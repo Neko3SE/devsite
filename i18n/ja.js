@@ -254,7 +254,7 @@ registerLocale('ja', {
   },
   game09: {
     title: '会議脱出シミュレーター',
-    description: '「他にありますか？」の緑ゾーンで3回連続退室を狙う',
+    description: '「他にありますか？」の緑ゾーンで3回退室を狙う',
     controls: 'タイミングクリック',
     culture: {
       heading: '当時の企業文化',
