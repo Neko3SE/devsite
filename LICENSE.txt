@@ -1,4 +1,4 @@
-Neko3SE_on_GitHub pages.
+Neko3SE LAB on GitHub pages.
 Copyright 2026 Neko3SE
 
 Licensed under the Apache License, Version 2.0 (the "License");
