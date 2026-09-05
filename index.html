@@ -2,50 +2,115 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>Neko3SE_on_GitHub</title>
-<meta name="description" content="野良エンジニアのまとめサイト">
-<meta name="keywords" content="生成AI">
+<title>Neko3SE LAB on GitHub - Dark Sample</title>
+<meta name="description" content="生成AIを活用したコンテンツ、IT関連の小ネタ・実験・制作物をまとめるNeko3SE LAB">
+<meta name="keywords" content="生成AI, Web, IT, Neko3SE LAB">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="index.css">
 </head>
+
 <body>
-<div id="outer">
-<header>
-<div id="logo"><h1>▶Neko3SE_on_GitHub</h1></div>
+<div class="site">
+
+<header class="hero">
+  <div class="hero-inner">
+    <p class="eyebrow">AI / WEB / IDEA / PLAY</p>
+
+    <h1>
+      <span class="brand-main">Neko3SE LAB</span>
+      <span class="brand-sub">on GitHub</span>
+    </h1>
+
+    <p class="hero-copy">
+      生成AIを活用したコンテンツと、<br class="desktop-only">
+      IT関連の小ネタ・実験・制作物。
+    </p>
+  </div>
 </header>
-<div id="content">
+
 <main>
-<div id="inner">
-<h2>生成AIによるコンテンツ</h2>
-<p>生成AIを活用したコンテンツとIT関連の小ネタ</p>
-</div></main>
-<aside>
-<div id="aside-inner">
-<nav id="left">
-<div class="title">▶開発・企画</div>
-<div class="side">
-<ul>
-<li>★<a href="mudagiken.html" target="_blank" rel="noopener">AI駆動型非生産的Web技術研究所。</a></li>
-<li>★開発・企画ノウハウ　TBD.</li>
-</ul>
-</div>
-</nav>
-<nav id="right">
-<div class="title">▶エンターテイメント</div>
-<div class="side">
-<ul>
-<li>★<a href="piano_emulator.html" target="_blank" rel="noopener">ピアノ・エミュレータ</a></li>
-<li>★生成AI画像　TBD.</li>
-<li>★生成AI画像ノウハウ　TBD.</li>
-</ul>
-</div>
-</nav>
-</div>
-</aside>
-</div>
-<footer>on GitHub &copy;2026 Neko3SE. 
-<a href="LICENSE.txt" target="_blank" rel="noopener"> #license.</a>
+
+  <section class="intro" aria-labelledby="contents-title">
+    <p class="section-label">CONTENTS</p>
+    <h2 id="contents-title">生成AIによるコンテンツ</h2>
+    <p>
+      生成AIを使って企画・制作した、技術系コンテンツや遊べる実験作品を公開しています。
+    </p>
+  </section>
+
+  <section class="content-grid" aria-label="コンテンツ一覧">
+
+    <article class="category-card">
+      <div class="card-icon" aria-hidden="true">&lt;/&gt;</div>
+      <div class="card-head">
+        <p class="card-kicker">DEVELOPMENT</p>
+        <h3>開発・企画</h3>
+      </div>
+
+      <nav class="link-list" aria-label="開発・企画">
+        <a class="content-link" href="mudagiken.html" target="_blank" rel="noopener">
+          <span>
+            <strong>AI駆動型非生産的Web技術研究所。</strong>
+            <small>無駄を本気で作るブラウザ実験コンテンツ</small>
+          </span>
+          <span class="arrow" aria-hidden="true">→</span>
+        </a>
+
+        <div class="content-link disabled" aria-disabled="true">
+          <span>
+            <strong>開発・企画ノウハウ</strong>
+            <small>制作プロセスや企画ノウハウ</small>
+          </span>
+          <span class="badge">COMING SOON</span>
+        </div>
+      </nav>
+    </article>
+
+    <article class="category-card">
+      <div class="card-icon" aria-hidden="true">♪</div>
+      <div class="card-head">
+        <p class="card-kicker">ENTERTAINMENT</p>
+        <h3>エンターテイメント</h3>
+      </div>
+
+      <nav class="link-list" aria-label="エンターテイメント">
+        <a class="content-link" href="piano_emulator.html" target="_blank" rel="noopener">
+          <span>
+            <strong>ピアノ・エミュレータ</strong>
+            <small>ブラウザで遊べる音楽実験コンテンツ</small>
+          </span>
+          <span class="arrow" aria-hidden="true">→</span>
+        </a>
+
+        <div class="content-link disabled" aria-disabled="true">
+          <span>
+            <strong>生成AI画像</strong>
+            <small>生成AIによるビジュアル作品</small>
+          </span>
+          <span class="badge">COMING SOON</span>
+        </div>
+
+        <div class="content-link disabled" aria-disabled="true">
+          <span>
+            <strong>生成AI画像ノウハウ</strong>
+            <small>画像生成の工夫や制作ノウハウ</small>
+          </span>
+          <span class="badge">COMING SOON</span>
+        </div>
+      </nav>
+    </article>
+
+  </section>
+
+</main>
+
+<footer>
+  <p>
+    on GitHub &copy;2026 Neko3SE.
+    <a href="LICENSE.txt" target="_blank" rel="noopener">#license.</a>
+  </p>
 </footer>
+
 </div>
 </body>
 </html>
