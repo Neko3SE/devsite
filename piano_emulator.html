@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PIANO EMULATOR - ブラウザで奏でるピアノ</title>
+<style>
+:root{
+  --bg:#090c14;
+  --panel:rgba(17,23,35,.86);
+  --panel2:rgba(24,32,48,.78);
+  --text:#f4f7fb;
+  --muted:#aeb8c8;
+  --line:rgba(255,255,255,.12);
+  --accent:#74c7ff;
+  --accent2:#9b8cff;
+  --danger:#ff7f8c;
+  --gold:#f1d58a;
+  --white-key:#f6f1e7;
+  --white-key-edge:#c9c4ba;
+  --black-key:#111318;
+  --black-key-edge:#2c3038;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans JP",sans-serif}
+body{min-height:100vh;overflow-x:hidden}
+button,input,textarea{font:inherit}
+button{cursor:pointer}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid rgba(116,199,255,.6);outline-offset:2px}
+
+.stage{
+  position:relative;
+  min-height:100vh;
+  padding:28px 18px 18px;
+  background:
+    radial-gradient(circle at 20% 10%,rgba(116,199,255,.11),transparent 30%),
+    radial-gradient(circle at 80% 18%,rgba(155,140,255,.11),transparent 28%),
+    linear-gradient(180deg,#0b1020 0%,#090c14 55%,#07090f 100%);
+}
+.decor{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.staff{
+  position:absolute;left:-4%;right:-4%;top:126px;height:82px;opacity:.20;
+  transform:rotate(-1.5deg);
+  background:repeating-linear-gradient(to bottom,transparent 0 12px,rgba(175,214,255,.68) 13px 14px);
+  filter:drop-shadow(0 0 8px rgba(116,199,255,.18));
+}
+.beam{
+  position:absolute;top:-80px;width:260px;height:560px;opacity:.20;
+  background:linear-gradient(180deg,rgba(116,199,255,.36),rgba(116,199,255,.06) 55%,transparent);
+  filter:blur(18px);transform-origin:top center;
+}
+.beam.b1{left:8%;transform:rotate(13deg)}
+.beam.b2{right:8%;transform:rotate(-13deg);background:linear-gradient(180deg,rgba(155,140,255,.32),rgba(155,140,255,.05) 55%,transparent)}
+.note{
+  position:absolute;color:rgba(210,232,255,.34);font-size:30px;
+  text-shadow:0 0 12px rgba(116,199,255,.22);
+  animation:floatNote 16s ease-in-out infinite;
+}
+.note.n1{left:7%;top:22%;animation-delay:-2s}.note.n2{left:24%;top:11%;animation-delay:-8s}
+.note.n3{right:17%;top:20%;animation-delay:-5s}.note.n4{right:5%;top:36%;animation-delay:-11s}
+.note.n5{left:12%;top:62%;animation-delay:-13s}.note.n6{right:22%;top:67%;animation-delay:-3s}
+.spark{
+  position:absolute;width:5px;height:5px;border-radius:50%;
+  background:rgba(224,241,255,.65);box-shadow:0 0 14px rgba(116,199,255,.65);
+  animation:twinkle 4.5s ease-in-out infinite;
+}
+.spark.s1{left:17%;top:31%;animation-delay:-1s}.spark.s2{left:37%;top:17%;animation-delay:-3s}
+.spark.s3{right:34%;top:29%;animation-delay:-2s}.spark.s4{right:12%;top:14%;animation-delay:-4s}
+.spark.s5{left:8%;top:53%;animation-delay:-2.5s}.spark.s6{right:19%;top:58%;animation-delay:-1.5s}
+@keyframes floatNote{0%,100%{transform:translateY(16px) rotate(-5deg);opacity:.18}50%{transform:translateY(-22px) rotate(5deg);opacity:.48}}
+@keyframes twinkle{0%,100%{transform:scale(.65);opacity:.25}50%{transform:scale(1.35);opacity:.85}}
+
+.app{position:relative;z-index:1;max-width:1180px;margin:0 auto}
+.topbar{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap}
+.brand{position:relative;padding:4px 0 8px}
+.brand h1{
+  position:relative;margin:0;display:inline-block;
+  font-family:Georgia,"Times New Roman",serif;
+  font-size:clamp(2.2rem,5.5vw,5rem);font-weight:700;letter-spacing:.11em;
+  color:#f7fbff;
+  text-shadow:0 2px 0 rgba(0,0,0,.25),0 0 24px rgba(116,199,255,.16);
+}
+.brand h1::before{
+  content:"♪";display:inline-block;margin-right:.24em;color:var(--gold);
+  font-size:.66em;vertical-align:.18em;text-shadow:0 0 14px rgba(241,213,138,.28);
+}
+.brand h1::after{
+  content:"";position:absolute;left:1.06em;right:.03em;bottom:-7px;height:5px;border-radius:99px;
+  background:repeating-linear-gradient(90deg,#f5f1e8 0 24px,#14171d 24px 31px,#f5f1e8 31px 55px);
+  opacity:.82;box-shadow:0 2px 10px rgba(0,0,0,.32);
+}
+.brand .subtitle{margin:.72rem 0 0 1.1em;color:#d9e2ef;font-size:clamp(1rem,2vw,1.35rem);letter-spacing:.04em}
+.lang-switch{display:inline-flex;background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:999px;padding:4px}
+.lang-switch button{border:0;background:transparent;color:var(--muted);padding:9px 14px;border-radius:999px}
+.lang-switch button.active{background:linear-gradient(135deg,rgba(116,199,255,.25),rgba(155,140,255,.25));color:var(--text)}
+.tagline{margin:24px 0 8px;font-size:clamp(1.05rem,2.1vw,1.5rem);font-weight:700}
+.description{margin:0 0 22px;color:var(--muted);line-height:1.8;max-width:900px}
+.examples{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:22px}
+.chip{padding:7px 11px;border:1px solid var(--line);border-radius:999px;background:rgba(255,255,255,.04);color:#dbe7f5;font-size:.9rem}
+
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:18px;backdrop-filter:blur(12px);box-shadow:0 20px 70px rgba(0,0,0,.25)}
+.piano-section{margin-top:8px}
+.section-title{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:12px}
+.section-title h2{margin:0;font-size:1rem;letter-spacing:.08em;color:#dfe8f4}
+.keyboard-wrap{position:relative;width:100%;padding-top:10px}
+.keyboard{
+  position:relative;
+  width:100%;
+  height:clamp(210px,29vw,310px);
+  user-select:none;
+  touch-action:none;
+}
+.white-keys{position:absolute;inset:0;display:flex}
+.key.white{
+  position:relative;flex:1;border:1px solid var(--white-key-edge);border-radius:0 0 9px 9px;
+  background:linear-gradient(180deg,#fffdfa 0%,var(--white-key) 82%,#e5ded1 100%);
+  box-shadow:inset 0 -8px 0 rgba(0,0,0,.05);
+}
+.key.white + .key.white{border-left-width:0}
+.key-label{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);text-align:center;color:#1c2330;font-weight:700;line-height:1.15;font-size:clamp(.55rem,1.3vw,.9rem);pointer-events:none}
+.key-label .kana{display:block;font-size:.85em;margin-bottom:2px;color:#505765}
+.black-key{
+  position:absolute;top:0;height:62%;width:4.8%;
+  transform:translateX(-50%);
+  z-index:3;border-radius:0 0 7px 7px;border:1px solid var(--black-key-edge);
+  background:linear-gradient(180deg,#242831 0%,var(--black-key) 78%,#050607 100%);
+  box-shadow:0 7px 10px rgba(0,0,0,.45);
+}
+.black-label{position:absolute;bottom:10px;left:50%;transform:translateX(-50%) rotate(-90deg);color:#dbe4ef;font-size:clamp(.48rem,1vw,.72rem);white-space:nowrap;pointer-events:none}
+.key.active{
+  background:linear-gradient(180deg,#dff5ff 0%,#9edbff 70%,#78c5ff 100%);
+  box-shadow:0 0 22px rgba(116,199,255,.7),inset 0 -7px 0 rgba(0,0,0,.08);
+}
+.black-key.active{
+  background:linear-gradient(180deg,#9cdaff 0%,#4aa9e8 72%,#277aaf 100%);
+  box-shadow:0 0 20px rgba(116,199,255,.85);
+}
+
+.status-strip{display:flex;gap:18px;flex-wrap:wrap;margin-top:14px;color:#dbe6f3}
+.status-item{background:rgba(255,255,255,.045);border:1px solid var(--line);padding:9px 12px;border-radius:12px;min-width:150px}
+.status-item strong{display:block;font-size:.8rem;color:var(--muted);margin-bottom:3px}
+
+.controls{margin-top:18px;display:grid;gap:16px}
+.field-label{display:block;margin-bottom:7px;font-weight:700}
+textarea{
+  width:100%;min-height:108px;resize:vertical;border-radius:14px;border:1px solid var(--line);
+  background:rgba(8,12,20,.75);color:var(--text);padding:14px 15px;font-size:16px;line-height:1.55
+}
+.segmented{display:inline-flex;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:rgba(255,255,255,.04)}
+.segmented button{border:0;border-right:1px solid var(--line);background:transparent;color:var(--muted);padding:10px 14px}
+.segmented button:last-child{border-right:0}.segmented button.active{background:rgba(116,199,255,.16);color:var(--text)}
+.button-row{display:flex;gap:10px;flex-wrap:wrap}
+.action{border:1px solid var(--line);border-radius:12px;padding:11px 15px;background:rgba(255,255,255,.06);color:var(--text);min-height:44px}
+.action.primary{background:linear-gradient(135deg,rgba(116,199,255,.28),rgba(155,140,255,.25));border-color:rgba(116,199,255,.35)}
+.action.danger{color:#ffd8dd}
+.action:disabled{opacity:.45;cursor:not-allowed}
+.knobs{display:grid;grid-template-columns:minmax(180px,1fr) minmax(220px,1.3fr);gap:16px}
+.control-card{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:13px}
+.control-card label{display:flex;justify-content:space-between;gap:12px;align-items:center;color:#dfe8f4;margin-bottom:8px}
+input[type="number"]{width:90px;background:#0b101b;color:var(--text);border:1px solid var(--line);border-radius:9px;padding:8px}
+input[type="range"]{width:100%}
+.message{min-height:24px;color:#ffd4da;font-size:.93rem}
+
+footer{margin:22px 0 0;text-align:center;color:#97a3b5;font-size:.9rem}
+footer a{color:#b8dfff;text-underline-offset:3px}
+
+.rotate-overlay{
+  display:none;position:absolute;inset:0;z-index:20;background:rgba(5,8,14,.96);
+  align-items:center;justify-content:center;text-align:center;padding:28px;border-radius:22px
+}
+.rotate-card{max-width:420px}.rotate-icon{font-size:3rem;margin-bottom:10px}.rotate-card h3{font-size:1.5rem;margin:.2rem 0 .5rem}.rotate-card p{color:var(--muted);line-height:1.7}
+
+@media(max-width:720px) and (orientation:portrait){
+  .piano-section{position:relative}
+  .piano-section .rotate-overlay{display:flex}
+}
+@media(max-width:820px){
+  .stage{padding:18px 10px 14px}
+  .panel{padding:12px;border-radius:16px}
+  .knobs{grid-template-columns:1fr}
+  .decor .note:nth-child(n+4),.decor .spark:nth-of-type(n+8){display:none}
+  .beam{opacity:.11}
+  .staff{opacity:.13}
+  .keyboard{height:220px}
+}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;scroll-behavior:auto!important;transition:none!important}
+}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="decor" aria-hidden="true">
+    <div class="beam b1"></div><div class="beam b2"></div>
+    <div class="staff"></div>
+    <span class="note n1">♪</span><span class="note n2">♫</span><span class="note n3">♩</span>
+    <span class="note n4">♬</span><span class="note n5">♪</span><span class="note n6">♫</span>
+    <span class="spark s1"></span><span class="spark s2"></span><span class="spark s3"></span>
+    <span class="spark s4"></span><span class="spark s5"></span><span class="spark s6"></span>
+  </div>
+
+  <main class="app">
+    <div class="topbar">
+      <div class="brand">
+        <h1>PIANO EMULATOR</h1>
+        <div class="subtitle" data-i18n="subtitle">ブラウザで奏でるピアノ</div>
+      </div>
+      <div class="lang-switch" aria-label="Language">
+        <button type="button" data-lang="ja" class="active">日本語</button>
+        <button type="button" data-lang="en">English</button>
+      </div>
+    </div>
+
+    <div class="tagline" data-i18n="tagline">鍵盤でも、テキストでも。音を自由に奏でよう。</div>
+    <p class="description" data-i18n="description">2オクターブの鍵盤をクリックして演奏したり、音階をテキスト入力して自動演奏できるブラウザピアノです。カタカナとコード、どちらの入力にも対応しています。R は休符として使用できます。</p>
+    <div class="examples">
+      <span class="chip" data-i18n="exampleKana">入力例：ド4 レ4 ミ4 ファ4 ソ4</span>
+      <span class="chip" data-i18n="exampleCode">入力例：C4 D4 E4 F4 G4</span>
+      <span class="chip" data-i18n="exampleRest">休符：R</span>
+    </div>
+
+    <section class="panel piano-section">
+      <div class="rotate-overlay" aria-live="polite">
+        <div class="rotate-card">
+          <div class="rotate-icon">📱↻</div>
+          <h3 data-i18n="rotateTitle">🎹 ピアノは横向きで♪</h3>
+          <p data-i18n="rotateText">スマートフォンを横向きにすると、2オクターブの鍵盤を演奏できます。</p>
+        </div>
+      </div>
+
+      <div class="section-title">
+        <h2 data-i18n="keyboardTitle">PIANO KEYBOARD</h2>
+      </div>
+      <div class="keyboard-wrap">
+        <div id="keyboard" class="keyboard" aria-label="Piano keyboard">
+          <div id="whiteKeys" class="white-keys"></div>
+        </div>
+      </div>
+
+      <div class="status-strip">
+        <div class="status-item">
+          <strong data-i18n="currentNoteLabel">現在の音</strong>
+          <span id="currentNote">—</span>
+        </div>
+        <div class="status-item">
+          <strong data-i18n="frequencyLabel">周波数</strong>
+          <span id="frequency">—</span>
+        </div>
+        <div class="status-item">
+          <strong data-i18n="positionLabel">再生位置</strong>
+          <span id="position">0 / 0</span>
+        </div>
+        <div class="status-item">
+          <strong data-i18n="stateLabel">状態</strong>
+          <span id="playState" data-i18n="ready">準備完了</span>
+        </div>
+      </div>
+
+      <div class="controls">
+        <div>
+          <label for="sequence" class="field-label" data-i18n="sequenceLabel">音階入力</label>
+          <textarea id="sequence" spellcheck="false" placeholder="ド4 レ4 ミ4 ファ4 ソ4 / C4 D4 E4 F4 G4"></textarea>
+        </div>
+
+        <div>
+          <span class="field-label" data-i18n="outputFormatLabel">鍵盤からの出力形式</span>
+          <div class="segmented">
+            <button type="button" id="formatKana" data-i18n="kana">カタカナ</button>
+            <button type="button" id="formatCode" class="active" data-i18n="code">コード</button>
+          </div>
+        </div>
+
+        <div class="button-row">
+          <button type="button" id="playBtn" class="action primary" data-i18n="play">▶ 再生</button>
+          <button type="button" id="stopBtn" class="action" data-i18n="stop">■ 停止</button>
+          <button type="button" id="deleteBtn" class="action" data-i18n="deleteNote">⌫ 一音削除</button>
+          <button type="button" id="clearBtn" class="action danger" data-i18n="clear">× 全消去</button>
+        </div>
+
+        <div class="knobs">
+          <div class="control-card">
+            <label for="bpm"><span data-i18n="bpmLabel">BPM</span><span><input id="bpm" type="number" min="40" max="240" value="120"></span></label>
+          </div>
+          <div class="control-card">
+            <label for="volume"><span data-i18n="volumeLabel">音量</span><span id="volumeValue">60%</span></label>
+            <input id="volume" type="range" min="0" max="100" value="60">
+          </div>
+        </div>
+        <div id="message" class="message" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <footer>
+      on GitHub &copy;2026 Neko3SE. <a href="LICENSE.txt">#LICENSE</a>
+    </footer>
+  </main>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  const WHITE_NOTES = [
+    ['C4','ド4'],['D4','レ4'],['E4','ミ4'],['F4','ファ4'],['G4','ソ4'],['A4','ラ4'],['B4','シ4'],
+    ['C5','ド5'],['D5','レ5'],['E5','ミ5'],['F5','ファ5'],['G5','ソ5'],['A5','ラ5'],['B5','シ5'],['C6','ド6']
+  ];
+  const BLACK_NOTES = [
+    {note:'C#4', after:0},{note:'D#4', after:1},{note:'F#4', after:3},{note:'G#4', after:4},{note:'A#4', after:5},
+    {note:'C#5', after:7},{note:'D#5', after:8},{note:'F#5', after:10},{note:'G#5', after:11},{note:'A#5', after:12}
+  ];
+  const CODE_TO_KANA = {
+    C:'ド', 'C#':'ド#', D:'レ', 'D#':'レ#', E:'ミ', F:'ファ', 'F#':'ファ#',
+    G:'ソ', 'G#':'ソ#', A:'ラ', 'A#':'ラ#', B:'シ'
+  };
+  const KANA_TO_CODE = {
+    'ド':'C','ド#':'C#','レ':'D','レ#':'D#','ミ':'E','ファ':'F','ファ#':'F#',
+    'ソ':'G','ソ#':'G#','ラ':'A','ラ#':'A#','シ':'B'
+  };
+  const texts = {
+    ja:{
+      subtitle:'ブラウザで奏でるピアノ',
+      tagline:'鍵盤でも、テキストでも。音を自由に奏でよう。',
+      description:'2オクターブの鍵盤をクリックして演奏したり、音階をテキスト入力して自動演奏できるブラウザピアノです。カタカナとコード、どちらの入力にも対応しています。R は休符として使用できます。',
+      exampleKana:'入力例：ド4 レ4 ミ4 ファ4 ソ4', exampleCode:'入力例：C4 D4 E4 F4 G4', exampleRest:'休符：R',
+      rotateTitle:'🎹 ピアノは横向きで♪', rotateText:'スマートフォンを横向きにすると、2オクターブの鍵盤を演奏できます。',
+      keyboardTitle:'PIANO KEYBOARD', currentNoteLabel:'現在の音', frequencyLabel:'周波数', positionLabel:'再生位置', stateLabel:'状態',
+      ready:'準備完了', playing:'再生中', completed:'再生完了', stopped:'停止', manual:'演奏中', rest:'休符',
+      sequenceLabel:'音階入力', outputFormatLabel:'鍵盤からの出力形式', kana:'カタカナ', code:'コード',
+      play:'▶ 再生', stop:'■ 停止', deleteNote:'⌫ 一音削除', clear:'× 全消去',
+      bpmLabel:'BPM', volumeLabel:'音量',
+      empty:'音階を入力してください。', invalid:'認識できない音階があります：', range:'鍵盤範囲外の音があります：'
+    },
+    en:{
+      subtitle:'Piano in Your Browser',
+      tagline:'Play with the keyboard or with text. Make music your way.',
+      description:'Play a two-octave piano directly in your browser. You can play the keyboard manually or enter note names such as C4 D4 E4 F4 G4 for automatic playback. R represents a rest.',
+      exampleKana:'Japanese note input is also supported.', exampleCode:'Example: C4 D4 E4 F4 G4', exampleRest:'Rest: R',
+      rotateTitle:'🎹 Turn your phone sideways♪', rotateText:'Rotate your phone to landscape mode to play the two-octave keyboard.',
+      keyboardTitle:'PIANO KEYBOARD', currentNoteLabel:'Current note', frequencyLabel:'Frequency', positionLabel:'Position', stateLabel:'Status',
+      ready:'Ready', playing:'Playing', completed:'Playback complete', stopped:'Stopped', manual:'Playing', rest:'Rest',
+      sequenceLabel:'Note sequence', outputFormatLabel:'Keyboard output format', kana:'Katakana', code:'Code',
+      play:'▶ Play', stop:'■ Stop', deleteNote:'⌫ Delete Note', clear:'× Clear',
+      bpmLabel:'BPM', volumeLabel:'Volume',
+      empty:'Enter a note sequence.', invalid:'Unrecognized note:', range:'Note outside keyboard range:'
+    }
+  };
+
+  const keyboard = document.getElementById('keyboard');
+  const whiteKeys = document.getElementById('whiteKeys');
+  const sequence = document.getElementById('sequence');
+  const currentNoteEl = document.getElementById('currentNote');
+  const frequencyEl = document.getElementById('frequency');
+  const positionEl = document.getElementById('position');
+  const playStateEl = document.getElementById('playState');
+  const messageEl = document.getElementById('message');
+  const bpmEl = document.getElementById('bpm');
+  const volumeEl = document.getElementById('volume');
+  const volumeValue = document.getElementById('volumeValue');
+  const playBtn = document.getElementById('playBtn');
+  const stopBtn = document.getElementById('stopBtn');
+  const deleteBtn = document.getElementById('deleteBtn');
+  const clearBtn = document.getElementById('clearBtn');
+  const formatKana = document.getElementById('formatKana');
+  const formatCode = document.getElementById('formatCode');
+
+  let lang = 'ja';
+  let outputFormat = 'code';
+  let audioCtx = null;
+  let masterGain = null;
+  let playbackTimer = null;
+  let isPlaying = false;
+  let activePlaybackNote = null;
+  const activeManual = new Map();
+  const voices = [];
+
+  function buildKeyboard(){
+    WHITE_NOTES.forEach(([code,kana])=>{
+      const key = document.createElement('button');
+      key.type = 'button';
+      key.className = 'key white';
+      key.dataset.note = code;
+      key.setAttribute('aria-label', code);
+      key.innerHTML = `<span class="key-label"><span class="kana">${kana.replace(/\d/g,'')}</span>${code}</span>`;
+      whiteKeys.appendChild(key);
+    });
+    BLACK_NOTES.forEach(({note,after})=>{
+      const key = document.createElement('button');
+      key.type = 'button';
+      key.className = 'black-key';
+      key.dataset.note = note;
+      key.setAttribute('aria-label', note);
+      key.style.left = `${((after + 1) / 15) * 100}%`;
+      key.innerHTML = `<span class="black-label">${note}</span>`;
+      keyboard.appendChild(key);
+    });
+  }
+
+  function setLanguage(next){
+    lang = next;
+    document.documentElement.lang = next;
+    document.querySelectorAll('[data-lang]').forEach(b=>b.classList.toggle('active', b.dataset.lang===next));
+    document.querySelectorAll('[data-i18n]').forEach(el=>{
+      const k = el.dataset.i18n;
+      if(texts[next][k] !== undefined) el.textContent = texts[next][k];
+    });
+    if(!isPlaying && playStateEl.dataset.stateKey){
+      playStateEl.textContent = texts[lang][playStateEl.dataset.stateKey];
+    }
+  }
+
+  function setState(key){
+    playStateEl.dataset.stateKey = key;
+    playStateEl.textContent = texts[lang][key] || key;
+  }
+
+  function noteToMidi(note){
+    const m = note.match(/^([A-G])(#?)(\d)$/);
+    if(!m) return null;
+    const base = {C:0,D:2,E:4,F:5,G:7,A:9,B:11}[m[1]] + (m[2] ? 1 : 0);
+    return (Number(m[3]) + 1) * 12 + base;
+  }
+
+  function frequency(note){
+    const midi = noteToMidi(note);
+    return 440 * Math.pow(2,(midi-69)/12);
+  }
+
+  function kanaFromCode(note){
+    if(note==='R') return 'R';
+    const m = note.match(/^([A-G]#?)(\d)$/);
+    return m ? `${CODE_TO_KANA[m[1]]}${m[2]}` : note;
+  }
+
+  function normalizeToken(raw){
+    const t = raw.trim();
+    if(!t) return null;
+    if(t.toUpperCase()==='R') return 'R';
+    const upper = t.toUpperCase();
+    if(/^[A-G]#?[0-9]$/.test(upper)) return upper;
+    const m = t.match(/^(ド#?|レ#?|ミ|ファ#?|ソ#?|ラ#?|シ)(\d)$/);
+    if(m) return `${KANA_TO_CODE[m[1]]}${m[2]}`;
+    return null;
+  }
+
+  function parseSequence(){
+    const rawTokens = sequence.value.trim().split(/[\s　]+/).filter(Boolean);
+    if(!rawTokens.length) return {error:texts[lang].empty};
+    const out = [];
+    for(const raw of rawTokens){
+      const n = normalizeToken(raw);
+      if(!n) return {error:`${texts[lang].invalid} ${raw}`};
+      if(n !== 'R'){
+        const midi = noteToMidi(n);
+        if(midi < noteToMidi('C4') || midi > noteToMidi('C6')){
+          return {error:`${texts[lang].range} ${raw}`};
+        }
+      }
+      out.push(n);
+    }
+    return {notes:out};
+  }
+
+  function ensureAudio(){
+    if(!audioCtx){
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      masterGain = audioCtx.createGain();
+      masterGain.gain.value = Number(volumeEl.value)/100;
+      masterGain.connect(audioCtx.destination);
+    }
+    if(audioCtx.state === 'suspended') audioCtx.resume();
+  }
+
+  function trimVoices(){
+    while(voices.length > 16){
+      const v = voices.shift();
+      if(v && v.stop) v.stop(true);
+    }
+  }
+
+  function createVoice(note, autoReleaseMs=null){
+    ensureAudio();
+    const now = audioCtx.currentTime;
+    const f = frequency(note);
+    const gain = audioCtx.createGain();
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.75, now + 0.012);
+    gain.gain.exponentialRampToValueAtTime(0.22, now + 0.38);
+    gain.connect(masterGain);
+
+    const harmonics = [
+      {ratio:1, amp:1},
+      {ratio:2, amp:.36},
+      {ratio:3, amp:.19},
+      {ratio:4, amp:.11}
+    ];
+    const oscs = [];
+    harmonics.forEach(h=>{
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.type = 'sine';
+      o.frequency.value = f*h.ratio;
+      g.gain.value = h.amp;
+      o.connect(g); g.connect(gain); o.start(now); oscs.push(o);
+    });
+    let stopped = false;
+    const voice = {
+      stop(immediate=false){
+        if(stopped) return;
+        stopped = true;
+        const t = audioCtx.currentTime;
+        gain.gain.cancelScheduledValues(t);
+        gain.gain.setValueAtTime(Math.max(gain.gain.value,0.0001),t);
+        gain.gain.exponentialRampToValueAtTime(0.0001,t+(immediate?0.05:0.48));
+        oscs.forEach(o=>o.stop(t+(immediate?0.07:0.52)));
+      }
+    };
+    voices.push(voice); trimVoices();
+    if(autoReleaseMs !== null) setTimeout(()=>voice.stop(false), Math.max(40,autoReleaseMs));
+    return voice;
+  }
+
+  function keyFor(note){
+    return keyboard.querySelector(`[data-note="${CSS.escape(note)}"]`);
+  }
+
+  function setKeyActive(note,on){
+    const k = keyFor(note);
+    if(k) k.classList.toggle('active',on);
+  }
+
+  function updateCurrent(note){
+    if(note === 'R'){
+      currentNoteEl.textContent = `R (${texts[lang].rest})`;
+      frequencyEl.textContent = '—';
+      return;
+    }
+    currentNoteEl.textContent = `${kanaFromCode(note)} / ${note}`;
+    frequencyEl.textContent = `${frequency(note).toFixed(2)} Hz`;
+  }
+
+  function appendManualNote(note){
+    if(isPlaying) return;
+    const token = outputFormat === 'kana' ? kanaFromCode(note) : note;
+    sequence.value = sequence.value.trim() ? `${sequence.value.trim()} ${token}` : token;
+  }
+
+  function manualDown(note, pointerId){
+    if(activeManual.has(pointerId)) return;
+    ensureAudio();
+    const voice = createVoice(note);
+    activeManual.set(pointerId,{note,voice});
+    setKeyActive(note,true);
+    updateCurrent(note);
+    setState('manual');
+    appendManualNote(note);
+  }
+
+  function manualUp(pointerId){
+    const item = activeManual.get(pointerId);
+    if(!item) return;
+    item.voice.stop(false);
+    setKeyActive(item.note,false);
+    activeManual.delete(pointerId);
+    if(!isPlaying) setState('ready');
+  }
+
+  keyboard.addEventListener('pointerdown',e=>{
+    const key = e.target.closest('[data-note]');
+    if(!key) return;
+    e.preventDefault();
+    key.setPointerCapture?.(e.pointerId);
+    manualDown(key.dataset.note,e.pointerId);
+  });
+  keyboard.addEventListener('pointerup',e=>manualUp(e.pointerId));
+  keyboard.addEventListener('pointercancel',e=>manualUp(e.pointerId));
+  keyboard.addEventListener('lostpointercapture',e=>manualUp(e.pointerId));
+
+  function stopPlayback(resetPosition=true){
+    if(playbackTimer){ clearTimeout(playbackTimer); playbackTimer = null; }
+    if(activePlaybackNote){ setKeyActive(activePlaybackNote,false); activePlaybackNote = null; }
+    isPlaying = false;
+    sequence.readOnly = false;
+    if(resetPosition) positionEl.textContent = '0 / 0';
+    setState('stopped');
+  }
+
+  function playSequence(){
+    stopPlayback(false);
+    messageEl.textContent = '';
+    const parsed = parseSequence();
+    if(parsed.error){ messageEl.textContent = parsed.error; setState('ready'); return; }
+    ensureAudio();
+    const bpm = Math.max(40,Math.min(240,Number(bpmEl.value)||120));
+    bpmEl.value = bpm;
+    const beat = 60000 / bpm;
+    const notes = parsed.notes;
+    isPlaying = true;
+    sequence.readOnly = true;
+    setState('playing');
+    let i = 0;
+
+    const step = ()=>{
+      if(!isPlaying) return;
+      if(activePlaybackNote){ setKeyActive(activePlaybackNote,false); activePlaybackNote = null; }
+      if(i >= notes.length){
+        isPlaying = false;
+        sequence.readOnly = false;
+        positionEl.textContent = `0 / ${notes.length}`;
+        setState('completed');
+        return;
+      }
+      const note = notes[i];
+      positionEl.textContent = `${i+1} / ${notes.length}`;
+      updateCurrent(note);
+      if(note !== 'R'){
+        activePlaybackNote = note;
+        setKeyActive(note,true);
+        createVoice(note, Math.max(100, beat*0.72));
+      }
+      i++;
+      playbackTimer = setTimeout(step, beat);
+    };
+    step();
+  }
+
+  playBtn.addEventListener('click',playSequence);
+  stopBtn.addEventListener('click',()=>stopPlayback(true));
+  deleteBtn.addEventListener('click',()=>{
+    if(isPlaying) return;
+    const arr = sequence.value.trim().split(/[\s　]+/).filter(Boolean);
+    arr.pop();
+    sequence.value = arr.join(' ');
+    messageEl.textContent = '';
+  });
+  clearBtn.addEventListener('click',()=>{
+    if(isPlaying) stopPlayback(true);
+    sequence.value = '';
+    currentNoteEl.textContent = '—';
+    frequencyEl.textContent = '—';
+    positionEl.textContent = '0 / 0';
+    messageEl.textContent = '';
+    setState('ready');
+  });
+
+  formatKana.addEventListener('click',()=>{
+    outputFormat='kana'; formatKana.classList.add('active'); formatCode.classList.remove('active');
+  });
+  formatCode.addEventListener('click',()=>{
+    outputFormat='code'; formatCode.classList.add('active'); formatKana.classList.remove('active');
+  });
+
+  volumeEl.addEventListener('input',()=>{
+    volumeValue.textContent = `${volumeEl.value}%`;
+    if(masterGain && audioCtx){
+      masterGain.gain.setTargetAtTime(Number(volumeEl.value)/100,audioCtx.currentTime,.02);
+    }
+  });
+
+  bpmEl.addEventListener('change',()=>{
+    bpmEl.value = Math.max(40,Math.min(240,Number(bpmEl.value)||120));
+  });
+
+  document.querySelectorAll('[data-lang]').forEach(btn=>btn.addEventListener('click',()=>setLanguage(btn.dataset.lang)));
+
+  buildKeyboard();
+  setLanguage('ja');
+  volumeValue.textContent = `${volumeEl.value}%`;
+})();
+</script>
+</body>
+</html>
