@@ -3,17 +3,36 @@
 <head>
 <meta charset="UTF-8">
 <title>Neko3SE LAB on GitHub</title>
-<meta name="description" content="生成AIを活用したコンテンツ、IT関連の小ネタ・実験・制作物をまとめるNeko3SE LAB">
-<meta name="keywords" content="生成AI, Web, IT, Neko3SE LAB">
+<meta name="description" content="Neko3SE LABは、生成AIやWeb技術を使った実験コンテンツ・ツール・制作物を公開するWeb実験ラボです。AIを活用したWeb企画、プロンプト作成支援、ブラウザ作品などを実際に触って試せます。">
 <meta name="copyright" content="© 2026 Neko3SE Apache License 2.0">
 <meta name="viewport" content="width=device-width, initial-scale=1">
- <meta property="og:title" content="Neko3SE LAB">
- <meta property="og:description" content="生成AIを活用したコンテンツと、IT関連の小ネタ・実験・制作物をまとめるNeko3SE LAB">
- <meta property="og:type" content="website">
- <meta property="og:url" content="https://neko3se.github.io/devsite/index.html">
- <!-- サムネイル画像の設定 -->
- <meta property="og:image" content="https://neko3se.github.io/devsite/og_images/Neko3SE_img.png">
- <meta name="twitter:card" content="summary_large_image">
+
+<link rel="canonical" href="https://neko3se.github.io/devsite/">
+
+<meta property="og:title" content="Neko3SE LAB">
+<meta property="og:description" content="生成AI × Web技術の実験ラボ。生成AIやWeb技術を使った実験コンテンツ・ツール・制作物を公開しています。">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://neko3se.github.io/devsite/">
+<meta property="og:site_name" content="Neko3SE LAB">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:image" content="https://neko3se.github.io/devsite/og_images/Neko3SE_img.png">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Neko3SE LAB">
+<meta name="twitter:description" content="生成AI × Web技術の実験ラボ。生成AIやWeb技術を使った実験コンテンツ・ツール・制作物を公開しています。">
+<meta name="twitter:image" content="https://neko3se.github.io/devsite/og_images/Neko3SE_img.png">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "Neko3SE LAB",
+  "alternateName": "Neko3SE LAB on GitHub",
+  "url": "https://neko3se.github.io/devsite/",
+  "inLanguage": "ja"
+}
+</script>
+
 <link rel="stylesheet" href="index.css">
 </head>
 
@@ -37,6 +56,32 @@
 </header>
 
 <main>
+
+  <section class="about" aria-labelledby="about-title">
+    <p class="section-label">ABOUT</p>
+    <h2 id="about-title">生成AI × Web技術の実験ラボ。</h2>
+    <p>
+      Neko3SE LABは、生成AIやWeb技術を使った実験コンテンツ・ツール・制作物を公開しています。
+      AIを活用したWeb企画、プロンプト作成支援、ブラウザで遊べる作品など、実際に触って試せるコンテンツを中心に掲載しています。
+    </p>
+  </section>
+
+  <section class="share-panel" aria-labelledby="share-title">
+    <div class="share-head">
+      <p class="section-label">SHARE</p>
+      <h2 id="share-title">Neko3SE LABをシェア</h2>
+    </div>
+
+    <div class="share-actions" aria-label="SNSシェア">
+      <a id="share-x" class="share-button" href="#" target="_blank" rel="noopener noreferrer" aria-label="Xでシェア">X</a>
+      <a id="share-line" class="share-button" href="#" target="_blank" rel="noopener noreferrer" aria-label="LINEでシェア">LINE</a>
+      <a id="share-bluesky" class="share-button" href="#" target="_blank" rel="noopener noreferrer" aria-label="Blueskyでシェア">Bluesky</a>
+      <a id="share-facebook" class="share-button" href="#" target="_blank" rel="noopener noreferrer" aria-label="Facebookでシェア">Facebook</a>
+      <button id="copy-link" class="share-button share-copy" type="button">リンクをコピー</button>
+    </div>
+
+    <p id="copy-status" class="copy-status" role="status" aria-live="polite"></p>
+  </section>
 
   <section class="intro" aria-labelledby="contents-title">
     <p class="section-label">CONTENTS</p>
@@ -63,7 +108,7 @@
           </span>
           <span class="arrow" aria-hidden="true">→</span>
         </a>
-       
+
         <a class="content-link" href="prompt_generator.html" target="_self" rel="noopener">
           <span>
             <strong>PROMPT GENERATOR</strong>
@@ -71,7 +116,7 @@
           </span>
           <span class="arrow" aria-hidden="true">→</span>
         </a>
-       
+
         <div class="content-link disabled" aria-disabled="true">
           <span>
             <strong>開発・企画ノウハウ</strong>
@@ -132,9 +177,63 @@
   <p>
     on GitHub &copy;2026 Neko3SE.
     <a href="LICENSE.txt" target="_blank" rel="noopener">#license.</a>
+    <a href="README.md" target="_blank" rel="noopener">#README.</a>
   </p>
 </footer>
 
 </div>
+
+<script>
+(() => {
+  "use strict";
+
+  const canonical = document.querySelector('link[rel="canonical"]');
+  const shareUrl = canonical ? canonical.href : window.location.href;
+  const shareText = "Neko3SE LAB｜生成AI × Web技術の実験ラボ。";
+
+  const links = {
+    "share-x": `https://x.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`,
+    "share-line": `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`,
+    "share-bluesky": `https://bsky.app/intent/compose?text=${encodeURIComponent(`${shareText}\n${shareUrl}`)}`,
+    "share-facebook": `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`
+  };
+
+  Object.entries(links).forEach(([id, href]) => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.href = href;
+    }
+  });
+
+  const copyButton = document.getElementById("copy-link");
+  const copyStatus = document.getElementById("copy-status");
+
+  async function copyShareUrl() {
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(shareUrl);
+      } else {
+        const textarea = document.createElement("textarea");
+        textarea.value = shareUrl;
+        textarea.setAttribute("readonly", "");
+        textarea.style.position = "fixed";
+        textarea.style.opacity = "0";
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textarea);
+      }
+
+      copyStatus.textContent = "リンクをコピーしました。";
+    } catch (error) {
+      copyStatus.textContent = "リンクをコピーできませんでした。";
+    }
+  }
+
+  if (copyButton) {
+    copyButton.addEventListener("click", copyShareUrl);
+  }
+})();
+</script>
 </body>
 </html>
