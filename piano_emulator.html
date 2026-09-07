@@ -22,7 +22,9 @@
   --text:#f4f7fb;
   --muted:#aeb8c8;
   --line:rgba(255,255,255,.12);
+  --line-strong:rgba(103,232,146,.30);
   --accent:#74c7ff;
+  --accent-soft:rgba(103,232,146,.10);
   --accent2:#9b8cff;
   --danger:#ff7f8c;
   --gold:#f1d58a;
@@ -171,6 +173,27 @@ input[type="number"]{width:90px;background:#0b101b;color:var(--text);border:1px 
 input[type="range"]{width:100%}
 .message{min-height:24px;color:#ffd4da;font-size:.93rem}
 
+.back-link{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  min-height:44px;
+  padding:9px 14px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  color:var(--text);
+  background:rgba(255,255,255,.025);
+  text-decoration:none;
+  font-size:.88rem;
+  font-weight:750;
+  white-space:nowrap;
+}
+.back-link:hover,.back-link:focus-visible{
+  border-color:var(--line-strong);
+  background:var(--accent-soft);
+  outline:none;
+}
+
 footer{margin:22px 0 0;text-align:center;color:#97a3b5;font-size:.9rem}
 footer a{color:#b8dfff;text-underline-offset:3px}
 
@@ -191,6 +214,7 @@ footer a{color:#b8dfff;text-underline-offset:3px}
   .decor .note:nth-child(n+4),.decor .spark:nth-of-type(n+8){display:none}
   .beam{opacity:.11}
   .staff{opacity:.13}
+  .back-link{width:100%;justify-content:center}
   .keyboard{height:220px}
 }
 @media(prefers-reduced-motion:reduce){
@@ -295,8 +319,9 @@ footer a{color:#b8dfff;text-underline-offset:3px}
             <label for="volume"><span data-i18n="volumeLabel">音量</span><span id="volumeValue">60%</span></label>
             <input id="volume" type="range" min="0" max="100" value="60">
           </div>
-          <div> <span class="chip"><a class="back-link" href="index.html">
-      ← Neko3SE LAB に戻る  </a></span></div>
+          <div><a class="back-link" href="index.html">
+            ← Neko3SE LAB に戻る
+          </a></div>
         </div>
         <div id="message" class="message" aria-live="polite"></div>
       </div>
