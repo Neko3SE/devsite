@@ -28,7 +28,7 @@ function capabilities(){
   };
 }
 const caps=capabilities();ui.setCapabilities(caps);
-ui.setTechnical({"Phase":"6 Rev.1","App State":state.app,"Microphone":state.mic,"Secure Context":String(window.isSecureContext),"MediaRecorder MIME":"UNKNOWN","Actual Sample Rate":"UNKNOWN"});
+ui.setTechnical({"Phase":"6 Rev.2","App State":state.app,"Microphone":state.mic,"Secure Context":String(window.isSecureContext),"MediaRecorder MIME":"UNKNOWN","Actual Sample Rate":"UNKNOWN"});
 ui.clearScopes();
 
 const required=["SECURE CONTEXT","AUDIO CONTEXT","MICROPHONE API","MEDIA RECORDER","WEB WORKER","CANVAS","BLOB","OBJECT URL"];

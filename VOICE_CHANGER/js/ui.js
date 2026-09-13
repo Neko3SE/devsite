@@ -25,7 +25,7 @@ export class UI {
     $("noteValue").textContent=v.note?(v.note.name+(v.note.cents?` ${v.note.cents>0?"+":""}${v.note.cents}c`:"")):"---";
     $("centroidValue").textContent=Number.isFinite(v.centroid)?Math.round(v.centroid)+" Hz":"--- Hz";
     const pct=Number.isFinite(v.rmsDb)?Math.max(0,Math.min(100,(v.rmsDb+80)/80*100)):0;$("levelBar").style.width=pct+"%";
-    const w=$("signalWarning");if(Number.isFinite(v.peakDb)&&v.peakDb>=-.2){w.hidden=false;w.textContent="⚠ CLIP"}else if(Number.isFinite(v.rmsDb)&&v.rmsDb<-55){w.hidden=false;w.textContent="⚠ LOW INPUT"}else w.hidden=true;
+    const w=$("signalWarning");if(Number.isFinite(v.peakDb)&&v.peakDb>=-.2){w.textContent="⚠ CLIP"}else if(Number.isFinite(v.rmsDb)&&v.rmsDb<-55){w.textContent="⚠ LOW INPUT"}else{w.textContent="";}
   }
   analysisStatus(text){$("analysisState").textContent=text}
   wholeAnalysis(a){
