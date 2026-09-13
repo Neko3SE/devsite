@@ -10,3 +10,5 @@ footer{max-width:1100px;margin:auto;padding:20px;display:flex;justify-content:sp
 @media(max-width:700px){.site-header{display:block}.status-pill{display:inline-block;margin-top:16px}.work-grid{grid-template-columns:1fr}.meter-grid{grid-template-columns:1fr 1fr}.cap-grid{grid-template-columns:1fr 1fr}footer{flex-direction:column}.shell{padding-inline:12px}.site-header{padding-inline:14px}.panel{padding:14px;border-radius:14px}}
 @media(max-width:340px){.preset-grid{grid-template-columns:1fr}.meter-grid{gap:6px}.metric{padding:9px}.timer strong{font-size:2rem}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important}}
+
+[hidden]{display:none!important}

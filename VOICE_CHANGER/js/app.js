@@ -46,21 +46,42 @@ function updateControls(){
     "Auto Gain Control":state.micSettings.autoGainControl??"UNKNOWN"
   });
 }
+function showPermissionPanel(){
+  $("permissionPanel").hidden=false;
+}
+function hidePermissionPanel(){
+  $("permissionPanel").hidden=true;
+}
 function micError(err){
   state.mic=err?.name==="NotAllowedError"?"DENIED":"UNAVAILABLE";
+  showPermissionPanel();
   ui.mic(state.mic==="DENIED"?"ACCESS DENIED":"NOT AVAILABLE");
+  $("enableMic").textContent="TRY AGAIN";
   ui.permissionError(state.mic==="DENIED"
     ?"MICROPHONE ACCESS DENIED\nマイクの使用を許可してから、もう一度お試しください。\nAllow microphone access and try again."
     :"MICROPHONE NOT AVAILABLE\nマイクの接続や端末の設定を確認してください。\nCheck your microphone connection and device settings.");
   ui.status("ERROR","error"); updateControls();
 }
 $("enableMic").addEventListener("click",async()=>{
+  if($("enableMic").disabled)return;
+  $("enableMic").disabled=true;
+  ui.permissionError("");
+  ui.mic("REQUESTING...");
   try{
-    ui.permissionError(""); await audio.ensureContext();
+    // getUserMedia is called directly from the first user gesture.
+    // AudioContext is created/resumed only after microphone permission succeeds.
     state.micSettings=await recorder.confirmAccess();
-    state.mic="READY";ui.mic("MICROPHONE ● READY");ui.status("READY","ready");
-    $("enableMic").textContent="TRY MICROPHONE AGAIN"; updateControls();
-  }catch(e){micError(e)}
+    await audio.ensureContext();
+    state.mic="READY";
+    ui.mic("MICROPHONE ● READY");
+    ui.status("READY","ready");
+    hidePermissionPanel();
+    updateControls();
+  }catch(e){
+    micError(e);
+  }finally{
+    if(state.mic!=="READY") $("enableMic").disabled=false;
+  }
 });
 
 $("recordBtn").addEventListener("click",()=>{
