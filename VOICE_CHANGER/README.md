@@ -1,38 +1,48 @@
-# VOICE CHANGER LAB β — Phase 1 Rev.1
+# VOICE CHANGER LAB β — Phase 2
 
-実装ベースライン: 基本設計仕様書 v1.0 / 詳細設計仕様書 v1.0
+実装ベースライン: Phase 1 Rev.1 + 基本設計仕様書 v1.0 + 詳細設計仕様書 v1.0
 
-## Phase 1 実装範囲
-- Responsive UI / Analyzer shell
+## Phase 2 追加実装
+- Realtime Pitch/F0 estimation (normalized autocorrelation, confidence gate)
+- Realtime NOTE conversion (A4=440 Hz)
+- Realtime Spectral Centroid display
+- Whole-recording ORIGINAL analysis
+  - Pitch AVG / MIN / MAX
+  - representative NOTE
+  - RMS AVG
+  - PEAK
+  - voiced frame count
+- ORIGINAL playback
+- Playback progress gauge
+- Playback waveform / spectrum
+- Playback/recording state lock
+- visibilitychange playback stop
+
+## 継続して有効なPhase 1 Rev.1機能
 - Capability Check
-- Secure Context check
-- Microphone permission flow
-- AudioContext lifecycle
+- Microphone allow / deny / retry
+- AudioContext
 - MediaRecorder MIME feature detection
-- Max 30 sec recording / auto stop
-- 0.5 sec minimum validation
-- Realtime waveform / spectrum / RMS / Peak
-- Decode + mono normalization
-- Transactional re-recording (old session retained until new recording validates)
-- Microphone release after recording
-- visibilitychange interruption handling
-- ORIGINAL session metadata
+- 30 sec max recording / auto stop
+- 0.5 sec validation
+- realtime waveform / spectrum / RMS / Peak
+- transactional re-recording
+- microphone release after recording
 
 ## 未実装（次Phase）
-- F0 / Note
-- Whole Analysis
 - PRESET / MANUAL DSP
-- Web Worker DSP
-- A/B playback
+- Web Worker DSP pipeline
+- PROCESSED whole analysis
+- A/B ORIGINAL / PROCESSED comparison
 - WAV export
 - Mini Monitor
 
-## 実機確認
-HTTPS環境で確認してください。スマートフォンの file:// は正式サポート対象外です。
+## Phase 2 実機確認ポイント
+1. 録音中にPITCHとNOTEが発声時だけ反応し、無音/不安定音では `---` になること。
+2. 録音停止後、ORIGINAL ANALYSISが表示されること。
+3. PLAY ORIGINALで録音結果が再生できること。
+4. 再生中にWaveform/Spectrumが動くこと。
+5. STOPおよび自然終了後にRECORDEDへ戻ること。
+6. 再録音しても新録音が正常確定するまで旧ORIGINALが保持されること。
 
-## Rev.1 修正
-- 初回 `ENABLE MICROPHONE` 操作では、ユーザー操作から `getUserMedia()` を直接実行するよう順序を修正。
-- マイク許可成功後、Large Permission Panelを非表示にし `MICROPHONE ● READY` へ移行。
-- Permission拒否・利用不可・RECORD時の再取得失敗ではPermission Panelを再表示し `TRY AGAIN` を提供。
-- Permission要求中の二重クリックを防止。
-- `[hidden]` の表示抑止をCSSでも明示。
+※ F0閾値・解析窓はβの音響チューニング対象です。

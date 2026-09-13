@@ -34,6 +34,7 @@
         <div class="metric"><span>NOTE</span><strong id="noteValue">---</strong></div>
         <div class="metric"><span>LEVEL</span><strong id="rmsValue">--- dBFS</strong></div>
         <div class="metric"><span>PEAK</span><strong id="peakValue">--- dBFS</strong></div>
+        <div class="metric"><span>CENTROID</span><strong id="centroidValue">--- Hz</strong></div>
       </div>
       <div class="level-track"><div id="levelBar" class="level-bar"></div></div>
       <div id="signalWarning" class="warning-line" hidden></div>
@@ -78,10 +79,39 @@
         </dl>
       </section>
 
+      <section class="panel">
+        <div class="section-head">
+          <div><span class="kicker">04</span><h2>ORIGINAL ANALYSIS</h2></div>
+          <span id="analysisState" class="data-state">WAITING</span>
+        </div>
+        <dl class="facts">
+          <div><dt>PITCH AVG</dt><dd id="pitchAvg">---</dd></div>
+          <div><dt>PITCH RANGE</dt><dd id="pitchRange">---</dd></div>
+          <div><dt>NOTE</dt><dd id="wholeNote">---</dd></div>
+          <div><dt>RMS AVG</dt><dd id="rmsAvg">---</dd></div>
+          <div><dt>PEAK</dt><dd id="wholePeak">---</dd></div>
+          <div><dt>VOICED FRAMES</dt><dd id="voicedFrames">---</dd></div>
+        </dl>
+      </section>
+
+      <section class="panel">
+        <div class="section-head">
+          <div><span class="kicker">05</span><h2>PLAYBACK / A-B</h2></div>
+          <span class="data-state">A : ORIGINAL</span>
+        </div>
+        <div class="timer playback-timer"><strong id="playTime">00:00.0</strong><span id="playTotal">/ 00:00.0</span></div>
+        <div class="progress"><div id="playProgress"></div></div>
+        <div class="button-row">
+          <button id="playBtn" class="primary" type="button" disabled>PLAY ORIGINAL</button>
+          <button id="playStopBtn" type="button" disabled>STOP</button>
+        </div>
+        <div id="playMessage" class="message" aria-live="polite"></div>
+      </section>
+
       <section class="panel processor disabled-section" id="processorPanel">
         <div class="section-head">
-          <div><span class="kicker">04</span><h2>VOICE PROCESSOR</h2></div>
-          <span class="badge">PHASE 1 REV.1</span>
+          <div><span class="kicker">06</span><h2>VOICE PROCESSOR</h2></div>
+          <span class="badge">PHASE 2</span>
         </div>
         <div class="tabs"><button class="active" disabled>PRESET</button><button disabled>MANUAL</button></div>
         <div class="preset-grid">
@@ -96,7 +126,7 @@
     </div>
 
     <section class="panel">
-      <div class="section-head"><div><span class="kicker">05</span><h2>CAPABILITIES / SYSTEM INFORMATION</h2></div></div>
+      <div class="section-head"><div><span class="kicker">07</span><h2>CAPABILITIES / SYSTEM INFORMATION</h2></div></div>
       <div id="capabilities" class="cap-grid"></div>
       <details>
         <summary>TECHNICAL DETAILS</summary>
@@ -105,13 +135,13 @@
     </section>
 
     <section class="panel info">
-      <div class="section-head"><div><span class="kicker">06</span><h2>HOW TO USE / ご利用方法</h2></div></div>
+      <div class="section-head"><div><span class="kicker">08</span><h2>HOW TO USE / ご利用方法</h2></div></div>
       <ol>
         <li><strong>ENABLE MICROPHONE</strong> — マイクの使用を許可します。</li>
         <li><strong>RECORD</strong> — 録音を開始します。最大30秒、30秒で自動停止します。</li>
         <li><strong>STOP</strong> — 30秒未満でも録音を終了できます。0.5秒未満は無効です。</li>
       </ol>
-      <p class="en">Phase 1 implements capability checking, microphone permission, recording, real-time waveform/spectrum/level analysis, 30-second auto stop, decoding, mono normalization, and ORIGINAL session protection.</p>
+      <p class="en">Phase 2 adds real-time Pitch/F0 and Note estimation, whole-recording ORIGINAL analysis, and ORIGINAL playback to the approved Phase 1 recording foundation.</p>
       <hr>
       <p><strong>PRIVACY / プライバシー</strong><br>録音した音声と音声処理はブラウザ内で扱われます。音声処理のために録音データをサーバーへ送信することはありません。保存していない録音データは、ページを閉じると失われます。</p>
       <p class="en">Recorded audio and audio processing are handled locally in your browser. Recorded audio is not sent to a server for audio processing. Unsaved recordings are lost when the page is closed.</p>

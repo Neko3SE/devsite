@@ -1,10 +1,11 @@
 import {AudioEngine} from "./audio-engine.js";
 import {Recorder} from "./recorder.js";
-import {RealtimeAnalyzer} from "./analyzer.js";
+import {RealtimeAnalyzer, analyzeWhole} from "./analyzer.js";
+import {Player} from "./player.js";
 import {UI} from "./ui.js";
 
 const $=id=>document.getElementById(id);
-const ui=new UI(), audio=new AudioEngine(), recorder=new Recorder(), analyzer=new RealtimeAnalyzer(ui);
+const ui=new UI(), audio=new AudioEngine(), recorder=new Recorder(), analyzer=new RealtimeAnalyzer(ui), player=new Player(ui,audio);
 const state={app:"READY",mic:"REQUIRED",session:null,sessionId:0,recordStarted:0,tick:0,pendingStop:null,micSettings:{}};
 
 function capabilities(){
@@ -34,6 +35,9 @@ if(missing.length){
 function updateControls(){
   $("recordBtn").disabled=!(state.mic==="READY"&&(state.app==="READY"||state.app==="RECORDED"));
   $("stopBtn").disabled=state.app!=="RECORDING";
+  const canPlay=!!state.session && (state.app==="RECORDED");
+  $("playBtn").disabled=!canPlay;
+  $("playStopBtn").disabled=state.app!=="PLAYING";
   ui.setTechnical({
     "Phase":"1","App State":state.app,"Microphone":state.mic,
     "Secure Context":String(window.isSecureContext),
@@ -124,8 +128,9 @@ async function stopRecording(reason){
     }
     for(const s of mono.samples){if(!Number.isFinite(s))throw new Error("DEC_INVALID_AUDIO")}
     // Transaction commit only after successful decode/validation.
-    state.session={id:++state.sessionId,original:mono,recordingInfo:{createdAt:new Date(),mimeType:blob.type}};
-    state.app="RECORDED";ui.recorded(mono);ui.status("READY","ready");
+    const whole=analyzeWhole(mono.samples,mono.sampleRate);
+    state.session={id:++state.sessionId,original:{...mono,analysis:whole},recordingInfo:{createdAt:new Date(),mimeType:blob.type}};
+    state.app="RECORDED";ui.recorded(mono);ui.wholeAnalysis(whole);ui.playbackProgress(0,mono.duration);ui.status("READY","ready");
     ui.message(reason==="auto"?"✓ RECORDING COMPLETE / 30 SEC AUTO STOP":"✓ RECORDING COMPLETE");
     ui.resetAnalyzer(); updateControls();
   }catch(e){
@@ -135,6 +140,33 @@ async function stopRecording(reason){
   }
 }
 
-document.addEventListener("visibilitychange",()=>{if(document.hidden&&state.app==="RECORDING")stopRecording("interrupted")});
-addEventListener("pagehide",()=>{cancelAnimationFrame(state.tick);analyzer.stop();recorder.finish()});
+$("playBtn").addEventListener("click",async()=>{
+  if(!state.session||state.app!=="RECORDED")return;
+  try{
+    state.app="PLAYING";ui.status("PLAYING","ready");$("analyzerState").textContent="A : ORIGINAL";updateControls();
+    const o=state.session.original;
+    await player.play(o.samples,o.sampleRate,()=>{
+      if(state.app!=="PLAYING")return;
+      state.app="RECORDED";ui.status("READY","ready");$("analyzerState").textContent="ANALYSIS READY";
+      ui.playbackProgress(0,o.duration);ui.resetAnalyzer();updateControls();
+    });
+  }catch(e){
+    state.app="RECORDED";ui.status("ERROR","error");$("playMessage").textContent="PLAYBACK FAILED / 音声を再生できませんでした。";updateControls();
+  }
+});
+$("playStopBtn").addEventListener("click",()=>{
+  if(state.app!=="PLAYING")return;
+  player.stop(false);state.app="RECORDED";ui.status("READY","ready");$("analyzerState").textContent="ANALYSIS READY";
+  ui.playbackProgress(0,state.session.original.duration);ui.resetAnalyzer();updateControls();
+});
+
+document.addEventListener("visibilitychange",()=>{
+  if(!document.hidden)return;
+  if(state.app==="RECORDING")stopRecording("interrupted");
+  else if(state.app==="PLAYING"){
+    player.stop(false);state.app="RECORDED";ui.status("READY","ready");$("analyzerState").textContent="ANALYSIS READY";
+    ui.playbackProgress(0,state.session.original.duration);ui.resetAnalyzer();updateControls();
+  }
+});
+addEventListener("pagehide",()=>{cancelAnimationFrame(state.tick);analyzer.stop();player.cleanup();recorder.finish()});
 updateControls();
