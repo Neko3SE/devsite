@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="法律名が分からなくてもジャンルやキーワードから探せる、Neko3SE LABの非公式e-Gov法令検索Viewerです。">
+  <title>e-Gov 法令検索 Viewer | Neko3SE LAB</title>
+  <link rel="stylesheet" href="egov-viewer.css">
+</head>
+<body>
+  <a class="egov-skip-link" href="#egov-main">本文へ移動</a>
+
+  <header class="egov-header">
+    <div class="egov-header__inner">
+      <div>
+        <a class="egov-brand" href="./">Neko3SE LAB</a>
+        <h1>e-Gov 法令検索 Viewer <span class="egov-beta">β</span></h1>
+        <p>法律名が分からなくても探せる、法令閲覧支援ツール</p>
+      </div>
+      <a class="egov-external" href="https://laws.e-gov.go.jp/" target="_blank" rel="noopener noreferrer">e-Gov法令検索 ↗</a>
+    </div>
+  </header>
+
+  <div class="egov-unofficial" role="note">
+    本ViewerはNeko3SE LABによる非公式ツールです。法令データはe-Gov法令検索から取得します。法的助言を提供するものではありません。
+  </div>
+
+  <main id="egov-main" class="egov-main">
+    <section class="egov-search-panel" aria-labelledby="egov-search-heading">
+      <h2 id="egov-search-heading">法令を検索</h2>
+      <form id="egov-search-form" role="search">
+        <fieldset class="egov-search-mode">
+          <legend class="egov-visually-hidden">検索方法</legend>
+          <label><input type="radio" name="mode" value="keyword" checked> 内容から検索</label>
+          <label><input type="radio" name="mode" value="law"> 法令名から検索</label>
+        </fieldset>
+        <div class="egov-search-row">
+          <label class="egov-visually-hidden" for="egov-query">検索語</label>
+          <input id="egov-query" name="q" maxlength="100" autocomplete="off" placeholder="例：有休、残業、相続、個人情報">
+          <button id="egov-search-button" type="submit">検索</button>
+        </div>
+        <div id="egov-suggestions" class="egov-suggestions" aria-label="関連する法律用語"></div>
+      </form>
+      <div id="egov-status" class="egov-status" aria-live="polite"></div>
+    </section>
+
+    <div class="egov-workspace">
+      <aside id="egov-category-pane" class="egov-pane egov-category-pane" aria-labelledby="egov-category-heading">
+        <div class="egov-pane__head">
+          <h2 id="egov-category-heading">ジャンルから探す</h2>
+          <span>Neko3SE LAB独自分類</span>
+        </div>
+        <div id="egov-categories"></div>
+      </aside>
+
+      <section id="egov-list-pane" class="egov-pane egov-list-pane" aria-labelledby="egov-list-heading">
+        <div class="egov-pane__head">
+          <button class="egov-mobile-back" type="button" data-action="back">‹ 戻る</button>
+          <h2 id="egov-list-heading">法令一覧</h2>
+        </div>
+        <div id="egov-list-content" class="egov-empty">
+          ジャンルを選ぶか、上の検索から法令を探してください。
+        </div>
+      </section>
+
+      <article id="egov-viewer-pane" class="egov-pane egov-viewer-pane" aria-labelledby="egov-law-heading">
+        <div class="egov-pane__head egov-viewer-toolbar">
+          <button class="egov-mobile-back" type="button" data-action="back">‹ 戻る</button>
+          <button id="egov-toc-button" type="button" aria-expanded="false" aria-controls="egov-toc">目次</button>
+          <form id="egov-law-search-form" class="egov-law-search" role="search">
+            <label class="egov-visually-hidden" for="egov-law-query">この法令内を検索</label>
+            <input id="egov-law-query" maxlength="100" placeholder="この法令内を検索">
+            <button type="submit">検索</button>
+          </form>
+        </div>
+        <div class="egov-law-layout">
+          <nav id="egov-toc" class="egov-toc" aria-label="法令目次"></nav>
+          <div id="egov-law-content" class="egov-law-content">
+            <div class="egov-empty">
+              <h2 id="egov-law-heading">法令を選択してください</h2>
+              <p>左のジャンルまたは検索結果から法令を開けます。</p>
+            </div>
+          </div>
+        </div>
+      </article>
+    </div>
+  </main>
+
+  <button id="egov-page-top" class="egov-page-top" type="button" aria-label="ページ上部へ">↑</button>
+
+  <footer class="egov-footer">
+    <p>e-Gov 法令検索 Viewer — Neko3SE LABによる非公式閲覧支援ツール</p>
+    <p>法令データ：<a href="https://laws.e-gov.go.jp/" target="_blank" rel="noopener noreferrer">e-Gov法令検索 ↗</a> / ©2026 Neko3SE</p>
+  </footer>
+
+  <noscript>
+    <div class="egov-noscript">このViewerの利用にはJavaScriptが必要です。法令は <a href="https://laws.e-gov.go.jp/">e-Gov法令検索</a> から確認できます。</div>
+  </noscript>
+
+  <script src="egov-categories.js" defer></script>
+  <script src="egov-search-dictionary.js" defer></script>
+  <script src="egov-api.js" defer></script>
+  <script src="egov-parser.js" defer></script>
+  <script src="egov-renderer.js" defer></script>
+  <script src="egov-app.js" defer></script>
+</body>
+</html>
