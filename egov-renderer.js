@@ -57,7 +57,7 @@ window.EGOV_RENDERER = (() => {
     container.replaceChildren();
     for(const c of categories){
       const wrap=$("section","egov-category"),b=$("button","",c.name);b.type="button";b.dataset.action="category";b.dataset.category=c.id;b.title=c.description||"";wrap.append(b);
-      const subs=$("div","egov-subcategories");for(const s of c.subcategories){const x=$("button","",s.name);x.type="button";x.dataset.action="subcategory";x.dataset.category=c.id;x.dataset.sub=s.id;subs.append(x)}wrap.append(subs);container.append(wrap);
+      const subs=$("div","egov-subcategories");for(const s of c.subcategories){if(!(s.lawKeys||[]).some(k=>window.EGOV_CATEGORIES.LAW_MASTER[k]))continue;const x=$("button","",s.name);x.type="button";x.dataset.action="subcategory";x.dataset.category=c.id;x.dataset.sub=s.id;subs.append(x)}wrap.append(subs);container.append(wrap);
     }
   }
   function renderLawList(container,laws,title="法令一覧"){

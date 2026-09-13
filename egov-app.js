@@ -44,10 +44,11 @@ function urlFor(extra={}){
 }
 function navigate(url,replace=false){history[replace?"replaceState":"pushState"]({},"",url)}
 function categoryById(id){return C.CATEGORIES.find(x=>x.id===id)}
-function subById(c,id){return c?.subcategories.find(x=>x.id===id)}
+function visibleSubs(c){return (c?.subcategories||[]).filter(s=>(s.lawKeys||[]).some(k=>C.LAW_MASTER[k]))}
+function subById(c,id){return visibleSubs(c).find(x=>x.id===id)}
 function selectCategory(category,sub,push=true){
   const c=categoryById(category);if(!c){show("HOME");return}
-  const s=subById(c,sub)||c.subcategories[0];state.category=c.id;state.sub=s?.id||null;
+  const s=subById(c,sub)||visibleSubs(c)[0];state.category=c.id;state.sub=s?.id||null;
   const laws=(s?.lawKeys||[]).map(k=>C.LAW_MASTER[k]).filter(Boolean);
   R.renderLawList(el.list,laws,s?`${c.name} / ${s.name}`:c.name);show("CATEGORY");
   if(push)navigate(urlFor({category:c.id,sub:s?.id}));
@@ -180,7 +181,7 @@ function parseLocation(push=false){
 }
 document.addEventListener("click",e=>{
   const t=e.target.closest("[data-action]");if(!t)return;const a=t.dataset.action;
-  if(a==="category"){const c=categoryById(t.dataset.category);if(c)selectCategory(c.id,c.subcategories[0]?.id)}
+  if(a==="category"){const c=categoryById(t.dataset.category);if(c)selectCategory(c.id,visibleSubs(c)[0]?.id)}
   else if(a==="subcategory")selectCategory(t.dataset.category,t.dataset.sub);
   else if(a==="law")openLaw(t.dataset.lawId,{article:t.dataset.article||"",highlight:t.dataset.highlight||""});
   else if(a==="suggestion"){el.query.value=t.dataset.query;suggestions(t.dataset.query);el.query.focus()}
