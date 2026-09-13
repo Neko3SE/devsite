@@ -23,14 +23,15 @@ window.EGOV_RENDERER = (() => {
     if(n.type==="Label")return $("div","egov-struct-title",n.text);
     if(n.type==="Article"){
       const s=$("section","egov-article");s.id=n.anchorId||"";if(n.hide)s.hidden=true;
-      if(n.caption)s.append($("div","egov-article-caption",n.caption));if(n.displayNumber)s.append($("div","egov-article-title",n.displayNumber));
+      if(n.caption){const c=$("div","egov-article-caption");appendHighlighted(c,n.caption,query);s.append(c)}
+      if(n.displayNumber){const t=$("div","egov-article-title");appendHighlighted(t,n.displayNumber,query);s.append(t)}
       for(const c of n.children)s.append(node(c,query));return s;
     }
     if(["Part","Chapter","Section","Subsection","Division"].includes(n.type)){
-      const s=$("section","egov-struct");if(n.title)s.append($("div","egov-struct-title",n.title));for(const c of n.children||[])s.append(node(c,query));return s;
+      const s=$("section","egov-struct");if(n.title){const t=$("div","egov-struct-title");appendHighlighted(t,n.title,query);s.append(t)}for(const c of n.children||[])s.append(node(c,query));return s;
     }
-    if(n.type==="Paragraph"){const d=$("div","egov-paragraph");if(n.displayNumber)d.append($("span","egov-number",n.displayNumber+" "));for(const c of n.children||[])d.append(node(c,query));return d}
-    if(n.type==="Item"||/^Subitem/.test(n.type)){const d=$("div",n.type==="Item"?"egov-item":"egov-subitem");if(n.displayNumber)d.append($("span","egov-number",n.displayNumber+" "));for(const c of n.children||[])d.append(node(c,query));return d}
+    if(n.type==="Paragraph"){const d=$("div","egov-paragraph");if(n.displayNumber){const num=$("span","egov-number");appendHighlighted(num,n.displayNumber+" ",query);d.append(num)}for(const c of n.children||[])d.append(node(c,query));return d}
+    if(n.type==="Item"||/^Subitem/.test(n.type)){const d=$("div",n.type==="Item"?"egov-item":"egov-subitem");if(n.displayNumber){const num=$("span","egov-number");appendHighlighted(num,n.displayNumber+" ",query);d.append(num)}for(const c of n.children||[])d.append(node(c,query));return d}
     const d=$("div","egov-unknown");for(const c of n.children||[])d.append(node(c,query));return d;
   }
   function renderCategories(container,categories){

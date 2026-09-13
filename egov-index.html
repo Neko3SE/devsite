@@ -39,6 +39,7 @@
           <label class="egov-visually-hidden" for="egov-query">検索語</label>
           <input id="egov-query" name="q" maxlength="100" autocomplete="off" placeholder="例：有休、残業、相続、個人情報">
           <button id="egov-search-button" type="submit">検索</button>
+          <button id="egov-clear-button" type="button" data-action="clear-all">すべてクリア</button>
         </div>
         <div id="egov-suggestions" class="egov-suggestions" aria-label="関連する法律用語"></div>
       </form>
@@ -67,15 +68,16 @@
       <article id="egov-viewer-pane" class="egov-pane egov-viewer-pane" aria-labelledby="egov-law-heading">
         <div class="egov-pane__head egov-viewer-toolbar">
           <button class="egov-mobile-back" type="button" data-action="back">‹ 戻る</button>
+          <button class="egov-mobile-home" type="button" data-action="genre-home">ジャンルへ</button>
           <button id="egov-toc-button" type="button" aria-expanded="false" aria-controls="egov-toc">目次</button>
-          <form id="egov-law-search-form" class="egov-law-search" role="search">
+          <div id="egov-law-search-form" class="egov-law-search" role="search">
             <label class="egov-visually-hidden" for="egov-law-query">この法令内を検索</label>
             <input id="egov-law-query" maxlength="100" placeholder="この法令内を検索">
-            <button type="submit">検索</button>
-          </form>
+            <button id="egov-law-search-button" type="button">検索</button>
+          </div>
         </div>
         <div class="egov-law-layout">
-          <nav id="egov-toc" class="egov-toc" aria-label="法令目次"></nav>
+          <nav id="egov-toc" class="egov-toc" aria-label="法令目次"><button id="egov-toc-close" class="egov-toc-close" type="button" data-action="close-toc">目次を閉じる</button><div id="egov-toc-items"></div></nav>
           <div id="egov-law-content" class="egov-law-content">
             <div class="egov-empty">
               <h2 id="egov-law-heading">法令を選択してください</h2>

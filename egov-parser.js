@@ -87,32 +87,58 @@ window.EGOV_PARSER = (() => {
     model.mainProvision=children(main).map(parseNode).filter(Boolean);
     for(const el of children(body)){
       if(el.localName==="SupplProvision")model.supplementaryProvisions.push({type:"SupplProvision",label:text(direct(el,"SupplProvisionLabel"))||"附則",amendLawNum:el.getAttribute("AmendLawNum")||"",extract:el.getAttribute("Extract")||"",children:children(el).filter(x=>x.localName!=="SupplProvisionLabel").map(parseNode).filter(Boolean)});
-      else if(appendices.has(el.localName))model.appendices.push({type:el.localName,title:text(el.querySelector(":scope > *[class$='Title']"))||el.localName,children:children(el).map(parseNode).filter(Boolean)});
+      else if(appendices.has(el.localName)){
+        const labels={AppdxTable:"別表",AppdxNote:"別記",AppdxStyle:"別記様式",Appdx:"付録",AppdxFig:"別図",AppdxFormat:"別記様式"};
+        const titleEl=children(el).find(x=>/Title$/.test(x.localName));
+        model.appendices.push({type:el.localName,title:text(titleEl)||labels[el.localName]||"付属資料",children:children(el).filter(x=>x!==titleEl).map(parseNode).filter(Boolean)});
+      }
     }
     model.toc=collectToc([...model.mainProvision,...model.supplementaryProvisions,...model.appendices]);
     return model;
   }
+  function stripSearchMarkup(value){
+    const raw=String(value??"");
+    if(!raw.includes("<"))return raw;
+    const d=new DOMParser().parseFromString(raw,"text/html");
+    return d.body.textContent||"";
+  }
   function normalizeLawList(data){
     const arr=Array.isArray(data?.laws)?data.laws:Array.isArray(data)?data:[];
     return arr.map(x=>{
-      const info=x.law_info||x;
-      return {lawId:info.law_id||info.lawId||x.law_id||"",lawTitle:info.law_name||info.law_title||info.lawName||info.lawTitle||"",lawNumber:info.law_num||info.law_number||info.lawNum||"",lawType:info.law_type||info.lawType||""};
+      const lawInfo=x.law_info||{};
+      const revision=x.revision_info||x.current_revision_info||{};
+      return {
+        lawId:lawInfo.law_id||x.law_id||x.lawId||"",
+        lawTitle:revision.law_title||x.law_title||x.lawTitle||"",
+        lawNumber:lawInfo.law_num||x.law_num||x.lawNumber||"",
+        lawType:lawInfo.law_type||revision.law_type||x.law_type||x.lawType||""
+      };
     }).filter(x=>x.lawId);
   }
   function normalizeKeyword(data){
     const raw=Array.isArray(data?.items)?data.items:Array.isArray(data?.results)?data.results:Array.isArray(data?.laws)?data.laws:Array.isArray(data)?data:[];
     const groups=new Map();
     for(const x of raw){
-      const info=x.law_info||x.revision_info||x;
-      const lawId=info.law_id||x.law_id||x.lawId||"";
+      const lawInfo=x.law_info||{};
+      const revision=x.revision_info||x.current_revision_info||{};
+      const lawId=lawInfo.law_id||x.law_id||x.lawId||"";
       if(!lawId)continue;
-      if(!groups.has(lawId))groups.set(lawId,{lawId,lawTitle:info.law_name||info.law_title||x.law_name||x.law_title||"",lawNumber:info.law_num||x.law_num||"",lawType:info.law_type||"",hitCount:0,matches:[]});
+      if(!groups.has(lawId))groups.set(lawId,{
+        lawId,
+        lawTitle:revision.law_title||x.law_title||x.lawTitle||lawId,
+        lawNumber:lawInfo.law_num||x.law_num||"",
+        lawType:lawInfo.law_type||revision.law_type||x.law_type||"",
+        hitCount:0,matches:[]
+      });
       const g=groups.get(lawId);
       const candidates=Array.isArray(x.sentences)?x.sentences:Array.isArray(x.matches)?x.matches:[x];
       for(const m of candidates){
-        const snippet=m.text||m.sentence||m.snippet||m.keyword_context||"";
+        const snippet=stripSearchMarkup(m.text||m.sentence||m.snippet||m.keyword_context||"");
         const articleNumber=m.article||m.article_num||m.article_number||x.article||x.article_num||"";
-        if(snippet||articleNumber){g.matches.push({articleNumber:String(articleNumber||""),snippet:String(snippet||"")});g.hitCount++}
+        if(snippet||articleNumber){
+          g.matches.push({articleNumber:String(articleNumber||""),snippet});
+          g.hitCount++;
+        }
       }
     }
     return [...groups.values()];

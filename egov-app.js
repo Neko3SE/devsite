@@ -2,9 +2,12 @@
 "use strict";
 const C=window.EGOV_CATEGORIES,A=window.EGOV_API,P=window.EGOV_PARSER,R=window.EGOV_RENDERER,D=window.EGOV_SEARCH_DICTIONARY;
 const state={view:"HOME",category:null,sub:null,search:{mode:"keyword",inputValue:"",submittedQuery:"",results:[]},law:{lawId:null,document:null,highlight:""},request:{controller:null,id:0},ui:{mobile:matchMedia("(max-width:899px)").matches}};
-const el={categories:document.getElementById("egov-categories"),list:document.getElementById("egov-list-content"),law:document.getElementById("egov-law-content"),toc:document.getElementById("egov-toc"),status:document.getElementById("egov-status"),query:document.getElementById("egov-query"),suggestions:document.getElementById("egov-suggestions")};
+const el={categories:document.getElementById("egov-categories"),list:document.getElementById("egov-list-content"),law:document.getElementById("egov-law-content"),toc:document.getElementById("egov-toc-items"),tocPanel:document.getElementById("egov-toc"),status:document.getElementById("egov-status"),query:document.getElementById("egov-query"),suggestions:document.getElementById("egov-suggestions")};
 
 function status(msg="",kind=""){el.status.textContent=msg;el.status.dataset.kind=kind}
+function normalizeSearchInput(value){
+  return String(value??"").trim().replace(/[\s\u3000]+/gu," ");
+}
 function beginRequest(){state.request.controller?.abort();state.request.controller=new AbortController();state.request.id++;return {id:state.request.id,signal:state.request.controller.signal}}
 function current(id){return id===state.request.id}
 function show(view){
@@ -32,7 +35,9 @@ function selectCategory(category,sub,push=true){
 }
 function suggestions(q){const terms=[];for(const [key,vals] of Object.entries(D)){if(q.includes(key)||key.includes(q))terms.push(...vals)}R.renderSuggestions(el.suggestions,[...new Set(terms)].slice(0,8))}
 async function submitSearch(mode,q,push=true){
-  q=q.trim();if(!q){status("検索語を入力してください。","warn");return}if(q.length>100){status("検索語は100文字以内で入力してください。","warn");return}
+  q=normalizeSearchInput(q);el.query.value=q;
+  if(!q){status("検索語を入力してください。","warn");return}
+  if(q.length>100){status("検索語は100文字以内で入力してください。","warn");return}
   state.search={...state.search,mode,inputValue:q,submittedQuery:q};suggestions(q);const req=beginRequest();status("e-Govから検索結果を取得しています…");
   document.getElementById("egov-search-button").disabled=true;
   try{
@@ -65,9 +70,58 @@ function jump(article){
   requestAnimationFrame(()=>{const target=document.getElementById(hash);if(target)target.scrollIntoView({block:"start"});else status("指定された条文位置が見つかりませんでした。","warn")});
 }
 function lawSearch(q){
-  q=q.trim();if(!state.law.document||!q)return;state.law.highlight=q;R.renderLaw(el.law,el.toc,state.law.document,q);
-  const articles=[...el.law.querySelectorAll(".egov-article")],first=articles.find(a=>a.textContent.toLocaleLowerCase().includes(q.toLocaleLowerCase()));
-  if(first)first.scrollIntoView({block:"start"});else status("この法令内では見つかりませんでした。","warn");
+  q=normalizeSearchInput(q);
+  const input=document.getElementById("egov-law-query");input.value=q;
+  if(!state.law.document||!q)return;
+  state.law.highlight=q;
+  R.renderLaw(el.law,el.toc,state.law.document,q);
+
+  const needle=q.toLocaleLowerCase();
+  const structuralSelectors=[
+    ".egov-struct-title",
+    ".egov-article-caption",
+    ".egov-article-title",
+    ".egov-paragraph",
+    ".egov-item",
+    ".egov-subitem"
+  ].join(",");
+  const candidates=[...el.law.querySelectorAll(structuralSelectors)];
+  const first=candidates.find(x=>x.textContent.toLocaleLowerCase().includes(needle));
+  if(first){
+    const target=first.closest(".egov-article,.egov-struct")||first;
+    target.scrollIntoView({block:"start"});
+    status("");
+  }else{
+    status("この法令内では見つかりませんでした。","warn");
+  }
+}
+function clearAll(){
+  state.request.controller?.abort();
+  state.request.id++;
+  state.category=null;state.sub=null;
+  state.search={mode:"keyword",inputValue:"",submittedQuery:"",results:[]};
+  state.law={lawId:null,document:null,highlight:""};
+  el.query.value="";
+  document.getElementById("egov-law-query").value="";
+  document.querySelector('input[name="mode"][value="keyword"]').checked=true;
+  R.renderSuggestions(el.suggestions,[]);
+  el.list.replaceChildren();
+  const emptyList=document.createElement("div");emptyList.className="egov-empty";emptyList.textContent="ジャンルを選ぶか、上の検索から法令を探してください。";el.list.append(emptyList);
+  document.getElementById("egov-list-heading").textContent="法令一覧";
+  el.law.replaceChildren();
+  const emptyLaw=document.createElement("div");emptyLaw.className="egov-empty";
+  const h=document.createElement("h2");h.id="egov-law-heading";h.textContent="法令を選択してください";
+  const p=document.createElement("p");p.textContent="左のジャンルまたは検索結果から法令を開けます。";
+  emptyLaw.append(h,p);el.law.append(emptyLaw);
+  el.toc.replaceChildren();el.tocPanel.classList.remove("egov-open");
+  document.getElementById("egov-toc-button").setAttribute("aria-expanded","false");
+  status("");
+  navigate(urlFor({}),true);show("HOME");
+}
+function genreHome(){
+  el.tocPanel.classList.remove("egov-open");
+  document.getElementById("egov-toc-button").setAttribute("aria-expanded","false");
+  navigate(urlFor({}),false);show("HOME");
 }
 function parseLocation(push=false){
   const u=new URL(location.href),law=u.searchParams.get("law"),cat=u.searchParams.get("category"),sub=u.searchParams.get("sub"),mode=u.searchParams.get("mode"),q=u.searchParams.get("q");
@@ -82,16 +136,26 @@ document.addEventListener("click",e=>{
   else if(a==="subcategory")selectCategory(t.dataset.category,t.dataset.sub);
   else if(a==="law")openLaw(t.dataset.lawId,{article:t.dataset.article||"",highlight:t.dataset.highlight||""});
   else if(a==="suggestion"){el.query.value=t.dataset.query;suggestions(t.dataset.query);el.query.focus()}
-  else if(a==="toc"){if(state.ui.mobile){el.toc.classList.remove("egov-open");document.getElementById("egov-toc-button").setAttribute("aria-expanded","false")}}
+  else if(a==="toc"){if(state.ui.mobile){el.tocPanel.classList.remove("egov-open");document.getElementById("egov-toc-button").setAttribute("aria-expanded","false")}}
+  else if(a==="close-toc"){el.tocPanel.classList.remove("egov-open");const b=document.getElementById("egov-toc-button");b.setAttribute("aria-expanded","false");b.focus()}
+  else if(a==="genre-home")genreHome();
+  else if(a==="clear-all")clearAll();
   else if(a==="back")history.back();
 });
-document.getElementById("egov-search-form").addEventListener("submit",e=>{e.preventDefault();const mode=new FormData(e.currentTarget).get("mode");submitSearch(mode,el.query.value)});
+document.getElementById("egov-search-form").addEventListener("submit",e=>{e.preventDefault()});
+document.getElementById("egov-search-button").addEventListener("click",()=>{
+  const form=document.getElementById("egov-search-form");
+  const mode=new FormData(form).get("mode");
+  submitSearch(mode,el.query.value);
+});
+el.query.addEventListener("keydown",e=>{if(e.key==="Enter")e.preventDefault()});
 el.query.addEventListener("input",()=>suggestions(el.query.value.trim()));
-document.getElementById("egov-law-search-form").addEventListener("submit",e=>{e.preventDefault();lawSearch(document.getElementById("egov-law-query").value)});
-document.getElementById("egov-toc-button").addEventListener("click",e=>{const open=el.toc.classList.toggle("egov-open");e.currentTarget.setAttribute("aria-expanded",String(open))});
-document.addEventListener("keydown",e=>{if(e.key==="Escape"&&el.toc.classList.contains("egov-open")){el.toc.classList.remove("egov-open");const b=document.getElementById("egov-toc-button");b.setAttribute("aria-expanded","false");b.focus()}});
+document.getElementById("egov-law-search-button").addEventListener("click",()=>lawSearch(document.getElementById("egov-law-query").value));
+document.getElementById("egov-law-query").addEventListener("keydown",e=>{if(e.key==="Enter")e.preventDefault()});
+document.getElementById("egov-toc-button").addEventListener("click",e=>{const open=el.tocPanel.classList.toggle("egov-open");e.currentTarget.setAttribute("aria-expanded",String(open))});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&el.tocPanel.classList.contains("egov-open")){el.tocPanel.classList.remove("egov-open");const b=document.getElementById("egov-toc-button");b.setAttribute("aria-expanded","false");b.focus()}});
 document.getElementById("egov-page-top").addEventListener("click",()=>scrollTo({top:0,behavior:"smooth"}));
 addEventListener("popstate",()=>parseLocation(false));
-const mq=matchMedia("(max-width:899px)");mq.addEventListener("change",e=>{state.ui.mobile=e.matches;el.toc.classList.remove("egov-open");document.getElementById("egov-toc-button").setAttribute("aria-expanded","false");show(state.view)});
+const mq=matchMedia("(max-width:899px)");mq.addEventListener("change",e=>{state.ui.mobile=e.matches;el.tocPanel.classList.remove("egov-open");document.getElementById("egov-toc-button").setAttribute("aria-expanded","false");show(state.view)});
 C.validate();R.renderCategories(el.categories,C.CATEGORIES);parseLocation(false);
 })();

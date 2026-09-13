@@ -9,3 +9,69 @@
 @media(max-width:899px){.egov-header__inner{padding:16px 14px;align-items:flex-start}.egov-external{font-size:.8rem}.egov-main{padding:12px 12px 40px}.egov-search-row{grid-template-columns:1fr}.egov-workspace{display:block}.egov-pane{display:none;max-height:none;position:static}.egov-pane.egov-active{display:block}.egov-category-pane,.egov-list-pane{overflow:visible}.egov-mobile-back{display:inline-block}.egov-law-layout{display:block}.egov-toc{display:none;position:fixed;z-index:100;inset:max(70px,env(safe-area-inset-top)) 12px max(12px,env(safe-area-inset-bottom));background:var(--panel);border:1px solid var(--border);border-radius:14px;box-shadow:0 20px 70px #000;max-height:none}.egov-toc.egov-open{display:block}.egov-law-content{padding:18px 15px}.egov-viewer-toolbar{padding-top:max(10px,env(safe-area-inset-top))}.egov-law-search{flex:1}.egov-law-search input{width:100%;min-width:0}.egov-search-mode{flex-wrap:wrap}.egov-unofficial{padding:8px 12px}.egov-article{scroll-margin-top:20px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 @media print{body{background:#fff;color:#000}.egov-header,.egov-unofficial,.egov-search-panel,.egov-category-pane,.egov-list-pane,.egov-viewer-toolbar,.egov-toc,.egov-page-top{display:none!important}.egov-main,.egov-law-content{padding:0}.egov-workspace,.egov-law-layout{display:block}.egov-viewer-pane{display:block!important;border:0;box-shadow:none}.egov-law-document{max-width:none}.egov-footer{color:#333;border-top:1px solid #aaa}a{color:#000;text-decoration:none}}
+
+
+/* ===== v0.2 実機評価反映 ===== */
+.egov-search-row{grid-template-columns:minmax(0,1fr) 110px 120px}
+.egov-mobile-home{display:none}
+.egov-toc-close{display:none;width:100%;margin-bottom:10px;background:var(--panel2);font-weight:700}
+
+@media(min-width:900px){
+  /* v0.3: bodyのスクロールを殺さず、各ペインの高さだけviewportに追従させる */
+  html,body{height:auto;min-height:100%}
+  body{overflow-y:auto;overflow-x:hidden;display:block}
+  .egov-main{width:100%;height:auto;min-height:0;display:block;padding-bottom:44px}
+  .egov-workspace{
+    height:calc(100dvh - 24px);
+    min-height:420px;
+    max-height:none;
+    align-items:stretch
+  }
+  .egov-pane{height:100%;min-height:0}
+  .egov-category-pane,.egov-list-pane{
+    position:sticky;
+    top:12px;
+    height:calc(100dvh - 24px);
+    max-height:none;
+    overflow-y:auto;
+    overflow-x:hidden;
+    overscroll-behavior:contain
+  }
+  .egov-viewer-pane{
+    height:calc(100dvh - 24px);
+    min-height:0;
+    display:flex!important;
+    flex-direction:column;
+    overflow:hidden
+  }
+  .egov-viewer-toolbar{flex:0 0 auto}
+  .egov-law-layout{
+    flex:1 1 auto;
+    min-height:0;
+    height:0;
+    overflow:hidden
+  }
+  .egov-toc{
+    position:static;
+    height:100%;
+    max-height:none;
+    min-height:0;
+    overflow-y:auto;
+    overflow-x:hidden;
+    overscroll-behavior:contain
+  }
+  .egov-law-content{
+    height:100%;
+    min-height:0;
+    overflow-y:auto;
+    overflow-x:hidden;
+    overscroll-behavior:contain
+  }
+}
+
+@media(max-width:899px){
+  .egov-search-row{grid-template-columns:1fr 1fr}
+  .egov-search-row input{grid-column:1/-1}
+  .egov-mobile-home{display:inline-block}
+  .egov-toc-close{display:block;position:sticky;top:0;z-index:2}
+}
