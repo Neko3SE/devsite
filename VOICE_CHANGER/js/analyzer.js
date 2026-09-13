@@ -58,6 +58,17 @@ function centroidFromSpectrum(freqDb,sampleRate){
   return total>1e-8?weighted/total:null;
 }
 
+
+export function analyzeRealtimeFrame(timeData,freqData,sampleRate){
+  let sum=0,peak=0;
+  for(const x of timeData){sum+=x*x;peak=Math.max(peak,Math.abs(x));}
+  const rms=Math.sqrt(sum/timeData.length);
+  const f0=estimateF0(timeData,sampleRate);
+  const note=noteFromHz(f0.hz);
+  const centroid=centroidFromSpectrum(freqData,sampleRate);
+  return {rmsDb:dbfs(rms),peakDb:dbfs(peak),f0:f0.hz,note,centroid,confidence:f0.confidence};
+}
+
 export class RealtimeAnalyzer {
   constructor(ui){
     this.ui=ui;this.ctx=null;this.source=null;this.analyser=null;this.raf=0;this.lastNumeric=0;
@@ -79,13 +90,7 @@ export class RealtimeAnalyzer {
     this.ui.drawWaveform(this.timeData);this.ui.drawSpectrum(this.freqData,this.ctx.sampleRate);
     if(ts-this.lastNumeric>=100){
       this.lastNumeric=ts;
-      let sum=0,peak=0;
-      for(const x of this.timeData){sum+=x*x;peak=Math.max(peak,Math.abs(x));}
-      const rms=Math.sqrt(sum/this.timeData.length);
-      const f0=estimateF0(this.timeData,this.ctx.sampleRate);
-      const note=noteFromHz(f0.hz);
-      const centroid=centroidFromSpectrum(this.freqData,this.ctx.sampleRate);
-      this.ui.updateRealtime({rmsDb:dbfs(rms),peakDb:dbfs(peak),f0:f0.hz,note,centroid,confidence:f0.confidence});
+      this.ui.updateRealtime(analyzeRealtimeFrame(this.timeData,this.freqData,this.ctx.sampleRate));
     }
     this.raf=requestAnimationFrame(this.loop);
   }

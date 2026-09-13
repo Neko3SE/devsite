@@ -1,22 +1,26 @@
-# VOICE CHANGER LAB β — Phase 2 Rev.1
+# VOICE CHANGER LAB β — Phase 2 Rev.2
 
-Phase 2実機確認で「録音・再生・再生時Waveformは正常、Whole Analysis値が表示されない」ことを受けた修正版です。
+Phase 2 Rev.1のPC実機確認で、Whole Analysisは正常表示された一方、
+PLAY ORIGINAL中はWaveform/Spectrumのみ更新され、ANALYZERの数値が更新されないことを受けた修正版です。
 
-## Rev.1修正
-- Whole Analysisを `worker/analysis-worker.js` に分離。
-- `analysis-engine.js` を追加し、Worker要求・応答を管理。
-- ORIGINALはデコード/検証成功時点で先に確定し、Whole Analysis失敗から独立。
-- ORIGINALをWorkerへ直接Transferせず、コピーをTransferして原本を保護。
-- `ANALYZING...` → 実解析進捗 → `ANALYSIS READY` を表示。
-- Whole Analysisで DURATION / PITCH AVG / PITCH RANGE / NOTE / RMS AVG / PEAK / VOICED FRAMES を表示。
-- Pitch解析に失敗しても、DURATION / RMS AVG / PEAKを表示する安全フォールバックを追加。
-- Pitch取得不能時は0ではなく `---`。
-- 録音・Permission・ORIGINAL再生の既存正常経路は維持。
+## Rev.2修正
+- 録音時と再生時でRealtime数値解析ロジックを共通化。
+- `analyzeRealtimeFrame()` を analyzer.js に追加。
+- player.js から同じRealtime解析関数を使用。
+- PLAY ORIGINAL中も以下を約10Hzで更新:
+  - PITCH / F0
+  - NOTE
+  - LEVEL / RMS dBFS
+  - PEAK dBFS
+  - CENTROID
+- Waveform / Spectrumは従来どおりCanvasで継続更新。
+- 再生STOP/自然終了後は瞬間値を `---` に戻し、`ANALYSIS READY` に復帰。
+- Whole Analysis、録音、Permission、ORIGINAL保護のRev.1正常動作は維持。
 
-## 実機確認ポイント
-1. STOP後に `ANALYZING...` が表示される。
-2. 解析完了後 `ANALYSIS READY` になる。
-3. DURATION / RMS AVG / PEAK が必ず表示される。
-4. 通常の発声では PITCH AVG / RANGE / NOTE / VOICED FRAMES が表示される。
-5. 無音やPitch推定不能時はPitch系が `---` でも、基本測定値は表示される。
-6. PLAY ORIGINALは従来どおり再生でき、再生中Waveform/Spectrumが動く。
+## Phase 2 Rev.2 実機確認ポイント
+1. 録音中にPITCH / NOTE / LEVEL / PEAK / CENTROIDが更新される。
+2. 録音終了後、ORIGINAL ANALYSISの全項目が表示される。
+3. PLAY ORIGINAL中にWaveform/Spectrumが動く。
+4. PLAY ORIGINAL中にPITCH / NOTE / LEVEL / PEAK / CENTROIDも更新される。
+5. 無音・Pitch推定不能区間ではPITCH/NOTEが `---` になる。
+6. STOPまたは自然終了後、Realtime数値が `---` に戻る。

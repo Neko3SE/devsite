@@ -1,7 +1,8 @@
+import {analyzeRealtimeFrame} from "./analyzer.js";
 export class Player {
   constructor(ui,audioEngine){
     this.ui=ui;this.audioEngine=audioEngine;this.source=null;this.analyser=null;this.gain=null;
-    this.raf=0;this.startedAt=0;this.duration=0;this.sessionId=0;this.onEnded=null;
+    this.raf=0;this.startedAt=0;this.duration=0;this.sessionId=0;this.onEnded=null;this.lastNumeric=0;
     this.timeData=null;this.freqData=null;
   }
   async play(samples,sampleRate,onEnded){
@@ -22,6 +23,11 @@ export class Player {
     if(id!==this.sessionId||!this.analyser)return;
     this.analyser.getFloatTimeDomainData(this.timeData);this.analyser.getFloatFrequencyData(this.freqData);
     this.ui.drawWaveform(this.timeData);this.ui.drawSpectrum(this.freqData,ctx.sampleRate);
+    const now=performance.now();
+    if(now-this.lastNumeric>=100){
+      this.lastNumeric=now;
+      this.ui.updateRealtime(analyzeRealtimeFrame(this.timeData,this.freqData,ctx.sampleRate));
+    }
     const elapsed=Math.min(this.duration,ctx.currentTime-this.startedAt);
     this.ui.playbackProgress(elapsed,this.duration);
     this.raf=requestAnimationFrame(()=>this.loop(ctx,id));
