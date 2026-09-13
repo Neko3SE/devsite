@@ -1,0 +1,379 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <title>e-Gov Law API v2 疎通テスト | Neko3SE LAB</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0d1318;
+      --panel: #151e25;
+      --panel2: #1b2730;
+      --text: #edf5f2;
+      --muted: #a9bbb5;
+      --accent: #55d69a;
+      --border: #31423d;
+      --ok: #8be6b8;
+      --warn: #ffd58a;
+      --bad: #ffaaa5;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); line-height: 1.65; }
+    a { color: var(--accent); }
+    button, input { font: inherit; }
+    .wrap { width: min(1100px, calc(100% - 32px)); margin: 0 auto; }
+    header { border-bottom: 1px solid var(--border); padding: 24px 0 18px; }
+    h1 { margin: 0; font-size: clamp(1.45rem, 4vw, 2rem); }
+    header p { margin: 8px 0 0; color: var(--muted); }
+    main { padding: 24px 0 48px; }
+    .notice, .card { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; }
+    .notice { padding: 16px; margin-bottom: 20px; }
+    .grid { display: grid; gap: 16px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .card { padding: 18px; min-width: 0; }
+    .card h2 { margin: 0 0 12px; font-size: 1.1rem; }
+    label { display: block; margin: 10px 0 5px; color: var(--muted); font-size: .92rem; }
+    input {
+      width: 100%; min-height: 44px; border-radius: 9px; border: 1px solid var(--border);
+      background: #0e171c; color: var(--text); padding: 9px 11px;
+    }
+    button {
+      width: 100%; min-height: 44px; margin-top: 12px; border: 0; border-radius: 9px;
+      background: var(--accent); color: #07110c; font-weight: 700; cursor: pointer;
+    }
+    button:disabled { opacity: .55; cursor: wait; }
+    button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+    .result { margin-top: 14px; padding: 12px; border-radius: 9px; background: var(--panel2); min-height: 115px; overflow-wrap: anywhere; }
+    .status { font-weight: 700; }
+    .idle { color: var(--muted); } .running { color: var(--warn); }
+    .ok { color: var(--ok); } .bad { color: var(--bad); }
+    .meta { margin: 7px 0 0; color: var(--muted); font-size: .88rem; }
+    pre {
+      max-height: 210px; overflow: auto; white-space: pre-wrap; word-break: break-word;
+      background: #0a1014; border: 1px solid var(--border); border-radius: 8px; padding: 10px;
+      font-size: .78rem;
+    }
+    .summary { margin-top: 20px; }
+    .summary button { max-width: 360px; }
+    footer { border-top: 1px solid var(--border); padding: 20px 0 32px; color: var(--muted); font-size: .9rem; }
+    @media (max-width: 899px) {
+      .grid { grid-template-columns: 1fr; }
+      .wrap { width: min(100% - 24px, 760px); }
+    }
+    @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>e-Gov Law API v2 疎通テスト</h1>
+    <p>Neko3SE LAB / GitHub Pages → e-Gov API のCORS・HTTP・レスポンス解析確認用</p>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="notice">
+    <strong>目的：</strong>Viewer本体の実装前に、主要3 APIがブラウザから直接利用できるか確認します。
+    このページは非公式の開発テストページです。大量アクセスは行いません。
+    <br><a href="https://laws.e-gov.go.jp/api/2/swagger-ui" target="_blank" rel="noopener noreferrer">e-Gov 法令API Version 2 仕様 ↗</a>
+  </section>
+
+  <div class="grid">
+    <section class="card">
+      <h2>1. /laws 法令一覧</h2>
+      <label for="lawTitle">法令名</label>
+      <input id="lawTitle" value="行政手続法" maxlength="100">
+      <button type="button" data-test="laws">/laws をテスト</button>
+      <div class="result" id="result-laws" aria-live="polite"><span class="status idle">未実行</span></div>
+    </section>
+
+    <section class="card">
+      <h2>2. /law_data 法令本文XML</h2>
+      <label for="lawId">法令ID</label>
+      <input id="lawId" value="405AC0000000088" maxlength="100">
+      <button type="button" data-test="law-data">/law_data をテスト</button>
+      <div class="result" id="result-law-data" aria-live="polite"><span class="status idle">未実行</span></div>
+    </section>
+
+    <section class="card">
+      <h2>3. /keyword キーワード検索</h2>
+      <label for="keyword">検索語</label>
+      <input id="keyword" value="行政手続" maxlength="100">
+      <button type="button" data-test="keyword">/keyword をテスト</button>
+      <div class="result" id="result-keyword" aria-live="polite"><span class="status idle">未実行</span></div>
+    </section>
+  </div>
+
+  <section class="notice summary">
+    <strong>総合確認</strong>
+    <div id="overall" class="meta">3項目とも未実行です。</div>
+    <button type="button" id="runAll">3項目を順番にテスト</button>
+    <p class="meta">「成功」は fetch がCORSで遮断されず、HTTP成功し、期待するJSON/XMLとして最低限解析できたことを示します。</p>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    本ページはNeko3SE LABによる非公式テストツールです。法令データの提供元はe-Gov法令検索です。
+  </div>
+</footer>
+
+<script>
+"use strict";
+
+const BASE = "https://laws.e-gov.go.jp/api/2";
+const TIMEOUT_MS = 15000;
+const states = { laws: null, "law-data": null, keyword: null };
+
+function safeText(value) {
+  return value == null ? "" : String(value);
+}
+
+function setResult(key, kind, title, lines = [], preview = "") {
+  const box = document.getElementById(`result-${key}`);
+  box.replaceChildren();
+
+  const status = document.createElement("div");
+  status.className = `status ${kind}`;
+  status.textContent = title;
+  box.append(status);
+
+  for (const line of lines) {
+    const p = document.createElement("div");
+    p.className = "meta";
+    p.textContent = line;
+    box.append(p);
+  }
+
+  if (preview) {
+    const pre = document.createElement("pre");
+    pre.textContent = preview.slice(0, 3000);
+    box.append(pre);
+  }
+}
+
+function updateOverall() {
+  const values = Object.values(states);
+  const el = document.getElementById("overall");
+  if (values.every(v => v === true)) {
+    el.textContent = "PASS：3項目すべて成功しました。直接API方式の有力な合格材料です。";
+    el.className = "meta ok";
+  } else if (values.some(v => v === false)) {
+    el.textContent = "FAILを含みます。表示されたエラーとブラウザの開発者ツール Console / Network を確認してください。";
+    el.className = "meta bad";
+  } else {
+    el.textContent = "未実行または実行中の項目があります。";
+    el.className = "meta";
+  }
+}
+
+async function fetchWithTimeout(url, options = {}) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort("timeout"), TIMEOUT_MS);
+  const started = performance.now();
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      mode: "cors",
+      cache: "no-store",
+      credentials: "omit",
+      redirect: "follow",
+      signal: controller.signal,
+      ...options
+    });
+    return { response, elapsed: Math.round(performance.now() - started) };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function classifyError(error) {
+  if (error?.name === "AbortError") return "TIMEOUT / ABORT";
+  if (error instanceof TypeError) {
+    return "FETCH / CORS / NETWORK";
+  }
+  return error?.name || "ERROR";
+}
+
+async function testLaws() {
+  const key = "laws";
+  const button = document.querySelector('[data-test="laws"]');
+  const q = document.getElementById("lawTitle").value.trim();
+  if (!q) {
+    states[key] = false;
+    setResult(key, "bad", "入力エラー", ["法令名を入力してください。"]);
+    updateOverall();
+    return false;
+  }
+
+  button.disabled = true;
+  states[key] = null;
+  setResult(key, "running", "実行中…", ["GET /laws"]);
+  updateOverall();
+
+  try {
+    const url = new URL(`${BASE}/laws`);
+    url.searchParams.set("law_title", q);
+    url.searchParams.set("limit", "3");
+    url.searchParams.set("response_format", "json");
+
+    const { response, elapsed } = await fetchWithTimeout(url);
+    const text = await response.text();
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+    const data = JSON.parse(text);
+    const count = data.count ?? data.total_count ?? (Array.isArray(data.laws) ? data.laws.length : null);
+    if (!data || !Array.isArray(data.laws)) throw new Error("期待する laws 配列を確認できません");
+
+    states[key] = true;
+    setResult(key, "ok", "PASS", [
+      `HTTP ${response.status} / ${elapsed} ms`,
+      `Content-Type: ${response.headers.get("content-type") || "(なし)"}`,
+      `件数情報: ${count ?? "取得できず"}`,
+      `laws配列: ${data.laws.length}件`
+    ], JSON.stringify(data.laws[0] ?? {}, null, 2));
+    return true;
+  } catch (error) {
+    states[key] = false;
+    setResult(key, "bad", "FAIL", [
+      `${classifyError(error)}: ${safeText(error.message)}`,
+      "CORSの場合、Consoleに「blocked by CORS policy」等が表示されることがあります。"
+    ]);
+    return false;
+  } finally {
+    button.disabled = false;
+    updateOverall();
+  }
+}
+
+async function testLawData() {
+  const key = "law-data";
+  const button = document.querySelector('[data-test="law-data"]');
+  const lawId = document.getElementById("lawId").value.trim();
+  if (!lawId) {
+    states[key] = false;
+    setResult(key, "bad", "入力エラー", ["法令IDを入力してください。"]);
+    updateOverall();
+    return false;
+  }
+
+  button.disabled = true;
+  states[key] = null;
+  setResult(key, "running", "実行中…", ["GET /law_data/{id}", "response_format=xml / law_full_text_format=xml"]);
+  updateOverall();
+
+  try {
+    const url = new URL(`${BASE}/law_data/${encodeURIComponent(lawId)}`);
+    url.searchParams.set("response_format", "xml");
+    url.searchParams.set("law_full_text_format", "xml");
+
+    const { response, elapsed } = await fetchWithTimeout(url);
+    const text = await response.text();
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+    const doc = new DOMParser().parseFromString(text, "application/xml");
+    if (doc.querySelector("parsererror")) throw new Error("DOMParserでXML解析に失敗しました");
+
+    const law = doc.querySelector("Law");
+    const title = doc.querySelector("LawTitle")?.textContent?.trim() || "(LawTitle未検出)";
+    if (!law) throw new Error("XML内にLaw要素を確認できません");
+
+    states[key] = true;
+    setResult(key, "ok", "PASS", [
+      `HTTP ${response.status} / ${elapsed} ms`,
+      `Content-Type: ${response.headers.get("content-type") || "(なし)"}`,
+      `XML解析: 成功`,
+      `Law要素: 検出`,
+      `法令名: ${title}`
+    ], text);
+    return true;
+  } catch (error) {
+    states[key] = false;
+    setResult(key, "bad", "FAIL", [
+      `${classifyError(error)}: ${safeText(error.message)}`,
+      "HTTP成功でもXMLとして解析できなければFAILです。"
+    ]);
+    return false;
+  } finally {
+    button.disabled = false;
+    updateOverall();
+  }
+}
+
+async function testKeyword() {
+  const key = "keyword";
+  const button = document.querySelector('[data-test="keyword"]');
+  const q = document.getElementById("keyword").value.trim();
+  if (!q) {
+    states[key] = false;
+    setResult(key, "bad", "入力エラー", ["検索語を入力してください。"]);
+    updateOverall();
+    return false;
+  }
+
+  button.disabled = true;
+  states[key] = null;
+  setResult(key, "running", "実行中…", ["GET /keyword"]);
+  updateOverall();
+
+  try {
+    const url = new URL(`${BASE}/keyword`);
+    url.searchParams.set("keyword", q);
+    url.searchParams.set("limit", "3");
+    url.searchParams.set("response_format", "json");
+
+    const { response, elapsed } = await fetchWithTimeout(url);
+    const text = await response.text();
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+    const data = JSON.parse(text);
+    if (!data || typeof data !== "object") throw new Error("JSONオブジェクトを確認できません");
+
+    states[key] = true;
+    const count = data.count ?? data.total_count ?? "(フィールド未確認)";
+    setResult(key, "ok", "PASS", [
+      `HTTP ${response.status} / ${elapsed} ms`,
+      `Content-Type: ${response.headers.get("content-type") || "(なし)"}`,
+      `JSON解析: 成功`,
+      `件数情報: ${count}`
+    ], JSON.stringify(data, null, 2));
+    return true;
+  } catch (error) {
+    states[key] = false;
+    setResult(key, "bad", "FAIL", [
+      `${classifyError(error)}: ${safeText(error.message)}`,
+      "CORS・HTTP・APIパラメータ・JSON解析のどこで失敗したかConsole/Networkも確認してください。"
+    ]);
+    return false;
+  } finally {
+    button.disabled = false;
+    updateOverall();
+  }
+}
+
+document.addEventListener("click", async (event) => {
+  const button = event.target.closest("[data-test]");
+  if (!button) return;
+  const test = button.dataset.test;
+  if (test === "laws") await testLaws();
+  if (test === "law-data") await testLawData();
+  if (test === "keyword") await testKeyword();
+});
+
+document.getElementById("runAll").addEventListener("click", async (event) => {
+  const button = event.currentTarget;
+  button.disabled = true;
+  try {
+    await testLaws();
+    await testLawData();
+    await testKeyword();
+  } finally {
+    button.disabled = false;
+    updateOverall();
+  }
+});
+</script>
+</body>
+</html>
