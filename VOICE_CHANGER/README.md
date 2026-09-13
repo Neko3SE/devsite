@@ -1,35 +1,33 @@
-# VOICE CHANGER LAB β — Phase 3 Rev.1
+# VOICE CHANGER LAB β — Phase 3 Rev.2
 
-Phase 3 PC test result:
-- Record: OK
-- PRESET selection: OK
-- APPLY: OK
-- PROCESSING COMPLETE: OK
-- PLAY PROCESSED button: clickable but no playback
+Phase 3 Rev.1 PC test:
+- APPLY -> PLAY PROCESSED -> sound -> Analyzer -> STOP: OK
+- Defect: pressing the PLAYBACK (ORIGINAL) STOP left the VOICE PROCESSOR STOP enabled and PRESET controls disabled.
 
 ## Root cause
-`Player.play()` uses the established Phase 2 API:
-`play(samples, sampleRate, onEnded)`
+ORIGINAL and PROCESSED playback shared the single `PLAYING` app state, but the application did not explicitly track which source was playing. The two STOP UIs could therefore become unsynchronized.
 
-Phase 3 incorrectly passed the entire processed object as the first argument:
-`player.play(state.processed, callback)`
+## Rev.2 fix
+- Added explicit `playbackSource`: `ORIGINAL | PROCESSED | null`.
+- Added `playbackReturnState`.
+- Added shared `finishPlayback()` cleanup path.
+- ORIGINAL STOP is enabled only while ORIGINAL is playing.
+- PROCESSED STOP is enabled only while PROCESSED is playing.
+- Both manual STOP paths and natural playback completion use the same state restoration logic.
+- After playback ends:
+  - `playbackSource = null`
+  - app returns to `PROCESSED` when a processed result exists, otherwise `RECORDED`
+  - PRESET selection is re-enabled
+  - APPLY / PLAY controls are recalculated
+  - both STOP buttons are disabled
+  - Analyzer instantaneous values are reset
 
-This caused the playback path to fail before a valid AudioBuffer could be created.
+DSP processing itself is unchanged from Rev.1.
 
-## Rev.1 fix
-- PROCESSED playback now calls:
-  `player.play(p.samples, p.sampleRate, onEnded)`
-- Uses the same Player path already validated for ORIGINAL.
-- Analyzer state explicitly shows `B : PROCESSED / <PRESET>`.
-- Natural end and STOP restore `PROCESSED`.
-- Realtime Analyzer is reset after playback.
-- ORIGINAL remains playable after a processed result exists.
-- DSP output and Phase 2 recording/analysis code are unchanged.
-
-## PC test focus
-1. Record -> preset -> APPLY -> PROCESSING COMPLETE.
-2. PLAY PROCESSED produces sound.
-3. During processed playback Waveform/Spectrum and numerical Analyzer values move.
-4. STOP works.
-5. Natural end returns to READY/PROCESSED.
-6. PLAY ORIGINAL still works after a processed result exists.
+## PC regression test
+1. PLAY ORIGINAL -> PLAYBACK STOP -> PRESET buttons selectable.
+2. PLAY PROCESSED -> VOICE PROCESSOR STOP -> PRESET buttons selectable.
+3. Natural end of ORIGINAL -> PRESET buttons selectable.
+4. Natural end of PROCESSED -> PRESET buttons selectable.
+5. Only the STOP button belonging to the currently playing source is enabled.
+6. APPLY -> PLAY PROCESSED still produces sound and Analyzer activity.
