@@ -16,3 +16,19 @@ footer{max-width:1100px;margin:auto;padding:20px;display:flex;justify-content:sp
 .meter-grid{grid-template-columns:repeat(5,1fr)}
 .playback-timer strong{font-size:1.8rem}
 @media(max-width:700px){.meter-grid{grid-template-columns:1fr 1fr}.meter-grid .metric:last-child{grid-column:1/-1}}
+
+
+/* Phase 2 Rev.4: microphone state remains visible when permission panel is hidden. */
+.mic-status-persistent{
+  display:flex;
+  align-items:center;
+  min-height:44px;
+  margin:10px 0;
+}
+.mic-status-persistent .micro-status{
+  display:inline-flex;
+  align-items:center;
+  min-height:32px;
+  font-weight:700;
+  letter-spacing:.04em;
+}
