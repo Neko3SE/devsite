@@ -21,7 +21,7 @@ export class UI {
   updateRealtime(v){
     $("rmsValue").textContent=Number.isFinite(v.rmsDb)?v.rmsDb.toFixed(1)+" dBFS":"--- dBFS";
     $("peakValue").textContent=Number.isFinite(v.peakDb)?v.peakDb.toFixed(1)+" dBFS":"--- dBFS";
-    $("pitchValue").textContent=Number.isFinite(v.f0)?v.f0.toFixed(1)+" Hz":"--- Hz";
+    $("pitchValue").textContent=Number.isFinite(v.f0)?v.f0.toFixed(1)+" Hz":"UNRELIABLE";
     $("noteValue").textContent=v.note?(v.note.name+(v.note.cents?` ${v.note.cents>0?"+":""}${v.note.cents}c`:"")):"---";
     $("centroidValue").textContent=Number.isFinite(v.centroid)?Math.round(v.centroid)+" Hz":"--- Hz";
     const pct=Number.isFinite(v.rmsDb)?Math.max(0,Math.min(100,(v.rmsDb+80)/80*100)):0;$("levelBar").style.width=pct+"%";
@@ -31,8 +31,8 @@ export class UI {
   wholeAnalysis(a){
     $("analysisState").textContent="ANALYSIS READY";
     $("analysisDuration").textContent=Number.isFinite(a.duration)?a.duration.toFixed(2)+" sec":"---";
-    $("pitchAvg").textContent=Number.isFinite(a.pitchAvg)?a.pitchAvg.toFixed(1)+" Hz":"---";
-    $("pitchRange").textContent=Number.isFinite(a.pitchMin)?a.pitchMin.toFixed(1)+" – "+a.pitchMax.toFixed(1)+" Hz":"---";
+    $("pitchAvg").textContent=Number.isFinite(a.pitchAvg)?a.pitchAvg.toFixed(1)+" Hz":"UNRELIABLE";
+    $("pitchRange").textContent=Number.isFinite(a.pitchMin)?a.pitchMin.toFixed(1)+" – "+a.pitchMax.toFixed(1)+" Hz":"UNRELIABLE";
     $("wholeNote").textContent=a.note?a.note.name:"---";
     $("rmsAvg").textContent=Number.isFinite(a.rmsAvgDb)?a.rmsAvgDb.toFixed(1)+" dBFS":"---";
     $("wholePeak").textContent=Number.isFinite(a.peakDb)?a.peakDb.toFixed(1)+" dBFS":"---";

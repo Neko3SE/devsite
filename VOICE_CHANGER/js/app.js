@@ -68,9 +68,9 @@ function renderComparison(){
   const a=state.session?.original?.analysis,b=state.processed?.analysis;
   if(!a||!b){$("comparisonState").textContent="NO PROCESSED AUDIO";return}
   $("comparisonState").textContent="MEASURED A / B";
-  $("cmpOrigPitch").textContent=fmtHz(a.pitchAvg);$("cmpProcPitch").textContent=fmtHz(b.pitchAvg);$("cmpChangePitch").textContent=delta(b.pitchAvg,a.pitchAvg,"Hz");
-  $("cmpOrigRange").textContent=Number.isFinite(a.pitchMin)&&Number.isFinite(a.pitchMax)?`${a.pitchMin.toFixed(1)}–${a.pitchMax.toFixed(1)} Hz`:"---";
-  $("cmpProcRange").textContent=Number.isFinite(b.pitchMin)&&Number.isFinite(b.pitchMax)?`${b.pitchMin.toFixed(1)}–${b.pitchMax.toFixed(1)} Hz`:"---";
+  $("cmpOrigPitch").textContent=Number.isFinite(a.pitchAvg)?fmtHz(a.pitchAvg):"UNRELIABLE";$("cmpProcPitch").textContent=Number.isFinite(b.pitchAvg)?fmtHz(b.pitchAvg):"UNRELIABLE";$("cmpChangePitch").textContent=delta(b.pitchAvg,a.pitchAvg,"Hz");
+  $("cmpOrigRange").textContent=Number.isFinite(a.pitchMin)&&Number.isFinite(a.pitchMax)?`${a.pitchMin.toFixed(1)}–${a.pitchMax.toFixed(1)} Hz`:"UNRELIABLE";
+  $("cmpProcRange").textContent=Number.isFinite(b.pitchMin)&&Number.isFinite(b.pitchMax)?`${b.pitchMin.toFixed(1)}–${b.pitchMax.toFixed(1)} Hz`:"UNRELIABLE";
   $("cmpChangeRange").textContent="—";
   $("cmpOrigRms").textContent=fmtDb(a.rmsAvgDb);$("cmpProcRms").textContent=fmtDb(b.rmsAvgDb);$("cmpChangeRms").textContent=delta(b.rmsAvgDb,a.rmsAvgDb,"dB");
   $("cmpOrigPeak").textContent=fmtDb(a.peakDb);$("cmpProcPeak").textContent=fmtDb(b.peakDb);$("cmpChangePeak").textContent=delta(b.peakDb,a.peakDb,"dB");
@@ -106,19 +106,11 @@ function triggerDownload(blob,filename){
  const a=document.createElement("a");
  a.href=url;
  a.download=safeName;
- a.setAttribute("download",safeName);
- a.rel="noopener";
- a.style.position="fixed";
- a.style.left="-9999px";
- a.style.top="0";
+ a.style.display="none";
  document.body.appendChild(a);
- // Keep the anchor and Blob URL alive long enough for Android's download manager
- // to consume the download attribute and filename.
- a.dispatchEvent(new MouseEvent("click",{view:window,bubbles:true,cancelable:true}));
- setTimeout(()=>{
-   try{a.remove();}catch{}
-   try{URL.revokeObjectURL(url);}catch{}
- },10000);
+ a.click();
+ a.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),1500);
  return safeName;
 }
 async function saveWav(kind){
