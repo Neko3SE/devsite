@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Android WAV Filename Diagnostic | Neko3SE LAB</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#0d1218;color:#e8f0f5;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:760px;margin:auto;padding:20px}.panel{background:#151d26;border:1px solid #31404d;border-radius:14px;padding:18px;margin:14px 0}
+h1{font-size:1.45rem}h2{font-size:1.05rem;color:#9fe6b8}.sub,.note{color:#aebbc5;line-height:1.65}
+button{width:100%;min-height:48px;margin:7px 0;padding:10px;border:1px solid #597080;border-radius:9px;background:#1d2a35;color:#fff;font-weight:700}
+button:active{transform:translateY(1px)}code{word-break:break-all;color:#b9f7cf}dl{display:grid;grid-template-columns:auto 1fr;gap:8px 14px}dt{color:#91a4b1}dd{margin:0}
+#log{white-space:pre-wrap;background:#091016;padding:12px;border-radius:9px;min-height:90px;font-family:ui-monospace,monospace;font-size:.85rem}
+.ok{color:#9fe6b8}.warn{color:#ffd27a}
+</style>
+</head>
+<body><main>
+<h1>Android WAV Filename Diagnostic</h1>
+<p class="sub">Androidブラウザが Blob のMIME typeと <code>download</code> 属性から保存名をどう決定するかを切り分ける診断ページです。音声は440 Hz・約1秒のテストトーンです。</p>
+
+<section class="panel">
+<h2>Environment</h2>
+<dl><dt>User Agent</dt><dd id="ua"></dd><dt>Web Share Files</dt><dd id="share"></dd></dl>
+</section>
+
+<section class="panel">
+<h2>Blob download tests</h2>
+<p class="note">各ボタンを1つずつ押し、Androidの保存画面に表示された名前を記録してください。</p>
+<button data-mime="audio/wav" data-name="test_audio_wav.wav">A — audio/wav → test_audio_wav.wav</button>
+<button data-mime="audio/x-wav" data-name="test_audio_xwav.wav">B — audio/x-wav → test_audio_xwav.wav</button>
+<button data-mime="application/octet-stream" data-name="test_octet.wav">C — application/octet-stream → test_octet.wav</button>
+</section>
+
+<section class="panel">
+<h2>File / Web Share comparison</h2>
+<p class="note">対応端末ではBlob URLを使わず、名前付き <code>File</code> をOS共有機能へ渡します。共有画面でファイル名を確認してください。</p>
+<button id="shareFile">D — Share File → test_share.wav</button>
+</section>
+
+<section class="panel">
+<h2>Diagnostic log</h2>
+<div id="log"></div>
+</section>
+
+<section class="panel">
+<h2>判定の目安</h2>
+<p class="note">
+Aだけ異常 → <code>audio/wav</code> のMIME処理を疑います。<br>
+A/B異常・C正常 → Androidの音声MIME→拡張子/名前推測処理を疑います。<br>
+A/B/Cすべて異常・D正常 → Blob URL + download属性からAndroid Download Managerへの名前引継ぎを疑います。<br>
+A/B/C/Dすべて異常 → ブラウザからOS保存/共有層まで含む実装依存を疑います。
+</p>
+</section>
+</main>
+<script>
+"use strict";
+const $=id=>document.getElementById(id),log=s=>{$("log").textContent+=`${new Date().toLocaleTimeString()} ${s}\n`};
+$("ua").textContent=navigator.userAgent;
+
+function makeWav(mime){
+  const rate=44100,n=rate,bytes=44+n*2,ab=new ArrayBuffer(bytes),v=new DataView(ab);
+  const txt=(o,s)=>{for(let i=0;i<s.length;i++)v.setUint8(o+i,s.charCodeAt(i))};
+  txt(0,"RIFF");v.setUint32(4,bytes-8,true);txt(8,"WAVE");txt(12,"fmt ");v.setUint32(16,16,true);
+  v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,rate,true);v.setUint32(28,rate*2,true);
+  v.setUint16(32,2,true);v.setUint16(34,16,true);txt(36,"data");v.setUint32(40,n*2,true);
+  for(let i=0,o=44;i<n;i++,o+=2)v.setInt16(o,Math.round(Math.sin(2*Math.PI*440*i/rate)*0.2*32767),true);
+  return new Blob([ab],{type:mime});
+}
+function downloadTest(mime,name){
+  const blob=makeWav(mime),url=URL.createObjectURL(blob),a=document.createElement("a");
+  a.href=url;a.download=name;a.setAttribute("download",name);document.body.appendChild(a);
+  log(`REQUEST download="${name}" MIME="${mime}" Blob.type="${blob.type}" size=${blob.size}`);
+  a.click();
+  setTimeout(()=>{a.remove();URL.revokeObjectURL(url)},15000);
+}
+document.querySelectorAll("[data-mime]").forEach(b=>b.addEventListener("click",()=>downloadTest(b.dataset.mime,b.dataset.name)));
+
+const shareSupported=(()=>{
+ try{
+   if(!navigator.share||!navigator.canShare||typeof File==="undefined")return false;
+   const f=new File([makeWav("audio/wav")],"test_share.wav",{type:"audio/wav"});
+   return navigator.canShare({files:[f]});
+ }catch{return false}
+})();
+$("share").textContent=shareSupported?"SUPPORTED":"NOT SUPPORTED";
+$("shareFile").disabled=!shareSupported;
+$("shareFile").addEventListener("click",async()=>{
+ const f=new File([makeWav("audio/wav")],"test_share.wav",{type:"audio/wav",lastModified:Date.now()});
+ log(`REQUEST share File.name="${f.name}" type="${f.type}" size=${f.size}`);
+ try{await navigator.share({files:[f],title:"WAV filename diagnostic"});log("Share sheet completed/closed normally.");}
+ catch(e){log(`Share result: ${e.name}: ${e.message}`)}
+});
+log("Diagnostic ready.");
+</script>
+</body></html>
