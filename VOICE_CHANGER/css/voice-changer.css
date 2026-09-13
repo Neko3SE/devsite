@@ -34,3 +34,17 @@ footer{max-width:1100px;margin:auto;padding:20px;display:flex;justify-content:sp
 }
 
 .preset-grid button.selected{outline:2px solid currentColor;font-weight:800}
+
+.applied-settings{margin:12px 0 16px}.applied-settings h3{margin:0 0 8px;font-size:.9rem}
+.settings-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.setting-chip{padding:8px;border:1px solid var(--line);border-radius:8px;min-width:0}
+.setting-chip strong,.setting-chip span{display:block;overflow-wrap:anywhere}.setting-chip strong{font-size:.72rem;opacity:.72}.setting-chip span{font-weight:700}
+.comparison-wrap{width:100%;overflow-x:auto}.comparison-table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+.comparison-table th,.comparison-table td{padding:9px 7px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+.comparison-table th:first-child{text-align:left}.comparison-table thead th{font-size:.72rem;opacity:.75}
+@media(max-width:599px){
+ .settings-grid{grid-template-columns:1fr 1fr}
+ .comparison-table{font-size:.76rem}
+ .comparison-table th,.comparison-table td{padding:8px 5px}
+}
+@media(max-width:340px){.settings-grid{grid-template-columns:1fr}.comparison-table{font-size:.7rem}}

@@ -1,33 +1,33 @@
-# VOICE CHANGER LAB β — Phase 3 Rev.2
+# VOICE CHANGER LAB β — Phase 3 Rev.3
 
-Phase 3 Rev.1 PC test:
-- APPLY -> PLAY PROCESSED -> sound -> Analyzer -> STOP: OK
-- Defect: pressing the PLAYBACK (ORIGINAL) STOP left the VOICE PROCESSOR STOP enabled and PRESET controls disabled.
+Phase 3 Rev.2 is the approved PC + Android baseline.
 
-## Root cause
-ORIGINAL and PROCESSED playback shared the single `PLAYING` app state, but the application did not explicitly track which source was playing. The two STOP UIs could therefore become unsynchronized.
+## Rev.3 scope — processed result visibility
+This revision implements the approved distinction between:
+1. **APPLIED SETTINGS** — the DSP parameters requested by PRESET.
+2. **MEASURED A/B RESULTS** — analysis measured from ORIGINAL and PROCESSED audio.
 
-## Rev.2 fix
-- Added explicit `playbackSource`: `ORIGINAL | PROCESSED | null`.
-- Added `playbackReturnState`.
-- Added shared `finishPlayback()` cleanup path.
-- ORIGINAL STOP is enabled only while ORIGINAL is playing.
-- PROCESSED STOP is enabled only while PROCESSED is playing.
-- Both manual STOP paths and natural playback completion use the same state restoration logic.
-- After playback ends:
-  - `playbackSource = null`
-  - app returns to `PROCESSED` when a processed result exists, otherwise `RECORDED`
-  - PRESET selection is re-enabled
-  - APPLY / PLAY controls are recalculated
-  - both STOP buttons are disabled
-  - Analyzer instantaneous values are reset
+After APPLY completes, the UI displays:
+- Applied PRESET / Pitch Shift / Formant Character / filters / EQ / modulation / delay / drive / output gain
+- Pitch AVG
+- Pitch RANGE
+- RMS AVG
+- Peak
+- Spectral Centroid AVG
+- Duration
+- Change values where meaningful
+- Duration MATCH / WARNING
 
-DSP processing itself is unchanged from Rev.1.
+`FORMANT CHARACTER +N%` is explicitly a DSP character parameter, not a measured F1/F2/F3 percentage.
 
-## PC regression test
-1. PLAY ORIGINAL -> PLAYBACK STOP -> PRESET buttons selectable.
-2. PLAY PROCESSED -> VOICE PROCESSOR STOP -> PRESET buttons selectable.
-3. Natural end of ORIGINAL -> PRESET buttons selectable.
-4. Natural end of PROCESSED -> PRESET buttons selectable.
-5. Only the STOP button belonging to the currently playing source is enabled.
-6. APPLY -> PLAY PROCESSED still produces sound and Analyzer activity.
+Whole-buffer analysis now also calculates a bounded Worker-side average spectral centroid for A/B display.
+
+## Regression test
+1. Record and confirm ORIGINAL ANALYSIS.
+2. Apply CHILD/MALE/FEMALE/OLD/ROBOT/ALIEN.
+3. Confirm APPLIED SETTINGS matches the selected preset.
+4. Confirm A: ORIGINAL and B: PROCESSED values are populated.
+5. Confirm DURATION shows MATCH under normal processing.
+6. Confirm PLAY ORIGINAL / PLAY PROCESSED / STOP and Analyzer still work.
+7. Re-record: comparison resets until the next successful APPLY.
+8. Test on PC first, then Android after PC acceptance.

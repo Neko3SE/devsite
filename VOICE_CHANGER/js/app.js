@@ -44,6 +44,41 @@ function updateProcessorControls(){
  $("playProcessed").disabled=!state.processed||busy;
  $("stopProcessed").disabled=!(state.app==="PLAYING"&&state.playbackSource==="PROCESSED");
 }
+const fmtHz=v=>Number.isFinite(v)?`${v.toFixed(1)} Hz`:"---";
+const fmtDb=v=>Number.isFinite(v)?`${v.toFixed(1)} dBFS`:"---";
+const fmtSec=v=>Number.isFinite(v)?`${v.toFixed(3)} sec`:"---";
+const delta=(b,a,unit,digits=1)=>Number.isFinite(a)&&Number.isFinite(b)?`${b-a>=0?"+":""}${(b-a).toFixed(digits)} ${unit}`:"---";
+function renderAppliedSettings(preset){
+  const p=PRESETS[preset];
+  if(!p){$("appliedSettings").innerHTML="<span>---</span>";return}
+  const rows=[
+    ["MODE","PRESET"],["PRESET",preset],["PITCH SHIFT",`${p.pitch>=0?"+":""}${p.pitch.toFixed(1)} st`],
+    ["FORMANT CHARACTER",`${p.formant>=0?"+":""}${p.formant}%`],["LOW CUT",`${p.lowCut} Hz`],["HIGH CUT",p.highCut?`${p.highCut} Hz`:"OFF"],
+    ["LOW EQ",`${p.lowEq>=0?"+":""}${p.lowEq} dB`],["HIGH EQ",`${p.highEq>=0?"+":""}${p.highEq} dB`],
+    ["MODULATION",p.modType==="off"?"OFF":`${p.modType.toUpperCase()} ${p.modRate} Hz / ${Math.round(p.modDepth*100)}%`],
+    ["DELAY",p.delayMs?`${p.delayMs} ms / FB ${Math.round(p.feedback*100)}%`:"OFF"],["DRIVE",`${Math.round(p.distortion*100)}%`],["OUTPUT GAIN",`${p.outputGain>=0?"+":""}${p.outputGain} dB`]
+  ];
+  $("appliedSettings").replaceChildren(...rows.map(([k,v])=>{const d=document.createElement("div");d.className="setting-chip";const a=document.createElement("strong"),b=document.createElement("span");a.textContent=k;b.textContent=v;d.append(a,b);return d}));
+}
+function renderComparison(){
+  const a=state.session?.original?.analysis,b=state.processed?.analysis;
+  if(!a||!b){$("comparisonState").textContent="NO PROCESSED AUDIO";return}
+  $("comparisonState").textContent="MEASURED A / B";
+  $("cmpOrigPitch").textContent=fmtHz(a.pitchAvg);$("cmpProcPitch").textContent=fmtHz(b.pitchAvg);$("cmpChangePitch").textContent=delta(b.pitchAvg,a.pitchAvg,"Hz");
+  $("cmpOrigRange").textContent=Number.isFinite(a.pitchMin)&&Number.isFinite(a.pitchMax)?`${a.pitchMin.toFixed(1)}–${a.pitchMax.toFixed(1)} Hz`:"---";
+  $("cmpProcRange").textContent=Number.isFinite(b.pitchMin)&&Number.isFinite(b.pitchMax)?`${b.pitchMin.toFixed(1)}–${b.pitchMax.toFixed(1)} Hz`:"---";
+  $("cmpChangeRange").textContent="—";
+  $("cmpOrigRms").textContent=fmtDb(a.rmsAvgDb);$("cmpProcRms").textContent=fmtDb(b.rmsAvgDb);$("cmpChangeRms").textContent=delta(b.rmsAvgDb,a.rmsAvgDb,"dB");
+  $("cmpOrigPeak").textContent=fmtDb(a.peakDb);$("cmpProcPeak").textContent=fmtDb(b.peakDb);$("cmpChangePeak").textContent=delta(b.peakDb,a.peakDb,"dB");
+  $("cmpOrigCentroid").textContent=fmtHz(a.centroidAvg);$("cmpProcCentroid").textContent=fmtHz(b.centroidAvg);$("cmpChangeCentroid").textContent=delta(b.centroidAvg,a.centroidAvg,"Hz");
+  $("cmpOrigDuration").textContent=fmtSec(a.duration);$("cmpProcDuration").textContent=fmtSec(b.duration);
+  const dd=Math.abs((b.duration??NaN)-(a.duration??NaN));$("cmpChangeDuration").textContent=Number.isFinite(dd)&&dd<=1/(state.session.original.sampleRate||48000)?"MATCH":Number.isFinite(dd)?`WARNING ${(b.duration-a.duration).toFixed(4)} sec`:"---";
+}
+function resetComparison(){
+  $("comparisonState").textContent="NO PROCESSED AUDIO";$("appliedSettings").replaceChildren(Object.assign(document.createElement("span"),{textContent:"---"}));
+  ["cmpOrigPitch","cmpProcPitch","cmpChangePitch","cmpOrigRange","cmpProcRange","cmpChangeRange","cmpOrigRms","cmpProcRms","cmpChangeRms","cmpOrigPeak","cmpProcPeak","cmpChangePeak","cmpOrigCentroid","cmpProcCentroid","cmpChangeCentroid","cmpOrigDuration","cmpProcDuration","cmpChangeDuration"].forEach(id=>$(id).textContent="---");
+}
+
 function finishPlayback({stopPlayer=false}={}){
   if(stopPlayer)player.stop(false);
   const source=state.playbackSource;
@@ -65,7 +100,7 @@ presetButtons.forEach(b=>b.addEventListener("click",()=>{
 }));
 $("applyPreset").addEventListener("click",async()=>{
  if(!state.session?.original||!state.selectedPreset||state.processing)return;
- if(state.selectedPreset==="ORIGINAL"){state.processed=null;$("processorState").textContent="ORIGINAL / NO DSP";$("processingProgress").textContent="ORIGINAL is the unprocessed recording.";updateProcessorControls();return}
+ if(state.selectedPreset==="ORIGINAL"){state.processed=null;$("processorState").textContent="ORIGINAL / NO DSP";$("processingProgress").textContent="ORIGINAL is the unprocessed recording.";resetComparison();updateProcessorControls();return}
  const original=state.session.original,old=state.processed,preset=state.selectedPreset,sid=state.session.id,t0=performance.now();
  state.processing=true;state.app="PROCESSING";$("processorState").textContent="PROCESSING";updateProcessorControls();
  try{
@@ -76,6 +111,7 @@ $("applyPreset").addEventListener("click",async()=>{
   if(state.session?.id!==sid)return;
   state.processed={samples:out.samples,sampleRate:out.sampleRate,duration:out.duration,analysis,preset,processingInfo:{elapsedMs:performance.now()-t0}};
   $("processorState").textContent="✓ PROCESSING COMPLETE";$("processingProgress").textContent=`${preset} / ${(state.processed.processingInfo.elapsedMs/1000).toFixed(2)} sec`;
+  renderAppliedSettings(preset);renderComparison();
  }catch(e){state.processed=old;$("processorState").textContent="PROCESSING FAILED";$("processingProgress").textContent="Original and last valid processed audio are preserved."}
  finally{if(state.session?.id===sid){state.processing=false;state.app=state.processed?"PROCESSED":"RECORDED";updateControls();updateProcessorControls()}}
 });
@@ -259,7 +295,7 @@ async function stopRecording(reason){
     // Commit the validated ORIGINAL first. Whole analysis is a separate transaction.
     const sid=++state.sessionId;
     state.session={id:sid,original:{...mono,analysis:null},recordingInfo:{createdAt:new Date(),mimeType:blob.type}};
-    state.processed=null;state.selectedPreset=null;state.playbackSource=null;state.playbackReturnState=null;presetButtons.forEach(b=>b.classList.remove("selected"));$("processorState").textContent="READY TO PROCESS";updateProcessorControls();
+    state.processed=null;state.selectedPreset=null;state.playbackSource=null;state.playbackReturnState=null;presetButtons.forEach(b=>b.classList.remove("selected"));$("processorState").textContent="READY TO PROCESS";resetComparison();updateProcessorControls();
     state.app="RECORDED";ui.recorded(mono);ui.playbackProgress(0,mono.duration);ui.status("ANALYZING","ready");
     ui.analysisStatus("ANALYZING...");
     ui.message(reason==="auto"?"✓ RECORDING COMPLETE / 30 SEC AUTO STOP":"✓ RECORDING COMPLETE");
@@ -272,6 +308,7 @@ async function stopRecording(reason){
       if(state.session?.id===sid){
         state.session.original.analysis=whole;
         ui.wholeAnalysis(whole);
+        if(state.processed)renderComparison();
         ui.status("READY","ready");
       }
     }catch(analysisError){
@@ -336,3 +373,5 @@ updateControls();
 syncMicrophonePermission();
 
 updateProcessorControls();
+
+resetComparison();

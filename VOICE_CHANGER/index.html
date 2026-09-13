@@ -126,6 +126,31 @@
         <p id="processingProgress" class="phase-note">Record audio, select a preset, then APPLY.</p>
         <div class="button-row"><button id="playProcessed" type="button" disabled>PLAY PROCESSED</button><button id="stopProcessed" type="button" disabled>STOP</button></div>
       </section>
+
+      <section class="panel" id="comparisonPanel">
+        <div class="section-head">
+          <div><span class="kicker">06B</span><h2>PROCESSED ANALYSIS / A-B COMPARISON</h2></div>
+          <span id="comparisonState" class="badge">NO PROCESSED AUDIO</span>
+        </div>
+        <div class="applied-settings">
+          <h3>APPLIED SETTINGS</h3>
+          <div id="appliedSettings" class="settings-grid"><span>---</span></div>
+          <p class="phase-note">設定値はDSPへ指定した値です。測定結果とは異なります。<br><span>Applied settings are DSP parameters and are separate from measured results.</span></p>
+        </div>
+        <div class="comparison-wrap">
+          <table class="comparison-table">
+            <thead><tr><th>MEASURED</th><th>A : ORIGINAL</th><th>B : PROCESSED</th><th>CHANGE</th></tr></thead>
+            <tbody>
+              <tr><th>PITCH AVG</th><td id="cmpOrigPitch">---</td><td id="cmpProcPitch">---</td><td id="cmpChangePitch">---</td></tr>
+              <tr><th>PITCH RANGE</th><td id="cmpOrigRange">---</td><td id="cmpProcRange">---</td><td id="cmpChangeRange">---</td></tr>
+              <tr><th>RMS AVG</th><td id="cmpOrigRms">---</td><td id="cmpProcRms">---</td><td id="cmpChangeRms">---</td></tr>
+              <tr><th>PEAK</th><td id="cmpOrigPeak">---</td><td id="cmpProcPeak">---</td><td id="cmpChangePeak">---</td></tr>
+              <tr><th>CENTROID AVG</th><td id="cmpOrigCentroid">---</td><td id="cmpProcCentroid">---</td><td id="cmpChangeCentroid">---</td></tr>
+              <tr><th>DURATION</th><td id="cmpOrigDuration">---</td><td id="cmpProcDuration">---</td><td id="cmpChangeDuration">---</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
     </div>
 
     <section class="panel">

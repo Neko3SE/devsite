@@ -23,6 +23,19 @@ function f0(frame,sr){
   const hz=sr/bestLag;
   return hz>=60&&hz<=500?hz:null;
 }
+
+function spectralCentroid(frame,sr){
+  const N=frame.length, bins=Math.min(512,Math.floor(N/2));
+  let weighted=0,total=0;
+  // Sparse direct DFT for whole-recording summary; intentionally bounded for Worker cost.
+  for(let k=1;k<bins;k+=4){
+    let re=0,im=0,ang=-2*Math.PI*k/N;
+    for(let n=0;n<N;n+=4){const x=frame[n],a=ang*n;re+=x*Math.cos(a);im+=x*Math.sin(a);}
+    const mag=Math.hypot(re,im),hz=k*sr/N;weighted+=hz*mag;total+=mag;
+  }
+  return total>1e-12?weighted/total:null;
+}
+
 self.onmessage=e=>{
   const {type,requestId,samples,sampleRate}=e.data||{};
   if(type!=="ANALYZE")return;
@@ -34,11 +47,14 @@ self.onmessage=e=>{
     const duration=a.length/sampleRate,rms=Math.sqrt(sum/a.length);
     self.postMessage({type:"PROGRESS",requestId,progress:20,stage:"LEVEL ANALYSIS"});
     const frameSize=Math.max(1024,Math.round(sampleRate*.04)),hop=Math.max(256,Math.round(sampleRate*.02));
-    const pitches=[];let frames=0;
+    const pitches=[];const centroids=[];let frames=0;
     const total=Math.max(1,Math.floor((a.length-frameSize)/hop)+1);
     for(let start=0;start+frameSize<=a.length;start+=hop){
-      const hz=f0(a.subarray(start,start+frameSize),sampleRate);
-      if(hz)pitches.push(hz);frames++;
+      const frame=a.subarray(start,start+frameSize);
+      const hz=f0(frame,sampleRate);
+      if(hz)pitches.push(hz);
+      if(frames%10===0){const c=spectralCentroid(frame,sampleRate);if(Number.isFinite(c))centroids.push(c);}
+      frames++;
       if(frames%25===0)self.postMessage({type:"PROGRESS",requestId,progress:20+Math.round(70*frames/total),stage:"PITCH ANALYSIS"});
     }
     const avg=pitches.length?pitches.reduce((x,y)=>x+y,0)/pitches.length:null;
@@ -46,7 +62,8 @@ self.onmessage=e=>{
     if(pitches.length){min=pitches[0];max=pitches[0];for(const p of pitches){if(p<min)min=p;if(p>max)max=p;}}
     self.postMessage({type:"COMPLETE",requestId,result:{
       duration,rmsAvgDb:dbfs(rms),peakDb:dbfs(peak),pitchAvg:avg,pitchMin:min,pitchMax:max,
-      voicedFrames:pitches.length,note:noteFromHz(avg)
+      voicedFrames:pitches.length,note:noteFromHz(avg),
+      centroidAvg:centroids.length?centroids.reduce((x,y)=>x+y,0)/centroids.length:null
     }});
   }catch(err){self.postMessage({type:"ERROR",requestId,message:String(err?.message||err)});}
 };
