@@ -1,48 +1,22 @@
-# VOICE CHANGER LAB β — Phase 2
+# VOICE CHANGER LAB β — Phase 2 Rev.1
 
-実装ベースライン: Phase 1 Rev.1 + 基本設計仕様書 v1.0 + 詳細設計仕様書 v1.0
+Phase 2実機確認で「録音・再生・再生時Waveformは正常、Whole Analysis値が表示されない」ことを受けた修正版です。
 
-## Phase 2 追加実装
-- Realtime Pitch/F0 estimation (normalized autocorrelation, confidence gate)
-- Realtime NOTE conversion (A4=440 Hz)
-- Realtime Spectral Centroid display
-- Whole-recording ORIGINAL analysis
-  - Pitch AVG / MIN / MAX
-  - representative NOTE
-  - RMS AVG
-  - PEAK
-  - voiced frame count
-- ORIGINAL playback
-- Playback progress gauge
-- Playback waveform / spectrum
-- Playback/recording state lock
-- visibilitychange playback stop
+## Rev.1修正
+- Whole Analysisを `worker/analysis-worker.js` に分離。
+- `analysis-engine.js` を追加し、Worker要求・応答を管理。
+- ORIGINALはデコード/検証成功時点で先に確定し、Whole Analysis失敗から独立。
+- ORIGINALをWorkerへ直接Transferせず、コピーをTransferして原本を保護。
+- `ANALYZING...` → 実解析進捗 → `ANALYSIS READY` を表示。
+- Whole Analysisで DURATION / PITCH AVG / PITCH RANGE / NOTE / RMS AVG / PEAK / VOICED FRAMES を表示。
+- Pitch解析に失敗しても、DURATION / RMS AVG / PEAKを表示する安全フォールバックを追加。
+- Pitch取得不能時は0ではなく `---`。
+- 録音・Permission・ORIGINAL再生の既存正常経路は維持。
 
-## 継続して有効なPhase 1 Rev.1機能
-- Capability Check
-- Microphone allow / deny / retry
-- AudioContext
-- MediaRecorder MIME feature detection
-- 30 sec max recording / auto stop
-- 0.5 sec validation
-- realtime waveform / spectrum / RMS / Peak
-- transactional re-recording
-- microphone release after recording
-
-## 未実装（次Phase）
-- PRESET / MANUAL DSP
-- Web Worker DSP pipeline
-- PROCESSED whole analysis
-- A/B ORIGINAL / PROCESSED comparison
-- WAV export
-- Mini Monitor
-
-## Phase 2 実機確認ポイント
-1. 録音中にPITCHとNOTEが発声時だけ反応し、無音/不安定音では `---` になること。
-2. 録音停止後、ORIGINAL ANALYSISが表示されること。
-3. PLAY ORIGINALで録音結果が再生できること。
-4. 再生中にWaveform/Spectrumが動くこと。
-5. STOPおよび自然終了後にRECORDEDへ戻ること。
-6. 再録音しても新録音が正常確定するまで旧ORIGINALが保持されること。
-
-※ F0閾値・解析窓はβの音響チューニング対象です。
+## 実機確認ポイント
+1. STOP後に `ANALYZING...` が表示される。
+2. 解析完了後 `ANALYSIS READY` になる。
+3. DURATION / RMS AVG / PEAK が必ず表示される。
+4. 通常の発声では PITCH AVG / RANGE / NOTE / VOICED FRAMES が表示される。
+5. 無音やPitch推定不能時はPitch系が `---` でも、基本測定値は表示される。
+6. PLAY ORIGINALは従来どおり再生でき、再生中Waveform/Spectrumが動く。

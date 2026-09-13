@@ -1,11 +1,13 @@
 import {AudioEngine} from "./audio-engine.js";
 import {Recorder} from "./recorder.js";
-import {RealtimeAnalyzer, analyzeWhole} from "./analyzer.js";
+import {RealtimeAnalyzer} from "./analyzer.js";
+import {AnalysisEngine} from "./analysis-engine.js";
 import {Player} from "./player.js";
 import {UI} from "./ui.js";
 
 const $=id=>document.getElementById(id);
-const ui=new UI(), audio=new AudioEngine(), recorder=new Recorder(), analyzer=new RealtimeAnalyzer(ui), player=new Player(ui,audio);
+const ui=new UI(), audio=new AudioEngine(), recorder=new Recorder(), analyzer=new RealtimeAnalyzer(ui),
+      player=new Player(ui,audio), analysisEngine=new AnalysisEngine();
 const state={app:"READY",mic:"REQUIRED",session:null,sessionId:0,recordStarted:0,tick:0,pendingStop:null,micSettings:{}};
 
 function capabilities(){
@@ -128,11 +130,37 @@ async function stopRecording(reason){
     }
     for(const s of mono.samples){if(!Number.isFinite(s))throw new Error("DEC_INVALID_AUDIO")}
     // Transaction commit only after successful decode/validation.
-    const whole=analyzeWhole(mono.samples,mono.sampleRate);
-    state.session={id:++state.sessionId,original:{...mono,analysis:whole},recordingInfo:{createdAt:new Date(),mimeType:blob.type}};
-    state.app="RECORDED";ui.recorded(mono);ui.wholeAnalysis(whole);ui.playbackProgress(0,mono.duration);ui.status("READY","ready");
+    // Commit the validated ORIGINAL first. Whole analysis is a separate transaction.
+    const sid=++state.sessionId;
+    state.session={id:sid,original:{...mono,analysis:null},recordingInfo:{createdAt:new Date(),mimeType:blob.type}};
+    state.app="RECORDED";ui.recorded(mono);ui.playbackProgress(0,mono.duration);ui.status("ANALYZING","ready");
+    ui.analysisStatus("ANALYZING...");
     ui.message(reason==="auto"?"✓ RECORDING COMPLETE / 30 SEC AUTO STOP":"✓ RECORDING COMPLETE");
     ui.resetAnalyzer(); updateControls();
+
+    try{
+      const whole=await analysisEngine.analyze(mono.samples,mono.sampleRate,m=>{
+        if(state.session?.id===sid)ui.analysisStatus(`${m.stage} ${m.progress}%`);
+      });
+      if(state.session?.id===sid){
+        state.session.original.analysis=whole;
+        ui.wholeAnalysis(whole);
+        ui.status("READY","ready");
+      }
+    }catch(analysisError){
+      if(state.session?.id===sid){
+        ui.analysisStatus("ANALYSIS FAILED");
+        // Basic metrics are calculated locally as a safe display fallback.
+        let sum=0,peak=0;
+        for(const x of mono.samples){sum+=x*x;peak=Math.max(peak,Math.abs(x));}
+        const rms=Math.sqrt(sum/mono.samples.length);
+        const basic={duration:mono.duration,rmsAvgDb:rms>0?20*Math.log10(rms):-Infinity,peakDb:peak>0?20*Math.log10(peak):-Infinity,
+          pitchAvg:null,pitchMin:null,pitchMax:null,voicedFrames:0,note:null};
+        ui.wholeAnalysis(basic);ui.analysisStatus("BASIC ANALYSIS READY / PITCH FAILED");
+        ui.status("READY","ready");
+      }
+    }
+    updateControls();
   }catch(e){
     recorder.finish();state.mic="READY";
     state.app=state.session?"RECORDED":"READY";
@@ -168,5 +196,5 @@ document.addEventListener("visibilitychange",()=>{
     ui.playbackProgress(0,state.session.original.duration);ui.resetAnalyzer();updateControls();
   }
 });
-addEventListener("pagehide",()=>{cancelAnimationFrame(state.tick);analyzer.stop();player.cleanup();recorder.finish()});
+addEventListener("pagehide",()=>{cancelAnimationFrame(state.tick);analyzer.stop();player.cleanup();analysisEngine.cleanup();recorder.finish()});
 updateControls();

@@ -27,8 +27,10 @@ export class UI {
     const pct=Number.isFinite(v.rmsDb)?Math.max(0,Math.min(100,(v.rmsDb+80)/80*100)):0;$("levelBar").style.width=pct+"%";
     const w=$("signalWarning");if(Number.isFinite(v.peakDb)&&v.peakDb>=-.2){w.hidden=false;w.textContent="⚠ CLIP"}else if(Number.isFinite(v.rmsDb)&&v.rmsDb<-55){w.hidden=false;w.textContent="⚠ LOW INPUT"}else w.hidden=true;
   }
+  analysisStatus(text){$("analysisState").textContent=text}
   wholeAnalysis(a){
     $("analysisState").textContent="ANALYSIS READY";
+    $("analysisDuration").textContent=Number.isFinite(a.duration)?a.duration.toFixed(2)+" sec":"---";
     $("pitchAvg").textContent=Number.isFinite(a.pitchAvg)?a.pitchAvg.toFixed(1)+" Hz":"---";
     $("pitchRange").textContent=Number.isFinite(a.pitchMin)?a.pitchMin.toFixed(1)+" – "+a.pitchMax.toFixed(1)+" Hz":"---";
     $("wholeNote").textContent=a.note?a.note.name:"---";
