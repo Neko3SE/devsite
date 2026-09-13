@@ -6,13 +6,14 @@ import {DSPEngine} from "./dsp-engine.js";
 import {PRESETS} from "./presets.js";
 import {Player} from "./player.js";
 import {UI} from "./ui.js";
+import {encodeWavPcm16,wavFilename} from "./wav-encoder.js";
 
 const $=id=>document.getElementById(id);
 const ui=new UI(), audio=new AudioEngine(), recorder=new Recorder(), analyzer=new RealtimeAnalyzer(ui),
       player=new Player(ui,audio), analysisEngine=new AnalysisEngine(), dspEngine=new DSPEngine();
 const state={app:"READY",mic:"REQUIRED",session:null,sessionId:0,recordStarted:0,tick:0,pendingStop:null,micSettings:{},permissionStatus:null,selectedPreset:null,processed:null,processing:false,playbackSource:null,playbackReturnState:null,processorPlaybackActualSource:null,selectedMode:"PRESET",bypassEnabled:false,
 manualParameters:{pitch:0,formant:0,lowCut:0,highCut:0,lowEq:0,highEq:0,modType:"off",modRate:.1,modDepth:0,delayMs:0,feedback:0,distortion:0,mix:1,outputGain:0},
-appliedMode:null,appliedParameters:null,parametersDirty:false};
+appliedMode:null,appliedParameters:null,parametersDirty:false,saveInProgress:false};
 
 function capabilities(){
   return {
@@ -82,6 +83,41 @@ function resetComparison(){
   ["cmpOrigPitch","cmpProcPitch","cmpChangePitch","cmpOrigRange","cmpProcRange","cmpChangeRange","cmpOrigRms","cmpProcRms","cmpChangeRms","cmpOrigPeak","cmpProcPeak","cmpChangePeak","cmpOrigCentroid","cmpProcCentroid","cmpChangeCentroid","cmpOrigDuration","cmpProcDuration","cmpChangeDuration"].forEach(id=>$(id).textContent="---");
 }
 
+function renderSaveControls(){
+ const busy=state.processing||state.app==="PLAYING"||state.app==="RECORDING"||state.saveInProgress;
+ $("saveOriginal").disabled=!state.session?.original||busy;
+ $("saveProcessed").disabled=!state.processed||busy;
+ $("saveState").textContent=state.processed?"ORIGINAL + PROCESSED":state.session?.original?"ORIGINAL READY":"NO AUDIO";
+}
+function updateSaveMeta(source,preset,sampleRate,duration,size){
+ $("saveSource").textContent=source.toUpperCase();$("savePreset").textContent=preset||"ORIGINAL";
+ $("saveRate").textContent=`${Math.round(sampleRate)} Hz`;$("saveDuration").textContent=`${duration.toFixed(3)} sec`;
+ $("saveSize").textContent=size>=1048576?`${(size/1048576).toFixed(2)} MiB`:`${(size/1024).toFixed(1)} KiB`;
+}
+function triggerDownload(blob,filename){
+ const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=filename;a.style.display="none";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
+}
+async function saveWav(kind){
+ if(state.saveInProgress||state.processing||state.app==="PLAYING"||state.app==="RECORDING")return;
+ const original=kind==="original",audio=original?state.session?.original:state.processed;if(!audio)return;
+ state.saveInProgress=true;renderSaveControls();$("saveMessage").textContent="ENCODING WAV...";
+ try{
+   const blob=encodeWavPcm16(audio.samples,audio.sampleRate);
+   const preset=original?"ORIGINAL":(audio.mode==="MANUAL"?"MANUAL":audio.preset);
+   updateSaveMeta(kind,preset,audio.sampleRate,audio.duration,blob.size);
+   triggerDownload(blob,wavFilename(kind,preset));
+   $("saveMessage").textContent="✓ DOWNLOAD STARTED";
+ }catch(e){$("saveMessage").textContent="SAVE FAILED / WAV保存処理を開始できませんでした。";}
+ finally{state.saveInProgress=false;renderSaveControls()}
+}
+$("saveOriginal").addEventListener("click",()=>saveWav("original"));
+$("saveProcessed").addEventListener("click",()=>{
+ if(state.parametersDirty){
+   $("saveMessage").textContent="PARAMETERS CHANGED / 最後に正常生成されたPROCESSED音声を保存します。";
+   setTimeout(()=>saveWav("processed"),0);
+ }else saveWav("processed");
+});
+
 function finishPlayback({stopPlayer=false}={}){
   if(stopPlayer)player.stop(false);
   const source=state.playbackSource;
@@ -113,7 +149,7 @@ function setManualUI(params){
  const sel=document.querySelector("[data-manual-select=modType]");if(sel)sel.value=params.modType||"off";
 }
 function markManualDirty(){
- state.parametersDirty=true;if(state.processed)$("processorState").textContent="PARAMETERS CHANGED";else $("processorState").textContent="READY TO PROCESS";updateProcessorControls();
+ state.parametersDirty=true;if(state.processed){$("processorState").textContent="PARAMETERS CHANGED";$("saveMessage").textContent="PARAMETERS CHANGED / SAVE PROCESSED saves the last successfully generated audio.";}else $("processorState").textContent="READY TO PROCESS";updateProcessorControls();
 }
 function switchMode(mode){
  if(state.app==="PLAYING"||state.processing)return;
@@ -209,6 +245,7 @@ function updateControls(){
     "Noise Suppression":state.micSettings.noiseSuppression??"UNKNOWN",
     "Auto Gain Control":state.micSettings.autoGainControl??"UNKNOWN"
   });
+  renderSaveControls();
 }
 function showPermissionPanel(){
   $("permissionPanel").hidden=false;
@@ -426,3 +463,5 @@ updateProcessorControls();
 resetComparison();
 
 setManualUI(effectiveManual());
+
+renderSaveControls();

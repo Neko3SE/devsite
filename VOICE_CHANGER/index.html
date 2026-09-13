@@ -194,6 +194,25 @@
           </table>
         </div>
       </section>
+
+      <section class="panel" id="savePanel">
+        <div class="section-head"><div><span class="kicker">07</span><h2>SAVE WAV</h2></div><span id="saveState" class="badge">NO AUDIO</span></div>
+        <div class="button-row">
+          <button id="saveOriginal" type="button" disabled>SAVE ORIGINAL WAV</button>
+          <button id="saveProcessed" type="button" disabled>SAVE PROCESSED WAV</button>
+        </div>
+        <dl class="analysis-grid save-meta">
+          <div><dt>SOURCE</dt><dd id="saveSource">---</dd></div>
+          <div><dt>MODE / PRESET</dt><dd id="savePreset">---</dd></div>
+          <div><dt>FORMAT</dt><dd>WAV / PCM16</dd></div>
+          <div><dt>CHANNEL</dt><dd>MONO</dd></div>
+          <div><dt>SAMPLE RATE</dt><dd id="saveRate">---</dd></div>
+          <div><dt>DURATION</dt><dd id="saveDuration">---</dd></div>
+          <div><dt>FILE SIZE</dt><dd id="saveSize">---</dd></div>
+        </dl>
+        <div id="saveMessage" class="message" aria-live="polite"></div>
+        <p class="phase-note">保存先や保存方法はブラウザおよびOSによって異なります。<br><span>The save location and behavior depend on your browser and operating system.</span></p>
+      </section>
     </div>
 
     <section class="panel">
