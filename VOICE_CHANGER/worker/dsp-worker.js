@@ -18,13 +18,15 @@ function delay(a,sr,ms,fb){if(!ms)return a;let d=Math.max(1,Math.round(sr*ms/100
 function drive(a,d){if(!d)return a;let k=1+d*18,z=Math.tanh(k);for(let i=0;i<a.length;i++)a[i]=Math.tanh(a[i]*k)/z;return a}
 function limit(a,db){let g=10**(db/20);for(let i=0;i<a.length;i++)a[i]=Math.max(-.98,Math.min(.98,a[i]*g));return a}
 onmessage=e=>{const {type,requestId,samples,sampleRate,params}=e.data||{};if(type!=="PROCESS")return;try{
- let input=new Float32Array(samples);if(!input.length||!ok(input))throw Error("DSP_INVALID_INPUT");prog(requestId,"PREPARING",5);
+ let input=new Float32Array(samples);if(!input.length||!ok(input))throw Error("DSP_INVALID_INPUT");const dry=input.slice();prog(requestId,"PREPARING",5);
  let a=pitch(input,sampleRate,params.pitch||0);prog(requestId,"PITCH",35);
  a=character(a,sampleRate,params.formant||0,params.lowEq||0,params.highEq||0);prog(requestId,"FORMANT CHARACTER",50);
  a=hp(a,sampleRate,params.lowCut||0);a=lp(a,sampleRate,params.highCut||0);prog(requestId,"FILTER",62);
  a=mod(a,sampleRate,params.modType||"off",params.modRate||0,params.modDepth||0);prog(requestId,"MODULATION",72);
  a=delay(a,sampleRate,params.delayMs||0,params.feedback||0);prog(requestId,"DELAY",82);
- a=drive(a,params.distortion||0);prog(requestId,"DRIVE",90);a=limit(a,params.outputGain||0);prog(requestId,"LIMITER",96);
+ a=drive(a,params.distortion||0);prog(requestId,"DRIVE",90);
+ const mix=Math.max(0,Math.min(1,params.mix??1));if(mix<1){for(let i=0;i<a.length;i++)a[i]=dry[i]*(1-mix)+a[i]*mix;}
+ a=limit(a,params.outputGain||0);prog(requestId,"LIMITER",96);
  if(a.length!==input.length||!ok(a))throw Error("DSP_INVALID_OUTPUT");prog(requestId,"FINALIZING",100);
  send("COMPLETE",requestId,{samples:a.buffer,sampleRate,duration:a.length/sampleRate});
 }catch(err){send("ERROR",requestId,{message:String(err?.message||err)})}};

@@ -115,15 +115,58 @@
 
       <section class="panel processor" id="processorPanel">
         <div class="section-head"><div><span class="kicker">06</span><h2>VOICE PROCESSOR</h2></div><span id="processorState" class="badge">READY TO PROCESS</span></div>
-        <div class="tabs"><button class="active" type="button">PRESET</button><button disabled>MANUAL</button></div>
-        <div class="preset-grid">
-          <button type="button" data-preset="ORIGINAL">ORIGINAL</button><button type="button" data-preset="CHILD">CHILD</button>
-          <button type="button" data-preset="MALE">MALE</button><button type="button" data-preset="FEMALE">FEMALE</button>
-          <button type="button" data-preset="OLD">OLD</button><button type="button" data-preset="ROBOT">ROBOT</button>
-          <button type="button" data-preset="ALIEN">ALIEN</button>
+        <div class="tabs processor-tabs"><button id="presetTab" class="active" type="button">PRESET</button><button id="manualTab" type="button">MANUAL</button></div>
+
+        <div id="presetMode">
+          <div class="preset-grid">
+            <button type="button" data-preset="ORIGINAL">ORIGINAL</button><button type="button" data-preset="CHILD">CHILD</button>
+            <button type="button" data-preset="MALE">MALE</button><button type="button" data-preset="FEMALE">FEMALE</button>
+            <button type="button" data-preset="OLD">OLD</button><button type="button" data-preset="ROBOT">ROBOT</button>
+            <button type="button" data-preset="ALIEN">ALIEN</button>
+          </div>
+          <button id="copyToManual" type="button" disabled>COPY TO MANUAL</button>
         </div>
+
+        <div id="manualMode" hidden>
+          <details open><summary>VOICE</summary>
+            <div class="manual-grid">
+              <label>PITCH SHIFT <span><input data-manual="pitch" type="range" min="-12" max="12" step=".1" value="0"><input data-manual-number="pitch" type="number" min="-12" max="12" step=".1" value="0"> st</span></label>
+              <label>FORMANT CHARACTER <span><input data-manual="formant" type="range" min="-30" max="30" step="1" value="0"><input data-manual-number="formant" type="number" min="-30" max="30" step="1" value="0"> %</span></label>
+            </div>
+          </details>
+          <details><summary>FILTER / EQ</summary>
+            <div class="manual-grid">
+              <label>LOW CUT <span><input data-manual="lowCut" type="range" min="0" max="300" step="10" value="0"><input data-manual-number="lowCut" type="number" min="0" max="300" step="10" value="0"> Hz</span></label>
+              <label>HIGH CUT <span><input data-manual="highCut" type="range" min="0" max="20000" step="100" value="0"><input data-manual-number="highCut" type="number" min="0" max="20000" step="100" value="0"> Hz</span></label>
+              <label>LOW EQ <span><input data-manual="lowEq" type="range" min="-12" max="12" step=".5" value="0"><input data-manual-number="lowEq" type="number" min="-12" max="12" step=".5" value="0"> dB</span></label>
+              <label>HIGH EQ <span><input data-manual="highEq" type="range" min="-12" max="12" step=".5" value="0"><input data-manual-number="highEq" type="number" min="-12" max="12" step=".5" value="0"> dB</span></label>
+            </div>
+          </details>
+          <details><summary>MODULATION</summary>
+            <div class="manual-grid">
+              <label>TYPE <select data-manual-select="modType"><option value="off">OFF</option><option value="tremolo">TREMOLO</option><option value="ring">RING MOD</option></select></label>
+              <label>RATE <span><input data-manual="modRate" type="range" min=".1" max="50" step=".1" value="0.1"><input data-manual-number="modRate" type="number" min=".1" max="50" step=".1" value="0.1"> Hz</span></label>
+              <label>DEPTH <span><input data-manual="modDepth" type="range" min="0" max="100" step="1" value="0"><input data-manual-number="modDepth" type="number" min="0" max="100" step="1" value="0"> %</span></label>
+            </div>
+          </details>
+          <details><summary>DELAY</summary>
+            <div class="manual-grid">
+              <label>TIME <span><input data-manual="delayMs" type="range" min="0" max="500" step="1" value="0"><input data-manual-number="delayMs" type="number" min="0" max="500" step="1" value="0"> ms</span></label>
+              <label>FEEDBACK <span><input data-manual="feedback" type="range" min="0" max="80" step="1" value="0"><input data-manual-number="feedback" type="number" min="0" max="80" step="1" value="0"> %</span></label>
+            </div>
+          </details>
+          <details><summary>DRIVE / OUTPUT</summary>
+            <div class="manual-grid">
+              <label>DISTORTION <span><input data-manual="distortion" type="range" min="0" max="100" step="1" value="0"><input data-manual-number="distortion" type="number" min="0" max="100" step="1" value="0"> %</span></label>
+              <label>MIX <span><input data-manual="mix" type="range" min="0" max="100" step="1" value="100"><input data-manual-number="mix" type="number" min="0" max="100" step="1" value="100"> %</span></label>
+              <label>OUTPUT GAIN <span><input data-manual="outputGain" type="range" min="-12" max="12" step=".5" value="0"><input data-manual-number="outputGain" type="number" min="-12" max="12" step=".5" value="0"> dB</span></label>
+            </div>
+          </details>
+          <div class="button-row"><button id="bypassBtn" type="button">BYPASS OFF</button><button id="resetManual" type="button">RESET</button></div>
+        </div>
+
         <button id="applyPreset" class="primary wide" type="button" disabled>APPLY</button>
-        <p id="processingProgress" class="phase-note">Record audio, select a preset, then APPLY.</p>
+        <p id="processingProgress" class="phase-note">Record audio, select a preset or edit MANUAL, then APPLY.</p>
         <div class="button-row"><button id="playProcessed" type="button" disabled>PLAY PROCESSED</button><button id="stopProcessed" type="button" disabled>STOP</button></div>
       </section>
 

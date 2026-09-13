@@ -10,7 +10,9 @@ import {UI} from "./ui.js";
 const $=id=>document.getElementById(id);
 const ui=new UI(), audio=new AudioEngine(), recorder=new Recorder(), analyzer=new RealtimeAnalyzer(ui),
       player=new Player(ui,audio), analysisEngine=new AnalysisEngine(), dspEngine=new DSPEngine();
-const state={app:"READY",mic:"REQUIRED",session:null,sessionId:0,recordStarted:0,tick:0,pendingStop:null,micSettings:{},permissionStatus:null,selectedPreset:null,processed:null,processing:false,playbackSource:null,playbackReturnState:null};
+const state={app:"READY",mic:"REQUIRED",session:null,sessionId:0,recordStarted:0,tick:0,pendingStop:null,micSettings:{},permissionStatus:null,selectedPreset:null,processed:null,processing:false,playbackSource:null,playbackReturnState:null,selectedMode:"PRESET",bypassEnabled:false,
+manualParameters:{pitch:0,formant:0,lowCut:0,highCut:0,lowEq:0,highEq:0,modType:"off",modRate:.1,modDepth:0,delayMs:0,feedback:0,distortion:0,mix:1,outputGain:0},
+appliedMode:null,appliedParameters:null,parametersDirty:false};
 
 function capabilities(){
   return {
@@ -40,19 +42,20 @@ const presetButtons=[...document.querySelectorAll("[data-preset]")];
 function updateProcessorControls(){
  const original=!!state.session?.original,busy=state.processing||state.app==="PLAYING";
  presetButtons.forEach(b=>b.disabled=!original||busy);
- $("applyPreset").disabled=!original||!state.selectedPreset||busy;
- $("playProcessed").disabled=!state.processed||busy;
+ const canApply=state.selectedMode==="PRESET"?!!state.selectedPreset:true;
+ $("applyPreset").disabled=!original||!canApply||busy||state.bypassEnabled;
+ $("playProcessed").disabled=!state.processed||busy||state.bypassEnabled;
  $("stopProcessed").disabled=!(state.app==="PLAYING"&&state.playbackSource==="PROCESSED");
 }
 const fmtHz=v=>Number.isFinite(v)?`${v.toFixed(1)} Hz`:"---";
 const fmtDb=v=>Number.isFinite(v)?`${v.toFixed(1)} dBFS`:"---";
 const fmtSec=v=>Number.isFinite(v)?`${v.toFixed(3)} sec`:"---";
 const delta=(b,a,unit,digits=1)=>Number.isFinite(a)&&Number.isFinite(b)?`${b-a>=0?"+":""}${(b-a).toFixed(digits)} ${unit}`:"---";
-function renderAppliedSettings(preset){
-  const p=PRESETS[preset];
+function renderAppliedSettings(preset,params=null,mode="PRESET"){
+  const p=params||PRESETS[preset];
   if(!p){$("appliedSettings").innerHTML="<span>---</span>";return}
   const rows=[
-    ["MODE","PRESET"],["PRESET",preset],["PITCH SHIFT",`${p.pitch>=0?"+":""}${p.pitch.toFixed(1)} st`],
+    ["MODE",mode],["PRESET",mode==="PRESET"?preset:"MANUAL"],["PITCH SHIFT",`${p.pitch>=0?"+":""}${p.pitch.toFixed(1)} st`],
     ["FORMANT CHARACTER",`${p.formant>=0?"+":""}${p.formant}%`],["LOW CUT",`${p.lowCut} Hz`],["HIGH CUT",p.highCut?`${p.highCut} Hz`:"OFF"],
     ["LOW EQ",`${p.lowEq>=0?"+":""}${p.lowEq} dB`],["HIGH EQ",`${p.highEq>=0?"+":""}${p.highEq} dB`],
     ["MODULATION",p.modType==="off"?"OFF":`${p.modType.toUpperCase()} ${p.modRate} Hz / ${Math.round(p.modDepth*100)}%`],
@@ -94,24 +97,55 @@ function finishPlayback({stopPlayer=false}={}){
   updateControls();
   updateProcessorControls();
 }
+const manualRanges=[...document.querySelectorAll("[data-manual]")],manualNumbers=[...document.querySelectorAll("[data-manual-number]")];
+function effectiveManual(){
+ const p={...state.manualParameters};
+ p.modDepth/=100;p.feedback/=100;p.distortion/=100;p.mix/=100;
+ return p;
+}
+function setManualUI(params){
+ const uiVals={...params,modDepth:(params.modDepth??0)*100,feedback:(params.feedback??0)*100,distortion:(params.distortion??0)*100,mix:(params.mix??1)*100};
+ for(const el of manualRanges){el.value=uiVals[el.dataset.manual]??0}
+ for(const el of manualNumbers){el.value=uiVals[el.dataset.manualNumber]??0}
+ const sel=document.querySelector("[data-manual-select=modType]");if(sel)sel.value=params.modType||"off";
+}
+function markManualDirty(){
+ state.parametersDirty=true;if(state.processed)$("processorState").textContent="PARAMETERS CHANGED";else $("processorState").textContent="READY TO PROCESS";updateProcessorControls();
+}
+function switchMode(mode){
+ if(state.app==="PLAYING"||state.processing)return;
+ state.selectedMode=mode;$("presetMode").hidden=mode!=="PRESET";$("manualMode").hidden=mode!=="MANUAL";
+ $("presetTab").classList.toggle("active",mode==="PRESET");$("manualTab").classList.toggle("active",mode==="MANUAL");
+ updateProcessorControls();
+}
+$("presetTab").addEventListener("click",()=>switchMode("PRESET"));$("manualTab").addEventListener("click",()=>switchMode("MANUAL"));
+manualRanges.forEach(el=>el.addEventListener("input",()=>{const k=el.dataset.manual,v=Number(el.value);state.manualParameters[k]=v;const n=document.querySelector(`[data-manual-number="${k}"]`);if(n)n.value=el.value;markManualDirty()}));
+manualNumbers.forEach(el=>el.addEventListener("change",()=>{const k=el.dataset.manual;let v=Number(el.value);v=Math.max(Number(el.min),Math.min(Number(el.max),v));el.value=v;state.manualParameters[k]=v;const r=document.querySelector(`[data-manual="${k}"]`);if(r)r.value=v;markManualDirty()}));
+document.querySelector("[data-manual-select=modType]").addEventListener("change",e=>{state.manualParameters.modType=e.target.value;markManualDirty()});
+$("resetManual").addEventListener("click",()=>{state.manualParameters={pitch:0,formant:0,lowCut:0,highCut:0,lowEq:0,highEq:0,modType:"off",modRate:.1,modDepth:0,delayMs:0,feedback:0,distortion:0,mix:100,outputGain:0};setManualUI(effectiveManual());markManualDirty()});
+$("bypassBtn").addEventListener("click",()=>{state.bypassEnabled=!state.bypassEnabled;$("bypassBtn").textContent=state.bypassEnabled?"BYPASS ON":"BYPASS OFF";$("bypassBtn").classList.toggle("active",state.bypassEnabled);$("processorState").textContent=state.bypassEnabled?"BYPASS / ORIGINAL":state.processed?"PROCESSED READY":"READY TO PROCESS";updateProcessorControls()});
+$("copyToManual").addEventListener("click",()=>{if(!state.selectedPreset||!PRESETS[state.selectedPreset])return;const p={...PRESETS[state.selectedPreset],mix:1};state.manualParameters={...p,modDepth:p.modDepth*100,feedback:p.feedback*100,distortion:p.distortion*100,mix:100};setManualUI(p);state.parametersDirty=true;switchMode("MANUAL");$("processorState").textContent="COPIED TO MANUAL";updateProcessorControls()});
+
 presetButtons.forEach(b=>b.addEventListener("click",()=>{
  if(b.disabled)return;state.selectedPreset=b.dataset.preset;presetButtons.forEach(x=>x.classList.toggle("selected",x===b));
- $("processorState").textContent=state.processed?"PRESET CHANGED":"READY TO PROCESS";updateProcessorControls();
+ $("processorState").textContent=state.processed?"PRESET CHANGED":"READY TO PROCESS";$("copyToManual").disabled=state.selectedPreset==="ORIGINAL";updateProcessorControls();
 }));
 $("applyPreset").addEventListener("click",async()=>{
- if(!state.session?.original||!state.selectedPreset||state.processing)return;
- if(state.selectedPreset==="ORIGINAL"){state.processed=null;$("processorState").textContent="ORIGINAL / NO DSP";$("processingProgress").textContent="ORIGINAL is the unprocessed recording.";resetComparison();updateProcessorControls();return}
- const original=state.session.original,old=state.processed,preset=state.selectedPreset,sid=state.session.id,t0=performance.now();
+ if(!state.session?.original||state.processing||state.bypassEnabled)return;
+ if(state.selectedMode==="PRESET"&&!state.selectedPreset)return;
+ if(state.selectedMode==="PRESET"&&state.selectedPreset==="ORIGINAL"){state.processed=null;$("processorState").textContent="ORIGINAL / NO DSP";$("processingProgress").textContent="ORIGINAL is the unprocessed recording.";resetComparison();updateProcessorControls();return}
+ const original=state.session.original,old=state.processed,preset=state.selectedMode==="PRESET"?state.selectedPreset:"MANUAL",params=state.selectedMode==="PRESET"?{...PRESETS[state.selectedPreset],mix:1}:effectiveManual(),sid=state.session.id,t0=performance.now();
  state.processing=true;state.app="PROCESSING";$("processorState").textContent="PROCESSING";updateProcessorControls();
  try{
-  const out=await dspEngine.process(original.samples,original.sampleRate,PRESETS[preset],m=>{if(state.session?.id===sid)$("processingProgress").textContent=`${m.stage} ${m.progress}%`});
+  const out=await dspEngine.process(original.samples,original.sampleRate,params,m=>{if(state.session?.id===sid)$("processingProgress").textContent=`${m.stage} ${m.progress}%`});
   if(state.session?.id!==sid)return;
   if(Math.abs(out.duration-original.duration)>1/original.sampleRate)throw Error("DSP_DURATION_MISMATCH");
   const analysis=await analysisEngine.analyze(out.samples,out.sampleRate);
   if(state.session?.id!==sid)return;
-  state.processed={samples:out.samples,sampleRate:out.sampleRate,duration:out.duration,analysis,preset,processingInfo:{elapsedMs:performance.now()-t0}};
+  state.processed={samples:out.samples,sampleRate:out.sampleRate,duration:out.duration,analysis,preset,mode:state.selectedMode,parameters:{...params},processingInfo:{elapsedMs:performance.now()-t0}};
+  state.appliedMode=state.selectedMode;state.appliedParameters={...params};state.parametersDirty=false;
   $("processorState").textContent="✓ PROCESSING COMPLETE";$("processingProgress").textContent=`${preset} / ${(state.processed.processingInfo.elapsedMs/1000).toFixed(2)} sec`;
-  renderAppliedSettings(preset);renderComparison();
+  renderAppliedSettings(preset,params,state.selectedMode);renderComparison();
  }catch(e){state.processed=old;$("processorState").textContent="PROCESSING FAILED";$("processingProgress").textContent="Original and last valid processed audio are preserved."}
  finally{if(state.session?.id===sid){state.processing=false;state.app=state.processed?"PROCESSED":"RECORDED";updateControls();updateProcessorControls()}}
 });
@@ -295,7 +329,7 @@ async function stopRecording(reason){
     // Commit the validated ORIGINAL first. Whole analysis is a separate transaction.
     const sid=++state.sessionId;
     state.session={id:sid,original:{...mono,analysis:null},recordingInfo:{createdAt:new Date(),mimeType:blob.type}};
-    state.processed=null;state.selectedPreset=null;state.playbackSource=null;state.playbackReturnState=null;presetButtons.forEach(b=>b.classList.remove("selected"));$("processorState").textContent="READY TO PROCESS";resetComparison();updateProcessorControls();
+    state.processed=null;state.selectedPreset=null;state.playbackSource=null;state.playbackReturnState=null;state.appliedMode=null;state.appliedParameters=null;state.parametersDirty=false;presetButtons.forEach(b=>b.classList.remove("selected"));$("processorState").textContent="READY TO PROCESS";resetComparison();updateProcessorControls();
     state.app="RECORDED";ui.recorded(mono);ui.playbackProgress(0,mono.duration);ui.status("ANALYZING","ready");
     ui.analysisStatus("ANALYZING...");
     ui.message(reason==="auto"?"✓ RECORDING COMPLETE / 30 SEC AUTO STOP":"✓ RECORDING COMPLETE");
@@ -375,3 +409,5 @@ syncMicrophonePermission();
 updateProcessorControls();
 
 resetComparison();
+
+setManualUI(effectiveManual());

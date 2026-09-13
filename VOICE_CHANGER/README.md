@@ -1,33 +1,33 @@
-# VOICE CHANGER LAB β — Phase 3 Rev.3
+# VOICE CHANGER LAB β — Phase 4 — MANUAL DSP
 
-Phase 3 Rev.2 is the approved PC + Android baseline.
+Baseline: Phase 3 Rev.3, verified on PC and Android.
 
-## Rev.3 scope — processed result visibility
-This revision implements the approved distinction between:
-1. **APPLIED SETTINGS** — the DSP parameters requested by PRESET.
-2. **MEASURED A/B RESULTS** — analysis measured from ORIGINAL and PROCESSED audio.
+## Implemented
+- PRESET / MANUAL mode tabs
+- MANUAL accordion:
+  - VOICE: Pitch Shift, Formant Character
+  - FILTER/EQ: Low Cut, High Cut, Low EQ, High EQ
+  - MODULATION: Type, Rate, Depth
+  - DELAY: Time, Feedback
+  - DRIVE/OUTPUT: Distortion, Mix, Output Gain
+- Slider + numeric input synchronization
+- MANUAL APPLY uses the existing Worker DSP pipeline and always processes from ORIGINAL
+- MIX dry/wet stage added before output limiter
+- RESET returns MANUAL controls to neutral and marks parameters changed; it does not process automatically
+- BYPASS ON disables APPLY and processed monitoring; ORIGINAL remains the monitor path
+- COPY TO MANUAL copies the selected preset parameters, switches to MANUAL, and does not process automatically
+- Applied MANUAL settings are displayed separately from measured A/B analysis
+- Existing valid PROCESSED audio remains until a new APPLY succeeds
+- Re-record retains MANUAL settings but clears processed/applied-result state
 
-After APPLY completes, the UI displays:
-- Applied PRESET / Pitch Shift / Formant Character / filters / EQ / modulation / delay / drive / output gain
-- Pitch AVG
-- Pitch RANGE
-- RMS AVG
-- Peak
-- Spectral Centroid AVG
-- Duration
-- Change values where meaningful
-- Duration MATCH / WARNING
-
-`FORMANT CHARACTER +N%` is explicitly a DSP character parameter, not a measured F1/F2/F3 percentage.
-
-Whole-buffer analysis now also calculates a bounded Worker-side average spectral centroid for A/B display.
-
-## Regression test
-1. Record and confirm ORIGINAL ANALYSIS.
-2. Apply CHILD/MALE/FEMALE/OLD/ROBOT/ALIEN.
-3. Confirm APPLIED SETTINGS matches the selected preset.
-4. Confirm A: ORIGINAL and B: PROCESSED values are populated.
-5. Confirm DURATION shows MATCH under normal processing.
-6. Confirm PLAY ORIGINAL / PLAY PROCESSED / STOP and Analyzer still work.
-7. Re-record: comparison resets until the next successful APPLY.
-8. Test on PC first, then Android after PC acceptance.
+## PC test focus
+1. Record.
+2. Switch MANUAL.
+3. Change Pitch/Formant and APPLY; confirm sound and A/B changes.
+4. Test FILTER/EQ, modulation, delay, distortion, Mix and Output Gain.
+5. RESET: controls neutral, no automatic processing.
+6. Select a PRESET -> COPY TO MANUAL: values copied, MANUAL selected, no automatic processing.
+7. BYPASS ON: APPLY disabled; use PLAY ORIGINAL for monitoring.
+8. BYPASS OFF: APPLY becomes available.
+9. Existing PROCESSED remains playable after editing MANUAL until next APPLY.
+10. Re-record: MANUAL values remain, old processed result clears.
