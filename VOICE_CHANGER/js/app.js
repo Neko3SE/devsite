@@ -94,8 +94,32 @@ function updateSaveMeta(source,preset,sampleRate,duration,size){
  $("saveRate").textContent=`${Math.round(sampleRate)} Hz`;$("saveDuration").textContent=`${duration.toFixed(3)} sec`;
  $("saveSize").textContent=size>=1048576?`${(size/1048576).toFixed(2)} MiB`:`${(size/1024).toFixed(1)} KiB`;
 }
+function safeAsciiFilename(filename){
+ const fallback="voice_audio.wav";
+ if(typeof filename!=="string"||!filename)return fallback;
+ const safe=filename.replace(/[^A-Za-z0-9._-]/g,"_");
+ return safe.toLowerCase().endsWith(".wav")?safe:`${safe}.wav`;
+}
 function triggerDownload(blob,filename){
- const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=filename;a.style.display="none";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
+ const safeName=safeAsciiFilename(filename);
+ const url=URL.createObjectURL(blob);
+ const a=document.createElement("a");
+ a.href=url;
+ a.download=safeName;
+ a.setAttribute("download",safeName);
+ a.rel="noopener";
+ a.style.position="fixed";
+ a.style.left="-9999px";
+ a.style.top="0";
+ document.body.appendChild(a);
+ // Keep the anchor and Blob URL alive long enough for Android's download manager
+ // to consume the download attribute and filename.
+ a.dispatchEvent(new MouseEvent("click",{view:window,bubbles:true,cancelable:true}));
+ setTimeout(()=>{
+   try{a.remove();}catch{}
+   try{URL.revokeObjectURL(url);}catch{}
+ },10000);
+ return safeName;
 }
 async function saveWav(kind){
  if(state.saveInProgress||state.processing||state.app==="PLAYING"||state.app==="RECORDING")return;
@@ -105,8 +129,8 @@ async function saveWav(kind){
    const blob=encodeWavPcm16(audio.samples,audio.sampleRate);
    const preset=original?"ORIGINAL":(audio.mode==="MANUAL"?"MANUAL":audio.preset);
    updateSaveMeta(kind,preset,audio.sampleRate,audio.duration,blob.size);
-   triggerDownload(blob,wavFilename(kind,preset));
-   $("saveMessage").textContent="✓ DOWNLOAD STARTED";
+   const downloadName=triggerDownload(blob,wavFilename(kind,preset));
+   $("saveMessage").textContent=`✓ DOWNLOAD STARTED / ${downloadName}`;
  }catch(e){$("saveMessage").textContent="SAVE FAILED / WAV保存処理を開始できませんでした。";}
  finally{state.saveInProgress=false;renderSaveControls()}
 }
