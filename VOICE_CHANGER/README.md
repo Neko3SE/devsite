@@ -1,33 +1,27 @@
-# VOICE CHANGER LAB β — Phase 4 — MANUAL DSP
+# VOICE CHANGER LAB β — Phase 4 Rev.1
 
-Baseline: Phase 3 Rev.3, verified on PC and Android.
+Baseline: Phase 4, verified on PC and Android.
 
-## Implemented
-- PRESET / MANUAL mode tabs
-- MANUAL accordion:
-  - VOICE: Pitch Shift, Formant Character
-  - FILTER/EQ: Low Cut, High Cut, Low EQ, High EQ
-  - MODULATION: Type, Rate, Depth
-  - DELAY: Time, Feedback
-  - DRIVE/OUTPUT: Distortion, Mix, Output Gain
-- Slider + numeric input synchronization
-- MANUAL APPLY uses the existing Worker DSP pipeline and always processes from ORIGINAL
-- MIX dry/wet stage added before output limiter
-- RESET returns MANUAL controls to neutral and marks parameters changed; it does not process automatically
-- BYPASS ON disables APPLY and processed monitoring; ORIGINAL remains the monitor path
-- COPY TO MANUAL copies the selected preset parameters, switches to MANUAL, and does not process automatically
-- Applied MANUAL settings are displayed separately from measured A/B analysis
-- Existing valid PROCESSED audio remains until a new APPLY succeeds
-- Re-record retains MANUAL settings but clears processed/applied-result state
+## Rev.1 — BYPASS monitor routing
+Phase 4 correctly disabled DSP APPLY during BYPASS, but it also disabled the VOICE PROCESSOR playback button. This made BYPASS comparison inconvenient.
 
-## PC test focus
-1. Record.
-2. Switch MANUAL.
-3. Change Pitch/Formant and APPLY; confirm sound and A/B changes.
-4. Test FILTER/EQ, modulation, delay, distortion, Mix and Output Gain.
-5. RESET: controls neutral, no automatic processing.
-6. Select a PRESET -> COPY TO MANUAL: values copied, MANUAL selected, no automatic processing.
-7. BYPASS ON: APPLY disabled; use PLAY ORIGINAL for monitoring.
-8. BYPASS OFF: APPLY becomes available.
-9. Existing PROCESSED remains playable after editing MANUAL until next APPLY.
-10. Re-record: MANUAL values remain, old processed result clears.
+Rev.1 changes the VOICE PROCESSOR playback behavior:
+
+- `BYPASS OFF` -> button label `PLAY PROCESSED` -> plays the latest valid processed audio.
+- `BYPASS ON` -> button label `PLAY ORIGINAL` -> plays ORIGINAL from the same VOICE PROCESSOR location.
+- APPLY remains disabled while BYPASS is ON.
+- Existing PROCESSED audio is retained and is available again immediately after BYPASS is turned OFF.
+- Analyzer identifies bypass playback as `A : ORIGINAL / BYPASS`.
+- The same VOICE PROCESSOR STOP button stops either routed source.
+- Natural playback completion uses the existing centralized playback cleanup.
+- No DSP algorithm or MANUAL parameter behavior was changed.
+
+## Regression test
+1. Create valid PROCESSED audio.
+2. BYPASS OFF -> PLAY PROCESSED -> processed audio / Analyzer -> STOP.
+3. BYPASS ON -> button changes to PLAY ORIGINAL.
+4. PLAY ORIGINAL -> original audio / Analyzer shows `A : ORIGINAL / BYPASS` -> STOP.
+5. Confirm APPLY is disabled while BYPASS ON.
+6. BYPASS OFF -> button returns to PLAY PROCESSED and existing processed audio remains playable.
+7. Repeat with natural playback completion.
+8. Verify PRESET/MANUAL controls return correctly after STOP/end.

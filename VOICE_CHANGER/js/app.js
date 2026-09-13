@@ -10,7 +10,7 @@ import {UI} from "./ui.js";
 const $=id=>document.getElementById(id);
 const ui=new UI(), audio=new AudioEngine(), recorder=new Recorder(), analyzer=new RealtimeAnalyzer(ui),
       player=new Player(ui,audio), analysisEngine=new AnalysisEngine(), dspEngine=new DSPEngine();
-const state={app:"READY",mic:"REQUIRED",session:null,sessionId:0,recordStarted:0,tick:0,pendingStop:null,micSettings:{},permissionStatus:null,selectedPreset:null,processed:null,processing:false,playbackSource:null,playbackReturnState:null,selectedMode:"PRESET",bypassEnabled:false,
+const state={app:"READY",mic:"REQUIRED",session:null,sessionId:0,recordStarted:0,tick:0,pendingStop:null,micSettings:{},permissionStatus:null,selectedPreset:null,processed:null,processing:false,playbackSource:null,playbackReturnState:null,processorPlaybackActualSource:null,selectedMode:"PRESET",bypassEnabled:false,
 manualParameters:{pitch:0,formant:0,lowCut:0,highCut:0,lowEq:0,highEq:0,modType:"off",modRate:.1,modDepth:0,delayMs:0,feedback:0,distortion:0,mix:1,outputGain:0},
 appliedMode:null,appliedParameters:null,parametersDirty:false};
 
@@ -44,7 +44,7 @@ function updateProcessorControls(){
  presetButtons.forEach(b=>b.disabled=!original||busy);
  const canApply=state.selectedMode==="PRESET"?!!state.selectedPreset:true;
  $("applyPreset").disabled=!original||!canApply||busy||state.bypassEnabled;
- $("playProcessed").disabled=!state.processed||busy||state.bypassEnabled;
+ $("playProcessed").disabled=busy||(state.bypassEnabled?!original:!state.processed);
  $("stopProcessed").disabled=!(state.app==="PLAYING"&&state.playbackSource==="PROCESSED");
 }
 const fmtHz=v=>Number.isFinite(v)?`${v.toFixed(1)} Hz`:"---";
@@ -91,7 +91,10 @@ function finishPlayback({stopPlayer=false}={}){
   state.app=returnState;
   ui.status("READY","ready");
   $("analyzerState").textContent="ANALYSIS READY";
-  const duration=source==="PROCESSED"?state.processed?.duration:state.session?.original?.duration;
+  const duration=source==="PROCESSED"
+    ?(state.processorPlaybackActualSource==="ORIGINAL"?state.session?.original?.duration:state.processed?.duration)
+    :state.session?.original?.duration;
+  state.processorPlaybackActualSource=null;
   if(Number.isFinite(duration))ui.playbackProgress(0,duration);
   ui.resetAnalyzer();
   updateControls();
@@ -123,7 +126,14 @@ manualRanges.forEach(el=>el.addEventListener("input",()=>{const k=el.dataset.man
 manualNumbers.forEach(el=>el.addEventListener("change",()=>{const k=el.dataset.manual;let v=Number(el.value);v=Math.max(Number(el.min),Math.min(Number(el.max),v));el.value=v;state.manualParameters[k]=v;const r=document.querySelector(`[data-manual="${k}"]`);if(r)r.value=v;markManualDirty()}));
 document.querySelector("[data-manual-select=modType]").addEventListener("change",e=>{state.manualParameters.modType=e.target.value;markManualDirty()});
 $("resetManual").addEventListener("click",()=>{state.manualParameters={pitch:0,formant:0,lowCut:0,highCut:0,lowEq:0,highEq:0,modType:"off",modRate:.1,modDepth:0,delayMs:0,feedback:0,distortion:0,mix:100,outputGain:0};setManualUI(effectiveManual());markManualDirty()});
-$("bypassBtn").addEventListener("click",()=>{state.bypassEnabled=!state.bypassEnabled;$("bypassBtn").textContent=state.bypassEnabled?"BYPASS ON":"BYPASS OFF";$("bypassBtn").classList.toggle("active",state.bypassEnabled);$("processorState").textContent=state.bypassEnabled?"BYPASS / ORIGINAL":state.processed?"PROCESSED READY":"READY TO PROCESS";updateProcessorControls()});
+$("bypassBtn").addEventListener("click",()=>{
+ state.bypassEnabled=!state.bypassEnabled;
+ $("bypassBtn").textContent=state.bypassEnabled?"BYPASS ON":"BYPASS OFF";
+ $("bypassBtn").classList.toggle("active",state.bypassEnabled);
+ $("playProcessed").textContent=state.bypassEnabled?"PLAY ORIGINAL":"PLAY PROCESSED";
+ $("processorState").textContent=state.bypassEnabled?"BYPASS / ORIGINAL":state.processed?"PROCESSED READY":"READY TO PROCESS";
+ updateProcessorControls();
+});
 $("copyToManual").addEventListener("click",()=>{if(!state.selectedPreset||!PRESETS[state.selectedPreset])return;const p={...PRESETS[state.selectedPreset],mix:1};state.manualParameters={...p,modDepth:p.modDepth*100,feedback:p.feedback*100,distortion:p.distortion*100,mix:100};setManualUI(p);state.parametersDirty=true;switchMode("MANUAL");$("processorState").textContent="COPIED TO MANUAL";updateProcessorControls()});
 
 presetButtons.forEach(b=>b.addEventListener("click",()=>{
@@ -150,25 +160,30 @@ $("applyPreset").addEventListener("click",async()=>{
  finally{if(state.session?.id===sid){state.processing=false;state.app=state.processed?"PROCESSED":"RECORDED";updateControls();updateProcessorControls()}}
 });
 $("playProcessed").addEventListener("click",async()=>{
-  if(!state.processed||state.processing||state.app==="PLAYING")return;
-  const p=state.processed;
+  if(state.processing||state.app==="PLAYING")return;
+  const bypass=state.bypassEnabled;
+  const source=bypass?state.session?.original:state.processed;
+  if(!source)return;
+  const sourceName=bypass?"ORIGINAL":"PROCESSED";
+  const returnState=state.processed?"PROCESSED":"RECORDED";
   try{
     state.playbackSource="PROCESSED";
-    state.playbackReturnState="PROCESSED";
+    state.processorPlaybackActualSource=sourceName;
+    state.playbackReturnState=returnState;
     state.app="PLAYING";
     ui.status("PLAYING","ready");
-    $("analyzerState").textContent=`B : PROCESSED / ${p.preset}`;
+    $("analyzerState").textContent=bypass?"A : ORIGINAL / BYPASS":`B : PROCESSED / ${state.processed.preset}`;
     updateControls();updateProcessorControls();
-    await player.play(p.samples,p.sampleRate,()=>{
+    await player.play(source.samples,source.sampleRate,()=>{
       if(state.app!=="PLAYING"||state.playbackSource!=="PROCESSED")return;
       finishPlayback();
     });
   }catch(e){
-    state.playbackSource=null;state.playbackReturnState=null;
-    state.app="PROCESSED";
+    state.playbackSource=null;state.playbackReturnState=null;state.processorPlaybackActualSource=null;
+    state.app=returnState;
     ui.status("ERROR","error");
     $("analyzerState").textContent="ANALYSIS READY";
-    $("processingProgress").textContent="PLAYBACK FAILED / 処理済み音声を再生できませんでした。";
+    $("processingProgress").textContent=`PLAYBACK FAILED / ${sourceName}音声を再生できませんでした。`;
     ui.resetAnalyzer();updateControls();updateProcessorControls();
   }
 });
@@ -329,7 +344,7 @@ async function stopRecording(reason){
     // Commit the validated ORIGINAL first. Whole analysis is a separate transaction.
     const sid=++state.sessionId;
     state.session={id:sid,original:{...mono,analysis:null},recordingInfo:{createdAt:new Date(),mimeType:blob.type}};
-    state.processed=null;state.selectedPreset=null;state.playbackSource=null;state.playbackReturnState=null;state.appliedMode=null;state.appliedParameters=null;state.parametersDirty=false;presetButtons.forEach(b=>b.classList.remove("selected"));$("processorState").textContent="READY TO PROCESS";resetComparison();updateProcessorControls();
+    state.processed=null;state.selectedPreset=null;state.playbackSource=null;state.playbackReturnState=null;state.processorPlaybackActualSource=null;state.appliedMode=null;state.appliedParameters=null;state.parametersDirty=false;presetButtons.forEach(b=>b.classList.remove("selected"));$("processorState").textContent="READY TO PROCESS";resetComparison();updateProcessorControls();
     state.app="RECORDED";ui.recorded(mono);ui.playbackProgress(0,mono.duration);ui.status("ANALYZING","ready");
     ui.analysisStatus("ANALYZING...");
     ui.message(reason==="auto"?"✓ RECORDING COMPLETE / 30 SEC AUTO STOP":"✓ RECORDING COMPLETE");
