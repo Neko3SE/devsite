@@ -229,7 +229,7 @@ $("stopProcessed").addEventListener("click",()=>{
 });
 
 function updateControls(){
-  $("recordBtn").disabled=!(state.mic==="READY"&&(state.app==="READY"||state.app==="RECORDED"));
+  $("recordBtn").disabled=!(state.mic==="READY"&&(state.app==="READY"||state.app==="RECORDED"||state.app==="PROCESSED"));
   $("stopBtn").disabled=state.app!=="RECORDING";
   const canPlay=!!state.session && (state.app==="RECORDED"||state.app==="PROCESSED");
   $("playBtn").disabled=!canPlay;
@@ -349,7 +349,7 @@ $("stopBtn").addEventListener("click",()=>stopRecording("manual"));
 recorder.onTrackEnded=()=>{if(state.app==="RECORDING")stopRecording("track-ended")};
 
 async function beginRecording(){
-  if(!(state.mic==="READY"&&(state.app==="READY"||state.app==="RECORDED")))return;
+  if(!(state.mic==="READY"&&(state.app==="READY"||state.app==="RECORDED"||state.app==="PROCESSED")))return;
   try{
     await audio.ensureContext();
     const result=await recorder.start(()=>stopRecording("auto"));
@@ -359,7 +359,7 @@ async function beginRecording(){
     ui.status("RECORDING","recording");ui.mic("MICROPHONE ● ACTIVE");ui.message("");
     $("analyzerState").textContent="LIVE INPUT"; updateControls();
     const tick=()=>{if(state.app!=="RECORDING")return;ui.recording(performance.now()-state.recordStarted);state.tick=requestAnimationFrame(tick)};tick();
-  }catch(e){recorder.finish();analyzer.stop();micError(e)}
+  }catch(e){recorder.finish();analyzer.stop();state.recordingReturnState=null;micError(e)}
 }
 async function stopRecording(reason){
   if(state.app!=="RECORDING")return;
@@ -413,8 +413,10 @@ async function stopRecording(reason){
     updateControls();
   }catch(e){
     recorder.finish();state.mic="READY";
-    state.app=state.session?"RECORDED":"READY";
-    ui.status("ERROR","error");ui.message("RECORDING FAILED / 録音を完了できませんでした。",true);updateControls();
+    state.app=state.recordingReturnState||(state.session?(state.processed?"PROCESSED":"RECORDED"):"READY");
+    state.recordingReturnState=null;
+    ui.status("ERROR","error");ui.message("RECORDING FAILED / 録音を完了できませんでした。現在の録音と処理済み音声は保持されています。",true);
+    updateControls();updateProcessorControls();renderSaveControls();
   }
 }
 

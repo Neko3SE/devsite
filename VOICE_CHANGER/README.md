@@ -1,33 +1,28 @@
-# VOICE CHANGER LAB β — Phase 5 — WAV SAVE
+# VOICE CHANGER LAB β — Phase 5 Rev.1
 
-Baseline: Phase 4 Rev.1, verified on PC and Android.
+Baseline: Phase 5. Phase 5 WAV saving was verified on PC and Android.
 
-## Implemented
-- SAVE ORIGINAL WAV
-- SAVE PROCESSED WAV
-- WAV RIFF / PCM16 / Mono
-- Actual AudioContext/decoded sample rate is written to the WAV header
-- ORIGINAL samples are encoded directly: no normalization, limiter, gain, or fade is added at save time
-- PROCESSED samples are encoded exactly as the last successful DSP output
-- Float32 -> PCM16: negative ×32768, positive ×32767, clamp [-1,1]
-- NaN/Infinity rejects save instead of silently writing zeros
-- Local device timestamp filenames:
-  - voice_original_YYYYMMDD_HHMMSS.wav
-  - voice_child_...
-  - voice_robot_...
-  - voice_manual_...
-- Metadata display: source, mode/preset, format, channel, sample rate, duration, actual Blob file size
-- Success wording: `✓ DOWNLOAD STARTED`
-- Double-click/in-progress guard
-- Blob URL is revoked after download start
-- Saving is locked during recording, processing, or playback
-- If MANUAL parameters are dirty, SAVE PROCESSED saves the last successfully generated PROCESSED result and warns accordingly
+## Fixed regression — re-record after processing
+Phase 5 inherited a state guard that enabled RECORD only in `READY` and `RECORDED`.
+After PRESET or MANUAL APPLY, the application is in `PROCESSED`, so re-recording was incorrectly disabled.
 
-## Test focus
-1. Save ORIGINAL and play the downloaded WAV.
-2. Apply PRESET, save PROCESSED, play it.
-3. Apply MANUAL, save PROCESSED; filename should contain `manual`.
-4. Confirm sample rate/duration/file size metadata.
-5. Edit MANUAL after APPLY without applying again; SAVE PROCESSED should save the last valid processed result.
-6. Verify both downloaded WAVs on PC.
-7. Android: verify download starts and downloaded WAV can be played by an available app/browser.
+Rev.1 fixes both the UI guard and the recording logic guard:
+
+- RECORD is available in `READY`, `RECORDED`, and `PROCESSED` when the microphone is READY.
+- When an existing session is present, the existing `REPLACE RECORDING?` confirmation is still used.
+- Starting a replacement recording does **not** immediately destroy ORIGINAL or PROCESSED.
+- The pre-recording state is snapshotted.
+- Only after the new recording is decoded, validated, and is at least 0.5 seconds long is the new ORIGINAL committed and old PROCESSED cleared.
+- If the replacement is too short or recording/decode fails, the previous ORIGINAL and PROCESSED are retained and the app returns to the previous usable state (`PROCESSED` when applicable).
+- MANUAL parameter settings remain retained across a successful re-record, per the approved design.
+- WAV saving and DSP algorithms are unchanged.
+
+## Regression test
+1. Record -> PRESET -> APPLY -> confirm `PROCESSED`.
+2. Confirm RECORD is enabled.
+3. RECORD -> replacement confirmation -> CANCEL: current ORIGINAL/PROCESSED remain.
+4. RECORD -> RECORD NEW -> record >=0.5 sec: new ORIGINAL commits and old PROCESSED clears.
+5. Create PROCESSED again -> RECORD NEW -> stop <0.5 sec: old ORIGINAL/PROCESSED remain available.
+6. Repeat the successful replacement path after MANUAL APPLY.
+7. Confirm MANUAL control values remain after successful replacement recording.
+8. Confirm SAVE ORIGINAL / SAVE PROCESSED still work.
