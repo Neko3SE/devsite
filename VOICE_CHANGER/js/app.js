@@ -65,16 +65,47 @@ $("applyPreset").addEventListener("click",async()=>{
  finally{if(state.session?.id===sid){state.processing=false;state.app=state.processed?"PROCESSED":"RECORDED";updateControls();updateProcessorControls()}}
 });
 $("playProcessed").addEventListener("click",async()=>{
- if(!state.processed||state.processing)return;try{await audio.ensure();state.app="PLAYING";updateControls();updateProcessorControls();ui.status("PLAYING","active");
- player.play(state.processed,()=>{state.app="PROCESSED";ui.status("READY","ready");ui.resetAnalyzer();updateControls();updateProcessorControls()});
- }catch(e){state.app="PROCESSED";ui.status("ERROR","error");updateControls();updateProcessorControls()}
+  if(!state.processed||state.processing||state.app==="PLAYING")return;
+  const p=state.processed;
+  try{
+    state.app="PLAYING";
+    ui.status("PLAYING","ready");
+    $("analyzerState").textContent=`B : PROCESSED / ${p.preset}`;
+    updateControls();updateProcessorControls();
+    // Player API is play(samples, sampleRate, onEnded), identical to ORIGINAL playback.
+    await player.play(p.samples,p.sampleRate,()=>{
+      if(state.app!=="PLAYING")return;
+      state.app="PROCESSED";
+      ui.status("READY","ready");
+      $("analyzerState").textContent="ANALYSIS READY";
+      ui.playbackProgress(0,p.duration);
+      ui.resetAnalyzer();
+      updateControls();updateProcessorControls();
+    });
+  }catch(e){
+    state.app="PROCESSED";
+    ui.status("ERROR","error");
+    $("analyzerState").textContent="ANALYSIS READY";
+    $("processingProgress").textContent="PLAYBACK FAILED / 処理済み音声を再生できませんでした。";
+    ui.resetAnalyzer();updateControls();updateProcessorControls();
+  }
 });
-$("stopProcessed").addEventListener("click",()=>{if(state.app==="PLAYING"){player.stop();state.app=state.processed?"PROCESSED":"RECORDED";ui.status("READY","ready");ui.resetAnalyzer();updateControls();updateProcessorControls()}});
+$("stopProcessed").addEventListener("click",()=>{
+  if(state.app!=="PLAYING"||!state.processed)return;
+  const p=state.processed;
+  player.stop(false);
+  state.app="PROCESSED";
+  ui.status("READY","ready");
+  $("analyzerState").textContent="ANALYSIS READY";
+  ui.playbackProgress(0,p.duration);
+  ui.resetAnalyzer();
+  updateControls();updateProcessorControls();
+});
 
 function updateControls(){
   $("recordBtn").disabled=!(state.mic==="READY"&&(state.app==="READY"||state.app==="RECORDED"));
   $("stopBtn").disabled=state.app!=="RECORDING";
-  const canPlay=!!state.session && (state.app==="RECORDED");
+  const canPlay=!!state.session && (state.app==="RECORDED"||state.app==="PROCESSED");
   $("playBtn").disabled=!canPlay;
   $("playStopBtn").disabled=state.app!=="PLAYING";
   ui.setTechnical({
@@ -260,14 +291,15 @@ async function stopRecording(reason){
 }
 
 $("playBtn").addEventListener("click",async()=>{
-  if(!state.session||state.app!=="RECORDED")return;
+  if(!state.session||!(state.app==="RECORDED"||state.app==="PROCESSED"))return;
   try{
-    state.app="PLAYING";ui.status("PLAYING","ready");$("analyzerState").textContent="A : ORIGINAL";updateControls();
+    const returnState=state.processed?"PROCESSED":"RECORDED";
+    state.app="PLAYING";ui.status("PLAYING","ready");$("analyzerState").textContent="A : ORIGINAL";updateControls();updateProcessorControls();
     const o=state.session.original;
     await player.play(o.samples,o.sampleRate,()=>{
       if(state.app!=="PLAYING")return;
-      state.app="RECORDED";ui.status("READY","ready");$("analyzerState").textContent="ANALYSIS READY";
-      ui.playbackProgress(0,o.duration);ui.resetAnalyzer();updateControls();
+      state.app=returnState;ui.status("READY","ready");$("analyzerState").textContent="ANALYSIS READY";
+      ui.playbackProgress(0,o.duration);ui.resetAnalyzer();updateControls();updateProcessorControls();
     });
   }catch(e){
     state.app="RECORDED";ui.status("ERROR","error");$("playMessage").textContent="PLAYBACK FAILED / 音声を再生できませんでした。";updateControls();

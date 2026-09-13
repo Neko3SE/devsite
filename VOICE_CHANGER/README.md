@@ -1,20 +1,35 @@
-# VOICE CHANGER LAB β — Phase 3
+# VOICE CHANGER LAB β — Phase 3 Rev.1
 
-Phase 2 Rev.4 is the approved PC and Android real-device baseline.
+Phase 3 PC test result:
+- Record: OK
+- PRESET selection: OK
+- APPLY: OK
+- PROCESSING COMPLETE: OK
+- PLAY PROCESSED button: clickable but no playback
 
-Phase 3 begins the VOICE PROCESSOR / DSP implementation:
-- PRESET: ORIGINAL, CHILD, MALE, FEMALE, OLD, ROBOT, ALIEN
-- APPLY processing in `worker/dsp-worker.js`
-- duration-preserving granular/OLA pitch stage
-- Level-1 Formant Character spectral-character stage
-- filter/EQ character, modulation, delay, drive, output limiter
-- ORIGINAL is preserved and never overwritten
-- failed processing retains the last valid PROCESSED audio
-- PROCESSED whole analysis is computed internally
-- PLAY PROCESSED uses the existing realtime Analyzer
+## Root cause
+`Player.play()` uses the established Phase 2 API:
+`play(samples, sampleRate, onEnded)`
 
-MANUAL, full A/B comparison UI, and WAV export remain later phases.
+Phase 3 incorrectly passed the entire processed object as the first argument:
+`player.play(state.processed, callback)`
 
-## Test focus
-Record -> select each preset -> APPLY -> PROCESSING COMPLETE -> PLAY PROCESSED.
-Confirm audible transformation, Analyzer operation, duration preservation, and Phase 2 regression.
+This caused the playback path to fail before a valid AudioBuffer could be created.
+
+## Rev.1 fix
+- PROCESSED playback now calls:
+  `player.play(p.samples, p.sampleRate, onEnded)`
+- Uses the same Player path already validated for ORIGINAL.
+- Analyzer state explicitly shows `B : PROCESSED / <PRESET>`.
+- Natural end and STOP restore `PROCESSED`.
+- Realtime Analyzer is reset after playback.
+- ORIGINAL remains playable after a processed result exists.
+- DSP output and Phase 2 recording/analysis code are unchanged.
+
+## PC test focus
+1. Record -> preset -> APPLY -> PROCESSING COMPLETE.
+2. PLAY PROCESSED produces sound.
+3. During processed playback Waveform/Spectrum and numerical Analyzer values move.
+4. STOP works.
+5. Natural end returns to READY/PROCESSED.
+6. PLAY ORIGINAL still works after a processed result exists.
