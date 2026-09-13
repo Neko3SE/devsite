@@ -147,6 +147,31 @@ A music clip that synchronizes the notes Do-Re-Mi-Fa-Sol-La-Ti-Do on a staff wit
 
 ---
 
+#### VOICE CHANGER LAB β
+
+> マイク音声を解析・録音・再生して楽しむブラウザ音声実験ツール。  
+> A browser-based voice experiment tool for analyzing, recording, and playing back microphone audio.
+
+ブラウザのマイク入力を使って、音声の解析・録音・再生を試せる実験コンテンツです。  
+A browser-based experimental tool that uses microphone input for voice analysis, recording, and playback.
+
+- マイク入力の状態を確認  
+  Check microphone input status
+- 音声アナライザー  
+  Voice analyzer
+- 音声録音  
+  Audio recording
+- オリジナル音声の解析  
+  Original audio analysis
+- 録音音声の再生  
+  Recorded audio playback
+- PC / Androidで動作確認済み  
+  Verified on PC and Android
+
+▶ [VOICE CHANGER LAB βを開く / Open VOICE CHANGER LAB β](https://neko3se.github.io/devsite/VOICE_CHANGER/index.html)
+
+---
+
 ## Coming Soon / 今後の予定
 
 今後、以下のコンテンツを追加予定です。  
@@ -179,6 +204,8 @@ devsite/
 ├─ egov-app.js              # e-Gov Viewer application logic
 ├─ piano_emulator.html      # Piano Emulator
 ├─ gosenfu_doremi.html      # Do-Re-Mi staff notation clip
+├─ VOICE_CHANGER/           # VOICE CHANGER LAB β
+│  └─ index.html            # Voice Changer main page
 │
 ├─ mudagiken.html           # Muda Giken main page
 ├─ mudagiken.css            # Muda Giken common styles
