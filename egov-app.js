@@ -8,6 +8,9 @@ function status(msg="",kind=""){el.status.textContent=msg;el.status.dataset.kind
 function normalizeSearchInput(value){
   return String(value??"").trim().replace(/[\s\u3000]+/gu," ");
 }
+function searchTerms(value){
+  return [...new Set(normalizeSearchInput(value).split(" ").filter(Boolean))];
+}
 function beginRequest(){state.request.controller?.abort();state.request.controller=new AbortController();state.request.id++;return {id:state.request.id,signal:state.request.controller.signal}}
 function current(id){return id===state.request.id}
 function show(view){
@@ -73,26 +76,24 @@ function lawSearch(q){
   q=normalizeSearchInput(q);
   const input=document.getElementById("egov-law-query");input.value=q;
   if(!state.law.document||!q)return;
+  const terms=searchTerms(q);
   state.law.highlight=q;
   R.renderLaw(el.law,el.toc,state.law.document,q);
 
-  const needle=q.toLocaleLowerCase();
   const structuralSelectors=[
-    ".egov-struct-title",
-    ".egov-article-caption",
-    ".egov-article-title",
-    ".egov-paragraph",
-    ".egov-item",
-    ".egov-subitem"
+    ".egov-struct",
+    ".egov-article"
   ].join(",");
   const candidates=[...el.law.querySelectorAll(structuralSelectors)];
-  const first=candidates.find(x=>x.textContent.toLocaleLowerCase().includes(needle));
+  const first=candidates.find(x=>{
+    const haystack=x.textContent.toLocaleLowerCase();
+    return terms.every(term=>haystack.includes(term.toLocaleLowerCase()));
+  });
   if(first){
-    const target=first.closest(".egov-article,.egov-struct")||first;
-    target.scrollIntoView({block:"start"});
-    status("");
+    first.scrollIntoView({block:"start"});
+    status(terms.length>1?`${terms.length}個のキーワードをすべて含む箇所を表示しています。`:"");
   }else{
-    status("この法令内では見つかりませんでした。","warn");
+    status(terms.length>1?"すべてのキーワードを含む箇所は、この法令内では見つかりませんでした。":"この法令内では見つかりませんでした。","warn");
   }
 }
 function clearAll(){

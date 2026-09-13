@@ -10,10 +10,29 @@ window.EGOV_RENDERER = (() => {
       parent.append(e);
     }
   }
+  function highlightTerms(query){
+    const terms=String(query??"").trim().split(/[\s\u3000]+/u).filter(Boolean);
+    return [...new Set(terms)].sort((a,b)=>b.length-a.length);
+  }
   function appendHighlighted(parent,text,query){
-    if(!query){parent.append(document.createTextNode(text||""));return}
-    const source=String(text||""), q=String(query); const lower=source.toLocaleLowerCase(), needle=q.toLocaleLowerCase();
-    let pos=0,i; while(needle&&(i=lower.indexOf(needle,pos))>=0){parent.append(document.createTextNode(source.slice(pos,i)));parent.append($("mark","",source.slice(i,i+q.length)));pos=i+q.length}
+    const source=String(text||""),terms=highlightTerms(query);
+    if(!terms.length){parent.append(document.createTextNode(source));return}
+    const lower=source.toLocaleLowerCase(),needles=terms.map(t=>({term:t,needle:t.toLocaleLowerCase()}));
+    let pos=0;
+    while(pos<source.length){
+      let bestIndex=-1,bestTerm=null;
+      for(const item of needles){
+        const i=lower.indexOf(item.needle,pos);
+        if(i<0)continue;
+        if(bestIndex<0||i<bestIndex||(i===bestIndex&&item.term.length>bestTerm.length)){
+          bestIndex=i;bestTerm=item.term;
+        }
+      }
+      if(bestIndex<0)break;
+      if(bestIndex>pos)parent.append(document.createTextNode(source.slice(pos,bestIndex)));
+      parent.append($("mark","",source.slice(bestIndex,bestIndex+bestTerm.length)));
+      pos=bestIndex+bestTerm.length;
+    }
     parent.append(document.createTextNode(source.slice(pos)));
   }
   function node(n,query=""){
