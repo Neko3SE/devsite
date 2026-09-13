@@ -224,19 +224,35 @@
       </details>
     </section>
 
-    <section class="panel info">
-      <div class="section-head"><div><span class="kicker">08</span><h2>HOW TO USE / ご利用方法</h2></div></div>
+    <section class="panel help">
+      <div class="section-head"><div><span class="kicker">10</span><h2>HOW TO USE / ご利用方法</h2></div></div>
       <ol>
-        <li><strong>ENABLE MICROPHONE</strong> — マイクの使用を許可します。</li>
-        <li><strong>RECORD</strong> — 録音を開始します。最大30秒、30秒で自動停止します。</li>
-        <li><strong>STOP</strong> — 30秒未満でも録音を終了できます。0.5秒未満は無効です。</li>
+        <li><strong>RECORDING</strong> — マイクを許可して <code>RECORD</code> を押すと録音を開始します。最大30秒です。録音中は波形、スペクトラム、Pitch、音量などをリアルタイム解析します。<br><span class="en">Allow microphone access and press <code>RECORD</code>. The maximum recording time is 30 seconds. Waveform, spectrum, pitch, and audio level are analyzed in real time.</span></li>
+        <li><strong>PRESET</strong> — <code>CHILD / MALE / FEMALE / OLD / ROBOT / ALIEN</code> から音響キャラクターを選び、<code>APPLY</code> で変換します。変換は常に <code>ORIGINAL</code> から行います。<br><span class="en">Select an audio character and press <code>APPLY</code>. Processing always starts from the original recording.</span></li>
+        <li><strong>MANUAL</strong> — Pitch、Formant Character、Filter/EQ、Modulation、Delay、Driveなどを個別調整し、<code>APPLY</code> で新しい処理済み音声を生成します。<br><span class="en">Adjust Pitch, Formant Character, Filter/EQ, Modulation, Delay, Drive, and other parameters, then press <code>APPLY</code>.</span></li>
+        <li><strong>ANALYSIS</strong> — Pitch、RMS、Peak、Spectral Centroidなどを観察できます。<code>UNRELIABLE</code> はF0を信頼できる精度で推定できない状態です。<br><span class="en">Observe Pitch, RMS, Peak, Spectral Centroid, and other characteristics. <code>UNRELIABLE</code> means a reliable F0 estimate could not be obtained.</span></li>
+        <li><strong>A/B COMPARISON</strong> — <code>A : ORIGINAL</code> と <code>B : PROCESSED</code> を比較できます。BYPASS ONではVOICE PROCESSORの再生をORIGINALへ切り替えます。<br><span class="en">Compare <code>A : ORIGINAL</code> and <code>B : PROCESSED</code>. BYPASS ON routes VOICE PROCESSOR playback to ORIGINAL.</span></li>
+        <li><strong>SAVING</strong> — ORIGINALまたはPROCESSEDをWAV / PCM16 / Mono形式で保存できます。保存先・保存方法・表示ファイル名はブラウザやOSの実装により異なる場合があります。<br><span class="en">Save ORIGINAL or PROCESSED as WAV / PCM16 / Mono. Save location, behavior, and displayed filename may depend on browser and OS implementation.</span></li>
       </ol>
-      <p class="en">Phase 2 adds real-time Pitch/F0 and Note estimation, whole-recording ORIGINAL analysis, and ORIGINAL playback to the approved Phase 1 recording foundation.</p>
+      <hr>
+      <p><strong>PITCH / F0</strong><br>音声信号から推定した基本周波数です。声の高さを観察する目安になります。安定して推定できない区間では <code>UNRELIABLE</code> と表示する場合があります。</p>
+      <p class="en">The estimated fundamental frequency of the audio signal. It provides an indication of perceived voice pitch. <code>UNRELIABLE</code> may be displayed when a reliable estimate cannot be obtained.</p>
+      <p><strong>dBFS</strong><br>デジタル音声の最大レベルを0 dBFSとした音量表示です。0 dBFSに近づくほどクリッピングの可能性が高くなります。</p>
+      <p class="en">A digital audio level scale where 0 dBFS represents the maximum level. Signals approaching 0 dBFS have a greater risk of clipping.</p>
+      <p><strong>SPECTRAL CENTROID</strong><br>周波数成分の重心を表す指標です。音の明るさ・暗さを観察する一つの目安として利用できます。</p>
+      <p class="en">A measure representing the center of mass of the frequency spectrum. It can be used as one indicator of spectral brightness.</p>
+      <p><strong>FORMANT CHARACTER</strong><br>フォルマントに関連するスペクトル特性を利用して、声の音色・キャラクターを変化させるDSPパラメータです。表示される%値はF1/F2/F3などの実測フォルマント周波数や、その厳密な変化率を表すものではありません。</p>
+      <p class="en">A DSP parameter used to modify vocal tone and character through formant-related spectral characteristics. The displayed percentage does not represent measured F1/F2/F3 frequencies or an exact percentage change of those frequencies.</p>
+      <p><strong>PRESET NOTE / プリセットについて</strong><br>プリセット名は音響エフェクトのキャラクターを表す名称です。話者の性別・年齢などの属性を解析・判定する機能ではなく、特定の声質への変換結果を保証するものではありません。</p>
+      <p class="en">Preset names describe audio-effect characters. They do not analyze or determine the speaker's gender, age, or other personal attributes, nor do they guarantee transformation into a particular type of voice.</p>
+      <hr>
+      <p><strong>REQUIREMENTS / 動作条件</strong><br>マイクを利用できるブラウザとマイク使用許可が必要です。公開環境ではHTTPSで利用してください。録音・処理・再生中はページを前面に保ってください。画面ロックやアプリ切替などで処理が中断される場合があります。</p>
+      <p class="en">A microphone-capable browser and microphone permission are required. Use HTTPS in public environments. Keep the page in the foreground while recording, processing, or playing audio. Screen lock or app switching may interrupt operation.</p>
+      <p>音声が再生されない場合は、端末の音量、消音設定、音声出力先を確認してください。</p>
+      <p class="en">If no audio is heard, check the device volume, mute settings, and audio output route.</p>
       <hr>
       <p><strong>PRIVACY / プライバシー</strong><br>録音した音声と音声処理はブラウザ内で扱われます。音声処理のために録音データをサーバーへ送信することはありません。保存していない録音データは、ページを閉じると失われます。</p>
       <p class="en">Recorded audio and audio processing are handled locally in your browser. Recorded audio is not sent to a server for audio processing. Unsaved recordings are lost when the page is closed.</p>
-      <p>音声が再生されない場合は、端末の音量、消音設定、音声出力先を確認してください。</p>
-      <p class="en">If no audio is heard, check the device volume, mute settings, and audio output route.</p>
     </section>
   </main>
 

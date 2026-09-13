@@ -1,31 +1,42 @@
-# VOICE CHANGER LAB β — Phase 5 Rev.3
+# VOICE CHANGER LAB β — Phase 6 — Integration / β Candidate
 
-Baseline: Phase 5 Rev.2. Re-recording and WAV save flows have been verified on PC and Android. Android filename diagnosis showed normal filenames in Android Chrome; the reported corruption was specific to DuckDuckGo Browser.
+Baseline: Phase 5 Rev.3, verified through PC/Android implementation cycles.
 
-## Rev.3 changes
+Phase 6 is an integration and documentation pass toward the β candidate. It does not intentionally change DSP algorithms, recording transactions, WAV encoding, or the approved Android Chrome download path.
 
-### Pitch / Note reliability display
-Code review confirmed that ROBOT uses strong Ring Modulation (35 Hz / Depth 75%), plus delay and drive. The F0 detector uses normalized autocorrelation and rejects estimates below its confidence threshold. Therefore an unavailable ROBOT pitch is not necessarily HIGH or LOW; it can be an unreliable F0 estimate.
+## Changes
+- Updated phase identification in SYSTEM INFORMATION.
+- Replaced obsolete Phase 2 HOW TO USE text with the approved complete workflow:
+  Record → Measure → Transform → Compare → Listen → Save.
+- Added PRESET, MANUAL, A/B/BYPASS, WAV save guidance.
+- Added the approved explanations for Pitch/F0, `UNRELIABLE`, dBFS, Spectral Centroid, and Formant Character.
+- Added the preset-name caution: effect-character names are not speaker gender/age classification.
+- Added complete browser/foreground/audio-route requirements.
+- Retained local-browser privacy statement.
+- Retained browser/OS-dependent download filename note established after Android diagnosis.
 
-The UI now uses:
-- `PITCH UNRELIABLE`
-- `NOTE ---`
+## Current verified implementation history
+- Microphone permission / recording: PC + Android.
+- Realtime and whole ORIGINAL analysis: PC + Android.
+- PRESET DSP / processed playback: PC + Android.
+- MANUAL DSP / BYPASS: PC + Android.
+- Re-record after PROCESSED: PC + Android.
+- WAV save: PC + Android.
+- Android Chrome filename: normal.
+- DuckDuckGo Browser filename corruption: isolated as browser-specific download implementation behavior.
+- ROBOT unreliable F0 display: Android Chrome verified.
 
-Whole-analysis Pitch AVG/RANGE and A/B Pitch fields also use `UNRELIABLE` when no reliable F0 result is available. No fake pitch value is generated and the confidence threshold is not weakened.
-
-### Download filename
-Diagnostic testing established:
-- Android Chrome: filename displayed normally.
-- DuckDuckGo Browser: filename corruption reproduced.
-- UTF-8/BOM and WAV payload encoding are not the cause.
-
-Rev.2's Android-specific extended Blob URL lifetime / synthetic MouseEvent workaround has therefore been removed. The implementation returns to the standard Blob URL + `<a download>` path, while retaining strict ASCII filename sanitization.
-
-The UI now states that the displayed download filename may depend on browser/OS implementation. Android Chrome is the verified Android baseline.
-
-## Regression checks
-1. PC and Android Chrome: ORIGINAL/PROCESSED WAV download and playback.
-2. Confirm expected ASCII filename on Android Chrome.
-3. ROBOT playback: if F0 cannot be reliably estimated, show `PITCH UNRELIABLE` and `NOTE ---`.
-4. Other presets with reliable F0 should continue to show numeric Pitch and Note.
-5. Re-record after PRESET/MANUAL processing remains functional.
+## β candidate test focus
+Run a regression pass without changing acoustic tuning:
+1. Permission allow / deny / retry.
+2. Record >0.5 sec and 30 sec auto-stop.
+3. ORIGINAL playback and analyzer.
+4. Every PRESET: APPLY → PLAY PROCESSED → STOP.
+5. MANUAL: edit → APPLY → BYPASS ON/OFF.
+6. Re-record from PROCESSED; cancel, successful replacement, and <0.5 sec failure retention.
+7. A/B measured comparison.
+8. SAVE ORIGINAL / SAVE PROCESSED and downloaded WAV playback.
+9. ROBOT `UNRELIABLE` behavior where F0 is not reliable.
+10. No horizontal scrolling on phone.
+11. Background/app-switch interruption behavior.
+12. iPhone Safari/Edge remains an unverified formal-device target and should be tested before final β release.
