@@ -113,20 +113,18 @@
         <div id="playMessage" class="message" aria-live="polite"></div>
       </section>
 
-      <section class="panel processor disabled-section" id="processorPanel">
-        <div class="section-head">
-          <div><span class="kicker">06</span><h2>VOICE PROCESSOR</h2></div>
-          <span class="badge">PHASE 2 REV.4</span>
-        </div>
-        <div class="tabs"><button class="active" disabled>PRESET</button><button disabled>MANUAL</button></div>
+      <section class="panel processor" id="processorPanel">
+        <div class="section-head"><div><span class="kicker">06</span><h2>VOICE PROCESSOR</h2></div><span id="processorState" class="badge">READY TO PROCESS</span></div>
+        <div class="tabs"><button class="active" type="button">PRESET</button><button disabled>MANUAL</button></div>
         <div class="preset-grid">
-          <button disabled>ORIGINAL</button><button disabled>CHILD</button>
-          <button disabled>MALE</button><button disabled>FEMALE</button>
-          <button disabled>OLD</button><button disabled>ROBOT</button>
-          <button disabled>ALIEN</button>
+          <button type="button" data-preset="ORIGINAL">ORIGINAL</button><button type="button" data-preset="CHILD">CHILD</button>
+          <button type="button" data-preset="MALE">MALE</button><button type="button" data-preset="FEMALE">FEMALE</button>
+          <button type="button" data-preset="OLD">OLD</button><button type="button" data-preset="ROBOT">ROBOT</button>
+          <button type="button" data-preset="ALIEN">ALIEN</button>
         </div>
-        <button class="primary wide" disabled>APPLY</button>
-        <p class="phase-note">DSP / PRESET / MANUAL は Phase 2 以降で有効化します。<br><span>DSP / PRESET / MANUAL will be enabled in a later phase.</span></p>
+        <button id="applyPreset" class="primary wide" type="button" disabled>APPLY</button>
+        <p id="processingProgress" class="phase-note">Record audio, select a preset, then APPLY.</p>
+        <div class="button-row"><button id="playProcessed" type="button" disabled>PLAY PROCESSED</button><button id="stopProcessed" type="button" disabled>STOP</button></div>
       </section>
     </div>
 

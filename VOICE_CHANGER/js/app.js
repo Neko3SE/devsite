@@ -2,13 +2,15 @@ import {AudioEngine} from "./audio-engine.js";
 import {Recorder} from "./recorder.js";
 import {RealtimeAnalyzer} from "./analyzer.js";
 import {AnalysisEngine} from "./analysis-engine.js";
+import {DSPEngine} from "./dsp-engine.js";
+import {PRESETS} from "./presets.js";
 import {Player} from "./player.js";
 import {UI} from "./ui.js";
 
 const $=id=>document.getElementById(id);
 const ui=new UI(), audio=new AudioEngine(), recorder=new Recorder(), analyzer=new RealtimeAnalyzer(ui),
-      player=new Player(ui,audio), analysisEngine=new AnalysisEngine();
-const state={app:"READY",mic:"REQUIRED",session:null,sessionId:0,recordStarted:0,tick:0,pendingStop:null,micSettings:{},permissionStatus:null};
+      player=new Player(ui,audio), analysisEngine=new AnalysisEngine(), dspEngine=new DSPEngine();
+const state={app:"READY",mic:"REQUIRED",session:null,sessionId:0,recordStarted:0,tick:0,pendingStop:null,micSettings:{},permissionStatus:null,selectedPreset:null,processed:null,processing:false};
 
 function capabilities(){
   return {
@@ -33,6 +35,41 @@ if(missing.length){
   ui.permissionError("BROWSER FEATURE NOT AVAILABLE / 必要な機能を利用できません: "+missing.join(", "));
   $("enableMic").disabled=true;
 }
+
+const presetButtons=[...document.querySelectorAll("[data-preset]")];
+function updateProcessorControls(){
+ const original=!!state.session?.original,busy=state.processing||state.app==="PLAYING";
+ presetButtons.forEach(b=>b.disabled=!original||busy);
+ $("applyPreset").disabled=!original||!state.selectedPreset||busy;
+ $("playProcessed").disabled=!state.processed||busy;
+ $("stopProcessed").disabled=state.app!=="PLAYING";
+}
+presetButtons.forEach(b=>b.addEventListener("click",()=>{
+ if(b.disabled)return;state.selectedPreset=b.dataset.preset;presetButtons.forEach(x=>x.classList.toggle("selected",x===b));
+ $("processorState").textContent=state.processed?"PRESET CHANGED":"READY TO PROCESS";updateProcessorControls();
+}));
+$("applyPreset").addEventListener("click",async()=>{
+ if(!state.session?.original||!state.selectedPreset||state.processing)return;
+ if(state.selectedPreset==="ORIGINAL"){state.processed=null;$("processorState").textContent="ORIGINAL / NO DSP";$("processingProgress").textContent="ORIGINAL is the unprocessed recording.";updateProcessorControls();return}
+ const original=state.session.original,old=state.processed,preset=state.selectedPreset,sid=state.session.id,t0=performance.now();
+ state.processing=true;state.app="PROCESSING";$("processorState").textContent="PROCESSING";updateProcessorControls();
+ try{
+  const out=await dspEngine.process(original.samples,original.sampleRate,PRESETS[preset],m=>{if(state.session?.id===sid)$("processingProgress").textContent=`${m.stage} ${m.progress}%`});
+  if(state.session?.id!==sid)return;
+  if(Math.abs(out.duration-original.duration)>1/original.sampleRate)throw Error("DSP_DURATION_MISMATCH");
+  const analysis=await analysisEngine.analyze(out.samples,out.sampleRate);
+  if(state.session?.id!==sid)return;
+  state.processed={samples:out.samples,sampleRate:out.sampleRate,duration:out.duration,analysis,preset,processingInfo:{elapsedMs:performance.now()-t0}};
+  $("processorState").textContent="✓ PROCESSING COMPLETE";$("processingProgress").textContent=`${preset} / ${(state.processed.processingInfo.elapsedMs/1000).toFixed(2)} sec`;
+ }catch(e){state.processed=old;$("processorState").textContent="PROCESSING FAILED";$("processingProgress").textContent="Original and last valid processed audio are preserved."}
+ finally{if(state.session?.id===sid){state.processing=false;state.app=state.processed?"PROCESSED":"RECORDED";updateControls();updateProcessorControls()}}
+});
+$("playProcessed").addEventListener("click",async()=>{
+ if(!state.processed||state.processing)return;try{await audio.ensure();state.app="PLAYING";updateControls();updateProcessorControls();ui.status("PLAYING","active");
+ player.play(state.processed,()=>{state.app="PROCESSED";ui.status("READY","ready");ui.resetAnalyzer();updateControls();updateProcessorControls()});
+ }catch(e){state.app="PROCESSED";ui.status("ERROR","error");updateControls();updateProcessorControls()}
+});
+$("stopProcessed").addEventListener("click",()=>{if(state.app==="PLAYING"){player.stop();state.app=state.processed?"PROCESSED":"RECORDED";ui.status("READY","ready");ui.resetAnalyzer();updateControls();updateProcessorControls()}});
 
 function updateControls(){
   $("recordBtn").disabled=!(state.mic==="READY"&&(state.app==="READY"||state.app==="RECORDED"));
@@ -186,6 +223,7 @@ async function stopRecording(reason){
     // Commit the validated ORIGINAL first. Whole analysis is a separate transaction.
     const sid=++state.sessionId;
     state.session={id:sid,original:{...mono,analysis:null},recordingInfo:{createdAt:new Date(),mimeType:blob.type}};
+    state.processed=null;state.selectedPreset=null;presetButtons.forEach(b=>b.classList.remove("selected"));$("processorState").textContent="READY TO PROCESS";updateProcessorControls();
     state.app="RECORDED";ui.recorded(mono);ui.playbackProgress(0,mono.duration);ui.status("ANALYZING","ready");
     ui.analysisStatus("ANALYZING...");
     ui.message(reason==="auto"?"✓ RECORDING COMPLETE / 30 SEC AUTO STOP":"✓ RECORDING COMPLETE");
@@ -249,6 +287,8 @@ document.addEventListener("visibilitychange",()=>{
     ui.playbackProgress(0,state.session.original.duration);ui.resetAnalyzer();updateControls();
   }
 });
-addEventListener("pagehide",()=>{cancelAnimationFrame(state.tick);analyzer.stop();player.cleanup();analysisEngine.cleanup();recorder.finish()});
+addEventListener("pagehide",()=>{cancelAnimationFrame(state.tick);analyzer.stop();player.cleanup();analysisEngine.cleanup();dspEngine.cleanup();recorder.finish()});
 updateControls();
 syncMicrophonePermission();
+
+updateProcessorControls();

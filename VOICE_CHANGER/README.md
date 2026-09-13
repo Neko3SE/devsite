@@ -1,17 +1,20 @@
-# VOICE CHANGER LAB β — Phase 2 Rev.4
+# VOICE CHANGER LAB β — Phase 3
 
-Phase 2 Rev.3はPC実機で、マイクPermission状態の自動取得と、
-許可済みReload時の `ENABLE MICROPHONE` Panel非表示が正常動作確認済みです。
+Phase 2 Rev.4 is the approved PC and Android real-device baseline.
 
-## Rev.4修正
-- `MICROPHONE ● READY` を表示する `micState` をPermission Panelから分離。
-- Permission Panelが非表示でもMicrophone Statusを常設表示。
-- 既存の `micState` IDを維持するため、JavaScript側の状態更新ロジックは変更なし。
-- Rev.3のPermissions API、録音、Whole Analysis、再生、Realtime Analyzer処理は変更なし。
+Phase 3 begins the VOICE PROCESSOR / DSP implementation:
+- PRESET: ORIGINAL, CHILD, MALE, FEMALE, OLD, ROBOT, ALIEN
+- APPLY processing in `worker/dsp-worker.js`
+- duration-preserving granular/OLA pitch stage
+- Level-1 Formant Character spectral-character stage
+- filter/EQ character, modulation, delay, drive, output limiter
+- ORIGINAL is preserved and never overwritten
+- failed processing retains the last valid PROCESSED audio
+- PROCESSED whole analysis is computed internally
+- PLAY PROCESSED uses the existing realtime Analyzer
 
-## PC実機確認ポイント
-1. Permission許可済みでReload → `ENABLE MICROPHONE` Panelが消える。
-2. 同時に `MICROPHONE ● READY` は画面上に残る。
-3. RECORD開始 → `MICROPHONE ● ACTIVE`。
-4. 録音終了 → `MICROPHONE ● READY`。
-5. Whole AnalysisとPLAY ORIGINAL、再生中Analyzerが従来どおり動作する。
+MANUAL, full A/B comparison UI, and WAV export remain later phases.
+
+## Test focus
+Record -> select each preset -> APPLY -> PROCESSING COMPLETE -> PLAY PROCESSED.
+Confirm audible transformation, Analyzer operation, duration preservation, and Phase 2 regression.
