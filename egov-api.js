@@ -1,5 +1,5 @@
 window.EGOV_API = (() => {
-  const BASE="https://laws.e-gov.go.jp/api/2", TIMEOUT=15000, MAX_RETRIES=3, LOCAL_COOLDOWN=60000, CACHE_MAX=20;
+  const BASE="https://laws.e-gov.go.jp/api/2", TIMEOUT=15000, MAX_USER_RETRIES=3, LOCAL_COOLDOWN=60000, CACHE_MAX=20;
   const inflight=new Map(), failures=new Map(), cache=new Map();
 
   class EgError extends Error{
@@ -13,7 +13,8 @@ window.EGOV_API = (() => {
   function noteFailure(op, retryAfter=0){
     const s=operationState(op); s.count++;
     if(retryAfter>0)s.until=Date.now()+retryAfter;
-    else if(s.count>=MAX_RETRIES)s.until=Date.now()+LOCAL_COOLDOWN;
+    else if(s.count>MAX_USER_RETRIES)s.until=Date.now()+LOCAL_COOLDOWN;
+    return Math.max(0,s.until-Date.now());
   }
   function noteSuccess(op){failures.set(op,{count:0,until:0})}
   function checkCooldown(op){
@@ -33,11 +34,14 @@ window.EGOV_API = (() => {
         const res=await fetch(url,{mode:"cors",cache:"no-store",credentials:"omit",signal:controller.signal});
         if(res.status===429){
           const wait=parseRetryAfter(res.headers.get("Retry-After"))||LOCAL_COOLDOWN; noteFailure(op,wait);
-          throw new EgError("RATE_LIMIT_ERROR","APIが再試行待機を要求しました",{httpStatus:429,retryable:true,retryAfter:wait});
+          throw new EgError("RATE_LIMIT_ERROR","APIが再試行待機を要求しました",{operation:op,httpStatus:429,retryable:true,retryAfter:wait});
         }
         if(!res.ok){
-          noteFailure(op);
-          throw new EgError("HTTP_ERROR",`HTTP ${res.status}`,{httpStatus:res.status,retryable:res.status>=500});
+          const wait=noteFailure(op);
+          if(op==="lawData"&&(res.status===400||res.status===404)){
+            throw new EgError("NOT_FOUND","指定された法令が見つかりません",{operation:op,httpStatus:res.status,retryable:false});
+          }
+          throw new EgError("HTTP_ERROR",`HTTP ${res.status}`,{operation:op,httpStatus:res.status,retryable:res.status>=500,retryAfter:wait});
         }
         const text=await res.text(); noteSuccess(op);
         if(format==="text")return text;
@@ -45,10 +49,10 @@ window.EGOV_API = (() => {
       }catch(e){
         if(e instanceof EgError)throw e;
         if(e?.name==="AbortError"){
-          if(controller.signal.reason==="timeout"){noteFailure(op);throw new EgError("TIMEOUT_ERROR","取得がタイムアウトしました",{retryable:true})}
-          throw new EgError("CANCELLED","通信を中止しました",{retryable:false});
+          if(controller.signal.reason==="timeout"){const wait=noteFailure(op);throw new EgError("TIMEOUT_ERROR","取得がタイムアウトしました",{operation:op,retryable:true,retryAfter:wait})}
+          throw new EgError("CANCELLED","通信を中止しました",{operation:op,retryable:false});
         }
-        noteFailure(op); throw new EgError("NETWORK_ERROR","通信できませんでした",{cause:e,retryable:true});
+        const wait=noteFailure(op); throw new EgError("NETWORK_ERROR","通信できませんでした",{operation:op,cause:e,retryable:true,retryAfter:wait});
       }finally{
         clearTimeout(timer); if(signal)signal.removeEventListener("abort",relay); inflight.delete(key);
       }

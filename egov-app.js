@@ -11,6 +11,22 @@ function normalizeSearchInput(value){
 function searchTerms(value){
   return [...new Set(normalizeSearchInput(value).split(" ").filter(Boolean))];
 }
+function validLawId(value){
+  return typeof value==="string" && /^[A-Za-z0-9_-]{1,128}$/.test(value);
+}
+function userErrorMessage(e){
+  switch(e?.code){
+    case "NETWORK_ERROR": return "e-Govに接続できませんでした。通信状態を確認してください。";
+    case "TIMEOUT_ERROR": return "e-Govからの応答に時間がかかっています。しばらくしてから再度お試しください。";
+    case "HTTP_ERROR": return "e-Govから法令データを取得できませんでした。";
+    case "RATE_LIMIT_ERROR": return "e-Govへのアクセスが集中しています。しばらく待ってから再度お試しください。";
+    case "API_ERROR": return "e-Govから正常な法令データを取得できませんでした。";
+    case "PARSE_ERROR": return "取得した法令データを本Viewerで正しく読み取れませんでした。";
+    case "RENDER_ERROR": return "法令データを画面に表示できませんでした。";
+    case "NOT_FOUND": return "指定された法令が見つかりませんでした。";
+    default: return "法令データを取得できませんでした。";
+  }
+}
 function beginRequest(){state.request.controller?.abort();state.request.controller=new AbortController();state.request.id++;return {id:state.request.id,signal:state.request.controller.signal}}
 function current(id){return id===state.request.id}
 function show(view){
@@ -45,28 +61,59 @@ async function submitSearch(mode,q,push=true){
   document.getElementById("egov-search-button").disabled=true;
   try{
     const data=mode==="law"?await A.laws(q,req.signal):await A.keyword(q,req.signal);if(!current(req.id))return;
-    const results=mode==="law"?P.normalizeLawList(data):P.normalizeKeyword(data);state.search.results=results;
-    if(mode==="law")R.renderLawList(el.list,results.map(x=>({...x,displayName:x.lawTitle})),`法令名検索：「${q}」`);
-    else R.renderSearchGroups(el.list,results,q);
+    let results;
+    try{results=mode==="law"?P.normalizeLawList(data):P.normalizeKeyword(data)}
+    catch(cause){throw new A.EgError("PARSE_ERROR","検索結果を解析できません",{operation:mode==="law"?"laws":"keyword",cause,retryable:false})}
+    state.search.results=results;
+    try{
+      if(mode==="law")R.renderLawList(el.list,results.map(x=>({...x,displayName:x.lawTitle})),`法令名検索：「${q}」`);
+      else R.renderSearchGroups(el.list,results,q);
+    }catch(cause){throw new A.EgError("RENDER_ERROR","検索結果を描画できません",{operation:mode==="law"?"laws":"keyword",cause,retryable:false})}
     show("SEARCH_RESULTS");status(results.length?`${results.length}件の法令グループを表示しています。`:"検索結果は0件です。");
     if(push)navigate(urlFor({mode,q}));
   }catch(e){if(e.code!=="CANCELLED")handleError(e,()=>submitSearch(mode,q,false))}
   finally{if(current(req.id))document.getElementById("egov-search-button").disabled=false}
 }
 function handleError(e,retry){
-  const msg=e.code==="RATE_LIMIT_ERROR"?"短時間に複数回の取得に失敗しています。しばらく時間をおいてからお試しください。":
-    e.code==="TIMEOUT_ERROR"?"取得がタイムアウトしました。":e.code==="PARSE_ERROR"?"取得したデータを解析できませんでした。":"法令データを取得できませんでした。通信状態を確認してください。";
-  status(msg,"error");const box=document.createElement("div");box.className="egov-empty";const p=document.createElement("p");p.textContent=msg;box.append(p);
-  if(e.retryable){const b=document.createElement("button");b.textContent="再試行";b.type="button";b.addEventListener("click",retry,{once:true});box.append(b)}
-  const a=document.createElement("a");a.href="https://laws.e-gov.go.jp/";a.target="_blank";a.rel="noopener noreferrer";a.textContent="e-Gov法令検索で確認 ↗";box.append(document.createElement("br"),a);el.law.replaceChildren(box);
+  if(e?.code==="CANCELLED")return;
+  let msg=userErrorMessage(e);
+  const wait=Math.ceil((e?.retryAfter||0)/1000);
+  if(wait>0)msg+=` 約${wait}秒後に再度お試しください。`;
+  status(msg,"error");
+  console.warn("[egov-viewer]",e?.code||"UNKNOWN","operation="+(e?.operation||"unknown"),e?.httpStatus?`http=${e.httpStatus}`:"");
+  const box=document.createElement("div");box.className="egov-empty";
+  const p=document.createElement("p");p.textContent=msg;box.append(p);
+  if(e?.retryable&&wait===0&&typeof retry==="function"){
+    const b=document.createElement("button");b.textContent="再試行";b.type="button";b.addEventListener("click",retry,{once:true});box.append(b);
+  }
+  const clear=document.createElement("button");clear.textContent="すべてクリア";clear.type="button";clear.dataset.action="clear-all";box.append(clear);
+  const a=document.createElement("a");a.href="https://laws.e-gov.go.jp/";a.target="_blank";a.rel="noopener noreferrer";a.textContent="e-Gov法令検索で確認 ↗";
+  box.append(document.createElement("br"),a);el.law.replaceChildren(box);
 }
 async function openLaw(lawId,{push=true,article="",highlight=""}={}){
-  if(!lawId)return;state.law.lawId=lawId;state.law.highlight=highlight||"";show("LAW_VIEWER");
+  if(!validLawId(lawId)){
+    handleError(new A.EgError("NOT_FOUND","不正な法令ID",{operation:"lawData",retryable:false}));
+    show("LAW_VIEWER");return;
+  }
+  state.law.lawId=lawId;state.law.highlight=highlight||"";show("LAW_VIEWER");
   if(push)navigate(urlFor({law:lawId,hash:article?`article-${article}`:""}));
-  let doc=A.cacheGet(lawId);if(doc){state.law.document=doc;R.renderLaw(el.law,el.toc,doc,state.law.highlight);status("");jump(article);return}
-  const req=beginRequest();status("e-Govから法令を取得しています…");el.law.innerHTML='<div class="egov-empty">e-Govから法令を取得しています…</div>';
-  try{const xml=await A.lawData(lawId,req.signal);if(!current(req.id))return;doc=P.parseLawXml(xml,lawId);A.cachePut(lawId,doc);state.law.document=doc;R.renderLaw(el.law,el.toc,doc,state.law.highlight);status("");jump(article)}
-  catch(e){if(e.code!=="CANCELLED")handleError(e,()=>openLaw(lawId,{push:false,article,highlight}))}
+  let doc=A.cacheGet(lawId);
+  if(doc){
+    state.law.document=doc;
+    try{R.renderLaw(el.law,el.toc,doc,state.law.highlight)}
+    catch(cause){handleError(new A.EgError("RENDER_ERROR","描画できません",{operation:"lawData",cause,retryable:false}));return}
+    status("");jump(article);return;
+  }
+  const req=beginRequest();status("e-Govから法令を取得しています…");
+  const loading=document.createElement("div");loading.className="egov-empty";loading.textContent="e-Govから法令を取得しています…";el.law.replaceChildren(loading);
+  try{
+    const xml=await A.lawData(lawId,req.signal);if(!current(req.id))return;
+    try{doc=P.parseLawXml(xml,lawId)}catch(cause){throw new A.EgError("PARSE_ERROR","法令XMLを解析できません",{operation:"lawData",cause,retryable:false})}
+    A.cachePut(lawId,doc);state.law.document=doc;
+    try{R.renderLaw(el.law,el.toc,doc,state.law.highlight)}
+    catch(cause){throw new A.EgError("RENDER_ERROR","法令を描画できません",{operation:"lawData",cause,retryable:false})}
+    status("");jump(article);
+  }catch(e){if(e.code!=="CANCELLED")handleError(e,()=>openLaw(lawId,{push:false,article,highlight}))}
 }
 function jump(article){
   const hash=article?`article-${String(article).replace(/[^\p{L}\p{N}_.-]+/gu,"-")}`:location.hash.slice(1);if(!hash)return;
