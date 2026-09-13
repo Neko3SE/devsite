@@ -1,26 +1,29 @@
-# VOICE CHANGER LAB β — Phase 2 Rev.2
+# VOICE CHANGER LAB β — Phase 2 Rev.3
 
-Phase 2 Rev.1のPC実機確認で、Whole Analysisは正常表示された一方、
-PLAY ORIGINAL中はWaveform/Spectrumのみ更新され、ANALYZERの数値が更新されないことを受けた修正版です。
+Phase 2 Rev.2の実機確認で、録音・Whole Analysis・ORIGINAL再生・再生中Realtime数値表示が正常動作。
+Rev.3では承認されたPermission UX改善を追加しました。
 
-## Rev.2修正
-- 録音時と再生時でRealtime数値解析ロジックを共通化。
-- `analyzeRealtimeFrame()` を analyzer.js に追加。
-- player.js から同じRealtime解析関数を使用。
-- PLAY ORIGINAL中も以下を約10Hzで更新:
-  - PITCH / F0
-  - NOTE
-  - LEVEL / RMS dBFS
-  - PEAK dBFS
-  - CENTROID
-- Waveform / Spectrumは従来どおりCanvasで継続更新。
-- 再生STOP/自然終了後は瞬間値を `---` に戻し、`ANALYSIS READY` に復帰。
-- Whole Analysis、録音、Permission、ORIGINAL保護のRev.1正常動作は維持。
+## Rev.3追加
+- 起動時に Permissions API が利用可能なら microphone permission を照会。
+- `granted`:
+  - マイクを自動起動しない。
+  - Large `ENABLE MICROPHONE` Panelを非表示。
+  - `MICROPHONE ● READY` を表示。
+- `prompt`:
+  - `ENABLE MICROPHONE` Panelを表示。
+  - ユーザー操作時だけ `getUserMedia()` を実行。
+- `denied`:
+  - `ACCESS DENIED` と復旧案内を表示。
+- Permissions API非対応・照会不能:
+  - エラー扱いにせず従来の `ENABLE MICROPHONE` フローへフォールバック。
+- PermissionStatus の `change` を監視可能なブラウザでは、設定変更にUIを追従。
+- 起動時 `granted` は「ブラウザPermissionが許可済み」という意味。
+  実際のマイク利用可否は RECORD時の `getUserMedia()` で再検証し、失敗時はPermission Panelへ復帰。
 
-## Phase 2 Rev.2 実機確認ポイント
-1. 録音中にPITCH / NOTE / LEVEL / PEAK / CENTROIDが更新される。
-2. 録音終了後、ORIGINAL ANALYSISの全項目が表示される。
-3. PLAY ORIGINAL中にWaveform/Spectrumが動く。
-4. PLAY ORIGINAL中にPITCH / NOTE / LEVEL / PEAK / CENTROIDも更新される。
-5. 無音・Pitch推定不能区間ではPITCH/NOTEが `---` になる。
-6. STOPまたは自然終了後、Realtime数値が `---` に戻る。
+## Rev.3 実機確認ポイント
+1. マイク許可済み状態でページReload → `ENABLE MICROPHONE` Panelが消え、`MICROPHONE ● READY` になる。
+2. Reloadだけではマイク使用中表示にならない。
+3. RECORD押下時にマイクが実際に取得され `MICROPHONE ● ACTIVE` になる。
+4. Permission未決定では従来どおり `ENABLE MICROPHONE` が表示される。
+5. Permission拒否状態では `ACCESS DENIED` が表示される。
+6. Permissions APIが利用できない環境でも従来フローで操作可能。

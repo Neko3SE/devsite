@@ -8,7 +8,7 @@ import {UI} from "./ui.js";
 const $=id=>document.getElementById(id);
 const ui=new UI(), audio=new AudioEngine(), recorder=new Recorder(), analyzer=new RealtimeAnalyzer(ui),
       player=new Player(ui,audio), analysisEngine=new AnalysisEngine();
-const state={app:"READY",mic:"REQUIRED",session:null,sessionId:0,recordStarted:0,tick:0,pendingStop:null,micSettings:{}};
+const state={app:"READY",mic:"REQUIRED",session:null,sessionId:0,recordStarted:0,tick:0,pendingStop:null,micSettings:{},permissionStatus:null};
 
 function capabilities(){
   return {
@@ -83,12 +83,65 @@ $("enableMic").addEventListener("click",async()=>{
     ui.status("READY","ready");
     hidePermissionPanel();
     updateControls();
+    // Refresh the browser permission state after explicit approval.
+    syncMicrophonePermission();
   }catch(e){
     micError(e);
   }finally{
     if(state.mic!=="READY") $("enableMic").disabled=false;
   }
 });
+
+async function syncMicrophonePermission(){
+  // Permission query is UI synchronization only. It never starts the microphone.
+  if(!navigator.permissions?.query){
+    state.mic="REQUIRED";
+    showPermissionPanel();
+    ui.mic("PERMISSION REQUIRED");
+    updateControls();
+    return;
+  }
+  try{
+    const ps=await navigator.permissions.query({name:"microphone"});
+    state.permissionStatus=ps;
+    const applyPermissionState=()=>{
+      if(ps.state==="granted"){
+        // "READY" here means browser permission is granted. Actual device usability
+        // is verified again by getUserMedia() when RECORD is pressed.
+        state.mic="READY";
+        hidePermissionPanel();
+        ui.permissionError("");
+        ui.mic("MICROPHONE ● READY");
+        ui.status("READY","ready");
+      }else if(ps.state==="denied"){
+        state.mic="DENIED";
+        showPermissionPanel();
+        ui.mic("ACCESS DENIED");
+        $("enableMic").textContent="TRY AGAIN";
+        ui.permissionError("MICROPHONE ACCESS DENIED\\nマイクの使用を許可してから、もう一度お試しください。\\nAllow microphone access and try again.");
+      }else{
+        state.mic="REQUIRED";
+        showPermissionPanel();
+        ui.mic("PERMISSION REQUIRED");
+        $("enableMic").textContent="ENABLE MICROPHONE";
+        ui.permissionError("");
+      }
+      updateControls();
+    };
+    applyPermissionState();
+    ps.addEventListener?.("change",applyPermissionState);
+  }catch(e){
+    // Some browsers do not expose microphone permission through Permissions API.
+    // Fall back to explicit user action without treating it as an error.
+    state.permissionStatus=null;
+    state.mic="REQUIRED";
+    showPermissionPanel();
+    ui.mic("PERMISSION REQUIRED");
+    $("enableMic").textContent="ENABLE MICROPHONE";
+    ui.permissionError("");
+    updateControls();
+  }
+}
 
 $("recordBtn").addEventListener("click",()=>{
   if(state.session){$("replaceDialog").hidden=false;return}
@@ -198,3 +251,4 @@ document.addEventListener("visibilitychange",()=>{
 });
 addEventListener("pagehide",()=>{cancelAnimationFrame(state.tick);analyzer.stop();player.cleanup();analysisEngine.cleanup();recorder.finish()});
 updateControls();
+syncMicrophonePermission();
