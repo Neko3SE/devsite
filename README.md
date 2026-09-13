@@ -81,6 +81,33 @@ A browser-based tool that helps users create structured Markdown prompts by fill
 
 ---
 
+#### e-Gov 法令検索 Viewerβ
+#### e-Gov Law Search Viewer β
+
+> 法律名が分からなくても、ジャンルやキーワードから探せる法令閲覧支援ツール。  
+> A law browsing aid that helps you find Japanese laws by category or keyword, even if you do not know the exact law name.
+
+Neko3SE LABによる非公式のe-Gov法令検索Viewerです。e-Gov法令検索の法令データを利用し、法令を探す・読むための操作をブラウザ上で補助します。  
+An unofficial e-Gov law search viewer by Neko3SE LAB. It uses law data from the official e-Gov Law Search service and provides a browser-based interface for finding and reading laws.
+
+- 内容 / 法令名から検索  
+  Search by content or law name
+- Neko3SE LAB独自分類のジャンルから法令を探索  
+  Browse laws using Neko3SE LAB's original category structure
+- 法令内検索と目次表示に対応  
+  In-law search and table-of-contents navigation
+- e-Gov法令検索への公式リンクを表示  
+  Provides links to the official e-Gov Law Search pages
+- 法令API Version 2 v2.1.139 時点で動作確認済み  
+  Verified with e-Gov Law API Version 2 v2.1.139
+
+> **注意 / Note:** 本Viewerは非公式ツールであり、法的助言を提供するものではありません。正確な法令内容はe-Gov法令検索で確認してください。  
+> This viewer is unofficial and does not provide legal advice. Confirm authoritative law text on the official e-Gov Law Search service.
+
+▶ [e-Gov 法令検索 Viewerβを開く / Open e-Gov Law Search Viewer β](https://neko3se.github.io/devsite/egov-index.html)
+
+---
+
 ### Entertainment / エンターテイメント
 
 #### PIANO EMULATOR
@@ -142,6 +169,14 @@ devsite/
 ├─ index.css                # Top page styles
 │
 ├─ prompt_generator.html    # Prompt Generator
+├─ egov-index.html          # e-Gov Law Search Viewer β
+├─ egov-viewer.css          # e-Gov Viewer styles
+├─ egov-categories.js       # e-Gov Viewer categories
+├─ egov-search-dictionary.js  # e-Gov Viewer search dictionary
+├─ egov-api.js              # e-Gov Law API access
+├─ egov-parser.js           # e-Gov response parser
+├─ egov-renderer.js         # e-Gov Viewer renderer
+├─ egov-app.js              # e-Gov Viewer application logic
 ├─ piano_emulator.html      # Piano Emulator
 ├─ gosenfu_doremi.html      # Do-Re-Mi staff notation clip
 │
