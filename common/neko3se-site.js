@@ -12,6 +12,7 @@
     { id: "gosenfu", label: "五線譜ドレミclip", path: "gosenfu/gosenfu_doremi.html" },
     { id: "piano", label: "PIANO EMULATOR", path: "pianoemu/piano_emulator.html" },
     { id: "promptgen", label: "PROMPT GENERATOR", path: "promptgen/prompt_generator.html" },
+    { id: "imageprompt", label: "PRO IMAGE PROMPT LAB", path: "imageprompt/image_prompt.html" },
     { id: "egov", label: "e-Gov 法令検索 Viewer β", path: "egov/egov-index.html" },
     { id: "voicechanger", label: "VOICE CHANGER LAB β", path: "voicechanger/index.html" }
   ];
