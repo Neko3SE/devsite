@@ -172,6 +172,29 @@ A browser-based experimental tool that uses microphone input for voice analysis,
 
 ---
 
+#### PRO IMAGE PROMPT LAB
+
+> プロ級画像生成のためのプロンプトを、構造・重要ポイント・実例から研究。  
+> Researching professional image-generation prompts through structure, key instructions, and a practical example.
+
+生成AIで高品質な画像を作るためのプロンプト設計を、テンプレート・構造分析・重要ポイント・実際の生成結果まで一連の流れで解説する研究ページです。  
+A research page that explores prompt design for high-quality AI image generation, from a reusable template and prompt anatomy to key instructions and an actual generated result.
+
+- 汎用マスタープロンプトテンプレート  
+  General-purpose master prompt template
+- SUBJECT / SCENE / COMPOSITION / LIGHTING など各指示の役割を解説  
+  Explains the role of prompt sections such as SUBJECT, SCENE, COMPOSITION, and LIGHTING
+- 「品質ワード」より具体的な制作ディレクションを重視  
+  Emphasizes concrete visual direction over simply stacking quality keywords
+- 「雨夜の窓辺の仔猫」をテーマにしたサンプルプロンプトと生成結果  
+  Includes a sample prompt and generated result themed around a kitten by a rainy nighttime window
+- サンプル画像はBase64としてHTML内に埋め込み  
+  Sample image is embedded directly in the HTML as Base64
+
+▶ [PRO IMAGE PROMPT LABを開く / Open PRO IMAGE PROMPT LAB](https://neko3se.github.io/devsite/imageprompt/image_prompt.html)
+
+---
+
 ## Coming Soon / 今後の予定
 
 今後、以下のコンテンツを追加予定です。  
@@ -179,10 +202,6 @@ More content is planned, including:
 
 - 開発・企画ノウハウ  
   Development and planning know-how
-- 生成AI画像  
-  Generative AI visual works
-- 生成AI画像ノウハウ  
-  Generative AI image creation tips
 
 ---
 
@@ -193,6 +212,13 @@ devsite/
 ├─ index.html                         # Neko3SE LAB top page
 ├─ index.css                          # Top page styles
 ├─ 404.html                           # Route Recovery / custom 404
+│
+├─ common/                            # Shared site components
+│  ├─ neko3se-site.css               # Common header / footer styles
+│  ├─ neko3se-site.js                # Common header / footer / navigation
+│  ├─ favicon.svg                    # Shared favicon
+│  ├─ favicon.ico                    # Fallback favicon
+│  └─ apple-touch-icon.png           # Apple touch icon
 │
 ├─ mudagiken/                         # 無駄技研。
 │  ├─ mudagiken.html                  # Main page
@@ -222,6 +248,9 @@ devsite/
 │
 ├─ voicechanger/
 │  └─ index.html                      # VOICE CHANGER LAB β
+│
+├─ imageprompt/
+│  └─ image_prompt.html               # PRO IMAGE PROMPT LAB
 │
 ├─ og_images/                         # Open Graph / social preview images
 ├─ sitemap.xml
