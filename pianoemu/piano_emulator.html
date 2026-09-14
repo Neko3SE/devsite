@@ -221,8 +221,11 @@ footer a{color:#b8dfff;text-underline-offset:3px}
   *,*::before,*::after{animation:none!important;scroll-behavior:auto!important;transition:none!important}
 }
 </style>
+  <link rel="stylesheet" href="../common/neko3se-site.css">
 </head>
-<body>
+<body data-n3-page="piano" data-n3-root="..">
+  <header id="n3-site-header"></header>
+  <noscript class="n3-noscript"><a href="../index.html">Neko3SE LAB</a></noscript>
 <div class="stage">
   <div class="decor" aria-hidden="true">
     <div class="beam b1"></div><div class="beam b2"></div>
@@ -319,19 +322,15 @@ footer a{color:#b8dfff;text-underline-offset:3px}
             <label for="volume"><span data-i18n="volumeLabel">音量</span><span id="volumeValue">60%</span></label>
             <input id="volume" type="range" min="0" max="100" value="60">
           </div>
-          <div><a class="back-link" href="index.html">
-            ← Neko3SE LAB に戻る
-          </a></div>
         </div>
         <div id="message" class="message" aria-live="polite"></div>
       </div>
     </section>
 
-    <footer>
-      on GitHub &copy;2026 Neko3SE. <a href="LICENSE.txt">#LICENSE</a>
-    </footer>
   </main>
 </div>
+
+<footer id="n3-site-footer"></footer>
 
 <script>
 (() => {
@@ -704,5 +703,6 @@ footer a{color:#b8dfff;text-underline-offset:3px}
   volumeValue.textContent = `${volumeEl.value}%`;
 })();
 </script>
+  <script src="../common/neko3se-site.js" defer></script>
 </body>
 </html>

@@ -372,15 +372,18 @@ footer a:hover,footer a:focus-visible {
   }
 }
   </style>
- </head>
- <body>
+   <link rel="stylesheet" href="../common/neko3se-site.css">
+</head>
+ <body data-n3-page="gosenfu" data-n3-root="..">
+  <header id="n3-site-header"></header>
+  <noscript class="n3-noscript"><a href="../index.html">Neko3SE LAB</a></noscript>
   <header class="site-header">
    <div class="shell">
     <p class="eyebrow">
      AI / WEB / IDEA / PLAY
     </p>
     <div class="header-row">
-     <a aria-label="Neko3SE LAB トップへ" class="brand" href="index.html" id="brand-link">
+     <a aria-label="Neko3SE LAB トップへ" class="brand" href="../index.html" id="brand-link">
       <span class="brand-main">
        Neko3SE LAB
       </span>
@@ -543,19 +546,9 @@ C4からC5まで、音符は線と間を交互に使って半段ずつ連続し�
       </div>
      </details>
     </section>
-    <div class="content-grid content-grid-nav">
-     <a class="back-link" href="index.html" id="back-link">
-      ← Neko3SE LAB に戻る
-     </a>
-    </div>
    </article>
   </main>
-  <footer>
-   on GitHub ©2026 Neko3SE.
-   <a href="LICENSE.txt" rel="noopener noreferrer" target="_blank">
-    #license.
-   </a>
-  </footer>
+  <footer id="n3-site-footer"></footer>
 
   <script>
    (() => {
@@ -696,7 +689,6 @@ If any condition is not met, correct it before exporting the MP4.`;
      document.getElementById("prompt-intro").textContent=t.promptIntro;
      document.getElementById("prompt-summary").textContent=t.promptSummary;
      document.getElementById("prompt-note").textContent=t.note;
-     document.getElementById("back-link").textContent=t.back;
      document.getElementById("video-fallback").textContent=t.fallback;
      document.getElementById("brand-link").setAttribute("aria-label",t.brandAria);
      promptText.textContent=t.prompt;
@@ -728,5 +720,6 @@ If any condition is not met, correct it before exporting the MP4.`;
     applyLanguage("ja");
    })();
   </script>
- </body>
+   <script src="../common/neko3se-site.js" defer></script>
+</body>
 </html>

@@ -8,14 +8,17 @@
   <meta name="description" content="法律名が分からなくてもジャンルやキーワードから探せる、Neko3SE LABの非公式e-Gov法令検索Viewerです。">
   <title>e-Gov法令検索Viewer β | Neko3SE LAB</title>
   <link rel="stylesheet" href="egov-viewer.css">
+  <link rel="stylesheet" href="../common/neko3se-site.css">
 </head>
-<body>
+<body data-n3-page="egov" data-n3-root="..">
+  <header id="n3-site-header"></header>
+  <noscript class="n3-noscript"><a href="../index.html">Neko3SE LAB</a></noscript>
   <a class="egov-skip-link" href="#egov-main">本文へ移動</a>
 
   <header class="egov-header">
     <div class="egov-header__inner">
       <div>
-        <a class="egov-brand" href="./">Neko3SE LAB</a>
+        <a class="egov-brand" href="../index.html">Neko3SE LAB</a>
         <h1>e-Gov 法令検索 Viewer <span class="egov-beta">β</span></h1>
         <p>法律名が分からなくても探せる、法令閲覧支援ツール</p>
       </div>
@@ -92,10 +95,11 @@
 
   <button id="egov-page-top" class="egov-page-top" type="button" aria-label="ページ上部へ">↑</button>
 
-  <footer class="egov-footer">
-    <p>e-Gov 法令検索 Viewer — Neko3SE LABによる非公式閲覧支援ツール</p>
-    <p>法令データ：<a href="https://laws.e-gov.go.jp/" target="_blank" rel="noopener noreferrer">e-Gov法令検索 ↗</a> / ©2026 Neko3SE</p>
-  </footer>
+  <section class="n3-egov-info" aria-label="e-Gov 法令検索 Viewer 情報">
+    <p>e-Gov 法令検索 Viewer — Neko3SE LABによる非公式閲覧支援ツール / 法令データ：<a href="https://laws.e-gov.go.jp/" target="_blank" rel="noopener noreferrer">e-Gov法令検索 ↗</a></p>
+  </section>
+
+  <footer id="n3-site-footer"></footer>
 
   <noscript>
     <div class="egov-noscript">このViewerの利用にはJavaScriptが必要です。法令は <a href="https://laws.e-gov.go.jp/">e-Gov法令検索</a> から確認できます。</div>
@@ -107,5 +111,6 @@
   <script src="egov-parser.js" defer></script>
   <script src="egov-renderer.js" defer></script>
   <script src="egov-app.js" defer></script>
+  <script src="../common/neko3se-site.js" defer></script>
 </body>
 </html>

@@ -1,0 +1,407 @@
+:root {
+  --n3-header-height: 48px;
+  --n3-nav-bg: rgba(15, 20, 27, 0.96);
+  --n3-drawer-bg: #151c24;
+  --n3-footer-bg: #10161d;
+  --n3-text: #e8edf2;
+  --n3-muted: #9aa8b4;
+  --n3-accent: #62e6a7;
+  --n3-link: #9fd9bd;
+  --n3-border: rgba(255, 255, 255, 0.08);
+  --n3-shadow: 0 2px 12px rgba(0, 0, 0, 0.18);
+}
+
+.n3-site-header,
+.n3-site-header *,
+.n3-drawer-overlay,
+.n3-drawer,
+.n3-drawer *,
+.n3-site-footer,
+.n3-site-footer *,
+.n3-egov-info,
+.n3-egov-info * {
+  box-sizing: border-box;
+}
+
+.n3-site-header {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  width: 100%;
+  height: var(--n3-header-height);
+  background: var(--n3-nav-bg);
+  border-bottom: 1px solid var(--n3-border);
+  box-shadow: var(--n3-shadow);
+  color: var(--n3-text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic UI", "Yu Gothic", Meiryo, sans-serif;
+  backdrop-filter: saturate(120%) blur(8px);
+}
+
+.n3-site-header__inner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: 100%;
+  padding: 0 14px;
+}
+
+.n3-site-brand {
+  flex: 0 0 auto;
+  color: var(--n3-accent) !important;
+  text-decoration: none !important;
+  font-size: 14px;
+  font-weight: 850;
+  letter-spacing: -0.015em;
+  white-space: nowrap;
+}
+
+.n3-site-brand:hover,
+.n3-site-brand:focus-visible {
+  color: #8ff0bf !important;
+  outline: none;
+}
+
+.n3-site-separator {
+  flex: 0 0 auto;
+  color: #72808d;
+  font-size: 13px;
+}
+
+.n3-current-page {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--n3-text);
+  font-size: 13px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.n3-contents-button,
+.n3-drawer-close {
+  appearance: none;
+  border: 1px solid rgba(98, 230, 167, 0.45);
+  color: var(--n3-text);
+  background: transparent;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.n3-contents-button {
+  flex: 0 0 auto;
+  min-height: 34px;
+  padding: 5px 10px;
+  border-radius: 9px;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.n3-contents-button:hover,
+.n3-contents-button:focus-visible,
+.n3-drawer-close:hover,
+.n3-drawer-close:focus-visible {
+  border-color: var(--n3-accent);
+  background: rgba(98, 230, 167, 0.08);
+  outline: none;
+}
+
+.n3-drawer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  background: rgba(0, 0, 0, 0.55);
+  transition: opacity 180ms ease, visibility 0s linear 180ms;
+}
+
+.n3-drawer-overlay.is-open {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
+  transition-delay: 0s;
+}
+
+.n3-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  z-index: 1200;
+  display: flex;
+  flex-direction: column;
+  width: 320px;
+  max-width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  padding: max(16px, env(safe-area-inset-top)) 14px max(16px, env(safe-area-inset-bottom));
+  color: var(--n3-text);
+  background: var(--n3-drawer-bg);
+  border-left: 1px solid var(--n3-border);
+  box-shadow: -18px 0 45px rgba(0, 0, 0, 0.35);
+  transform: translateX(100%);
+  visibility: hidden;
+  transition: transform 220ms ease, visibility 0s linear 220ms;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic UI", "Yu Gothic", Meiryo, sans-serif;
+}
+
+.n3-drawer.is-open {
+  visibility: visible;
+  transform: translateX(0);
+  transition-delay: 0s;
+}
+
+.n3-drawer__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 2px 12px;
+  border-bottom: 1px solid var(--n3-border);
+}
+
+.n3-drawer__title {
+  margin: 0;
+  color: var(--n3-text);
+  font-size: 14px;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+}
+
+.n3-drawer-close {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 9px;
+  font-size: 22px;
+  line-height: 1;
+}
+
+.n3-drawer-nav {
+  display: grid;
+  gap: 4px;
+  margin-top: 12px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.n3-drawer-link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 10px 12px 10px 15px;
+  border-radius: 10px;
+  color: #dce5eb !important;
+  background: transparent;
+  text-decoration: none !important;
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1.35;
+}
+
+.n3-drawer-link:hover,
+.n3-drawer-link:focus-visible {
+  color: #fff !important;
+  background: rgba(255, 255, 255, 0.045);
+  outline: none;
+}
+
+.n3-drawer-link[aria-current="page"] {
+  color: #fff !important;
+  background: rgba(98, 230, 167, 0.08);
+}
+
+.n3-drawer-link[aria-current="page"]::before {
+  content: "";
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  left: 0;
+  width: 3px;
+  border-radius: 99px;
+  background: var(--n3-accent);
+}
+
+.n3-site-footer {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  margin: 0;
+  padding: 12px 8px;
+  color: var(--n3-muted);
+  background: var(--n3-footer-bg);
+  border-top: 1px solid var(--n3-border);
+  text-align: center;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic UI", "Yu Gothic", Meiryo, sans-serif;
+}
+
+.n3-site-footer__inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: nowrap;
+  gap: clamp(5px, 1.6vw, 14px);
+  width: 100%;
+  min-width: 0;
+  margin: 0 auto;
+  white-space: nowrap;
+}
+
+.n3-site-footer__brand,
+.n3-site-footer__copyright {
+  flex: 0 1 auto;
+  min-width: 0;
+  margin: 0;
+  line-height: 1.25;
+}
+
+.n3-site-footer__brand {
+  color: #c7d0d8;
+  font-size: clamp(9px, 2.4vw, 13px);
+}
+
+.n3-site-footer__brand a {
+  color: #dce6ec !important;
+  text-decoration: none !important;
+  font-weight: 800;
+}
+
+.n3-site-footer__links {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(6px, 1.4vw, 12px);
+  margin: 0;
+  font-size: clamp(9px, 2.25vw, 12px);
+  white-space: nowrap;
+}
+
+.n3-site-footer__links a {
+  color: var(--n3-link) !important;
+  text-decoration: none !important;
+}
+
+.n3-site-footer__links a:hover,
+.n3-site-footer__links a:focus-visible,
+.n3-site-footer__brand a:hover,
+.n3-site-footer__brand a:focus-visible {
+  color: var(--n3-accent) !important;
+  outline: none;
+}
+
+.n3-site-footer__copyright {
+  color: #7f8c97;
+  font-size: clamp(9px, 2.25vw, 12px);
+}
+
+.n3-egov-info {
+  display: block;
+  width: 100%;
+  max-width: none;
+  margin: 10px 0 0;
+  padding: 8px 12px;
+  color: #aeb9c2;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  text-align: center;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic UI", "Yu Gothic", Meiryo, sans-serif;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.n3-egov-info p {
+  margin: 0;
+  white-space: nowrap;
+}
+
+.n3-egov-info a {
+  color: var(--n3-link) !important;
+  text-decoration: none !important;
+}
+
+.n3-egov-info a:hover,
+.n3-egov-info a:focus-visible {
+  color: var(--n3-accent) !important;
+  outline: none;
+}
+
+@media (max-width: 600px) {
+  .n3-egov-info {
+    padding-inline: 8px;
+    font-size: 10px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .n3-egov-info::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.n3-noscript {
+  display: block;
+  padding: 8px 12px;
+  color: #dce5eb;
+  background: #111820;
+  border-bottom: 1px solid var(--n3-border);
+  text-align: center;
+  font: 700 12px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.n3-noscript a {
+  color: var(--n3-accent);
+}
+
+.n3-app-viewport {
+  min-height: calc(100dvh - var(--n3-header-height));
+}
+
+@media (max-width: 600px) {
+  .n3-site-header__inner {
+    gap: 8px;
+    padding-inline: 10px;
+  }
+
+  .n3-site-brand {
+    font-size: 13px;
+  }
+
+  .n3-site-separator,
+  .n3-current-page {
+    font-size: 12px;
+  }
+
+  .n3-contents-button {
+    padding-inline: 8px;
+    font-size: 10px;
+  }
+
+  .n3-drawer {
+    width: min(88vw, 340px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .n3-drawer,
+  .n3-drawer-overlay {
+    transition-duration: 1ms !important;
+  }
+}
+
+@media print {
+  .n3-site-header,
+  .n3-drawer,
+  .n3-drawer-overlay,
+  .n3-noscript {
+    display: none !important;
+  }
+}

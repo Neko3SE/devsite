@@ -51,9 +51,12 @@
   margin-top: clamp(28px, 4vw, 48px);
 }
 </style>
+  <link rel="stylesheet" href="common/neko3se-site.css">
 </head>
 
-<body>
+<body data-n3-page="top" data-n3-root=".">
+  <header id="n3-site-header"></header>
+  <noscript class="n3-noscript"><a href="./index.html">Neko3SE LAB</a></noscript>
 <div class="site">
 
 <header class="hero">
@@ -207,13 +210,7 @@
 
 </main>
 
-<footer>
-  <p>
-    on GitHub &copy;2026 Neko3SE.
-    <a href="LICENSE.txt" target="_blank" rel="noopener">#license.</a>
-    <a href="README.md" target="_blank" rel="noopener">#README.</a>
-  </p>
-</footer>
+<footer id="n3-site-footer"></footer>
 
 </div>
 
@@ -269,5 +266,6 @@
   }
 })();
 </script>
+  <script src="common/neko3se-site.js" defer></script>
 </body>
 </html>

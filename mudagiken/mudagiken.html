@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="description" content="無駄技研。くだらないことに、実装密度だけは本番級。">
-　<meta name="keywords" content="生成AI, Web, IT, Neko3SE LAB">
-　<meta name="copyright" content="© 2026 Neko3SE Apache License 2.0">
+  <meta name="keywords" content="生成AI, Web, IT, Neko3SE LAB">
+  <meta name="copyright" content="© 2026 Neko3SE Apache License 2.0">
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
    <meta property="og:title" content="無駄技研。くだらないことに、実装密度だけは本番級。">
   <meta property="og:description" content="AI駆動型非生産的Web技術研究所。">
@@ -15,8 +15,11 @@
   <meta name="twitter:card" content="summary_large_image">
   <title>AI駆動型非生産的Web技術研究所。</title>
   <link rel="stylesheet" href="mudagiken.css">
+  <link rel="stylesheet" href="../common/neko3se-site.css">
 </head>
-<body>
+<body data-n3-page="mudagiken" data-n3-root="..">
+  <header id="n3-site-header"></header>
+  <noscript class="n3-noscript"><a href="../index.html">Neko3SE LAB</a></noscript>
   <canvas id="globalFxCanvas" aria-hidden="true"></canvas>
   <div class="globalOverlay" aria-hidden="true"></div>
   <div class="wrap">
@@ -62,8 +65,9 @@
       <div class="stage" id="stage"></div>
     </section>
 
-    <footer class="siteFooter">on GitHub &copy;2026 Neko3SE.  <a href="LICENSE.txt" target="_blank" rel="noopener"> #license.</a></footer>
   </div>
+
+  <footer id="n3-site-footer"></footer>
 
   <script src="i18n/i18n.js"></script>
   <script src="i18n/ja.js"></script>
@@ -85,5 +89,6 @@
   <script src="games/game008_bug_temple.js"></script>
   <script src="games/game009_meeting.js"></script>
   <script src="games/game010_shrine.js"></script>
+  <script src="../common/neko3se-site.js" defer></script>
 </body>
 </html>
