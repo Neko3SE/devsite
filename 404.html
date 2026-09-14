@@ -325,7 +325,7 @@
     }
 
     .redirecting .progress-bar {
-      animation: progress 1.55s cubic-bezier(.2,.65,.2,1) forwards;
+      animation: progress 3s cubic-bezier(.2,.65,.2,1) forwards;
     }
 
     .actions {
@@ -660,15 +660,15 @@
 
         let shown = 0;
         const meter = window.setInterval(() => {
-          shown = Math.min(shown + 4, 96);
+          shown = Math.min(shown + 2, 96);
           progressPercent.textContent = shown + "%";
-        }, 55);
+        }, 60);
 
         window.setTimeout(() => {
           window.clearInterval(meter);
           progressPercent.textContent = "100%";
           window.location.replace(targetUrl);
-        }, 1550);
+        }, 3000);
       } else {
         app.classList.add("lost");
 

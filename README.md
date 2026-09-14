@@ -48,7 +48,7 @@ A collection of browser-based experimental mini-games inspired by IT work and co
 - 外部API・外部ライブラリを使用せず動作  
   Runs without external APIs or libraries
 
-▶ [無駄技研。を開く / Open Muda Giken](https://neko3se.github.io/devsite/mudagiken.html)
+▶ [無駄技研。を開く / Open Muda Giken](https://neko3se.github.io/devsite/mudagiken/mudagiken.html)
 
 ---
 
@@ -77,7 +77,7 @@ A browser-based tool that helps users create structured Markdown prompts by fill
 - クリップボードへのコピー / Markdownファイル保存  
   Copy to clipboard / save as a Markdown file
 
-▶ [PROMPT GENERATORを開く / Open PROMPT GENERATOR](https://neko3se.github.io/devsite/prompt_generator.html)
+▶ [PROMPT GENERATORを開く / Open PROMPT GENERATOR](https://neko3se.github.io/devsite/promptgen/prompt_generator.html)
 
 ---
 
@@ -104,7 +104,7 @@ An unofficial e-Gov law search viewer by Neko3SE LAB. It uses law data from the 
 > **注意 / Note:** 本Viewerは非公式ツールであり、法的助言を提供するものではありません。正確な法令内容はe-Gov法令検索で確認してください。  
 > This viewer is unofficial and does not provide legal advice. Confirm authoritative law text on the official e-Gov Law Search service.
 
-▶ [e-Gov 法令検索 Viewerβを開く / Open e-Gov Law Search Viewer β](https://neko3se.github.io/devsite/egov-index.html)
+▶ [e-Gov 法令検索 Viewerβを開く / Open e-Gov Law Search Viewer β](https://neko3se.github.io/devsite/egov/egov-index.html)
 
 ---
 
@@ -130,7 +130,7 @@ A browser-based piano emulator with a two-octave keyboard.
 - スマートフォンでは横向き演奏を案内  
   Landscape orientation guidance for smartphones
 
-▶ [PIANO EMULATORを開く / Open PIANO EMULATOR](https://neko3se.github.io/devsite/piano_emulator.html)
+▶ [PIANO EMULATORを開く / Open PIANO EMULATOR](https://neko3se.github.io/devsite/pianoemu/piano_emulator.html)
 
 ---
 
@@ -143,7 +143,7 @@ A browser-based piano emulator with a two-octave keyboard.
 五線譜上のドレミファソラシドと、それぞれの音を同期させた音楽クリップです。  
 A music clip that synchronizes the notes Do-Re-Mi-Fa-Sol-La-Ti-Do on a staff with their corresponding tones.
 
-▶ [五線譜ドレミclipを開く / Open the Do-Re-Mi Clip](https://neko3se.github.io/devsite/gosenfu_doremi.html)
+▶ [五線譜ドレミclipを開く / Open the Do-Re-Mi Clip](https://neko3se.github.io/devsite/gosenfu/gosenfu_doremi.html)
 
 ---
 
@@ -168,7 +168,7 @@ A browser-based experimental tool that uses microphone input for voice analysis,
 - PC / Androidで動作確認済み  
   Verified on PC and Android
 
-▶ [VOICE CHANGER LAB βを開く / Open VOICE CHANGER LAB β](https://neko3se.github.io/devsite/VOICE_CHANGER/index.html)
+▶ [VOICE CHANGER LAB βを開く / Open VOICE CHANGER LAB β](https://neko3se.github.io/devsite/voicechanger/index.html)
 
 ---
 
@@ -190,30 +190,42 @@ More content is planned, including:
 
 ```text
 devsite/
-├─ index.html               # Neko3SE LAB top page
-├─ index.css                # Top page styles
+├─ index.html                         # Neko3SE LAB top page
+├─ index.css                          # Top page styles
+├─ 404.html                           # Route Recovery / custom 404
 │
-├─ prompt_generator.html    # Prompt Generator
-├─ egov-index.html          # e-Gov Law Search Viewer β
-├─ egov-viewer.css          # e-Gov Viewer styles
-├─ egov-categories.js       # e-Gov Viewer categories
-├─ egov-search-dictionary.js  # e-Gov Viewer search dictionary
-├─ egov-api.js              # e-Gov Law API access
-├─ egov-parser.js           # e-Gov response parser
-├─ egov-renderer.js         # e-Gov Viewer renderer
-├─ egov-app.js              # e-Gov Viewer application logic
-├─ piano_emulator.html      # Piano Emulator
-├─ gosenfu_doremi.html      # Do-Re-Mi staff notation clip
-├─ VOICE_CHANGER/           # VOICE CHANGER LAB β
-│  └─ index.html            # Voice Changer main page
+├─ mudagiken/                         # 無駄技研。
+│  ├─ mudagiken.html                  # Main page
+│  ├─ mudagiken.css                   # Common styles
+│  ├─ mudagiken_common.js             # Common scripts
+│  ├─ games/                          # Mini-games
+│  └─ i18n/                           # Language files
 │
-├─ mudagiken.html           # Muda Giken main page
-├─ mudagiken.css            # Muda Giken common styles
-├─ mudagiken_common.js      # Muda Giken common scripts
-├─ games/                   # Muda Giken mini-games
-├─ i18n/                    # Muda Giken language files
+├─ promptgen/                         # PROMPT GENERATOR
+│  └─ prompt_generator.html
 │
-├─ og_images/               # Open Graph / social preview images
+├─ egov/                              # e-Gov 法令検索 Viewer β
+│  ├─ egov-index.html
+│  ├─ egov-viewer.css
+│  ├─ egov-categories.js
+│  ├─ egov-search-dictionary.js
+│  ├─ egov-api.js
+│  ├─ egov-parser.js
+│  ├─ egov-renderer.js
+│  └─ egov-app.js
+│
+├─ pianoemu/
+│  └─ piano_emulator.html             # Piano Emulator
+│
+├─ gosenfu/
+│  └─ gosenfu_doremi.html             # Do-Re-Mi staff notation clip
+│
+├─ voicechanger/
+│  └─ index.html                      # VOICE CHANGER LAB β
+│
+├─ og_images/                         # Open Graph / social preview images
+├─ sitemap.xml
+├─ robots.txt
 ├─ LICENSE
 ├─ LICENSE.txt
 └─ README.md
