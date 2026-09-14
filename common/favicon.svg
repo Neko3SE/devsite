@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Neko3SE LAB favicon">
+  <rect width="512" height="512" rx="78" fill="#05131f"/>
+  <rect x="10" y="10" width="492" height="492" rx="70" fill="none" stroke="#14bebe" stroke-width="5"/>
+  <path d="M82 182 L103 91 L180 154 Q256 124 332 154 L409 91 L430 182"
+        fill="none" stroke="#18efc4" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="256" y="300" text-anchor="middle"
+        font-family="Arial, Helvetica, sans-serif" font-size="116" font-weight="800">
+    <tspan fill="#f8fafc">N</tspan><tspan fill="#18efc4">3</tspan><tspan fill="#f8fafc">SE</tspan>
+  </text>
+  <path d="M151 332 Q256 423 361 332"
+        fill="none" stroke="#18efc4" stroke-width="20" stroke-linecap="round"/>
+</svg>
