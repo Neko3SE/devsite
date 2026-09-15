@@ -59,6 +59,7 @@ function updateToneReadout(){
   const f=frequencyFromMidi(tunerState.toneMidi,tunerState.a4);
   els.toneNote.textContent=`${parts.name}${parts.octave}`;
   els.toneFrequency.textContent=`${f.toFixed(2)} Hz`;
+  if(tunerState.tonePlaying)engine.setReferenceToneFrequency(f);
   return f;
 }
 async function toggleTone(){
@@ -213,12 +214,10 @@ els.accidental.addEventListener("change",()=>{
   if(latestPitch&&!state.hold)renderLiveMeasurement(latestPitch);
 });
 els.toneDown.addEventListener("click",()=>{
-  if(tunerState.tonePlaying)return;
   tunerState.toneMidi=Math.max(36,tunerState.toneMidi-1);
   updateToneReadout();
 });
 els.toneUp.addEventListener("click",()=>{
-  if(tunerState.tonePlaying)return;
   tunerState.toneMidi=Math.min(96,tunerState.toneMidi+1);
   updateToneReadout();
 });

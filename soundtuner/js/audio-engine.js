@@ -62,6 +62,13 @@ export class AudioEngine {
     osc.connect(gain); gain.connect(context.destination); osc.start();
     this.toneContext=context; this.toneOscillator=osc; this.toneGain=gain;
   }
+  setReferenceToneFrequency(frequency) {
+    if(!this.toneContext||!this.toneOscillator||this.toneContext.state==="closed")return false;
+    const now=this.toneContext.currentTime;
+    this.toneOscillator.frequency.cancelScheduledValues(now);
+    this.toneOscillator.frequency.setTargetAtTime(frequency,now,0.015);
+    return true;
+  }
   async stopReferenceTone() {
     const context=this.toneContext, osc=this.toneOscillator, gain=this.toneGain;
     if(osc&&context){try{const now=context.currentTime;if(gain){gain.gain.cancelScheduledValues(now);gain.gain.setValueAtTime(gain.gain.value,now);gain.gain.linearRampToValueAtTime(0,now+0.025);}osc.stop(now+0.03);}catch(_){}}
