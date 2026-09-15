@@ -151,7 +151,8 @@ function renderVocal(v,pitch){
   if(els.vocalSolfege){const n=Number.isFinite(f)?Math.round(69+12*Math.log2(f/tunerState.a4)):null;els.vocalSolfege.textContent=n===null?"---":noteParts(n,tunerState.accidental).solfege||"---";}
   els.vocalState.textContent=`● ${v.state}`;els.vocalTime.textContent=`${formatTime(v.elapsedMs)} / 00:30`;
   if(els.vocalEvent){
-    const event=v.state==="MEASUREMENT_COMPLETE"?"30秒の計測が完了しました。計測結果を表示しています。次の発声で新しい計測を開始します。":v.state==="MEASUREMENT_STOPPED"?"音が止まったため計測を停止しました。直前の計測結果を表示しています。":v.state==="MEASURING"?"計測中です。音を止めると約1秒後に計測を停止します。":v.state==="VOICE_DETECTED"?"音声を検出しました。計測開始を判定しています。":"発声すると自動で計測を開始します。";
+    const ja=getLanguage()==="ja";
+    const event=v.state==="MEASUREMENT_COMPLETE"?(ja?"30秒の計測が完了しました。計測結果を表示しています。次の発声で新しい計測を開始します。":"30-second measurement complete. Results remain visible. The next vocal sound starts a new measurement."):v.state==="MEASUREMENT_STOPPED"?(ja?"音が止まったため計測を停止しました。直前の計測結果を表示しています。":"Measurement stopped after silence. The latest result remains visible."):v.state==="MEASURING"?(ja?"計測中です。音を止めると約1秒後に計測を停止します。":"Measuring. After about one second of silence, measurement will stop."):v.state==="VOICE_DETECTED"?(ja?"音声を検出しました。計測開始を判定しています。":"Voice detected. Preparing measurement."):(ja?"発声すると自動で計測を開始します。":"Sing to start measurement automatically.");
     els.vocalEvent.textContent=event;els.vocalEvent.dataset.state=v.state==="MEASUREMENT_COMPLETE"?"complete":v.state==="MEASUREMENT_STOPPED"?"ended":"live";
   }
   drawPitchHistory(v);
@@ -294,7 +295,8 @@ els.hold.addEventListener("click",()=>{state.hold=!state.hold;state.holdSnapshot
 function openTone(){els.sheet.classList.add("is-open");els.sheet.setAttribute("aria-hidden","false");els.backdrop.hidden=false;document.body.style.overflow="hidden";}
 function closeTone(){els.sheet.classList.remove("is-open");els.sheet.setAttribute("aria-hidden","true");els.backdrop.hidden=true;document.body.style.overflow="";}
 els.tone.addEventListener("click",openTone);els.toneClose.addEventListener("click",closeTone);els.backdrop.addEventListener("click",closeTone);
-$("langJa").addEventListener("click",()=>setLanguage("ja"));$("langEn").addEventListener("click",()=>setLanguage("en"));
+$("langJa").addEventListener("click",()=>{setLanguage("ja");if(state.mode==="VOCAL"&&latestVocal)renderVocal(latestVocal,latestPitch);});
+$("langEn").addEventListener("click",()=>{setLanguage("en");if(state.mode==="VOCAL"&&latestVocal)renderVocal(latestVocal,latestPitch);});
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeTone();});
 window.addEventListener("pagehide",()=>{stopLoops();engine.stop();});
 document.addEventListener("visibilitychange",async()=>{if(document.visibilityState==="visible"&&engine.context?.state==="suspended"){try{await engine.context.resume();}catch{}}});

@@ -48,7 +48,7 @@
       <button id="retryButton" class="st-secondary st-retry" type="button" hidden>RETRY</button>
       <p id="heroStatus" class="st-hero-status" aria-live="polite"></p>
       <p class="st-privacy" data-i18n="privacy">音声はブラウザ内で解析され、サーバーへ送信されません。</p>
-      <p class="st-phase">PHASE 5 REV.3 / VOCAL MEASUREMENT</p>
+      <p class="st-phase">BROWSER SOUND RESEARCH TOOL / β</p>
     </section>
 
     <section id="workspace" class="st-workspace" hidden>
@@ -70,7 +70,7 @@
       <div class="st-grid">
         <section class="st-panel st-tuner">
           <div id="instrumentView">
-            <div class="st-test-label">TUNER — LIVE / PHASE 3</div>
+            <div class="st-test-label">TUNER — LIVE</div>
             <div id="tunerNote" class="st-note">---</div>
             <div id="tunerSolfege" class="st-solfege" data-ja-only>---</div>
             <div class="st-frequency"><span id="pitchFrequency">---</span> <span>Hz</span></div>
@@ -90,7 +90,7 @@
           </div>
 
           <div id="vocalView" hidden>
-            <div class="st-test-label">VOCAL PITCH — LIVE / PHASE 5</div>
+            <div class="st-test-label">VOCAL PITCH — LIVE</div>
             <div id="vocalNote" class="st-note">---</div><div id="vocalSolfege" class="st-solfege" data-ja-only>---</div>
             <div class="st-frequency"><span id="vocalFrequency">---</span> <span>Hz</span></div>
             <div class="st-session"><strong id="vocalState">● 計測待機中</strong><span id="vocalTime">00:00 / 00:30</span></div>
@@ -119,7 +119,7 @@
         </section>
 
         <section class="st-panel st-analyzer">
-          <details open><summary>INPUT DIAGNOSTICS <small>LIVE / PHASE 1</small></summary>
+          <details open><summary>INPUT DIAGNOSTICS <small>LIVE</small></summary>
             <dl class="st-details">
               <div><dt>Sample Rate</dt><dd id="diagSampleRate">---</dd></div>
               <div><dt>Audio State</dt><dd id="diagAudioState">---</dd></div>
@@ -136,7 +136,7 @@
             </dl>
           </details>
           <details id="tuningSettings" open>
-            <summary>TUNING SETTINGS <small>LIVE / PHASE 3</small></summary>
+            <summary>TUNING SETTINGS <small>LIVE</small></summary>
             <div class="st-setting-grid">
               <label>A4 REFERENCE
                 <input id="a4Reference" type="number" min="415" max="466" step="0.1" value="440.0">
@@ -162,12 +162,28 @@
           <details><summary>HARMONICS <small>H1–H8 / RELATIVE TO H1</small></summary><div class="st-harmonics"><div><span>H1</span><i id="harmonicBar1" style="--v:0%"></i><b id="harmonicValue1">---</b></div><div><span>H2</span><i id="harmonicBar2" style="--v:0%"></i><b id="harmonicValue2">---</b></div><div><span>H3</span><i id="harmonicBar3" style="--v:0%"></i><b id="harmonicValue3">---</b></div><div><span>H4</span><i id="harmonicBar4" style="--v:0%"></i><b id="harmonicValue4">---</b></div><div><span>H5</span><i id="harmonicBar5" style="--v:0%"></i><b id="harmonicValue5">---</b></div><div><span>H6</span><i id="harmonicBar6" style="--v:0%"></i><b id="harmonicValue6">---</b></div><div><span>H7</span><i id="harmonicBar7" style="--v:0%"></i><b id="harmonicValue7">---</b></div><div><span>H8</span><i id="harmonicBar8" style="--v:0%"></i><b id="harmonicValue8">---</b></div></div></details>
         </section>
       </div>
-      <p class="st-testnote" data-i18n="testNote">Phase 5ではVOCAL Pitch History / AVG / Session Pitch Range / Pitch Variation / Vibratoまで実測します。</p>
+      
     </section>
 
     
-          <section class="st-info"><p class="st-kicker">HOW TO USE</p><h2 data-i18n="howTitle">START後はハンズフリー。</h2><div class="st-steps"><article><b>01</b><span data-i18n="step1">スマートフォンを置く</span></article><article><b>02</b><span>START ANALYSIS</span></article><article><b>03</b><span data-i18n="step3">楽器を鳴らす / 歌う</span></article><article><b>04</b><span data-i18n="step4">自動解析</span></article><article><b>05</b><span data-i18n="step5">結果を見る</span></article></div></section>
-    <section class="st-info"><p class="st-kicker">ABOUT PHASE 1</p><h2>INPUT QUALITY</h2><p data-i18n="phase1About">LOW INPUT / GOOD / CLIP はマイク入力品質の状態です。Pitchの正しさを示すものではありません。</p><div class="st-data"><article><strong>LOW INPUT</strong><p data-i18n="lowAbout">入力が小さく、Pitch解析に適さない可能性があります。</p></article><article><strong>GOOD</strong><p data-i18n="goodAbout">入力レベルが解析に適した範囲です。</p></article><article><strong>CLIP</strong><p data-i18n="clipAbout">入力が大きすぎます。端末を音源から少し離してください。</p></article></div><p class="st-fine" data-i18n="thresholdNote">LOW INPUT閾値とCLIP表示保持時間はPhase 1実機評価用の初期値です。端末比較後に調整します。</p></section>
+          <section class="st-info">
+      <p class="st-kicker">HOW TO USE</p><h2 data-i18n="howTitle">START後はハンズフリー。</h2>
+      <div class="st-steps"><article><b>01</b><span data-i18n="step1">スマートフォンを置く</span></article><article><b>02</b><span>START ANALYSIS</span></article><article><b>03</b><span data-i18n="step3">楽器を鳴らす / 歌う</span></article><article><b>04</b><span data-i18n="step4">自動解析</span></article><article><b>05</b><span data-i18n="step5">結果を見る</span></article></div>
+      <p class="st-fine" data-i18n="vocalHow">VOCALでは、約1秒の無音で計測を停止し、結果を画面に保持します。1回の計測は最大30秒です。次の発声で新しい計測を自動開始します。</p>
+    </section>
+    <section class="st-info">
+      <p class="st-kicker">WHAT CAN YOU SEE</p><h2 data-i18n="whatTitle">音を、数字と波形で観察。</h2>
+      <div class="st-data"><article><strong>TUNER</strong><p data-i18n="whatTuner">音名、周波数、基準周波数との差をcentで表示します。</p></article><article><strong>SOUND ANALYZER</strong><p data-i18n="whatSound">波形、周波数スペクトル、H1–H8、Spectral Centroidを表示します。</p></article><article><strong>VOCAL</strong><p data-i18n="whatVocal">Pitch History、平均Pitch、計測範囲、Pitch Variation、Vibratoを観察できます。</p></article></div>
+    </section>
+    <section class="st-info">
+      <p class="st-kicker">ABOUT DATA</p><h2 data-i18n="dataTitle">データは一時的に処理。</h2>
+      <p data-i18n="dataText">VOCALの時系列データは計測・表示のためブラウザ内で一時的に保持されます。音声そのものを録音・保存する機能ではありません。計測停止後は直前の結果を画面に保持し、次の計測開始時に更新します。</p>
+    </section>
+    <section class="st-info">
+      <p class="st-kicker">ABOUT MEASUREMENTS</p><h2 data-i18n="measureTitle">端末やマイクによって結果は変わります。</h2>
+      <p data-i18n="measureText">本ツールの測定結果は、使用する端末・マイク・OS・ブラウザ・音声処理機能によって異なる場合があります。内蔵マイクや端末の音声処理は人の声を主な対象として設計されている場合があり、楽器音、低音・高音、持続音などが抑制されることがあります。</p>
+      <p class="st-fine" data-i18n="measureDetail">ノイズ抑制、エコーキャンセル、自動ゲイン調整、風切り音低減、空間オーディオなどが入力音へ影響する場合があります。本ツールはブラウザから可能な範囲で音声処理を抑制する設定を要求しますが、端末・OS・ドライバ等による処理を完全には制御できません。楽器音を検出しにくい場合は、音声設定やマイクとの距離を確認するか、楽器収音に適した外部マイクをお試しください。</p>
+    </section>
     <section class="st-info"><p class="st-kicker">PRIVACY</p><div class="st-privacybox"><div><span>Audio Analysis</span><strong>LOCAL</strong></div><div><span>Server Upload</span><strong>NONE</strong></div><div><span>Audio Recording</span><strong>NONE</strong></div></div><p class="st-fine" data-i18n="privacyLong">音声の録音・保存は行いません。解析に必要な音声データと解析結果はブラウザ内で一時的に処理されます。</p></section>
   </main>
 
@@ -186,7 +202,7 @@
         <button id="tonePlay" class="st-primary" type="button">▶ PLAY TONE</button>
         <button id="toneUp" type="button">+ NOTE</button>
       </div>
-      <p class="st-small">再生時はマイク入力をいったん完全に解放します。STOP TONE後にマイクを再取得し、自動的に測定へ復帰します。</p>
+      <p class="st-small" data-i18n="toneHelp">基準音の再生中はマイク入力をいったん解放します。STOP TONE後にマイクを再取得し、自動的に計測へ復帰します。</p>
     </div>
   </section>
 
