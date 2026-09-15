@@ -183,10 +183,26 @@
 
 .n3-drawer-nav {
   display: grid;
-  gap: 4px;
+  gap: 22px;
   margin-top: 12px;
   overflow-y: auto;
   overscroll-behavior: contain;
+}
+
+.n3-drawer-group {
+  display: grid;
+  gap: 4px;
+}
+
+.n3-drawer-category {
+  margin: 0 2px 6px;
+  padding: 0 10px 8px;
+  color: var(--n3-accent);
+  border-bottom: 1px solid var(--n3-border);
+  font-size: 11px;
+  font-weight: 850;
+  letter-spacing: 0.16em;
+  line-height: 1.35;
 }
 
 .n3-drawer-link {

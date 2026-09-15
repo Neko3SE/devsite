@@ -131,7 +131,8 @@ main {
 }
 
 .about {
-  max-width: 900px;
+  width: 100%;
+  max-width: none;
   margin-bottom: 24px;
   padding: 30px;
   background:
@@ -158,12 +159,16 @@ main {
 }
 
 .share-panel {
-  max-width: 900px;
+  width: 100%;
+  max-width: none;
   margin-bottom: 52px;
-  padding: 22px 24px;
-  background: rgba(23, 30, 39, 0.62);
+  padding: 30px;
+  background:
+    linear-gradient(135deg, rgba(154, 196, 90, 0.07), transparent 55%),
+    var(--surface);
   border: 1px solid var(--border);
-  border-radius: 18px;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
 }
 
 .share-head {
