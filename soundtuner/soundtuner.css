@@ -12,3 +12,5 @@
 .st-tone-readout{font-variant-numeric:tabular-nums}
 .st-small{font-size:.78rem;opacity:.75}
 #centDot{left:50%;transition:left .08s linear}
+
+.st-vocal-results{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:14px}.st-vocal-results>div{background:#0d181c;border:1px solid var(--line);border-radius:12px;padding:10px}.st-vocal-results span{display:block;color:var(--muted);font-size:.62rem}.st-vocal-results strong{font-size:.8rem;font-variant-numeric:tabular-nums}@media(max-width:560px){.st-vocal-results{grid-template-columns:1fr}}

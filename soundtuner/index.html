@@ -48,7 +48,7 @@
       <button id="retryButton" class="st-secondary st-retry" type="button" hidden>RETRY</button>
       <p id="heroStatus" class="st-hero-status" aria-live="polite"></p>
       <p class="st-privacy" data-i18n="privacy">音声はブラウザ内で解析され、サーバーへ送信されません。</p>
-      <p class="st-phase">PHASE 4 REV.1 / SOUND ANALYZER</p>
+      <p class="st-phase">PHASE 5 REV.1 / VOCAL ANALYZER</p>
     </section>
 
     <section id="workspace" class="st-workspace" hidden>
@@ -90,11 +90,17 @@
           </div>
 
           <div id="vocalView" hidden>
-            <div class="st-test-label">VOCAL PITCH — TEST DATA / PHASE 5</div>
-            <div class="st-note">A3</div><div class="st-solfege" data-ja-only>ラ</div>
-            <div class="st-frequency">220.70 <span>Hz</span></div>
-            <div class="st-session"><strong>● UI TEST</strong><span>00:08 / 00:30</span></div>
-            <h3>PITCH HISTORY — TEST DATA</h3><canvas id="pitchCanvas" width="800" height="220"></canvas>
+            <div class="st-test-label">VOCAL PITCH — LIVE / PHASE 5</div>
+            <div id="vocalNote" class="st-note">---</div><div id="vocalSolfege" class="st-solfege" data-ja-only>---</div>
+            <div class="st-frequency"><span id="vocalFrequency">---</span> <span>Hz</span></div>
+            <div class="st-session"><strong id="vocalState">● WAITING FOR VOICE</strong><span id="vocalTime">00:00 / 00:30</span></div>
+            <h3>PITCH HISTORY — LIVE</h3><canvas id="pitchCanvas" width="800" height="220"></canvas>
+            <div class="st-vocal-results">
+              <div><span>AVG PITCH</span><strong id="vocalAvg">---</strong></div>
+              <div><span>SESSION PITCH RANGE</span><strong id="vocalRange">---</strong></div>
+              <div><span>PITCH VARIATION</span><strong id="vocalVariation">---</strong></div>
+              <div><span>VIBRATO</span><strong id="vocalVibrato">INSUFFICIENT DATA</strong></div>
+            </div>
           </div>
 
           <section class="st-live-input" aria-label="Live microphone input">
@@ -155,7 +161,7 @@
           <details><summary>HARMONICS <small>H1–H8 / RELATIVE TO H1</small></summary><div class="st-harmonics"><div><span>H1</span><i id="harmonicBar1" style="--v:0%"></i><b id="harmonicValue1">---</b></div><div><span>H2</span><i id="harmonicBar2" style="--v:0%"></i><b id="harmonicValue2">---</b></div><div><span>H3</span><i id="harmonicBar3" style="--v:0%"></i><b id="harmonicValue3">---</b></div><div><span>H4</span><i id="harmonicBar4" style="--v:0%"></i><b id="harmonicValue4">---</b></div><div><span>H5</span><i id="harmonicBar5" style="--v:0%"></i><b id="harmonicValue5">---</b></div><div><span>H6</span><i id="harmonicBar6" style="--v:0%"></i><b id="harmonicValue6">---</b></div><div><span>H7</span><i id="harmonicBar7" style="--v:0%"></i><b id="harmonicValue7">---</b></div><div><span>H8</span><i id="harmonicBar8" style="--v:0%"></i><b id="harmonicValue8">---</b></div></div></details>
         </section>
       </div>
-      <p class="st-testnote" data-i18n="testNote">Phase 4ではSpectrum / H1–H8 / Spectral Centroidまで実測です。Vocal専用解析はPhase 5で実装します。</p>
+      <p class="st-testnote" data-i18n="testNote">Phase 5ではVOCAL Pitch History / AVG / Session Pitch Range / Pitch Variation / Vibratoまで実測します。</p>
     </section>
 
     
