@@ -62,7 +62,7 @@ function createCards() {
 }
 
 function renderSiteText() {
-  document.title = t('site.documentTitle');
+  document.title = 'AI駆動型非生産的Web技術研究所。 | Neko3SE LAB | 無駄を本気で作るブラウザ実験コンテンツ';
   document.getElementById('siteEyebrow').textContent = t('site.eyebrow');
   document.getElementById('officialLabel').textContent = t('site.officialLabel');
   document.getElementById('officialName').textContent = t('site.officialName');
