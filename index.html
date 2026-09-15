@@ -67,6 +67,32 @@
 .content-grid + .share-panel {
   margin-top: clamp(28px, 4vw, 48px);
 }
+
+/* Phase 3: top-page language switch (page-local only) */
+.language-switch {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 8px;
+}
+
+.language-switch-button {
+  appearance: none;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  padding: 6px 12px;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+
+.language-switch-button:hover,
+.language-switch-button:focus-visible {
+  background: rgba(255, 255, 255, 0.08);
+}
 </style>
   <link rel="stylesheet" href="common/neko3se-site.css?v=20260915r3">
 </head>
@@ -78,16 +104,19 @@
 
 <header class="hero">
   <div class="hero-inner">
+    <div class="language-switch">
+      <button id="language-switch" class="language-switch-button" type="button">English</button>
+    </div>
     <p class="eyebrow">AI / WEB / IDEA / PLAY</p>
 
     <h1>
-      <a class="brand-home" href="./" aria-label="Neko3SE LAB トップへ"><span class="brand-main">Neko3SE LAB</span></a>
+      <a class="brand-home" href="./" aria-label="Neko3SE LAB トップへ" data-i18n-aria-label="brandHome"><span class="brand-main">Neko3SE LAB</span></a>
       <span class="brand-sub">on GitHub</span>
     </h1>
 
     <p class="hero-copy">
-      生成AIを製作に活用したコンテンツと、<br class="desktop-only">
-      IT関連の小ネタ・実験・制作物の研究を行っています。
+      <span data-i18n="heroCopy1">生成AIを製作に活用したコンテンツと、</span><br class="desktop-only">
+      <span data-i18n="heroCopy2">IT関連の小ネタ・実験・制作物の研究を行っています。</span>
     </p>
   </div>
 </header>
@@ -96,8 +125,8 @@
 
   <section class="about" aria-labelledby="about-title">
     <p class="section-label">ABOUT</p>
-    <h2 id="about-title">生成AI × Web技術の実験ラボ。</h2>
-    <p>
+    <h2 id="about-title" data-i18n="aboutTitle">生成AI × Web技術の実験ラボ。</h2>
+    <p data-i18n="aboutBody">
       Neko3SE LABは、生成AIやWeb技術を使った実験コンテンツ・ツール・制作物を公開しています。
       AIを活用したWeb企画、プロンプト作成支援、ブラウザで遊べる作品など、実際に触って試せるコンテンツを中心に掲載しています。
       心理学専攻の組み込みシステムエンジニアが、実装密度は本番級で遊び心を持って研究するコンセプトです。
@@ -107,26 +136,26 @@
 
   <section class="intro" aria-labelledby="contents-title">
     <p class="section-label">CONTENTS</p>
-    <h2 id="contents-title">生成AIによるコンテンツ</h2>
-    <p>
+    <h2 id="contents-title" data-i18n="contentsTitle">生成AIによるコンテンツ</h2>
+    <p data-i18n="contentsBody">
       生成AIを使って企画・制作した、技術系コンテンツや遊べる実験作品を公開しています。
     </p>
   </section>
 
-  <section class="content-grid" aria-label="コンテンツ一覧">
+  <section class="content-grid" aria-label="コンテンツ一覧" data-i18n-aria-label="contentList">
 
     <article class="category-card">
       <div class="card-icon" aria-hidden="true">&lt;/&gt;</div>
       <div class="card-head">
         <p class="card-kicker">DEVELOPMENT</p>
-        <h3>開発・企画</h3>
+        <h3 data-i18n="developmentTitle">開発・企画</h3>
       </div>
 
-      <nav class="link-list" aria-label="開発・企画">
+      <nav class="link-list" aria-label="開発・企画" data-i18n-aria-label="developmentNav">
         <a class="content-link" href="mudagiken/" target="_self" rel="noopener">
           <span>
             <strong>AI駆動型非生産的Web技術研究所。</strong>
-            <small>無駄を本気で作るブラウザ実験コンテンツ</small>
+            <small data-i18n="mudagikenDesc">無駄を本気で作るブラウザ実験コンテンツ</small>
           </span>
           <span class="arrow" aria-hidden="true">→</span>
         </a>
@@ -134,7 +163,7 @@
         <a class="content-link" href="egov/" target="_self" rel="noopener">
           <span>
             <strong>e-Gov 法令検索 Viewerβ</strong>
-            <small>ジャンルやキーワードから探せる法令閲覧支援ツール</small>
+            <small data-i18n="egovDesc">ジャンルやキーワードから探せる法令閲覧支援ツール</small>
           </span>
           <span class="arrow" aria-hidden="true">→</span>
         </a>
@@ -142,7 +171,7 @@
         <a class="content-link" href="promptgen/" target="_self" rel="noopener">
           <span>
             <strong>PROMPT GENERATOR</strong>
-            <small>構造化プロンプトを、もっと簡単に</small>
+            <small data-i18n="promptgenDesc">構造化プロンプトを、もっと簡単に</small>
           </span>
           <span class="arrow" aria-hidden="true">→</span>
         </a>
@@ -150,7 +179,7 @@
         <a class="content-link" href="imageprompt/" target="_self" rel="noopener">
           <span>
             <strong>PRO IMAGE PROMPT LAB</strong>
-            <small>プロ級画像生成のプロンプト設計を研究・実証</small>
+            <small data-i18n="imagepromptDesc">プロ級画像生成のプロンプト設計を研究・実証</small>
           </span>
           <span class="arrow" aria-hidden="true">→</span>
         </a>
@@ -158,7 +187,7 @@
         <div class="content-link disabled" aria-disabled="true">
           <span>
             <strong>開発・企画ノウハウ</strong>
-            <small>制作プロセスや企画ノウハウ</small>
+            <small data-i18n="knowhowDesc">制作プロセスや企画ノウハウ</small>
           </span>
           <span class="badge">COMING SOON</span>
         </div>
@@ -169,14 +198,14 @@
       <div class="card-icon" aria-hidden="true">♪</div>
       <div class="card-head">
         <p class="card-kicker">ENTERTAINMENT</p>
-        <h3>エンターテイメント</h3>
+        <h3 data-i18n="entertainmentTitle">エンターテイメント</h3>
       </div>
 
-      <nav class="link-list" aria-label="エンターテイメント">
+      <nav class="link-list" aria-label="エンターテイメント" data-i18n-aria-label="entertainmentNav">
         <a class="content-link" href="pianoemu/" target="_self" rel="noopener">
           <span>
             <strong>PIANO EMULATOR</strong>
-            <small>ブラウザで遊べる音楽実験コンテンツ</small>
+            <small data-i18n="pianoDesc">ブラウザで遊べる音楽実験コンテンツ</small>
           </span>
           <span class="arrow" aria-hidden="true">→</span>
         </a>
@@ -184,7 +213,7 @@
         <a class="content-link" href="gosenfu/" target="_self" rel="noopener">
           <span>
             <strong>五線譜ドレミclip</strong>
-            <small>五線譜の音符と音階吹鳴を完全同期♪</small>
+            <small data-i18n="gosenfuDesc">五線譜の音符と音階吹鳴を完全同期♪</small>
           </span>
           <span class="arrow" aria-hidden="true">→</span>
         </a>
@@ -192,7 +221,7 @@
         <a class="content-link" href="voicechanger/" target="_self" rel="noopener">
           <span>
             <strong>VOICE CHANGER LAB β</strong>
-            <small>マイク音声を解析・録音・再生して楽しむブラウザ音声実験ツール</small>
+            <small data-i18n="voicechangerDesc">マイク音声を解析・録音・再生して楽しむブラウザ音声実験ツール</small>
           </span>
           <span class="arrow" aria-hidden="true">→</span>
         </a>
@@ -200,7 +229,7 @@
         <a class="content-link" href="soundtuner/" target="_self" rel="noopener">
           <span>
             <strong>SOUND TUNER LAB β</strong>
-            <small>楽器も声も、「音」として測るブラウザサウンド解析ツール</small>
+            <small data-i18n="soundtunerDesc">楽器も声も、「音」として測るブラウザサウンド解析ツール</small>
           </span>
           <span class="arrow" aria-hidden="true">→</span>
         </a>
@@ -212,15 +241,15 @@
   <section class="share-panel" aria-labelledby="share-title">
     <div class="share-head">
       <p class="section-label">SHARE</p>
-      <h2 id="share-title">Neko3SE LABをシェア</h2>
+      <h2 id="share-title" data-i18n="shareTitle">Neko3SE LABをシェア</h2>
     </div>
 
-    <div class="share-actions" aria-label="SNSシェア">
-      <a id="share-x" class="share-button" href="#" target="_blank" rel="noopener noreferrer" aria-label="Xでシェア">X</a>
-      <a id="share-line" class="share-button" href="#" target="_blank" rel="noopener noreferrer" aria-label="LINEでシェア">LINE</a>
-      <a id="share-bluesky" class="share-button" href="#" target="_blank" rel="noopener noreferrer" aria-label="Blueskyでシェア">Bluesky</a>
-      <a id="share-facebook" class="share-button" href="#" target="_blank" rel="noopener noreferrer" aria-label="Facebookでシェア">Facebook</a>
-      <button id="copy-link" class="share-button share-copy" type="button">リンクをコピー</button>
+    <div class="share-actions" aria-label="SNSシェア" data-i18n-aria-label="shareActions">
+      <a id="share-x" class="share-button" href="#" target="_blank" rel="noopener noreferrer" aria-label="Xでシェア" data-i18n-aria-label="shareX">X</a>
+      <a id="share-line" class="share-button" href="#" target="_blank" rel="noopener noreferrer" aria-label="LINEでシェア" data-i18n-aria-label="shareLINE">LINE</a>
+      <a id="share-bluesky" class="share-button" href="#" target="_blank" rel="noopener noreferrer" aria-label="Blueskyでシェア" data-i18n-aria-label="shareBluesky">Bluesky</a>
+      <a id="share-facebook" class="share-button" href="#" target="_blank" rel="noopener noreferrer" aria-label="Facebookでシェア" data-i18n-aria-label="shareFacebook">Facebook</a>
+      <button id="copy-link" class="share-button share-copy" type="button" data-i18n="copyLink">リンクをコピー</button>
     </div>
 
     <p id="copy-status" class="copy-status" role="status" aria-live="polite"></p>
@@ -236,26 +265,110 @@
 (() => {
   "use strict";
 
-  const canonical = document.querySelector('link[rel="canonical"]');
-  const shareUrl = canonical ? canonical.href : window.location.href;
-  const shareText = "Neko3SE LAB｜生成AI × Web技術の実験ラボ。";
+  let currentLanguage = "ja";
 
-  const links = {
-    "share-x": `https://x.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`,
-    "share-line": `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`,
-    "share-bluesky": `https://bsky.app/intent/compose?text=${encodeURIComponent(`${shareText}\n${shareUrl}`)}`,
-    "share-facebook": `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`
+  const translations = {
+    en: {
+      heroCopy1: "Exploring content created with generative AI,",
+      heroCopy2: "along with IT ideas, experiments, and projects.",
+      aboutTitle: "A Lab for Generative AI × Web Technology Experiments.",
+      aboutBody: "Neko3SE LAB showcases experimental content, tools, and projects created with generative AI and web technologies. It focuses on hands-on content you can actually try, including AI-assisted web projects, prompt creation tools, and interactive browser experiences. The concept is a playful research lab built with production-level implementation depth by an embedded systems engineer with a background in psychology.",
+      contentsTitle: "Content Created with Generative AI",
+      contentsBody: "Explore technical content and playful experiments planned and created with generative AI.",
+      developmentTitle: "Development & Planning",
+      mudagikenDesc: "Browser experiments seriously dedicated to creating wonderfully useless things",
+      egovDesc: "A tool for browsing Japanese laws by category or keyword",
+      promptgenDesc: "Structured prompts, made easier",
+      imagepromptDesc: "Researching and demonstrating professional-grade prompt design for AI image generation",
+      knowhowDesc: "Development processes and practical planning know-how",
+      entertainmentTitle: "Entertainment",
+      pianoDesc: "A browser-based musical experiment featuring piano and solfege",
+      gosenfuDesc: "Musical notes and solfege sounds perfectly synchronized♪",
+      voicechangerDesc: "A browser audio experiment for analyzing, recording, transforming, and playing with your voice",
+      soundtunerDesc: "A browser-based sound analyzer that measures both instruments and voices as sound",
+      shareTitle: "Share Neko3SE LAB",
+      copyLink: "Copy Link"
+    }
   };
 
-  Object.entries(links).forEach(([id, href]) => {
-    const element = document.getElementById(id);
-    if (element) {
-      element.href = href;
+  const ariaTranslations = {
+    en: {
+      brandHome: "Neko3SE LAB Home",
+      contentList: "Content list",
+      developmentNav: "Development & Planning",
+      entertainmentNav: "Entertainment",
+      shareActions: "Share on social media",
+      shareX: "Share on X",
+      shareLINE: "Share on LINE",
+      shareBluesky: "Share on Bluesky",
+      shareFacebook: "Share on Facebook"
     }
-  });
+  };
 
+  const textElements = Array.from(document.querySelectorAll("[data-i18n]"));
+  const ariaElements = Array.from(document.querySelectorAll("[data-i18n-aria-label]"));
+  const originalText = new Map(textElements.map((element) => [element, element.textContent]));
+  const originalAria = new Map(ariaElements.map((element) => [element, element.getAttribute("aria-label")]));
+
+  const canonical = document.querySelector('link[rel="canonical"]');
+  const shareUrl = canonical ? canonical.href : window.location.href;
+  const languageButton = document.getElementById("language-switch");
   const copyButton = document.getElementById("copy-link");
   const copyStatus = document.getElementById("copy-status");
+
+  function getShareText() {
+    return currentLanguage === "en"
+      ? "Neko3SE LAB | A Lab for Generative AI × Web Technology Experiments."
+      : "Neko3SE LAB｜生成AI × Web技術の実験ラボ。";
+  }
+
+  function updateShareLinks() {
+    const shareText = getShareText();
+    const links = {
+      "share-x": `https://x.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`,
+      "share-line": `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`,
+      "share-bluesky": `https://bsky.app/intent/compose?text=${encodeURIComponent(`${shareText}\n${shareUrl}`)}`,
+      "share-facebook": `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`
+    };
+
+    Object.entries(links).forEach(([id, href]) => {
+      const element = document.getElementById(id);
+      if (element) {
+        element.href = href;
+      }
+    });
+  }
+
+  function applyLanguage(language) {
+    currentLanguage = language === "en" ? "en" : "ja";
+    document.documentElement.lang = currentLanguage;
+
+    textElements.forEach((element) => {
+      const key = element.dataset.i18n;
+      if (currentLanguage === "en" && Object.prototype.hasOwnProperty.call(translations.en, key)) {
+        element.textContent = translations.en[key];
+      } else {
+        element.textContent = originalText.get(element);
+      }
+    });
+
+    ariaElements.forEach((element) => {
+      const key = element.dataset.i18nAriaLabel;
+      if (currentLanguage === "en" && Object.prototype.hasOwnProperty.call(ariaTranslations.en, key)) {
+        element.setAttribute("aria-label", ariaTranslations.en[key]);
+      } else {
+        element.setAttribute("aria-label", originalAria.get(element));
+      }
+    });
+
+    if (languageButton) {
+      languageButton.textContent = currentLanguage === "en" ? "Japanese" : "English";
+    }
+    if (copyStatus) {
+      copyStatus.textContent = "";
+    }
+    updateShareLinks();
+  }
 
   async function copyShareUrl() {
     try {
@@ -273,15 +386,23 @@
         document.body.removeChild(textarea);
       }
 
-      copyStatus.textContent = "リンクをコピーしました。";
+      copyStatus.textContent = currentLanguage === "en" ? "Link copied." : "リンクをコピーしました。";
     } catch (error) {
-      copyStatus.textContent = "リンクをコピーできませんでした。";
+      copyStatus.textContent = currentLanguage === "en" ? "Could not copy the link." : "リンクをコピーできませんでした。";
     }
+  }
+
+  if (languageButton) {
+    languageButton.addEventListener("click", () => {
+      applyLanguage(currentLanguage === "ja" ? "en" : "ja");
+    });
   }
 
   if (copyButton) {
     copyButton.addEventListener("click", copyShareUrl);
   }
+
+  updateShareLinks();
 })();
 </script>
   <script src="common/neko3se-site.js?v=20260915r3" defer></script>
