@@ -52,6 +52,33 @@ A collection of browser-based experimental mini-games inspired by IT work and co
 
 ---
 
+#### e-Gov 法令検索 Viewerβ
+#### e-Gov Law Search Viewer β
+
+> 法律名が分からなくても、ジャンルやキーワードから探せる法令閲覧支援ツール。  
+> A law browsing aid that helps you find Japanese laws by category or keyword, even if you do not know the exact law name.
+
+Neko3SE LABによる非公式のe-Gov法令検索Viewerです。e-Gov法令検索の法令データを利用し、法令を探す・読むための操作をブラウザ上で補助します。  
+An unofficial e-Gov law search viewer by Neko3SE LAB. It uses law data from the official e-Gov Law Search service and provides a browser-based interface for finding and reading laws.
+
+- 内容 / 法令名から検索  
+  Search by content or law name
+- Neko3SE LAB独自分類のジャンルから法令を探索  
+  Browse laws using Neko3SE LAB's original category structure
+- 法令内検索と目次表示に対応  
+  In-law search and table-of-contents navigation
+- e-Gov法令検索への公式リンクを表示  
+  Provides links to the official e-Gov Law Search pages
+- 法令API Version 2 v2.1.139 時点で動作確認済み  
+  Verified with e-Gov Law API Version 2 v2.1.139
+
+> **注意 / Note:** 本Viewerは非公式ツールであり、法的助言を提供するものではありません。正確な法令内容はe-Gov法令検索で確認してください。  
+> This viewer is unofficial and does not provide legal advice. Confirm authoritative law text on the official e-Gov Law Search service.
+
+▶ [e-Gov 法令検索 Viewerβを開く / Open e-Gov Law Search Viewer β](https://neko3se.github.io/devsite/egov/egov-index.html)
+
+---
+
 #### PROMPT GENERATOR
 
 > 構造化プロンプトを、もっと簡単に。  
@@ -81,30 +108,26 @@ A browser-based tool that helps users create structured Markdown prompts by fill
 
 ---
 
-#### e-Gov 法令検索 Viewerβ
-#### e-Gov Law Search Viewer β
+#### PRO IMAGE PROMPT LAB
 
-> 法律名が分からなくても、ジャンルやキーワードから探せる法令閲覧支援ツール。  
-> A law browsing aid that helps you find Japanese laws by category or keyword, even if you do not know the exact law name.
+> プロ級画像生成のためのプロンプトを、構造・重要ポイント・実例から研究。  
+> Researching professional image-generation prompts through structure, key instructions, and a practical example.
 
-Neko3SE LABによる非公式のe-Gov法令検索Viewerです。e-Gov法令検索の法令データを利用し、法令を探す・読むための操作をブラウザ上で補助します。  
-An unofficial e-Gov law search viewer by Neko3SE LAB. It uses law data from the official e-Gov Law Search service and provides a browser-based interface for finding and reading laws.
+生成AIで高品質な画像を作るためのプロンプト設計を、テンプレート・構造分析・重要ポイント・実際の生成結果まで一連の流れで解説する研究ページです。  
+A research page that explores prompt design for high-quality AI image generation, from a reusable template and prompt anatomy to key instructions and an actual generated result.
 
-- 内容 / 法令名から検索  
-  Search by content or law name
-- Neko3SE LAB独自分類のジャンルから法令を探索  
-  Browse laws using Neko3SE LAB's original category structure
-- 法令内検索と目次表示に対応  
-  In-law search and table-of-contents navigation
-- e-Gov法令検索への公式リンクを表示  
-  Provides links to the official e-Gov Law Search pages
-- 法令API Version 2 v2.1.139 時点で動作確認済み  
-  Verified with e-Gov Law API Version 2 v2.1.139
+- 汎用マスタープロンプトテンプレート  
+  General-purpose master prompt template
+- SUBJECT / SCENE / COMPOSITION / LIGHTING など各指示の役割を解説  
+  Explains the role of prompt sections such as SUBJECT, SCENE, COMPOSITION, and LIGHTING
+- 「品質ワード」より具体的な制作ディレクションを重視  
+  Emphasizes concrete visual direction over simply stacking quality keywords
+- 「雨夜の窓辺の仔猫」をテーマにしたサンプルプロンプトと生成結果  
+  Includes a sample prompt and generated result themed around a kitten by a rainy nighttime window
+- サンプル画像はBase64としてHTML内に埋め込み  
+  Sample image is embedded directly in the HTML as Base64
 
-> **注意 / Note:** 本Viewerは非公式ツールであり、法的助言を提供するものではありません。正確な法令内容はe-Gov法令検索で確認してください。  
-> This viewer is unofficial and does not provide legal advice. Confirm authoritative law text on the official e-Gov Law Search service.
-
-▶ [e-Gov 法令検索 Viewerβを開く / Open e-Gov Law Search Viewer β](https://neko3se.github.io/devsite/egov/egov-index.html)
+▶ [PRO IMAGE PROMPT LABを開く / Open PRO IMAGE PROMPT LAB](https://neko3se.github.io/devsite/imageprompt/image_prompt.html)
 
 ---
 
@@ -172,26 +195,29 @@ A browser-based experimental tool that uses microphone input for voice analysis,
 
 ---
 
-#### PRO IMAGE PROMPT LAB
+#### SOUND TUNER LAB β
+#### Instrument & Vocal Sound Analyzer
 
-> プロ級画像生成のためのプロンプトを、構造・重要ポイント・実例から研究。  
-> Researching professional image-generation prompts through structure, key instructions, and a practical example.
+> 楽器も声も、「音」として測る。  
+> Measure instruments and vocals as sound.
 
-生成AIで高品質な画像を作るためのプロンプト設計を、テンプレート・構造分析・重要ポイント・実際の生成結果まで一連の流れで解説する研究ページです。  
-A research page that explores prompt design for high-quality AI image generation, from a reusable template and prompt anatomy to key instructions and an actual generated result.
+スマートフォンやPCのマイク入力を使い、楽器音と人声を共通の「音」として観測するブラウザサウンド解析ツールです。  
+A browser-based sound analyzer that uses microphone input to observe instrument sounds and vocals through a common measurement engine.
 
-- 汎用マスタープロンプトテンプレート  
-  General-purpose master prompt template
-- SUBJECT / SCENE / COMPOSITION / LIGHTING など各指示の役割を解説  
-  Explains the role of prompt sections such as SUBJECT, SCENE, COMPOSITION, and LIGHTING
-- 「品質ワード」より具体的な制作ディレクションを重視  
-  Emphasizes concrete visual direction over simply stacking quality keywords
-- 「雨夜の窓辺の仔猫」をテーマにしたサンプルプロンプトと生成結果  
-  Includes a sample prompt and generated result themed around a kitten by a rainy nighttime window
-- サンプル画像はBase64としてHTML内に埋め込み  
-  Sample image is embedded directly in the HTML as Base64
+- 単音Pitch / 周波数 / cent / IN TUNE表示  
+  Pitch, frequency, cent, and in-tune indication
+- Waveform / Spectrum / H1–H8 / Spectral Centroid  
+  Waveform, spectrum, harmonics H1–H8, and spectral centroid
+- VOCAL Pitch History / 平均 / 計測範囲 / Variation / Vibrato  
+  Vocal pitch history, average, measured range, variation, and vibrato analysis
+- Reference Tone / A4 415・440・442 Hz  
+  Reference tone with A4 presets at 415, 440, and 442 Hz
+- 音声解析はブラウザ内でローカル処理、録音・サーバー送信なし  
+  Audio analysis is processed locally in the browser with no recording or server upload
+- Windows 11 / Edge、Android / Chrome、iPhone / Safariで動作確認済み  
+  Verified on Windows 11 / Edge, Android / Chrome, and iPhone / Safari
 
-▶ [PRO IMAGE PROMPT LABを開く / Open PRO IMAGE PROMPT LAB](https://neko3se.github.io/devsite/imageprompt/image_prompt.html)
+▶ [SOUND TUNER LAB βを開く / Open SOUND TUNER LAB β](https://neko3se.github.io/devsite/soundtuner/index.html)
 
 ---
 
@@ -248,6 +274,11 @@ devsite/
 │
 ├─ voicechanger/
 │  └─ index.html                      # VOICE CHANGER LAB β
+│
+├─ soundtuner/                        # SOUND TUNER LAB β
+│  ├─ index.html
+│  ├─ soundtuner.css
+│  └─ js/                             # Audio / Pitch / Tuning / Analyzer / UI
 │
 ├─ imageprompt/
 │  └─ image_prompt.html               # PRO IMAGE PROMPT LAB
