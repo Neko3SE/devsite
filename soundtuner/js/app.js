@@ -2,11 +2,13 @@ import {AudioEngine} from "./audio-engine.js";
 import {PitchDetector} from "./pitch-detector.js";
 import {analyzeTuning,tuningStatus,frequencyFromMidi,noteParts,clampA4} from "./tuning.js";
 import {setLanguage, getLanguage, msg} from "./ui.js";
+import {SoundAnalyzer} from "./sound-analyzer.js";
 
 const engine=new AudioEngine();
 const pitchDetector=new PitchDetector();
+const soundAnalyzer=new SoundAnalyzer();
 const state={microphone:"NOT_STARTED",input:"UNKNOWN",hold:false,holdSnapshot:null,mode:"INSTRUMENT"};
-let measureTimer=0, uiTimer=0, latest=null, latestPitch=null, latestTuning=null;
+let measureTimer=0, uiTimer=0, latest=null, latestPitch=null, latestTuning=null, latestSound=null, holdSound=null;
 let tunerState={a4:440.0,tolerance:5,accidental:"sharp",status:"---",toneMidi:69,tonePlaying:false,toneTransition:false};
 
 const $=id=>document.getElementById(id);
@@ -14,6 +16,7 @@ const els={hero:$("hero"),workspace:$("workspace"),start:$("startButton"),retry:
 instrumentMode:$("instrumentMode"),vocalMode:$("vocalMode"),instrumentView:$("instrumentView"),vocalView:$("vocalView"),hold:$("holdButton"),tone:$("toneButton"),stop:$("stopButton"),restart:$("restartButton"),
 inputState:$("inputState"),levelBar:$("levelBar"),peakMarker:$("peakMarker"),rms:$("rmsValue"),peak:$("peakValue"),
 sampleRate:$("diagSampleRate"),audioState:$("diagAudioState"),ec:$("diagEC"),ns:$("diagNS"),agc:$("diagAGC"),diagInput:$("diagInput"),diagRms:$("diagRms"),diagPeak:$("diagPeak"),pitchFrequency:$("pitchFrequency"),pitchConfidence:$("pitchConfidence"),pitchVoiced:$("pitchVoiced"),pitchStatus:$("pitchStatus"),diagPitchFrequency:$("diagPitchFrequency"),diagPitchConfidence:$("diagPitchConfidence"),diagPitchVoiced:$("diagPitchVoiced"),diagPitchState:$("diagPitchState"),diagRawPeriod:$("diagRawPeriod"),tunerNote:$("tunerNote"),tunerSolfege:$("tunerSolfege"),tunerTarget:$("tunerTarget"),tunerCent:$("tunerCent"),tunerStatus:$("tunerStatus"),centDot:$("centDot"),a4:$("a4Reference"),tolerance:$("tuneTolerance"),accidental:$("accidentalMode"),toneNote:$("toneNote"),toneFrequency:$("toneFrequency"),toneDown:$("toneDown"),tonePlay:$("tonePlay"),toneUp:$("toneUp"),
+spectralCentroid:$("spectralCentroid"),spectrumCanvas:$("spectrumCanvas"),waveCanvas:$("waveCanvas"),
 sheet:$("toneSheet"),backdrop:$("toneBackdrop"),toneClose:$("toneClose")};
 
 function dbText(v){return Number.isFinite(v)?`${v.toFixed(1)} dBFS`:"-∞ dBFS";}
@@ -103,6 +106,36 @@ function renderLiveMeasurement(p){
     clearTuner(p.pitchState||"---");
   }
 }
+function drawWaveform(buffer){
+  const cv=els.waveCanvas;if(!cv||!buffer)return;const c=cv.getContext("2d"),w=cv.width,h=cv.height;
+  c.clearRect(0,0,w,h);c.strokeStyle="#67e892";c.lineWidth=2;c.beginPath();
+  const step=Math.max(1,Math.floor(buffer.length/w));
+  for(let x=0;x<w;x++){const i=Math.min(buffer.length-1,x*step),y=h/2-buffer[i]*h*.44;x?c.lineTo(x,y):c.moveTo(x,y);}c.stroke();
+}
+function drawSpectrum(s){
+  const cv=els.spectrumCanvas;if(!cv||!s?.dbBins)return;const c=cv.getContext("2d"),w=cv.width,h=cv.height;
+  c.clearRect(0,0,w,h);c.strokeStyle="#67e892";c.lineWidth=2;c.beginPath();
+  const maxHz=Math.min(10000,s.nyquist),maxBin=Math.min(s.dbBins.length-1,Math.floor(maxHz/s.binHz));
+  for(let x=0;x<w;x++){const i=Math.min(maxBin,Math.floor(x/w*maxBin));const db=Math.max(-100,Math.min(0,s.dbBins[i]));const y=h-(db+100)/100*h;x?c.lineTo(x,y):c.moveTo(x,y);}c.stroke();
+}
+function renderSound(s,wave){
+  if(!s)return;
+  els.spectralCentroid.textContent=Number.isFinite(s.centroidHz)?`${s.centroidHz.toFixed(1)} Hz`:"--- Hz";
+  drawSpectrum(s);drawWaveform(wave);
+  for(let i=1;i<=8;i++){
+    const h=s.harmonics?.[i-1],v=$(`harmonicValue${i}`),bar=$(`harmonicBar${i}`);
+    if(!v||!bar)continue;
+    if(!h||h.outOfRange||!Number.isFinite(h.relativePercent)){v.textContent="---";bar.style.setProperty("--v","0%");continue;}
+    const pct=Math.max(0,Math.min(100,h.relativePercent));
+    v.textContent=i===1?"100%":`${pct.toFixed(1)}%`;
+    bar.style.setProperty("--v",`${pct}%`);
+  }
+}
+function clearSound(){
+  els.spectralCentroid.textContent="--- Hz";
+  for(let i=1;i<=8;i++){const v=$(`harmonicValue${i}`),bar=$(`harmonicBar${i}`);if(v)v.textContent="---";if(bar)bar.style.setProperty("--v","0%");}
+  for(const cv of [els.spectrumCanvas,els.waveCanvas])if(cv)cv.getContext("2d").clearRect(0,0,cv.width,cv.height);
+}
 function stopLoops(){
   if(measureTimer){clearInterval(measureTimer);measureTimer=0;}
   if(uiTimer){clearInterval(uiTimer);uiTimer=0;}
@@ -132,7 +165,7 @@ function renderStatus(){
 }
 
 function resetLiveInput(){
-  latest=null; latestPitch=null; pitchDetector.reset(); state.input="UNKNOWN"; state.hold=false; state.holdSnapshot=null;
+  latest=null; latestPitch=null; latestSound=null; holdSound=null; pitchDetector.reset(); state.input="UNKNOWN"; state.hold=false; state.holdSnapshot=null;
   els.hold.classList.remove("is-active"); els.hold.textContent="HOLD";
   els.inputState.textContent="---"; delete els.inputState.dataset.state;
   els.rms.textContent="--- dBFS"; els.peak.textContent="--- dBFS";
@@ -141,7 +174,7 @@ function resetLiveInput(){
   els.pitchFrequency.textContent="---";els.pitchConfidence.textContent="---";els.pitchVoiced.textContent="NO";els.pitchStatus.textContent="---"; clearTuner();
   els.diagPitchFrequency.textContent="---";els.diagPitchConfidence.textContent="---";els.diagPitchVoiced.textContent="---";els.diagPitchState.textContent="---";els.diagRawPeriod.textContent="---";
   els.sampleRate.textContent="---"; els.audioState.textContent="closed";
-  els.ec.textContent="---"; els.ns.textContent="---"; els.agc.textContent="---";
+  els.ec.textContent="---"; els.ns.textContent="---"; els.agc.textContent="---"; clearSound();
 }
 async function stopAnalysis(){
   tunerState.tonePlaying=false;tunerState.toneTransition=false;if(els.tonePlay){els.tonePlay.textContent="▶ PLAY TONE";els.tonePlay.disabled=false;}
@@ -169,7 +202,7 @@ async function startAudio(){
   els.start.disabled=true;els.retry.hidden=true;els.heroStatus.textContent=msg("REQUESTING");
   try{
     const d=await engine.start();state.microphone="READY";state.input="UNKNOWN";renderDiagnostics(d);
-    els.hero.hidden=true;els.workspace.hidden=false;els.heroStatus.textContent="";pitchDetector.reset();startLoops();drawTestGraphs();requestAnimationFrame(()=>requestAnimationFrame(()=>els.workspace.scrollIntoView({behavior:"smooth",block:"start"})));
+    els.hero.hidden=true;els.workspace.hidden=false;els.heroStatus.textContent="";pitchDetector.reset();startLoops();requestAnimationFrame(()=>requestAnimationFrame(()=>els.workspace.scrollIntoView({behavior:"smooth",block:"start"})));
   }catch(e){
     state.microphone=e.code||"AUDIO_INITIALIZATION_FAILED";els.heroStatus.textContent=msg(state.microphone);els.retry.hidden=false;
   }finally{els.start.disabled=false;}
@@ -180,16 +213,13 @@ function startLoops(){
     latest=engine.measure();
     const b=engine.getTimeDomainBuffer();
     latestPitch=pitchDetector.detect(b,engine.context?.sampleRate,latest?.inputState);
+    const fb=engine.getFrequencyDomainBuffer();
+    const f0=latestPitch?.pitchState==="VALID"?latestPitch.frequency:null;
+    latestSound=soundAnalyzer.analyze(fb,engine.context?.sampleRate,engine.analyser?.fftSize,f0);
+    if(latestSound&&b)latestSound.waveform=new Float32Array(b);
   },50);
-  uiTimer=setInterval(()=>{if(latest)renderInput(latest);if(latestPitch && !state.hold)renderLiveMeasurement(latestPitch);renderDiagnostics(engine.getDiagnostics());},100);
+  uiTimer=setInterval(()=>{if(latest)renderInput(latest);if(latestPitch && !state.hold)renderLiveMeasurement(latestPitch);if(latestSound&&!state.hold)renderSound(latestSound,latestSound.waveform);renderDiagnostics(engine.getDiagnostics());},100);
 }
-function drawTestGraphs(){
-  for(const [id,type] of [["spectrumCanvas","s"],["waveCanvas","w"],["pitchCanvas","p"]]){
-    const cv=$(id);if(!cv)continue;const c=cv.getContext("2d");c.clearRect(0,0,cv.width,cv.height);c.strokeStyle="#67e892";c.lineWidth=2.5;c.beginPath();
-    for(let x=0;x<cv.width;x+=type==="w"?1:4){let y;if(type==="w")y=cv.height/2+Math.sin(x*.09)*42*Math.sin(x*.004+1);else if(type==="p")y=cv.height/2+Math.sin(x*.035)*28+Math.sin(x*.008)*10;else y=cv.height-25-(Math.sin(x*.035)*22+Math.max(0,150-x*.12)*(.25+.75*Math.abs(Math.sin(x*.023))));x?c.lineTo(x,y):c.moveTo(x,y);}c.stroke();
-  }
-}
-
 // Phase 3 controls — wired in the same initialization path as START/HOLD/TONE.
 function applyA4Reference(value){
   tunerState.a4=clampA4(value);
@@ -223,8 +253,8 @@ updateToneReadout();
 
 els.start.addEventListener("click",startAudio);els.retry.addEventListener("click",startAudio);els.stop.addEventListener("click",stopAnalysis);els.restart.addEventListener("click",restartAnalysis);
 els.instrumentMode.addEventListener("click",()=>{state.mode="INSTRUMENT";els.instrumentMode.classList.add("is-active");els.vocalMode.classList.remove("is-active");els.instrumentView.hidden=false;els.vocalView.hidden=true;});
-els.vocalMode.addEventListener("click",()=>{state.mode="VOCAL";els.vocalMode.classList.add("is-active");els.instrumentMode.classList.remove("is-active");els.instrumentView.hidden=true;els.vocalView.hidden=false;drawTestGraphs();});
-els.hold.addEventListener("click",()=>{state.hold=!state.hold;state.holdSnapshot=state.hold&&latest?{...latest}:null;els.hold.classList.toggle("is-active",state.hold);els.hold.textContent=state.hold?"RELEASE":"HOLD";renderStatus();if(!state.hold){if(latest)renderInput(latest);if(latestPitch)renderLiveMeasurement(latestPitch);}});
+els.vocalMode.addEventListener("click",()=>{state.mode="VOCAL";els.vocalMode.classList.add("is-active");els.instrumentMode.classList.remove("is-active");els.instrumentView.hidden=true;els.vocalView.hidden=false;});
+els.hold.addEventListener("click",()=>{state.hold=!state.hold;state.holdSnapshot=state.hold&&latest?{...latest}:null;holdSound=state.hold&&latestSound?{...latestSound,dbBins:new Float32Array(latestSound.dbBins),harmonics:latestSound.harmonics.map(h=>({...h})),waveform:latestSound.waveform?new Float32Array(latestSound.waveform):null}:null;if(state.hold&&holdSound)renderSound(holdSound,holdSound.waveform);els.hold.classList.toggle("is-active",state.hold);els.hold.textContent=state.hold?"RELEASE":"HOLD";renderStatus();if(!state.hold){if(latest)renderInput(latest);if(latestPitch)renderLiveMeasurement(latestPitch);if(latestSound)renderSound(latestSound,latestSound.waveform);}});
 function openTone(){els.sheet.classList.add("is-open");els.sheet.setAttribute("aria-hidden","false");els.backdrop.hidden=false;document.body.style.overflow="hidden";}
 function closeTone(){els.sheet.classList.remove("is-open");els.sheet.setAttribute("aria-hidden","true");els.backdrop.hidden=true;document.body.style.overflow="";}
 els.tone.addEventListener("click",openTone);els.toneClose.addEventListener("click",closeTone);els.backdrop.addEventListener("click",closeTone);

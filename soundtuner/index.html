@@ -48,7 +48,7 @@
       <button id="retryButton" class="st-secondary st-retry" type="button" hidden>RETRY</button>
       <p id="heroStatus" class="st-hero-status" aria-live="polite"></p>
       <p class="st-privacy" data-i18n="privacy">音声はブラウザ内で解析され、サーバーへ送信されません。</p>
-      <p class="st-phase">PHASE 3 REV.5 / TUNER LOGIC</p>
+      <p class="st-phase">PHASE 4 REV.1 / SOUND ANALYZER</p>
     </section>
 
     <section id="workspace" class="st-workspace" hidden>
@@ -147,12 +147,15 @@
               </label>
             </div>
           </details>
-          <details id="spectrumDetails"><summary>SPECTRUM <small>TEST DATA / PHASE 4</small></summary><canvas id="spectrumCanvas" width="900" height="300"></canvas></details>
-          <details><summary>WAVEFORM <small>TEST DATA / PHASE 4</small></summary><canvas id="waveCanvas" width="900" height="220"></canvas></details>
-          <details><summary>HARMONICS <small>TEST DATA / PHASE 4</small></summary><div class="st-harmonics"><div><span>H1</span><i style="--v:100%"></i><b>100%</b></div><div><span>H2</span><i style="--v:63%"></i><b>63%</b></div><div><span>H3</span><i style="--v:41%"></i><b>41%</b></div><div><span>H4</span><i style="--v:28%"></i><b>28%</b></div><div><span>H5</span><i style="--v:19%"></i><b>19%</b></div><div><span>H6</span><i style="--v:13%"></i><b>13%</b></div><div><span>H7</span><i style="--v:9%"></i><b>9%</b></div><div><span>H8</span><i style="--v:6%"></i><b>6%</b></div></div></details>
+          <details id="spectrumDetails" open><summary>SPECTRUM <small>LIVE FFT</small></summary>
+            <div class="st-data"><article><strong>SPECTRAL CENTROID</strong><p id="spectralCentroid">--- Hz</p></article></div>
+            <canvas id="spectrumCanvas" width="900" height="300"></canvas>
+          </details>
+          <details><summary>WAVEFORM <small>LIVE</small></summary><canvas id="waveCanvas" width="900" height="220"></canvas></details>
+          <details><summary>HARMONICS <small>H1–H8 / RELATIVE TO H1</small></summary><div class="st-harmonics"><div><span>H1</span><i id="harmonicBar1" style="--v:0%"></i><b id="harmonicValue1">---</b></div><div><span>H2</span><i id="harmonicBar2" style="--v:0%"></i><b id="harmonicValue2">---</b></div><div><span>H3</span><i id="harmonicBar3" style="--v:0%"></i><b id="harmonicValue3">---</b></div><div><span>H4</span><i id="harmonicBar4" style="--v:0%"></i><b id="harmonicValue4">---</b></div><div><span>H5</span><i id="harmonicBar5" style="--v:0%"></i><b id="harmonicValue5">---</b></div><div><span>H6</span><i id="harmonicBar6" style="--v:0%"></i><b id="harmonicValue6">---</b></div><div><span>H7</span><i id="harmonicBar7" style="--v:0%"></i><b id="harmonicValue7">---</b></div><div><span>H8</span><i id="harmonicBar8" style="--v:0%"></i><b id="harmonicValue8">---</b></div></div></details>
         </section>
       </div>
-      <p class="st-testnote" data-i18n="testNote">Phase 3ではFrequency / Note / Target / Cent / Tuning Statusまで実測です。Spectrum / Harmonics / Vocal値は未実装またはテスト表示です。</p>
+      <p class="st-testnote" data-i18n="testNote">Phase 4ではSpectrum / H1–H8 / Spectral Centroidまで実測です。Vocal専用解析はPhase 5で実装します。</p>
     </section>
 
     

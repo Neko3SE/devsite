@@ -26,7 +26,7 @@ export class AudioEngine {
       analyser.fftSize = FFT_SIZE; analyser.smoothingTimeConstant = 0;
       source.connect(analyser);
       this.stream=stream; this.context=context; this.source=source; this.analyser=analyser;
-      this.buffer=new Float32Array(analyser.fftSize);
+      this.buffer=new Float32Array(analyser.fftSize);this.frequencyBuffer=new Float32Array(analyser.frequencyBinCount);
       return this.getDiagnostics();
     } catch(e) {
       stream.getTracks().forEach(t=>t.stop());
@@ -78,12 +78,18 @@ export class AudioEngine {
   async stopMeasurement() {
     if(this.stream){this.stream.getTracks().forEach(t=>t.stop());this.stream=null;}
     if(this.context&&this.context.state!=="closed"){try{await this.context.close();}catch(_){}}
-    this.context=null;this.source=null;this.analyser=null;this.buffer=null;this.last=null;this.clipUntil=0;
+    this.context=null;this.source=null;this.analyser=null;this.buffer=null;this.frequencyBuffer=null;this.last=null;this.clipUntil=0;
   }
   getTimeDomainBuffer() {
     if (!this.analyser || !this.buffer) return null;
     this.analyser.getFloatTimeDomainData(this.buffer);
     return this.buffer;
+  }
+  getFrequencyDomainBuffer() {
+    if(!this.analyser)return null;
+    if(!this.frequencyBuffer||this.frequencyBuffer.length!==this.analyser.frequencyBinCount)this.frequencyBuffer=new Float32Array(this.analyser.frequencyBinCount);
+    this.analyser.getFloatFrequencyData(this.frequencyBuffer);
+    return this.frequencyBuffer;
   }
   getDiagnostics() {
     const track=this.stream?.getAudioTracks?.()[0];
