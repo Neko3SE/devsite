@@ -48,7 +48,7 @@ A collection of browser-based experimental mini-games inspired by IT work and co
 - 外部API・外部ライブラリを使用せず動作  
   Runs without external APIs or libraries
 
-▶ [無駄技研。を開く / Open Muda Giken](https://neko3se.github.io/devsite/mudagiken/mudagiken.html)
+▶ [無駄技研。を開く / Open Muda Giken](https://neko3se.github.io/devsite/mudagiken/)
 
 ---
 
@@ -75,7 +75,7 @@ An unofficial e-Gov law search viewer by Neko3SE LAB. It uses law data from the 
 > **注意 / Note:** 本Viewerは非公式ツールであり、法的助言を提供するものではありません。正確な法令内容はe-Gov法令検索で確認してください。  
 > This viewer is unofficial and does not provide legal advice. Confirm authoritative law text on the official e-Gov Law Search service.
 
-▶ [e-Gov 法令検索 Viewerβを開く / Open e-Gov Law Search Viewer β](https://neko3se.github.io/devsite/egov/egov-index.html)
+▶ [e-Gov 法令検索 Viewerβを開く / Open e-Gov Law Search Viewer β](https://neko3se.github.io/devsite/egov/)
 
 ---
 
@@ -104,7 +104,7 @@ A browser-based tool that helps users create structured Markdown prompts by fill
 - クリップボードへのコピー / Markdownファイル保存  
   Copy to clipboard / save as a Markdown file
 
-▶ [PROMPT GENERATORを開く / Open PROMPT GENERATOR](https://neko3se.github.io/devsite/promptgen/prompt_generator.html)
+▶ [PROMPT GENERATORを開く / Open PROMPT GENERATOR](https://neko3se.github.io/devsite/promptgen/)
 
 ---
 
@@ -127,7 +127,7 @@ A research page that explores prompt design for high-quality AI image generation
 - サンプル画像はBase64としてHTML内に埋め込み  
   Sample image is embedded directly in the HTML as Base64
 
-▶ [PRO IMAGE PROMPT LABを開く / Open PRO IMAGE PROMPT LAB](https://neko3se.github.io/devsite/imageprompt/image_prompt.html)
+▶ [PRO IMAGE PROMPT LABを開く / Open PRO IMAGE PROMPT LAB](https://neko3se.github.io/devsite/imageprompt/)
 
 ---
 
@@ -153,7 +153,7 @@ A browser-based piano emulator with a two-octave keyboard.
 - スマートフォンでは横向き演奏を案内  
   Landscape orientation guidance for smartphones
 
-▶ [PIANO EMULATORを開く / Open PIANO EMULATOR](https://neko3se.github.io/devsite/pianoemu/piano_emulator.html)
+▶ [PIANO EMULATORを開く / Open PIANO EMULATOR](https://neko3se.github.io/devsite/pianoemu/)
 
 ---
 
@@ -166,7 +166,7 @@ A browser-based piano emulator with a two-octave keyboard.
 五線譜上のドレミファソラシドと、それぞれの音を同期させた音楽クリップです。  
 A music clip that synchronizes the notes Do-Re-Mi-Fa-Sol-La-Ti-Do on a staff with their corresponding tones.
 
-▶ [五線譜ドレミclipを開く / Open the Do-Re-Mi Clip](https://neko3se.github.io/devsite/gosenfu/gosenfu_doremi.html)
+▶ [五線譜ドレミclipを開く / Open the Do-Re-Mi Clip](https://neko3se.github.io/devsite/gosenfu/)
 
 ---
 
@@ -191,7 +191,7 @@ A browser-based experimental tool that uses microphone input for voice analysis,
 - PC / Androidで動作確認済み  
   Verified on PC and Android
 
-▶ [VOICE CHANGER LAB βを開く / Open VOICE CHANGER LAB β](https://neko3se.github.io/devsite/voicechanger/index.html)
+▶ [VOICE CHANGER LAB βを開く / Open VOICE CHANGER LAB β](https://neko3se.github.io/devsite/voicechanger/)
 
 ---
 
@@ -217,7 +217,7 @@ A browser-based sound analyzer that uses microphone input to observe instrument 
 - Windows 11 / Edge、Android / Chrome、iPhone / Safariで動作確認済み  
   Verified on Windows 11 / Edge, Android / Chrome, and iPhone / Safari
 
-▶ [SOUND TUNER LAB βを開く / Open SOUND TUNER LAB β](https://neko3se.github.io/devsite/soundtuner/index.html)
+▶ [SOUND TUNER LAB βを開く / Open SOUND TUNER LAB β](https://neko3se.github.io/devsite/soundtuner/)
 
 ---
 
@@ -228,6 +228,13 @@ More content is planned, including:
 
 - 開発・企画ノウハウ  
   Development and planning know-how
+
+---
+
+## Entry URL Policy / エントリURL方針
+
+公開コンテンツは **1フォルダ = 1エントリ** とし、エントリファイル名を `index.html` に統一します。正規公開URLは末尾 `/` の形式を使用し、過去に公開したURLは `404.html` のRoute Recovery Tableで可能な限り最新URLへ直接転送します。  
+Published content follows a **one folder = one entry point** rule. Each entry file is named `index.html`, canonical public URLs use a trailing `/`, and previously published URLs are recovered through the Route Recovery Table in `404.html` whenever possible.
 
 ---
 
@@ -247,17 +254,17 @@ devsite/
 │  └─ apple-touch-icon.png           # Apple touch icon
 │
 ├─ mudagiken/                         # 無駄技研。
-│  ├─ mudagiken.html                  # Main page
+│  ├─ index.html                  # Main page
 │  ├─ mudagiken.css                   # Common styles
 │  ├─ mudagiken_common.js             # Common scripts
 │  ├─ games/                          # Mini-games
 │  └─ i18n/                           # Language files
 │
 ├─ promptgen/                         # PROMPT GENERATOR
-│  └─ prompt_generator.html
+│  └─ index.html
 │
 ├─ egov/                              # e-Gov 法令検索 Viewer β
-│  ├─ egov-index.html
+│  ├─ index.html
 │  ├─ egov-viewer.css
 │  ├─ egov-categories.js
 │  ├─ egov-search-dictionary.js
@@ -267,10 +274,10 @@ devsite/
 │  └─ egov-app.js
 │
 ├─ pianoemu/
-│  └─ piano_emulator.html             # Piano Emulator
+│  └─ index.html             # Piano Emulator
 │
 ├─ gosenfu/
-│  └─ gosenfu_doremi.html             # Do-Re-Mi staff notation clip
+│  └─ index.html             # Do-Re-Mi staff notation clip
 │
 ├─ voicechanger/
 │  └─ index.html                      # VOICE CHANGER LAB β
@@ -281,7 +288,7 @@ devsite/
 │  └─ js/                             # Audio / Pitch / Tuning / Analyzer / UI
 │
 ├─ imageprompt/
-│  └─ image_prompt.html               # PRO IMAGE PROMPT LAB
+│  └─ index.html               # PRO IMAGE PROMPT LAB
 │
 ├─ og_images/                         # Open Graph / social preview images
 ├─ sitemap.xml

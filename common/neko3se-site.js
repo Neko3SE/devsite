@@ -6,14 +6,14 @@
   const root = (body.dataset.n3Root || ".").replace(/\/+$/, "");
   const pages = [
     { id: "top", label: "TOP🐈", path: "index.html" },
-    { id: "mudagiken", label: "無駄技研。", path: "mudagiken/mudagiken.html" },
-    { id: "gosenfu", label: "五線譜ドレミclip", path: "gosenfu/gosenfu_doremi.html" },
-    { id: "piano", label: "PIANO EMULATOR", path: "pianoemu/piano_emulator.html" },
-    { id: "promptgen", label: "PROMPT GENERATOR", path: "promptgen/prompt_generator.html" },
-    { id: "imageprompt", label: "PRO IMAGE PROMPT LAB", path: "imageprompt/image_prompt.html" },
-    { id: "egov", label: "e-Gov 法令検索 Viewer β", path: "egov/egov-index.html" },
-    { id: "voicechanger", label: "VOICE CHANGER LAB β", path: "voicechanger/index.html" },
-    { id: "soundtuner", label: "SOUND TUNER LAB β", path: "soundtuner/index.html" }
+    { id: "mudagiken", label: "無駄技研。", path: "mudagiken/" },
+    { id: "gosenfu", label: "五線譜ドレミclip", path: "gosenfu/" },
+    { id: "piano", label: "PIANO EMULATOR", path: "pianoemu/" },
+    { id: "promptgen", label: "PROMPT GENERATOR", path: "promptgen/" },
+    { id: "imageprompt", label: "PRO IMAGE PROMPT LAB", path: "imageprompt/" },
+    { id: "egov", label: "e-Gov 法令検索 Viewer β", path: "egov/" },
+    { id: "voicechanger", label: "VOICE CHANGER LAB β", path: "voicechanger/" },
+    { id: "soundtuner", label: "SOUND TUNER LAB β", path: "soundtuner/" }
   ];
   const navGroups = [
     { label: "DEVELOPMENT", ids: ["mudagiken", "egov", "promptgen", "imageprompt"] },
