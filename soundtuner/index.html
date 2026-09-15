@@ -48,7 +48,7 @@
       <button id="retryButton" class="st-secondary st-retry" type="button" hidden>RETRY</button>
       <p id="heroStatus" class="st-hero-status" aria-live="polite"></p>
       <p class="st-privacy" data-i18n="privacy">音声はブラウザ内で解析され、サーバーへ送信されません。</p>
-      <p class="st-phase">PHASE 3 REV.1 / TUNER LOGIC</p>
+      <p class="st-phase">PHASE 3 REV.2 / TUNER LOGIC</p>
     </section>
 
     <section id="workspace" class="st-workspace" hidden>
@@ -128,17 +128,8 @@
               <div><dt>Raw Period</dt><dd id="diagRawPeriod">---</dd></div>
             </dl>
           </details>
-          <details id="spectrumDetails"><summary>SPECTRUM <small>TEST DATA / PHASE 4</small></summary><canvas id="spectrumCanvas" width="900" height="300"></canvas></details>
-          <details><summary>WAVEFORM <small>TEST DATA / PHASE 4</small></summary><canvas id="waveCanvas" width="900" height="220"></canvas></details>
-          <details><summary>HARMONICS <small>TEST DATA / PHASE 4</small></summary><div class="st-harmonics"><div><span>H1</span><i style="--v:100%"></i><b>100%</b></div><div><span>H2</span><i style="--v:63%"></i><b>63%</b></div><div><span>H3</span><i style="--v:41%"></i><b>41%</b></div><div><span>H4</span><i style="--v:28%"></i><b>28%</b></div><div><span>H5</span><i style="--v:19%"></i><b>19%</b></div><div><span>H6</span><i style="--v:13%"></i><b>13%</b></div><div><span>H7</span><i style="--v:9%"></i><b>9%</b></div><div><span>H8</span><i style="--v:6%"></i><b>6%</b></div></div></details>
-        </section>
-      </div>
-      <p class="st-testnote" data-i18n="testNote">Phase 3ではFrequency / Note / Target / Cent / Tuning Statusまで実測です。Spectrum / Harmonics / Vocal値は未実装またはテスト表示です。</p>
-    </section>
-
-    
-          <section class="st-phase3-controls" aria-labelledby="tuningSettingsTitle">
-            <h3 id="tuningSettingsTitle">TUNING SETTINGS</h3>
+          <details id="tuningSettings" open>
+            <summary>TUNING SETTINGS <small>LIVE / PHASE 3</small></summary>
             <div class="st-setting-grid">
               <label>A4 REFERENCE
                 <input id="a4Reference" type="number" min="415" max="466" step="0.1" value="440.0">
@@ -155,20 +146,17 @@
                 <select id="accidentalMode"><option value="sharp" selected>♯ SHARP</option><option value="flat">♭ FLAT</option></select>
               </label>
             </div>
-          </section>
+          </details>
+          <details id="spectrumDetails"><summary>SPECTRUM <small>TEST DATA / PHASE 4</small></summary><canvas id="spectrumCanvas" width="900" height="300"></canvas></details>
+          <details><summary>WAVEFORM <small>TEST DATA / PHASE 4</small></summary><canvas id="waveCanvas" width="900" height="220"></canvas></details>
+          <details><summary>HARMONICS <small>TEST DATA / PHASE 4</small></summary><div class="st-harmonics"><div><span>H1</span><i style="--v:100%"></i><b>100%</b></div><div><span>H2</span><i style="--v:63%"></i><b>63%</b></div><div><span>H3</span><i style="--v:41%"></i><b>41%</b></div><div><span>H4</span><i style="--v:28%"></i><b>28%</b></div><div><span>H5</span><i style="--v:19%"></i><b>19%</b></div><div><span>H6</span><i style="--v:13%"></i><b>13%</b></div><div><span>H7</span><i style="--v:9%"></i><b>9%</b></div><div><span>H8</span><i style="--v:6%"></i><b>6%</b></div></div></details>
+        </section>
+      </div>
+      <p class="st-testnote" data-i18n="testNote">Phase 3ではFrequency / Note / Target / Cent / Tuning Statusまで実測です。Spectrum / Harmonics / Vocal値は未実装またはテスト表示です。</p>
+    </section>
 
-          <section class="st-reference-tone" aria-labelledby="referenceToneTitle">
-            <h3 id="referenceToneTitle">REFERENCE TONE</h3>
-            <p class="st-tone-readout"><strong id="toneNote">A4</strong> <span id="toneFrequency">440.00 Hz</span></p>
-            <div class="st-tone-controls">
-              <button id="toneDown" type="button">− NOTE</button>
-              <button id="tonePlay" type="button">▶ PLAY TONE</button>
-              <button id="toneUp" type="button">+ NOTE</button>
-            </div>
-            <p class="st-small">Reference Tone再生中は、端末自身のスピーカー音を測定しないようマイク解析を一時停止します。</p>
-          </section>
-
-<section class="st-info"><p class="st-kicker">HOW TO USE</p><h2 data-i18n="howTitle">START後はハンズフリー。</h2><div class="st-steps"><article><b>01</b><span data-i18n="step1">スマートフォンを置く</span></article><article><b>02</b><span>START ANALYSIS</span></article><article><b>03</b><span data-i18n="step3">楽器を鳴らす / 歌う</span></article><article><b>04</b><span data-i18n="step4">自動解析</span></article><article><b>05</b><span data-i18n="step5">結果を見る</span></article></div></section>
+    
+          <section class="st-info"><p class="st-kicker">HOW TO USE</p><h2 data-i18n="howTitle">START後はハンズフリー。</h2><div class="st-steps"><article><b>01</b><span data-i18n="step1">スマートフォンを置く</span></article><article><b>02</b><span>START ANALYSIS</span></article><article><b>03</b><span data-i18n="step3">楽器を鳴らす / 歌う</span></article><article><b>04</b><span data-i18n="step4">自動解析</span></article><article><b>05</b><span data-i18n="step5">結果を見る</span></article></div></section>
     <section class="st-info"><p class="st-kicker">ABOUT PHASE 1</p><h2>INPUT QUALITY</h2><p data-i18n="phase1About">LOW INPUT / GOOD / CLIP はマイク入力品質の状態です。Pitchの正しさを示すものではありません。</p><div class="st-data"><article><strong>LOW INPUT</strong><p data-i18n="lowAbout">入力が小さく、Pitch解析に適さない可能性があります。</p></article><article><strong>GOOD</strong><p data-i18n="goodAbout">入力レベルが解析に適した範囲です。</p></article><article><strong>CLIP</strong><p data-i18n="clipAbout">入力が大きすぎます。端末を音源から少し離してください。</p></article></div><p class="st-fine" data-i18n="thresholdNote">LOW INPUT閾値とCLIP表示保持時間はPhase 1実機評価用の初期値です。端末比較後に調整します。</p></section>
     <section class="st-info"><p class="st-kicker">PRIVACY</p><div class="st-privacybox"><div><span>Audio Analysis</span><strong>LOCAL</strong></div><div><span>Server Upload</span><strong>NONE</strong></div><div><span>Audio Recording</span><strong>NONE</strong></div></div><p class="st-fine" data-i18n="privacyLong">音声の録音・保存は行いません。解析に必要な音声データと解析結果はブラウザ内で一時的に処理されます。</p></section>
   </main>
@@ -176,7 +164,21 @@
   <footer id="n3-site-footer"></footer>
 
   <div id="toneBackdrop" class="st-backdrop" hidden></div>
-  <section id="toneSheet" class="st-sheet" aria-hidden="true"><div class="st-handle"></div><div class="st-sheethead"><div><p class="st-kicker">REFERENCE TONE</p><h2>A4 / 440.00 Hz</h2></div><button id="toneClose" class="st-close" type="button">×</button></div><div class="st-tonecontrols"><p data-i18n="toneNote">Phase 1ではReference ToneはUIのみです。音はPhase 3で実装します。</p><button class="st-primary" type="button" disabled>PLAY — PHASE 3</button></div></section>
+  <section id="toneSheet" class="st-sheet" aria-hidden="true">
+    <div class="st-handle"></div>
+    <div class="st-sheethead">
+      <div><p class="st-kicker">REFERENCE TONE</p><h2><span id="toneNote">A4</span> / <span id="toneFrequency">440.00 Hz</span></h2></div>
+      <button id="toneClose" class="st-close" type="button">×</button>
+    </div>
+    <div class="st-tonecontrols">
+      <div class="st-tone-controls">
+        <button id="toneDown" type="button">− NOTE</button>
+        <button id="tonePlay" class="st-primary" type="button">▶ PLAY TONE</button>
+        <button id="toneUp" type="button">+ NOTE</button>
+      </div>
+      <p class="st-small">再生中は端末自身のスピーカー音を測定しないよう、マイク解析のみ一時停止します。STOP TONE後に自動復帰します。</p>
+    </div>
+  </section>
 
   <script type="module" src="js/app.js"></script>
   <script src="../common/neko3se-site.js" defer></script>
