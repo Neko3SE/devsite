@@ -15,7 +15,6 @@
   <meta name="theme-color" content="#081014">
 
   <link rel="canonical" href="https://neko3se.github.io/devsite/soundtuner/index.html">
-
   <meta property="og:title" content="SOUND TUNER LAB β | Neko3SE LAB">
   <meta property="og:description" content="楽器も声も、「音」として測る。スマートフォンを置いてSTART。楽器と声をハンズフリーで観察するブラウザ音響研究ツール。">
   <meta property="og:type" content="website">
@@ -23,7 +22,6 @@
   <meta property="og:site_name" content="Neko3SE LAB">
   <meta property="og:locale" content="ja_JP">
   <meta property="og:image" content="https://neko3se.github.io/devsite/og_images/Neko3SE_img.png">
-
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="SOUND TUNER LAB β | Neko3SE LAB">
   <meta name="twitter:description" content="楽器も声も、「音」として測る。ブラウザで使えるサウンドチューナー＆音響解析ラボ。">
@@ -41,25 +39,22 @@
       <p class="st-kicker">INSTRUMENT &amp; VOCAL SOUND ANALYZER</p>
       <h1>SOUND<br>TUNER LAB <span>β</span></h1>
       <p class="st-concept" data-i18n="concept">楽器も声も、「音」として測る。</p>
-
       <div class="st-handsfree">
         <strong data-i18n="handsTitle">STARTしたら、あとは音を鳴らすだけ。</strong>
         <p data-i18n="handsText">楽器の演奏や発声を自動解析。スマートフォンを置いたまま、START後はハンズフリーで使用できます。</p>
       </div>
-
-      <p class="st-mic">◉ MICROPHONE</p>
+      <p class="st-mic">◉ MICROPHONE REQUIRED</p>
       <button id="startButton" class="st-primary" type="button" data-i18n="start">START ANALYSIS</button>
+      <button id="retryButton" class="st-secondary st-retry" type="button" hidden>RETRY</button>
+      <p id="heroStatus" class="st-hero-status" aria-live="polite"></p>
       <p class="st-privacy" data-i18n="privacy">音声はブラウザ内で解析され、サーバーへ送信されません。</p>
-      <p class="st-phase">PHASE 0 / UI FOUNDATION — TEST DATA</p>
+      <p class="st-phase">PHASE 1 REV.1 / MICROPHONE &amp; INPUT ENGINE</p>
     </section>
 
     <section id="workspace" class="st-workspace" hidden>
       <div class="st-compact">
-        <div>
-          <strong>SOUND TUNER LAB β</strong>
-          <small>INSTRUMENT &amp; VOCAL SOUND ANALYZER</small>
-        </div>
-        <div class="st-status">● <span data-i18n="uiTest">UI TEST MODE</span></div>
+        <div><strong>SOUND TUNER LAB β</strong><small>INSTRUMENT &amp; VOCAL SOUND ANALYZER</small></div>
+        <div id="statusLine" class="st-status" data-state="ready" aria-live="polite">● MICROPHONE READY</div>
       </div>
 
       <div class="st-toolbar">
@@ -68,146 +63,70 @@
           <button id="vocalMode" type="button">VOCAL</button>
         </div>
         <div class="st-lang" aria-label="Language">
-          <button id="langJa" class="is-active" type="button">JA</button>
-          <span>/</span>
-          <button id="langEn" type="button">EN</button>
+          <button id="langJa" class="is-active" type="button">JA</button><span>/</span><button id="langEn" type="button">EN</button>
         </div>
       </div>
 
       <div class="st-grid">
         <section class="st-panel st-tuner">
           <div id="instrumentView">
-            <div class="st-note">A4</div>
-            <div class="st-solfege" data-ja-only>ラ</div>
+            <div class="st-test-label">PITCH — TEST DATA / PHASE 2</div>
+            <div class="st-note">A4</div><div class="st-solfege" data-ja-only>ラ</div>
             <div class="st-frequency">440.18 <span>Hz</span></div>
-
-            <div class="st-meter">
-              <div class="st-meter-label"><span>FLAT</span><span>SHARP</span></div>
-              <div class="st-meter-line"><i class="st-dot"></i></div>
-              <div class="st-meter-scale"><span>-50</span><span>0</span><span>+50</span></div>
-            </div>
-
-            <div class="st-cent">+0.7 <span>cent</span></div>
-            <div class="st-intune">● <span data-i18n="inTune">IN TUNE</span></div>
-
-            <div class="st-input">
-              <div><span>INPUT</span><strong>GOOD</strong></div>
-              <div class="st-level"><i></i></div>
-            </div>
+            <div class="st-meter"><div class="st-meter-label"><span>FLAT</span><span>SHARP</span></div><div class="st-meter-line"><i class="st-dot"></i></div><div class="st-meter-scale"><span>-50</span><span>0</span><span>+50</span></div></div>
+            <div class="st-cent">+0.7 <span>cent</span></div><div class="st-intune">● IN TUNE <small>TEST DATA</small></div>
           </div>
 
           <div id="vocalView" hidden>
-            <div class="st-note">A3</div>
-            <div class="st-solfege" data-ja-only>ラ</div>
+            <div class="st-test-label">VOCAL PITCH — TEST DATA / PHASE 5</div>
+            <div class="st-note">A3</div><div class="st-solfege" data-ja-only>ラ</div>
             <div class="st-frequency">220.70 <span>Hz</span></div>
-            <div class="st-session"><strong>● ANALYZING</strong><span>00:08 / 00:30</span></div>
-            <h3>PITCH HISTORY</h3>
-            <canvas id="pitchCanvas" width="800" height="220"></canvas>
+            <div class="st-session"><strong>● UI TEST</strong><span>00:08 / 00:30</span></div>
+            <h3>PITCH HISTORY — TEST DATA</h3><canvas id="pitchCanvas" width="800" height="220"></canvas>
           </div>
 
-          <div class="st-actions">
-            <button id="holdButton" type="button">HOLD</button>
-            <button id="toneButton" type="button">TONE</button>
-          </div>
+          <section class="st-live-input" aria-label="Live microphone input">
+            <div class="st-input-head"><span>LIVE INPUT</span><strong id="inputState">---</strong></div>
+            <div class="st-level"><i id="levelBar"></i><em id="peakMarker"></em></div>
+            <div class="st-input-values">
+              <div><span>RMS</span><strong id="rmsValue">--- dBFS</strong></div>
+              <div><span>PEAK</span><strong id="peakValue">--- dBFS</strong></div>
+            </div>
+          </section>
+
+          <div class="st-actions"><button id="holdButton" type="button">HOLD</button><button id="toneButton" type="button">TONE</button></div>
         </section>
 
         <section class="st-panel st-analyzer">
-          <details id="spectrumDetails" open>
-            <summary>SPECTRUM <small>FFT / TEST DATA</small></summary>
-            <canvas id="spectrumCanvas" width="900" height="300"></canvas>
-          </details>
-          <details>
-            <summary>SOUND DETAILS <small>MEASURED / DERIVED</small></summary>
+          <details open><summary>INPUT DIAGNOSTICS <small>LIVE / PHASE 1</small></summary>
             <dl class="st-details">
-              <div><dt>Frequency</dt><dd>440.18 Hz</dd></div>
-              <div><dt>Target</dt><dd>440.00 Hz</dd></div>
-              <div><dt>MIDI</dt><dd>69</dd></div>
-              <div><dt>Reference A4</dt><dd>440.0 Hz</dd></div>
-              <div><dt>Temperament</dt><dd>12-TET</dd></div>
-              <div><dt>Input</dt><dd>GOOD</dd></div>
+              <div><dt>Sample Rate</dt><dd id="diagSampleRate">---</dd></div>
+              <div><dt>Audio State</dt><dd id="diagAudioState">---</dd></div>
+              <div><dt>Echo Cancellation</dt><dd id="diagEC">---</dd></div>
+              <div><dt>Noise Suppression</dt><dd id="diagNS">---</dd></div>
+              <div><dt>Auto Gain Control</dt><dd id="diagAGC">---</dd></div>
+              <div><dt>Input State</dt><dd id="diagInput">---</dd></div>
+              <div><dt>RMS</dt><dd id="diagRms">---</dd></div>
+              <div><dt>Peak</dt><dd id="diagPeak">---</dd></div>
             </dl>
           </details>
-          <details>
-            <summary>WAVEFORM <small>TEST DATA</small></summary>
-            <canvas id="waveCanvas" width="900" height="220"></canvas>
-          </details>
-          <details>
-            <summary>HARMONICS <small>H1–H8 / TEST DATA</small></summary>
-            <div class="st-harmonics">
-              <div><span>H1</span><i style="--v:100%"></i><b>100%</b></div>
-              <div><span>H2</span><i style="--v:63%"></i><b>63%</b></div>
-              <div><span>H3</span><i style="--v:41%"></i><b>41%</b></div>
-              <div><span>H4</span><i style="--v:28%"></i><b>28%</b></div>
-              <div><span>H5</span><i style="--v:19%"></i><b>19%</b></div>
-              <div><span>H6</span><i style="--v:13%"></i><b>13%</b></div>
-              <div><span>H7</span><i style="--v:9%"></i><b>9%</b></div>
-              <div><span>H8</span><i style="--v:6%"></i><b>6%</b></div>
-            </div>
-          </details>
+          <details id="spectrumDetails"><summary>SPECTRUM <small>TEST DATA / PHASE 4</small></summary><canvas id="spectrumCanvas" width="900" height="300"></canvas></details>
+          <details><summary>WAVEFORM <small>TEST DATA / PHASE 4</small></summary><canvas id="waveCanvas" width="900" height="220"></canvas></details>
+          <details><summary>HARMONICS <small>TEST DATA / PHASE 4</small></summary><div class="st-harmonics"><div><span>H1</span><i style="--v:100%"></i><b>100%</b></div><div><span>H2</span><i style="--v:63%"></i><b>63%</b></div><div><span>H3</span><i style="--v:41%"></i><b>41%</b></div><div><span>H4</span><i style="--v:28%"></i><b>28%</b></div><div><span>H5</span><i style="--v:19%"></i><b>19%</b></div><div><span>H6</span><i style="--v:13%"></i><b>13%</b></div><div><span>H7</span><i style="--v:9%"></i><b>9%</b></div><div><span>H8</span><i style="--v:6%"></i><b>6%</b></div></div></details>
         </section>
       </div>
-      <p class="st-testnote" data-i18n="testNote">Phase 0では画面確認用のテスト値を表示しています。マイク・音響解析はまだ実装していません。</p>
+      <p class="st-testnote" data-i18n="testNote">Phase 1ではマイク入力・RMS・Peak・Input Qualityのみ実測です。Pitch / Spectrum / Harmonics / Vocal値はテスト表示です。</p>
     </section>
 
-    <section class="st-info">
-      <p class="st-kicker">HOW TO USE</p>
-      <h2 data-i18n="howTitle">START後はハンズフリー。</h2>
-      <div class="st-steps">
-        <article><b>01</b><span data-i18n="step1">スマートフォンを置く</span></article>
-        <article><b>02</b><span>START ANALYSIS</span></article>
-        <article><b>03</b><span data-i18n="step3">楽器を鳴らす / 歌う</span></article>
-        <article><b>04</b><span data-i18n="step4">自動解析</span></article>
-        <article><b>05</b><span data-i18n="step5">結果を見る</span></article>
-      </div>
-    </section>
-
-    <section class="st-info">
-      <p class="st-kicker">WHAT CAN YOU SEE?</p>
-      <div class="st-features">
-        <article><h3>PITCH</h3><p data-i18n="pitchDesc">音の高さ</p></article>
-        <article><h3>DETUNE</h3><p data-i18n="detuneDesc">基準音からのズレ</p></article>
-        <article><h3>SPECTRUM</h3><p data-i18n="spectrumDesc">音に含まれる周波数成分</p></article>
-        <article><h3>HARMONICS</h3><p data-i18n="harmonicsDesc">基音と倍音</p></article>
-        <article><h3>PITCH HISTORY</h3><p data-i18n="historyDesc">声の音程変化</p></article>
-        <article><h3>VIBRATO</h3><p data-i18n="vibratoDesc">声の周期的な揺らぎ</p></article>
-      </div>
-    </section>
-
-    <section class="st-info">
-      <p class="st-kicker">ABOUT MEASUREMENTS</p>
-      <h2 data-i18n="aboutTitle">測定値を、測定値らしく扱う。</h2>
-      <div class="st-data">
-        <article><strong>MEASURED</strong><p data-i18n="measured">マイク入力から測定した値</p></article>
-        <article><strong>DERIVED</strong><p data-i18n="derived">測定値から計算した値</p></article>
-        <article><strong>ANALYSIS</strong><p data-i18n="analysis">一定時間のデータから解析した結果</p></article>
-      </div>
-      <p class="st-fine" data-i18n="measurementNote">表示桁数は測定精度を保証するものではありません。端末のマイク特性やOS・ブラウザの音声処理により結果は異なる場合があります。</p>
-      <div class="st-privacybox">
-        <div><span>Audio Analysis</span><strong>LOCAL</strong></div>
-        <div><span>Server Upload</span><strong>NONE</strong></div>
-        <div><span>Audio Recording</span><strong>NONE</strong></div>
-      </div>
-    </section>
+    <section class="st-info"><p class="st-kicker">HOW TO USE</p><h2 data-i18n="howTitle">START後はハンズフリー。</h2><div class="st-steps"><article><b>01</b><span data-i18n="step1">スマートフォンを置く</span></article><article><b>02</b><span>START ANALYSIS</span></article><article><b>03</b><span data-i18n="step3">楽器を鳴らす / 歌う</span></article><article><b>04</b><span data-i18n="step4">自動解析</span></article><article><b>05</b><span data-i18n="step5">結果を見る</span></article></div></section>
+    <section class="st-info"><p class="st-kicker">ABOUT PHASE 1</p><h2>INPUT QUALITY</h2><p data-i18n="phase1About">LOW INPUT / GOOD / CLIP はマイク入力品質の状態です。Pitchの正しさを示すものではありません。</p><div class="st-data"><article><strong>LOW INPUT</strong><p data-i18n="lowAbout">入力が小さく、Pitch解析に適さない可能性があります。</p></article><article><strong>GOOD</strong><p data-i18n="goodAbout">入力レベルが解析に適した範囲です。</p></article><article><strong>CLIP</strong><p data-i18n="clipAbout">入力が大きすぎます。端末を音源から少し離してください。</p></article></div><p class="st-fine" data-i18n="thresholdNote">LOW INPUT閾値とCLIP表示保持時間はPhase 1実機評価用の初期値です。端末比較後に調整します。</p></section>
+    <section class="st-info"><p class="st-kicker">PRIVACY</p><div class="st-privacybox"><div><span>Audio Analysis</span><strong>LOCAL</strong></div><div><span>Server Upload</span><strong>NONE</strong></div><div><span>Audio Recording</span><strong>NONE</strong></div></div><p class="st-fine" data-i18n="privacyLong">音声の録音・保存は行いません。解析に必要な音声データと解析結果はブラウザ内で一時的に処理されます。</p></section>
   </main>
 
   <footer id="n3-site-footer"></footer>
 
   <div id="toneBackdrop" class="st-backdrop" hidden></div>
-  <section id="toneSheet" class="st-sheet" aria-hidden="true" aria-labelledby="toneTitle">
-    <div class="st-handle"></div>
-    <div class="st-sheethead">
-      <div><p class="st-kicker">REFERENCE TONE</p><h2 id="toneTitle">A4 / 440.00 Hz</h2></div>
-      <button id="toneClose" class="st-close" type="button" aria-label="Close">×</button>
-    </div>
-    <div class="st-tonecontrols">
-      <div class="st-stepper"><button type="button">−</button><strong>A4</strong><button type="button">＋</button></div>
-      <label>REFERENCE A4 <output>440.0 Hz</output><input type="range" min="415" max="466" step="0.1" value="440"></label>
-      <div class="st-presets"><button>415</button><button class="is-active">440</button><button>442</button></div>
-      <label>VOLUME <input type="range" min="0" max="100" value="45"></label>
-      <button class="st-primary" type="button">PLAY — UI TEST</button>
-      <p class="st-fine" data-i18n="toneNote">Phase 0ではReference Toneの画面のみ実装しています。音は再生しません。</p>
-    </div>
-  </section>
+  <section id="toneSheet" class="st-sheet" aria-hidden="true"><div class="st-handle"></div><div class="st-sheethead"><div><p class="st-kicker">REFERENCE TONE</p><h2>A4 / 440.00 Hz</h2></div><button id="toneClose" class="st-close" type="button">×</button></div><div class="st-tonecontrols"><p data-i18n="toneNote">Phase 1ではReference ToneはUIのみです。音はPhase 3で実装します。</p><button class="st-primary" type="button" disabled>PLAY — PHASE 3</button></div></section>
 
   <script type="module" src="js/app.js"></script>
   <script src="../common/neko3se-site.js" defer></script>

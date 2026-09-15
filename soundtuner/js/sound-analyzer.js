@@ -1,2 +1,2 @@
-/* Phase 0 stub. Spectrum / harmonics analysis begins in Phase 4. */
-export class SoundAnalyzer {}
+/* Phase 4 stub: spectrum/harmonics analysis is intentionally not implemented in Phase 1. */
+export class SoundAnalyzer{}

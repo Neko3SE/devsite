@@ -1,2 +1,2 @@
-/* Phase 0 stub. YIN-family pitch detection begins in Phase 2. */
-export function detectPitch(){ return null; }
+/* Phase 2 stub: YIN-family pitch detection is intentionally not implemented in Phase 1. */
+export function detectPitch(){return null;}
