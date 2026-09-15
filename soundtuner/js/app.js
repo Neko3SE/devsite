@@ -191,18 +191,15 @@ function drawTestGraphs(){
 }
 
 // Phase 3 controls — wired in the same initialization path as START/HOLD/TONE.
-els.a4.addEventListener("change",()=>{
-  tunerState.a4=clampA4(els.a4.value);
+function applyA4Reference(value){
+  tunerState.a4=clampA4(value);
+  tunerState.toneMidi=69; // A4: A4 REFERENCE change is also a one-touch A4 tone selection.
   els.a4.value=tunerState.a4.toFixed(1);
-  updateToneReadout();
+  updateToneReadout(); // Same calculated value drives both display and active oscillator.
   if(latestPitch&&!state.hold)renderLiveMeasurement(latestPitch);
-});
-document.querySelectorAll("[data-a4]").forEach(b=>b.addEventListener("click",()=>{
-  tunerState.a4=clampA4(b.dataset.a4);
-  els.a4.value=tunerState.a4.toFixed(1);
-  updateToneReadout();
-  if(latestPitch&&!state.hold)renderLiveMeasurement(latestPitch);
-}));
+}
+els.a4.addEventListener("change",()=>applyA4Reference(els.a4.value));
+document.querySelectorAll("[data-a4]").forEach(b=>b.addEventListener("click",()=>applyA4Reference(b.dataset.a4)));
 els.tolerance.addEventListener("change",()=>{
   tunerState.tolerance=Number(els.tolerance.value)||5;
   tunerState.status="---";
