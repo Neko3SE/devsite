@@ -1,16 +1,16 @@
 export class VocalAnalyzer {
   constructor(){this.reset();}
-  reset(){this.state="WAITING_FOR_VOICE";this.frames=[];this.sessionStart=null;this.lastValidAt=null;this.candidateStart=null;this.lastResult=null;this.completed=false;this.completedReason=null;this.awaitingRelease=false;}
+  reset(){this.state="MEASUREMENT_WAITING";this.frames=[];this.sessionStart=null;this.lastValidAt=null;this.candidateStart=null;this.lastResult=null;this.lastFrames=[];this.completed=false;this.completedReason=null;this.awaitingRelease=false;}
   update(pitch,nowMs,hold=false){
     if(hold)return this.snapshot(nowMs);
     const valid=!!(pitch?.voiced&&pitch?.pitchState==="VALID"&&Number.isFinite(pitch.frequency));
     if(valid){
-      if(this.awaitingRelease){this.state="SESSION_COMPLETE";return this.snapshot(nowMs);}
-      if(this.completed){this.completed=false;this.completedReason=null;this.state="WAITING_FOR_VOICE";}
+      if(this.awaitingRelease){this.state="MEASUREMENT_COMPLETE";return this.snapshot(nowMs);}
+      if(this.completed){this.completed=false;this.completedReason=null;this.state="MEASUREMENT_WAITING";}
       if(this.candidateStart===null)this.candidateStart=nowMs;
-      if(this.sessionStart===null && nowMs-this.candidateStart>=200){this.sessionStart=this.candidateStart;this.frames=[];this.completed=false;}
+      if(this.sessionStart===null && nowMs-this.candidateStart>=200){this.sessionStart=this.candidateStart;this.frames=[];this.lastFrames=[];this.completed=false;}
       if(this.sessionStart!==null){
-        this.lastValidAt=nowMs;this.state="ANALYZING";
+        this.lastValidAt=nowMs;this.state="MEASURING";
         const elapsed=Math.min(30000,nowMs-this.sessionStart);
         this.frames.push({t:elapsed,f:pitch.frequency});
         if(this.frames.length>900)this.frames.shift();
@@ -19,21 +19,22 @@ export class VocalAnalyzer {
     }else{
       this.candidateStart=null;
       if(this.sessionStart!==null&&this.lastValidAt!==null&&nowMs-this.lastValidAt>=1000)this.complete("SILENCE_1S");
-      else if(this.awaitingRelease){this.awaitingRelease=false;this.state="SESSION_COMPLETE";}
-      else if(this.completed)this.state=this.completedReason==="MAX_30S"?"SESSION_COMPLETE":"VOICE_ENDED";
-      else if(this.sessionStart===null)this.state=this.lastResult?"VOICE_ENDED":"WAITING_FOR_VOICE";
+      else if(this.awaitingRelease){this.awaitingRelease=false;this.state="MEASUREMENT_COMPLETE";}
+      else if(this.completed)this.state=this.completedReason==="MAX_30S"?"MEASUREMENT_COMPLETE":"MEASUREMENT_STOPPED";
+      else if(this.sessionStart===null)this.state=this.lastResult?"MEASUREMENT_STOPPED":"MEASUREMENT_WAITING";
     }
     return this.snapshot(nowMs);
   }
   complete(reason="SILENCE_1S"){
     if(this.frames.length){
+      this.lastFrames=this.frames.slice();
       const fs=this.frames.map(x=>x.f),avg=fs.reduce((a,b)=>a+b,0)/fs.length;
       const low=Math.min(...fs),high=Math.max(...fs);
       const cents=fs.map(f=>1200*Math.log2(f/avg));
       const variation=Math.max(...cents.map(Math.abs));
       this.lastResult={avgHz:avg,lowHz:low,highHz:high,variationCent:variation,vibrato:this._vibrato(cents)};
     }
-    this.completedReason=reason;this.state=reason==="MAX_30S"?"SESSION_COMPLETE":"VOICE_ENDED";
+    this.completedReason=reason;this.state=reason==="MAX_30S"?"MEASUREMENT_COMPLETE":"MEASUREMENT_STOPPED";
     this.awaitingRelease=reason==="MAX_30S";
     this.sessionStart=null;this.lastValidAt=null;this.candidateStart=null;this.frames=[];this.completed=true;
   }
@@ -48,6 +49,6 @@ export class VocalAnalyzer {
   }
   snapshot(nowMs){
     const elapsed=this.sessionStart===null?0:Math.min(30000,nowMs-this.sessionStart);
-    return {state:this.state,elapsedMs:this.completedReason==="MAX_30S"&&this.completed?30000:elapsed,frames:this.frames.slice(),lastResult:this.lastResult,completedReason:this.completedReason};
+    return {state:this.state,elapsedMs:this.completedReason==="MAX_30S"&&this.completed?30000:elapsed,frames:(this.frames.length?this.frames:this.lastFrames).slice(),lastResult:this.lastResult,completedReason:this.completedReason};
   }
 }

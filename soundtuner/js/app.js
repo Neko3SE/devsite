@@ -144,13 +144,15 @@ function drawPitchHistory(v){
 }
 function renderVocal(v,pitch){
   if(!v)return;
-  const f=pitch?.pitchState==="VALID"?pitch.frequency:null;
+  const liveF=pitch?.pitchState==="VALID"?pitch.frequency:null;
+  const stopped=["MEASUREMENT_STOPPED","MEASUREMENT_COMPLETE"].includes(v.state);
+  const f=stopped&&v.lastResult?v.lastResult.avgHz:liveF;
   els.vocalNote.textContent=noteTextFromHz(f);els.vocalFrequency.textContent=Number.isFinite(f)?f.toFixed(2):"---";
   if(els.vocalSolfege){const n=Number.isFinite(f)?Math.round(69+12*Math.log2(f/tunerState.a4)):null;els.vocalSolfege.textContent=n===null?"---":noteParts(n,tunerState.accidental).solfege||"---";}
   els.vocalState.textContent=`● ${v.state}`;els.vocalTime.textContent=`${formatTime(v.elapsedMs)} / 00:30`;
   if(els.vocalEvent){
-    const event=v.state==="SESSION_COMPLETE"?"30秒に到達しました。音を止め、次の発声で新しいセッションを開始します。":v.state==="VOICE_ENDED"?"約1秒の無声を検出し、セッションを終了しました。":v.state==="ANALYZING"?"発声を解析中です。音を止めると約1秒後に終了します。":v.state==="VOICE_DETECTED"?"VOICE DETECTED — セッション開始判定中です。":"発声すると自動でセッションを開始します。";
-    els.vocalEvent.textContent=event;els.vocalEvent.dataset.state=v.state==="SESSION_COMPLETE"?"complete":v.state==="VOICE_ENDED"?"ended":"live";
+    const event=v.state==="MEASUREMENT_COMPLETE"?"30秒の計測が完了しました。計測結果を表示しています。次の発声で新しい計測を開始します。":v.state==="MEASUREMENT_STOPPED"?"音が止まったため計測を停止しました。直前の計測結果を表示しています。":v.state==="MEASURING"?"計測中です。音を止めると約1秒後に計測を停止します。":v.state==="VOICE_DETECTED"?"音声を検出しました。計測開始を判定しています。":"発声すると自動で計測を開始します。";
+    els.vocalEvent.textContent=event;els.vocalEvent.dataset.state=v.state==="MEASUREMENT_COMPLETE"?"complete":v.state==="MEASUREMENT_STOPPED"?"ended":"live";
   }
   drawPitchHistory(v);
   const r=v.lastResult;
@@ -161,7 +163,7 @@ function renderVocal(v,pitch){
 }
 function clearVocal(){
   for(const e of [els.vocalNote,els.vocalFrequency,els.vocalAvg,els.vocalRange,els.vocalVariation])if(e)e.textContent="---";
-  if(els.vocalSolfege)els.vocalSolfege.textContent="---";if(els.vocalState)els.vocalState.textContent="● WAITING FOR VOICE";if(els.vocalTime)els.vocalTime.textContent="00:00 / 00:30";if(els.vocalEvent){els.vocalEvent.textContent="発声すると自動でセッションを開始します。";els.vocalEvent.dataset.state="live";}if(els.vocalVibrato)els.vocalVibrato.textContent="INSUFFICIENT DATA";
+  if(els.vocalSolfege)els.vocalSolfege.textContent="---";if(els.vocalState)els.vocalState.textContent="● 計測待機中";if(els.vocalTime)els.vocalTime.textContent="00:00 / 00:30";if(els.vocalEvent){els.vocalEvent.textContent="発声すると自動でセッションを開始します。";els.vocalEvent.dataset.state="live";}if(els.vocalVibrato)els.vocalVibrato.textContent="INSUFFICIENT DATA";
   if(els.pitchCanvas)els.pitchCanvas.getContext("2d").clearRect(0,0,els.pitchCanvas.width,els.pitchCanvas.height);
 }
 function clearSound(){
