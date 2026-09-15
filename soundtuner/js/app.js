@@ -1,15 +1,17 @@
 import {AudioEngine} from "./audio-engine.js";
+import {PitchDetector} from "./pitch-detector.js";
 import {setLanguage, getLanguage, msg} from "./ui.js";
 
 const engine=new AudioEngine();
+const pitchDetector=new PitchDetector();
 const state={microphone:"NOT_STARTED",input:"UNKNOWN",hold:false,holdSnapshot:null,mode:"INSTRUMENT"};
-let measureTimer=0, uiTimer=0, latest=null;
+let measureTimer=0, uiTimer=0, latest=null, latestPitch=null;
 
 const $=id=>document.getElementById(id);
 const els={hero:$("hero"),workspace:$("workspace"),start:$("startButton"),retry:$("retryButton"),heroStatus:$("heroStatus"),status:$("statusLine"),
 instrumentMode:$("instrumentMode"),vocalMode:$("vocalMode"),instrumentView:$("instrumentView"),vocalView:$("vocalView"),hold:$("holdButton"),tone:$("toneButton"),stop:$("stopButton"),restart:$("restartButton"),
 inputState:$("inputState"),levelBar:$("levelBar"),peakMarker:$("peakMarker"),rms:$("rmsValue"),peak:$("peakValue"),
-sampleRate:$("diagSampleRate"),audioState:$("diagAudioState"),ec:$("diagEC"),ns:$("diagNS"),agc:$("diagAGC"),diagInput:$("diagInput"),diagRms:$("diagRms"),diagPeak:$("diagPeak"),
+sampleRate:$("diagSampleRate"),audioState:$("diagAudioState"),ec:$("diagEC"),ns:$("diagNS"),agc:$("diagAGC"),diagInput:$("diagInput"),diagRms:$("diagRms"),diagPeak:$("diagPeak"),pitchFrequency:$("pitchFrequency"),pitchConfidence:$("pitchConfidence"),pitchVoiced:$("pitchVoiced"),pitchStatus:$("pitchStatus"),diagPitchFrequency:$("diagPitchFrequency"),diagPitchConfidence:$("diagPitchConfidence"),diagPitchVoiced:$("diagPitchVoiced"),diagPitchState:$("diagPitchState"),diagRawPeriod:$("diagRawPeriod"),
 sheet:$("toneSheet"),backdrop:$("toneBackdrop"),toneClose:$("toneClose")};
 
 function dbText(v){return Number.isFinite(v)?`${v.toFixed(1)} dBFS`:"-∞ dBFS";}
@@ -25,6 +27,21 @@ function renderInput(m){
   els.diagInput.textContent=shown.inputState;els.diagRms.textContent=dbText(shown.rmsDb);els.diagPeak.textContent=dbText(shown.peakDb);
   state.input=shown.inputState; renderStatus();
 }
+
+function renderPitch(p){
+  if(!p)return;
+  const f=p.frequency;
+  els.pitchFrequency.textContent=Number.isFinite(f)?f.toFixed(2):"---";
+  els.pitchConfidence.textContent=Number.isFinite(p.confidence)?p.confidence.toFixed(3):"---";
+  els.pitchVoiced.textContent=p.voiced?"YES":"NO";
+  els.pitchStatus.textContent=p.pitchState||"---";
+  els.diagPitchFrequency.textContent=Number.isFinite(f)?`${f.toFixed(2)} Hz`:"---";
+  els.diagPitchConfidence.textContent=Number.isFinite(p.confidence)?p.confidence.toFixed(3):"---";
+  els.diagPitchVoiced.textContent=p.voiced?"YES":"NO";
+  els.diagPitchState.textContent=p.pitchState||"---";
+  els.diagRawPeriod.textContent=Number.isFinite(p.rawPeriod)?p.rawPeriod.toFixed(3):"---";
+}
+
 function renderStatus(){
   if(state.microphone==="MICROPHONE_OFF"){els.status.dataset.state="warning";els.status.textContent=`■ ${msg("MICROPHONE_OFF")}`;return;}
   if(state.microphone!=="READY"){els.status.dataset.state="error";els.status.textContent=`✕ ${msg(state.microphone)}`;return;}
@@ -35,12 +52,14 @@ function renderStatus(){
 }
 
 function resetLiveInput(){
-  latest=null; state.input="UNKNOWN"; state.hold=false; state.holdSnapshot=null;
+  latest=null; latestPitch=null; pitchDetector.reset(); state.input="UNKNOWN"; state.hold=false; state.holdSnapshot=null;
   els.hold.classList.remove("is-active"); els.hold.textContent="HOLD";
   els.inputState.textContent="---"; delete els.inputState.dataset.state;
   els.rms.textContent="--- dBFS"; els.peak.textContent="--- dBFS";
   els.levelBar.style.width="0%"; els.peakMarker.style.left="0%";
   els.diagInput.textContent="---"; els.diagRms.textContent="---"; els.diagPeak.textContent="---";
+  els.pitchFrequency.textContent="---";els.pitchConfidence.textContent="---";els.pitchVoiced.textContent="NO";els.pitchStatus.textContent="---";
+  els.diagPitchFrequency.textContent="---";els.diagPitchConfidence.textContent="---";els.diagPitchVoiced.textContent="---";els.diagPitchState.textContent="---";els.diagRawPeriod.textContent="---";
   els.sampleRate.textContent="---"; els.audioState.textContent="closed";
   els.ec.textContent="---"; els.ns.textContent="---"; els.agc.textContent="---";
 }
@@ -59,7 +78,7 @@ async function restartAnalysis(){
     const d=await engine.start();
     state.microphone="READY"; state.input="UNKNOWN";
     renderDiagnostics(d); els.restart.hidden=true; els.stop.hidden=false;
-    startLoops(); renderStatus();
+    pitchDetector.reset(); startLoops(); renderStatus();
   }catch(e){
     state.microphone=e.code||"AUDIO_INITIALIZATION_FAILED"; renderStatus();
   }finally{els.restart.disabled=false;}
@@ -69,15 +88,19 @@ async function startAudio(){
   els.start.disabled=true;els.retry.hidden=true;els.heroStatus.textContent=msg("REQUESTING");
   try{
     const d=await engine.start();state.microphone="READY";state.input="UNKNOWN";renderDiagnostics(d);
-    els.hero.hidden=true;els.workspace.hidden=false;els.heroStatus.textContent="";startLoops();drawTestGraphs();window.scrollTo({top:0});
+    els.hero.hidden=true;els.workspace.hidden=false;els.heroStatus.textContent="";pitchDetector.reset();startLoops();drawTestGraphs();requestAnimationFrame(()=>requestAnimationFrame(()=>els.workspace.scrollIntoView({behavior:"smooth",block:"start"})));
   }catch(e){
     state.microphone=e.code||"AUDIO_INITIALIZATION_FAILED";els.heroStatus.textContent=msg(state.microphone);els.retry.hidden=false;
   }finally{els.start.disabled=false;}
 }
 function startLoops(){
   clearInterval(measureTimer);clearInterval(uiTimer);
-  measureTimer=setInterval(()=>{latest=engine.measure();},25);
-  uiTimer=setInterval(()=>{if(latest)renderInput(latest);renderDiagnostics(engine.getDiagnostics());},100);
+  measureTimer=setInterval(()=>{
+    latest=engine.measure();
+    const b=engine.getTimeDomainBuffer();
+    latestPitch=pitchDetector.detect(b,engine.context?.sampleRate,latest?.inputState);
+  },50);
+  uiTimer=setInterval(()=>{if(latest)renderInput(latest);if(latestPitch)renderPitch(latestPitch);renderDiagnostics(engine.getDiagnostics());},100);
 }
 function drawTestGraphs(){
   for(const [id,type] of [["spectrumCanvas","s"],["waveCanvas","w"],["pitchCanvas","p"]]){

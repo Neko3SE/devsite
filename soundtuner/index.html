@@ -48,7 +48,7 @@
       <button id="retryButton" class="st-secondary st-retry" type="button" hidden>RETRY</button>
       <p id="heroStatus" class="st-hero-status" aria-live="polite"></p>
       <p class="st-privacy" data-i18n="privacy">音声はブラウザ内で解析され、サーバーへ送信されません。</p>
-      <p class="st-phase">PHASE 1 REV.2 / MICROPHONE &amp; INPUT ENGINE</p>
+      <p class="st-phase">PHASE 2 REV.1 / YIN PITCH DETECTION</p>
     </section>
 
     <section id="workspace" class="st-workspace" hidden>
@@ -70,11 +70,17 @@
       <div class="st-grid">
         <section class="st-panel st-tuner">
           <div id="instrumentView">
-            <div class="st-test-label">PITCH — TEST DATA / PHASE 2</div>
-            <div class="st-note">A4</div><div class="st-solfege" data-ja-only>ラ</div>
-            <div class="st-frequency">440.18 <span>Hz</span></div>
-            <div class="st-meter"><div class="st-meter-label"><span>FLAT</span><span>SHARP</span></div><div class="st-meter-line"><i class="st-dot"></i></div><div class="st-meter-scale"><span>-50</span><span>0</span><span>+50</span></div></div>
-            <div class="st-cent">+0.7 <span>cent</span></div><div class="st-intune">● IN TUNE <small>TEST DATA</small></div>
+            <div class="st-test-label">PITCH DETECTION — LIVE / PHASE 2</div>
+            <div id="pitchFrequency" class="st-note st-pitchfreq">---</div>
+            <div class="st-frequency"><span>Hz</span></div>
+            <dl class="st-details st-pitch-details">
+              <div><dt>CONFIDENCE</dt><dd id="pitchConfidence">---</dd></div>
+              <div><dt>VOICED</dt><dd id="pitchVoiced">NO</dd></div>
+              <div><dt>PITCH STATUS</dt><dd id="pitchStatus">---</dd></div>
+              <div><dt>RANGE</dt><dd>C2 – C7</dd></div>
+            </dl>
+            <div class="st-test-label">NOTE / CENT / IN TUNE — PHASE 3</div>
+            <div class="st-meter"><div class="st-meter-label"><span>FLAT</span><span>SHARP</span></div><div class="st-meter-line"></div><div class="st-meter-scale"><span>-50</span><span>0</span><span>+50</span></div></div>
           </div>
 
           <div id="vocalView" hidden>
@@ -109,7 +115,11 @@
               <div><dt>Auto Gain Control</dt><dd id="diagAGC">---</dd></div>
               <div><dt>Input State</dt><dd id="diagInput">---</dd></div>
               <div><dt>RMS</dt><dd id="diagRms">---</dd></div>
-              <div><dt>Peak</dt><dd id="diagPeak">---</dd></div>
+              <div><dt>Peak</dt><dd id="diagPeak">---</dd></div><div><dt>Pitch Frequency</dt><dd id="diagPitchFrequency">---</dd></div>
+              <div><dt>Pitch Confidence</dt><dd id="diagPitchConfidence">---</dd></div>
+              <div><dt>Voiced</dt><dd id="diagPitchVoiced">---</dd></div>
+              <div><dt>Pitch State</dt><dd id="diagPitchState">---</dd></div>
+              <div><dt>Raw Period</dt><dd id="diagRawPeriod">---</dd></div>
             </dl>
           </details>
           <details id="spectrumDetails"><summary>SPECTRUM <small>TEST DATA / PHASE 4</small></summary><canvas id="spectrumCanvas" width="900" height="300"></canvas></details>
@@ -117,7 +127,7 @@
           <details><summary>HARMONICS <small>TEST DATA / PHASE 4</small></summary><div class="st-harmonics"><div><span>H1</span><i style="--v:100%"></i><b>100%</b></div><div><span>H2</span><i style="--v:63%"></i><b>63%</b></div><div><span>H3</span><i style="--v:41%"></i><b>41%</b></div><div><span>H4</span><i style="--v:28%"></i><b>28%</b></div><div><span>H5</span><i style="--v:19%"></i><b>19%</b></div><div><span>H6</span><i style="--v:13%"></i><b>13%</b></div><div><span>H7</span><i style="--v:9%"></i><b>9%</b></div><div><span>H8</span><i style="--v:6%"></i><b>6%</b></div></div></details>
         </section>
       </div>
-      <p class="st-testnote" data-i18n="testNote">Phase 1ではマイク入力・RMS・Peak・Input Qualityのみ実測です。Pitch / Spectrum / Harmonics / Vocal値はテスト表示です。</p>
+      <p class="st-testnote" data-i18n="testNote">Phase 2ではFrequency / Confidence / Voiced / Pitch Statusまで実測です。Note / Cent / IN TUNE / Spectrum / Harmonics / Vocal値は未実装またはテスト表示です。</p>
     </section>
 
     <section class="st-info"><p class="st-kicker">HOW TO USE</p><h2 data-i18n="howTitle">START後はハンズフリー。</h2><div class="st-steps"><article><b>01</b><span data-i18n="step1">スマートフォンを置く</span></article><article><b>02</b><span>START ANALYSIS</span></article><article><b>03</b><span data-i18n="step3">楽器を鳴らす / 歌う</span></article><article><b>04</b><span data-i18n="step4">自動解析</span></article><article><b>05</b><span data-i18n="step5">結果を見る</span></article></div></section>

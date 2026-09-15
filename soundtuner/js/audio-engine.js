@@ -50,6 +50,11 @@ export class AudioEngine {
     else inputState="GOOD";
     return this.last={rms,rmsDb,peak,peakDb,inputState};
   }
+  getTimeDomainBuffer() {
+    if (!this.analyser || !this.buffer) return null;
+    this.analyser.getFloatTimeDomainData(this.buffer);
+    return this.buffer;
+  }
   getDiagnostics() {
     const track=this.stream?.getAudioTracks?.()[0];
     const settings=track?.getSettings?.()||{};
