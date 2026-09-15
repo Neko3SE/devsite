@@ -51,33 +51,27 @@ export class AudioEngine {
     return this.last={rms,rmsDb,peak,peakDb,inputState};
   }
   async startReferenceTone(frequency, volume=0.12) {
-    if (!this.context) throw new Error("AUDIO_CONTEXT_NOT_READY");
-    await this.context.resume();
-    this.stopReferenceTone();
-    const osc=this.context.createOscillator();
-    const gain=this.context.createGain();
-    const now=this.context.currentTime;
-    osc.type="sine";
-    osc.frequency.setValueAtTime(frequency,now);
-    gain.gain.setValueAtTime(0,now);
-    gain.gain.linearRampToValueAtTime(volume,now+0.025);
-    osc.connect(gain); gain.connect(this.context.destination);
-    osc.start();
-    this.toneOscillator=osc; this.toneGain=gain;
+    await this.stopReferenceTone();
+    const AudioContextClass=window.AudioContext||window.webkitAudioContext;
+    if(!AudioContextClass) throw this._error("AUDIO_INITIALIZATION_FAILED");
+    const context=new AudioContextClass();
+    if(context.state==="suspended") await context.resume();
+    const osc=context.createOscillator(), gain=context.createGain(), now=context.currentTime;
+    osc.type="sine"; osc.frequency.setValueAtTime(frequency,now);
+    gain.gain.setValueAtTime(0,now); gain.gain.linearRampToValueAtTime(volume,now+0.025);
+    osc.connect(gain); gain.connect(context.destination); osc.start();
+    this.toneContext=context; this.toneOscillator=osc; this.toneGain=gain;
   }
-  stopReferenceTone() {
-    const osc=this.toneOscillator, gain=this.toneGain;
-    if(!osc){ this.toneGain=null; return; }
-    try{
-      const now=this.context?.currentTime ?? 0;
-      if(gain){
-        gain.gain.cancelScheduledValues(now);
-        gain.gain.setValueAtTime(gain.gain.value,now);
-        gain.gain.linearRampToValueAtTime(0,now+0.025);
-      }
-      osc.stop(now+0.03);
-    }catch(_){}
-    this.toneOscillator=null; this.toneGain=null;
+  async stopReferenceTone() {
+    const context=this.toneContext, osc=this.toneOscillator, gain=this.toneGain;
+    if(osc&&context){try{const now=context.currentTime;if(gain){gain.gain.cancelScheduledValues(now);gain.gain.setValueAtTime(gain.gain.value,now);gain.gain.linearRampToValueAtTime(0,now+0.025);}osc.stop(now+0.03);}catch(_){}}
+    this.toneContext=null;this.toneOscillator=null;this.toneGain=null;
+    if(context&&context.state!=="closed"){await new Promise(r=>setTimeout(r,40));try{await context.close();}catch(_){}}
+  }
+  async stopMeasurement() {
+    if(this.stream){this.stream.getTracks().forEach(t=>t.stop());this.stream=null;}
+    if(this.context&&this.context.state!=="closed"){try{await this.context.close();}catch(_){}}
+    this.context=null;this.source=null;this.analyser=null;this.buffer=null;this.last=null;this.clipUntil=0;
   }
   getTimeDomainBuffer() {
     if (!this.analyser || !this.buffer) return null;
@@ -96,10 +90,8 @@ export class AudioEngine {
     };
   }
   async stop() {
-    this.stopReferenceTone();
-    if(this.stream){this.stream.getTracks().forEach(t=>t.stop());this.stream=null;}
-    if(this.context && this.context.state!=="closed"){try{await this.context.close();}catch{}}
-    this.context=null;this.source=null;this.analyser=null;this.buffer=null;this.last=null;this.clipUntil=0;
+    await this.stopReferenceTone();
+    await this.stopMeasurement();
   }
   _error(code,cause){const e=new Error(code);e.code=code;e.cause=cause;return e;}
   _mapMediaError(e){

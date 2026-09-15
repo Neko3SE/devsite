@@ -7,7 +7,7 @@ const engine=new AudioEngine();
 const pitchDetector=new PitchDetector();
 const state={microphone:"NOT_STARTED",input:"UNKNOWN",hold:false,holdSnapshot:null,mode:"INSTRUMENT"};
 let measureTimer=0, uiTimer=0, latest=null, latestPitch=null, latestTuning=null;
-let tunerState={a4:440.0,tolerance:5,accidental:"sharp",status:"---",toneMidi:69,tonePlaying:false};
+let tunerState={a4:440.0,tolerance:5,accidental:"sharp",status:"---",toneMidi:69,tonePlaying:false,toneTransition:false};
 
 const $=id=>document.getElementById(id);
 const els={hero:$("hero"),workspace:$("workspace"),start:$("startButton"),retry:$("retryButton"),heroStatus:$("heroStatus"),status:$("statusLine"),
@@ -62,27 +62,30 @@ function updateToneReadout(){
   return f;
 }
 async function toggleTone(){
+  if(tunerState.toneTransition)return;
+  tunerState.toneTransition=true;els.tonePlay.disabled=true;
   if(tunerState.tonePlaying){
-    engine.stopReferenceTone();
-    tunerState.tonePlaying=false;
-    els.tonePlay.textContent="▶ PLAY TONE";
-    latestPitch=null; latestTuning=null; pitchDetector.reset();
-    startLoops();
-    renderStatus();
+    try{
+      await engine.stopReferenceTone();tunerState.tonePlaying=false;els.tonePlay.textContent="▶ PLAY TONE";
+      const d=await engine.start();state.microphone="READY";state.input="UNKNOWN";renderDiagnostics(d);
+      pitchDetector.reset();latest=null;latestPitch=null;latestTuning=null;
+      await new Promise(r=>setTimeout(r,250));startLoops();renderStatus();els.stop.hidden=false;els.restart.hidden=true;
+    }catch(e){
+      tunerState.tonePlaying=false;state.microphone=e?.code||"MICROPHONE_UNAVAILABLE";stopLoops();resetLiveInput();renderStatus();els.stop.hidden=true;els.restart.hidden=false;
+    }finally{tunerState.toneTransition=false;els.tonePlay.disabled=false;}
     return;
   }
-  if(state.microphone!=="READY") return;
-  stopLoops();
-  const f=updateToneReadout();
+  if(state.microphone!=="READY"){tunerState.toneTransition=false;els.tonePlay.disabled=false;return;}
+  stopLoops();latest=null;latestPitch=null;latestTuning=null;pitchDetector.reset();
   try{
-    await engine.startReferenceTone(f);
-    tunerState.tonePlaying=true;
-    els.tonePlay.textContent="■ STOP TONE";
+    await engine.stopMeasurement();state.microphone="MICROPHONE_OFF";state.input="UNKNOWN";renderStatus();
+    const f=updateToneReadout();await engine.startReferenceTone(f);tunerState.tonePlaying=true;els.tonePlay.textContent="■ STOP TONE";els.stop.hidden=true;
   }catch(e){
-    tunerState.tonePlaying=false;
-    els.tonePlay.textContent="▶ PLAY TONE";
-    startLoops();
-  }
+    tunerState.tonePlaying=false;els.tonePlay.textContent="▶ PLAY TONE";
+    try{const d=await engine.start();state.microphone="READY";renderDiagnostics(d);pitchDetector.reset();await new Promise(r=>setTimeout(r,250));startLoops();els.stop.hidden=false;}
+    catch(re){state.microphone=re?.code||"MICROPHONE_UNAVAILABLE";els.stop.hidden=true;els.restart.hidden=false;}
+    renderStatus();
+  }finally{tunerState.toneTransition=false;els.tonePlay.disabled=false;}
 }
 
 
@@ -140,7 +143,7 @@ function resetLiveInput(){
   els.ec.textContent="---"; els.ns.textContent="---"; els.agc.textContent="---";
 }
 async function stopAnalysis(){
-  tunerState.tonePlaying=false; if(els.tonePlay)els.tonePlay.textContent="▶ PLAY TONE";
+  tunerState.tonePlaying=false;tunerState.toneTransition=false;if(els.tonePlay){els.tonePlay.textContent="▶ PLAY TONE";els.tonePlay.disabled=false;}
   stopLoops();
   await engine.stop();
   resetLiveInput();
