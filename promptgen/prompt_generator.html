@@ -30,7 +30,7 @@
 .check-list{display:grid;gap:8px}.check-item{padding:10px 11px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.025);line-height:1.5}.check-item.ok{border-color:rgba(117,230,168,.22)}.check-item.tip{border-color:rgba(255,209,102,.20)}.check-item.warn{border-color:rgba(255,127,140,.28)}.check-item.jump{cursor:pointer}.check-item.jump:hover,.check-item.jump:focus{border-color:rgba(99,230,167,.5);outline:none}.output-wrap{margin-top:14px}.output-status{min-height:22px;color:var(--warn);font-size:.88rem;margin-bottom:6px}.output{width:100%;min-height:340px;max-height:520px;resize:vertical;border:1px solid var(--line);border-radius:14px;padding:14px;background:#080b12;color:#eaf4ff;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;line-height:1.55;white-space:pre;overflow:auto}.button-row{display:flex;gap:9px;flex-wrap:wrap;margin-top:10px}.save-name-row{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap}.save-name-row label{font-size:.84rem;color:var(--muted);font-weight:750}.save-name-row input{flex:1;min-width:180px;border:1px solid var(--line);background:rgba(0,0,0,.24);color:var(--text);border-radius:10px;padding:9px 11px}.file-caveat{margin-top:10px;padding:9px 11px;border-radius:10px;background:rgba(255,209,102,.055);color:#e9dcae;font-size:.82rem;line-height:1.55}.action.primary{border-color:rgba(99,230,167,.5);background:linear-gradient(135deg,rgba(99,230,167,.20),rgba(101,184,255,.17));color:#fff}.action.danger{color:#ffd7db}.action:disabled{opacity:.4;cursor:not-allowed}.generate-message{min-height:18px;margin-top:6px;color:var(--ok);font-size:.78rem;font-weight:750}.message{min-height:24px;margin-top:4px;color:var(--muted);font-size:.88rem}.back-row{display:flex;justify-content:flex-end;margin-top:16px}.back-link{border-color:rgba(99,230,167,.28)}footer{text-align:center;color:var(--muted);font-size:.88rem;padding:26px 0 6px}footer a{color:var(--text)}footer a:hover{color:var(--accent)}
 @media(max-width:980px){.category-grid{grid-template-columns:repeat(4,1fr)}.layout{grid-template-columns:1fr}}@media(max-width:620px){.stage{padding:18px 10px 14px}.panel{padding:13px;border-radius:16px}.category-grid{grid-template-columns:repeat(2,1fr)}.brand h1{font-size:2.15rem}.lang-switch{width:100%}.lang-switch button{flex:1}.back-link{width:100%}.button-row .action{flex:1 1 45%}}@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;scroll-behavior:auto!important;transition:none!important}}
 </style>
-  <link rel="stylesheet" href="../common/neko3se-site.css">
+  <link rel="stylesheet" href="../common/neko3se-site.css?v=20260915r3">
 </head>
 <body data-n3-page="promptgen" data-n3-root="..">
   <header id="n3-site-header"></header>
@@ -149,5 +149,5 @@ $('clearBtn').onclick=()=>{if(!confirm(tr('confirmClear')))return;document.query
 renderCategories();renderAllFields();setMode('simple');renderFiles();updateCheck();syncButtons();updateOutputState();
 })();
 </script>
-  <script src="../common/neko3se-site.js" defer></script>
+  <script src="../common/neko3se-site.js?v=20260915r3" defer></script>
 </body></html>

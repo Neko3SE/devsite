@@ -189,6 +189,15 @@
   overscroll-behavior: contain;
 }
 
+.n3-drawer-home {
+  display: grid;
+  gap: 4px;
+}
+
+.n3-drawer-link--top {
+  font-weight: 850;
+}
+
 .n3-drawer-group {
   display: grid;
   gap: 4px;
