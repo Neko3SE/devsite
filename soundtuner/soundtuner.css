@@ -14,3 +14,5 @@
 #centDot{left:50%;transition:left .08s linear}
 
 .st-vocal-results{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:14px}.st-vocal-results>div{background:#0d181c;border:1px solid var(--line);border-radius:12px;padding:10px}.st-vocal-results span{display:block;color:var(--muted);font-size:.62rem}.st-vocal-results strong{font-size:.8rem;font-variant-numeric:tabular-nums}@media(max-width:560px){.st-vocal-results{grid-template-columns:1fr}}
+
+.st-vocal-event{min-height:2.4em;margin:-8px 0 14px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;color:var(--muted);font-size:.72rem}.st-vocal-event[data-state="complete"]{color:var(--green)}.st-vocal-event[data-state="ended"]{color:var(--warn)}

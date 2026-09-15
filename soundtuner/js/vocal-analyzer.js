@@ -1,10 +1,12 @@
 export class VocalAnalyzer {
   constructor(){this.reset();}
-  reset(){this.state="WAITING_FOR_VOICE";this.frames=[];this.sessionStart=null;this.lastValidAt=null;this.candidateStart=null;this.lastResult=null;this.completed=false;}
+  reset(){this.state="WAITING_FOR_VOICE";this.frames=[];this.sessionStart=null;this.lastValidAt=null;this.candidateStart=null;this.lastResult=null;this.completed=false;this.completedReason=null;this.awaitingRelease=false;}
   update(pitch,nowMs,hold=false){
     if(hold)return this.snapshot(nowMs);
     const valid=!!(pitch?.voiced&&pitch?.pitchState==="VALID"&&Number.isFinite(pitch.frequency));
     if(valid){
+      if(this.awaitingRelease){this.state="SESSION_COMPLETE";return this.snapshot(nowMs);}
+      if(this.completed){this.completed=false;this.completedReason=null;this.state="WAITING_FOR_VOICE";}
       if(this.candidateStart===null)this.candidateStart=nowMs;
       if(this.sessionStart===null && nowMs-this.candidateStart>=200){this.sessionStart=this.candidateStart;this.frames=[];this.completed=false;}
       if(this.sessionStart!==null){
@@ -12,16 +14,18 @@ export class VocalAnalyzer {
         const elapsed=Math.min(30000,nowMs-this.sessionStart);
         this.frames.push({t:elapsed,f:pitch.frequency});
         if(this.frames.length>900)this.frames.shift();
-        if(elapsed>=30000){this.complete();return this.snapshot(nowMs);}
+        if(elapsed>=30000){this.complete("MAX_30S");return this.snapshot(nowMs);}
       }else this.state="VOICE_DETECTED";
     }else{
       this.candidateStart=null;
-      if(this.sessionStart!==null&&this.lastValidAt!==null&&nowMs-this.lastValidAt>=1000)this.complete();
+      if(this.sessionStart!==null&&this.lastValidAt!==null&&nowMs-this.lastValidAt>=1000)this.complete("SILENCE_1S");
+      else if(this.awaitingRelease){this.awaitingRelease=false;this.state="SESSION_COMPLETE";}
+      else if(this.completed)this.state=this.completedReason==="MAX_30S"?"SESSION_COMPLETE":"VOICE_ENDED";
       else if(this.sessionStart===null)this.state=this.lastResult?"VOICE_ENDED":"WAITING_FOR_VOICE";
     }
     return this.snapshot(nowMs);
   }
-  complete(){
+  complete(reason="SILENCE_1S"){
     if(this.frames.length){
       const fs=this.frames.map(x=>x.f),avg=fs.reduce((a,b)=>a+b,0)/fs.length;
       const low=Math.min(...fs),high=Math.max(...fs);
@@ -29,7 +33,9 @@ export class VocalAnalyzer {
       const variation=Math.max(...cents.map(Math.abs));
       this.lastResult={avgHz:avg,lowHz:low,highHz:high,variationCent:variation,vibrato:this._vibrato(cents)};
     }
-    this.state="VOICE_ENDED";this.sessionStart=null;this.lastValidAt=null;this.candidateStart=null;this.frames=[];this.completed=true;
+    this.completedReason=reason;this.state=reason==="MAX_30S"?"SESSION_COMPLETE":"VOICE_ENDED";
+    this.awaitingRelease=reason==="MAX_30S";
+    this.sessionStart=null;this.lastValidAt=null;this.candidateStart=null;this.frames=[];this.completed=true;
   }
   _vibrato(cents){
     if(cents.length<20)return {state:"INSUFFICIENT DATA",rateHz:null,depthCent:null};
@@ -42,6 +48,6 @@ export class VocalAnalyzer {
   }
   snapshot(nowMs){
     const elapsed=this.sessionStart===null?0:Math.min(30000,nowMs-this.sessionStart);
-    return {state:this.state,elapsedMs:elapsed,frames:this.frames.slice(),lastResult:this.lastResult};
+    return {state:this.state,elapsedMs:this.completedReason==="MAX_30S"&&this.completed?30000:elapsed,frames:this.frames.slice(),lastResult:this.lastResult,completedReason:this.completedReason};
   }
 }

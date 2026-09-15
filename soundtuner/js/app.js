@@ -19,7 +19,7 @@ instrumentMode:$("instrumentMode"),vocalMode:$("vocalMode"),instrumentView:$("in
 inputState:$("inputState"),levelBar:$("levelBar"),peakMarker:$("peakMarker"),rms:$("rmsValue"),peak:$("peakValue"),
 sampleRate:$("diagSampleRate"),audioState:$("diagAudioState"),ec:$("diagEC"),ns:$("diagNS"),agc:$("diagAGC"),diagInput:$("diagInput"),diagRms:$("diagRms"),diagPeak:$("diagPeak"),pitchFrequency:$("pitchFrequency"),pitchConfidence:$("pitchConfidence"),pitchVoiced:$("pitchVoiced"),pitchStatus:$("pitchStatus"),diagPitchFrequency:$("diagPitchFrequency"),diagPitchConfidence:$("diagPitchConfidence"),diagPitchVoiced:$("diagPitchVoiced"),diagPitchState:$("diagPitchState"),diagRawPeriod:$("diagRawPeriod"),tunerNote:$("tunerNote"),tunerSolfege:$("tunerSolfege"),tunerTarget:$("tunerTarget"),tunerCent:$("tunerCent"),tunerStatus:$("tunerStatus"),centDot:$("centDot"),a4:$("a4Reference"),tolerance:$("tuneTolerance"),accidental:$("accidentalMode"),toneNote:$("toneNote"),toneFrequency:$("toneFrequency"),toneDown:$("toneDown"),tonePlay:$("tonePlay"),toneUp:$("toneUp"),
 spectralCentroid:$("spectralCentroid"),spectrumCanvas:$("spectrumCanvas"),waveCanvas:$("waveCanvas"),
-vocalNote:$("vocalNote"),vocalSolfege:$("vocalSolfege"),vocalFrequency:$("vocalFrequency"),vocalState:$("vocalState"),vocalTime:$("vocalTime"),pitchCanvas:$("pitchCanvas"),vocalAvg:$("vocalAvg"),vocalRange:$("vocalRange"),vocalVariation:$("vocalVariation"),vocalVibrato:$("vocalVibrato"),
+vocalNote:$("vocalNote"),vocalSolfege:$("vocalSolfege"),vocalFrequency:$("vocalFrequency"),vocalState:$("vocalState"),vocalTime:$("vocalTime"),vocalEvent:$("vocalEvent"),pitchCanvas:$("pitchCanvas"),vocalAvg:$("vocalAvg"),vocalRange:$("vocalRange"),vocalVariation:$("vocalVariation"),vocalVibrato:$("vocalVibrato"),
 sheet:$("toneSheet"),backdrop:$("toneBackdrop"),toneClose:$("toneClose")};
 
 function dbText(v){return Number.isFinite(v)?`${v.toFixed(1)} dBFS`:"-∞ dBFS";}
@@ -147,7 +147,12 @@ function renderVocal(v,pitch){
   const f=pitch?.pitchState==="VALID"?pitch.frequency:null;
   els.vocalNote.textContent=noteTextFromHz(f);els.vocalFrequency.textContent=Number.isFinite(f)?f.toFixed(2):"---";
   if(els.vocalSolfege){const n=Number.isFinite(f)?Math.round(69+12*Math.log2(f/tunerState.a4)):null;els.vocalSolfege.textContent=n===null?"---":noteParts(n,tunerState.accidental).solfege||"---";}
-  els.vocalState.textContent=`● ${v.state}`;els.vocalTime.textContent=`${formatTime(v.elapsedMs)} / 00:30`;drawPitchHistory(v);
+  els.vocalState.textContent=`● ${v.state}`;els.vocalTime.textContent=`${formatTime(v.elapsedMs)} / 00:30`;
+  if(els.vocalEvent){
+    const event=v.state==="SESSION_COMPLETE"?"30秒に到達しました。音を止め、次の発声で新しいセッションを開始します。":v.state==="VOICE_ENDED"?"約1秒の無声を検出し、セッションを終了しました。":v.state==="ANALYZING"?"発声を解析中です。音を止めると約1秒後に終了します。":v.state==="VOICE_DETECTED"?"VOICE DETECTED — セッション開始判定中です。":"発声すると自動でセッションを開始します。";
+    els.vocalEvent.textContent=event;els.vocalEvent.dataset.state=v.state==="SESSION_COMPLETE"?"complete":v.state==="VOICE_ENDED"?"ended":"live";
+  }
+  drawPitchHistory(v);
   const r=v.lastResult;
   els.vocalAvg.textContent=r?`${noteTextFromHz(r.avgHz)} / ${r.avgHz.toFixed(2)} Hz`:"---";
   els.vocalRange.textContent=r?`${noteTextFromHz(r.lowHz)} ${r.lowHz.toFixed(2)} – ${noteTextFromHz(r.highHz)} ${r.highHz.toFixed(2)} Hz`:"---";
@@ -156,7 +161,7 @@ function renderVocal(v,pitch){
 }
 function clearVocal(){
   for(const e of [els.vocalNote,els.vocalFrequency,els.vocalAvg,els.vocalRange,els.vocalVariation])if(e)e.textContent="---";
-  if(els.vocalSolfege)els.vocalSolfege.textContent="---";if(els.vocalState)els.vocalState.textContent="● WAITING FOR VOICE";if(els.vocalTime)els.vocalTime.textContent="00:00 / 00:30";if(els.vocalVibrato)els.vocalVibrato.textContent="INSUFFICIENT DATA";
+  if(els.vocalSolfege)els.vocalSolfege.textContent="---";if(els.vocalState)els.vocalState.textContent="● WAITING FOR VOICE";if(els.vocalTime)els.vocalTime.textContent="00:00 / 00:30";if(els.vocalEvent){els.vocalEvent.textContent="発声すると自動でセッションを開始します。";els.vocalEvent.dataset.state="live";}if(els.vocalVibrato)els.vocalVibrato.textContent="INSUFFICIENT DATA";
   if(els.pitchCanvas)els.pitchCanvas.getContext("2d").clearRect(0,0,els.pitchCanvas.width,els.pitchCanvas.height);
 }
 function clearSound(){
