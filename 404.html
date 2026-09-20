@@ -498,7 +498,7 @@
 <body>
   <div class="shell" id="app">
     <header class="topbar">
-      <a class="brand" id="brandLink" href="/devsite/" aria-label="Neko3SE LAB Home">
+      <a class="brand" id="brandLink" href="https://www.neko3se.com/" aria-label="Neko3SE LAB Home">
         <span class="brand-mark" aria-hidden="true"></span>
         <span>Neko3SE LAB <small>/ on GitHub</small></span>
       </a>
@@ -556,10 +556,10 @@
             </div>
 
             <div class="actions">
-              <a class="button primary" id="primaryAction" href="/devsite/">
+              <a class="button primary" id="primaryAction" href="https://www.neko3se.com/">
                 OPEN NEW LOCATION
               </a>
-              <a class="button" id="homeAction" href="/devsite/">
+              <a class="button" id="homeAction" href="https://www.neko3se.com/">
                 NEKO3SE LAB HOME
               </a>
             </div>
@@ -576,7 +576,7 @@
       <span>AI / WEB / IDEA / PLAY</span>
       <span>
         on GitHub &copy;2026 Neko3SE.
-        <a id="licenseLink" href="/devsite/LICENSE.txt">#LICENSE</a>
+        <a id="licenseLink" href="https://www.neko3se.com/LICENSE.txt">#LICENSE</a>
       </span>
     </footer>
   </div>
@@ -588,7 +588,7 @@
       /*
        * Neko3SE LAB - Route Recovery Table
        *
-       * GitHub Pages project site:
+       * Legacy GitHub Pages project site:
        *   https://neko3se.github.io/devsite/
        *
        * Keys and values below are paths relative to the site root.
@@ -608,7 +608,8 @@
         "/VOICE_CHANGER/index.html": "/voicechanger/"
       };
 
-      const PROJECT_PATH = "/devsite";
+      const SITE_ORIGIN = "https://www.neko3se.com";
+      const LEGACY_PROJECT_PATH = "/devsite";
 
       const app = document.getElementById("app");
       const requestPath = document.getElementById("requestPath");
@@ -628,14 +629,14 @@
       const panelCode = document.getElementById("panelCode");
 
       const pathname = window.location.pathname;
-      const isProjectSite = pathname === PROJECT_PATH || pathname.startsWith(PROJECT_PATH + "/");
-      const siteBase = isProjectSite ? PROJECT_PATH : "";
-      const relativePath = siteBase && pathname.startsWith(siteBase)
-        ? pathname.slice(siteBase.length) || "/"
+      const isLegacyProjectPath = pathname === LEGACY_PROJECT_PATH ||
+        pathname.startsWith(LEGACY_PROJECT_PATH + "/");
+      const relativePath = isLegacyProjectPath
+        ? pathname.slice(LEGACY_PROJECT_PATH.length) || "/"
         : pathname;
 
-      const homeUrl = (siteBase || "") + "/";
-      const licenseUrl = (siteBase || "") + "/LICENSE.txt";
+      const homeUrl = SITE_ORIGIN + "/";
+      const licenseUrl = SITE_ORIGIN + "/LICENSE.txt";
 
       brandLink.href = homeUrl;
       homeAction.href = homeUrl;
@@ -645,7 +646,7 @@
       const destination = redirects[relativePath];
 
       if (destination) {
-        const targetUrl = (siteBase || "") + destination +
+        const targetUrl = SITE_ORIGIN + destination +
           window.location.search +
           window.location.hash;
 
@@ -656,7 +657,7 @@
         lead.textContent =
           "このページは新しいフォルダへ移動しました。新しいルートへ自動的に転送します。";
         routeStatus.textContent = "MIGRATION ROUTE FOUND";
-        targetPath.textContent = (siteBase || "") + destination;
+        targetPath.textContent = SITE_ORIGIN + destination;
         primaryAction.href = targetUrl;
         primaryAction.textContent = "OPEN NEW LOCATION";
         message.innerHTML =
