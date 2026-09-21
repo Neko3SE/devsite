@@ -6,7 +6,7 @@
 A personal lab for generative AI content, IT experiments, creative ideas, and browser-based projects.
 
 🌐 **Neko3SE LAB on GitHub**  
-https://neko3se.com/
+https://www.neko3se.com/
 
 ---
 
@@ -21,6 +21,33 @@ https://neko3se.com/
 
 From practical tools to technical experiments, music, and playful projects,  
 the lab explores how ideas can be turned into things that actually work.
+
+---
+
+
+## Generative AI-Driven Development / 生成AI駆動開発
+
+Neko3SE LABでは、生成AIを企画・設計・実装・レビュー・改善に活用し、人による判断・承認と実機検証を組み合わせて、実際に動く成果物へ仕上げる「生成AI駆動開発」を実践しています。  
+Neko3SE LAB practices **Generative AI-Driven Development**, using generative AI to support planning, design, implementation, review, and improvement while keeping goals, decisions, approvals, and real-device testing as human responsibilities.
+
+**IDEA → AI → BUILD → TEST → FINDINGS → IMPROVE ↻**
+
+---
+
+## LAB NOTE
+
+各コンテンツでは、完成した機能だけでなく、**「なぜ作ったか」「何を試したか」「何が分かったか」**をLAB NOTEとして公開しています。各コンテンツのディレクトリには、機能・技術・動作環境・既知の制約をまとめた `README.md`（Technical Documentation）も配置しています。  
+Each project includes a **LAB NOTE** describing why it was built, what was tested, and what was learned. Each project directory also contains a `README.md` with technical documentation, features, environments, and known limitations.
+
+---
+
+## About Neko3SE 😺
+
+Neko3SEは、心理学を専攻した組み込みシステムエンジニアです。生成AI駆動開発とWeb技術を使い、アイデアを実際に動くものへ変える実験と制作を行っています。  
+Neko3SE is an embedded systems engineer with an academic background in psychology, experimenting with generative AI-driven development and web technologies to turn ideas into things that actually work.
+
+▶ [ABOUT Neko3SE](https://www.neko3se.com/about/)  
+▶ [Neko3SE on GitHub](https://github.com/Neko3SE)
 
 ---
 
@@ -48,7 +75,7 @@ A collection of browser-based experimental mini-games inspired by IT work and co
 - 外部API・外部ライブラリを使用せず動作  
   Runs without external APIs or libraries
 
-▶ [無駄技研。を開く / Open Muda Giken](https://neko3se.com/mudagiken/)
+▶ [無駄技研。を開く / Open Muda Giken](https://www.neko3se.com/mudagiken/)
 
 ---
 
@@ -75,7 +102,7 @@ An unofficial e-Gov law search viewer by Neko3SE LAB. It uses law data from the 
 > **注意 / Note:** 本Viewerは非公式ツールであり、法的助言を提供するものではありません。正確な法令内容はe-Gov法令検索で確認してください。  
 > This viewer is unofficial and does not provide legal advice. Confirm authoritative law text on the official e-Gov Law Search service.
 
-▶ [e-Gov 法令検索 Viewerβを開く / Open e-Gov Law Search Viewer β](https://neko3se.com/egov/)
+▶ [e-Gov 法令検索 Viewerβを開く / Open e-Gov Law Search Viewer β](https://www.neko3se.com/egov/)
 
 ---
 
@@ -104,7 +131,7 @@ A browser-based tool that helps users create structured Markdown prompts by fill
 - クリップボードへのコピー / Markdownファイル保存  
   Copy to clipboard / save as a Markdown file
 
-▶ [PROMPT GENERATORを開く / Open PROMPT GENERATOR](https://neko3se.com/promptgen/)
+▶ [PROMPT GENERATORを開く / Open PROMPT GENERATOR](https://www.neko3se.com/promptgen/)
 
 ---
 
@@ -127,7 +154,7 @@ A research page that explores prompt design for high-quality AI image generation
 - サンプル画像はBase64としてHTML内に埋め込み  
   Sample image is embedded directly in the HTML as Base64
 
-▶ [PRO IMAGE PROMPT LABを開く / Open PRO IMAGE PROMPT LAB](https://neko3se.com/imageprompt/)
+▶ [PRO IMAGE PROMPT LABを開く / Open PRO IMAGE PROMPT LAB](https://www.neko3se.com/imageprompt/)
 
 ---
 
@@ -153,7 +180,7 @@ A browser-based piano emulator with a two-octave keyboard.
 - スマートフォンでは横向き演奏を案内  
   Landscape orientation guidance for smartphones
 
-▶ [PIANO EMULATORを開く / Open PIANO EMULATOR](https://neko3se.com/pianoemu/)
+▶ [PIANO EMULATORを開く / Open PIANO EMULATOR](https://www.neko3se.com/pianoemu/)
 
 ---
 
@@ -166,7 +193,7 @@ A browser-based piano emulator with a two-octave keyboard.
 五線譜上のドレミファソラシドと、それぞれの音を同期させた音楽クリップです。  
 A music clip that synchronizes the notes Do-Re-Mi-Fa-Sol-La-Ti-Do on a staff with their corresponding tones.
 
-▶ [五線譜ドレミclipを開く / Open the Do-Re-Mi Clip](https://neko3se.com/gosenfu/)
+▶ [五線譜ドレミclipを開く / Open the Do-Re-Mi Clip](https://www.neko3se.com/gosenfu/)
 
 ---
 
@@ -191,7 +218,7 @@ A browser-based experimental tool that uses microphone input for voice analysis,
 - PC / Androidで動作確認済み  
   Verified on PC and Android
 
-▶ [VOICE CHANGER LAB βを開く / Open VOICE CHANGER LAB β](https://neko3se.com/voicechanger/)
+▶ [VOICE CHANGER LAB βを開く / Open VOICE CHANGER LAB β](https://www.neko3se.com/voicechanger/)
 
 ---
 
@@ -217,7 +244,7 @@ A browser-based sound analyzer that uses microphone input to observe instrument 
 - Windows 11 / Edge、Android / Chrome、iPhone / Safariで動作確認済み  
   Verified on Windows 11 / Edge, Android / Chrome, and iPhone / Safari
 
-▶ [SOUND TUNER LAB βを開く / Open SOUND TUNER LAB β](https://neko3se.com/soundtuner/)
+▶ [SOUND TUNER LAB βを開く / Open SOUND TUNER LAB β](https://www.neko3se.com/soundtuner/)
 
 ---
 
@@ -245,6 +272,8 @@ devsite/
 ├─ index.html                         # Neko3SE LAB top page
 ├─ index.css                          # Top page styles
 ├─ 404.html                           # Route Recovery / custom 404
+├─ about/                             # ABOUT Neko3SE
+│  └─ index.html
 │
 ├─ common/                            # Shared site components
 │  ├─ neko3se-site.css               # Common header / footer styles
@@ -302,11 +331,11 @@ devsite/
 
 ## Usage / 利用方法
 
-公開版はGitHub Pagesから、そのままブラウザで利用できます。  
-The published version can be used directly in a web browser through GitHub Pages.
+公開版はNeko3SE LABの独自ドメインから、そのままブラウザで利用できます。  
+The published version can be used directly in a web browser through the Neko3SE LAB custom domain.
 
 **Neko3SE LAB**  
-https://neko3se.com/
+https://www.neko3se.com/
 
 ソースコードを確認する場合は、このリポジトリ内のHTML / CSS / JavaScriptファイルを参照してください。  
 To inspect the source code, see the HTML, CSS, and JavaScript files in this repository.
