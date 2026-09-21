@@ -1,0 +1,34 @@
+# Neko3SE LAB
+
+> Neko3SE LAB is a personal lab for generative AI content, IT experiments, creative ideas, and browser-based projects.
+
+Canonical site: https://neko3se.com/
+Primary language: Japanese. Some content provides English or bilingual interfaces.
+
+Neko3SE LAB practices Generative AI-Driven Development, using generative AI to support planning, design, implementation, review, and improvement while keeping goals, decisions, approvals, and real-device testing as human responsibilities.
+
+Project README.md files are Technical Documentation. Use them for project overviews, features, implementation details, supported environments, known limitations, and experimental findings. Each project README also provides the corresponding live-site URL.
+
+## Site
+
+- [Neko3SE LAB README](https://neko3se.com/README.md): Overview of Neko3SE LAB, its development philosophy, contents, repository structure, and project information.
+- [ABOUT Neko3SE](https://neko3se.com/about/): Author profile and background behind Neko3SE LAB and its development activities.
+
+## Development
+
+- [AI駆動型非生産的Web技術研究所。](https://neko3se.com/mudagiken/README.md): Ten browser mini-games exploring deliberately playful and non-productive ideas implemented with generative AI, JavaScript, sound, animation, and multilingual UI.
+- [e-Gov 法令検索 Viewer β](https://neko3se.com/egov/README.md): Unofficial browser viewer using the e-Gov Law API, with original genre-based navigation and separate law-name and content search. It does not provide legal advice.
+- [PROMPT GENERATOR](https://neko3se.com/promptgen/README.md): Browser-based tool for building reusable structured Markdown prompts with simple and advanced modes, copying and saving, and Base64 Data URL file attachments.
+- [PRO IMAGE PROMPT LAB](https://neko3se.com/imageprompt/README.md): Experimental guide to image-generation prompt design covering subject, composition, light, texture, mood, sample prompts, and generated examples.
+
+## Entertainment
+
+- [PIANO EMULATOR](https://neko3se.com/pianoemu/README.md): Two-octave browser piano combining playable keys with text-based note playback, BPM and volume controls, and Japanese and English interfaces.
+- [五線譜ドレミclip](https://neko3se.com/gosenfu/README.md): Short browser-based learning clip synchronizing staff notation, solfege labels, and sounding notes using an embedded video.
+- [VOICE CHANGER LAB β](https://neko3se.com/voicechanger/README.md): Browser-based voice recording and transformation experiment with waveform visualization, audio metrics, processed-audio playback, and WAV saving.
+- [SOUND TUNER LAB β](https://neko3se.com/soundtuner/README.md): Browser-based tuner and audio-analysis experiment for instruments and vocals, including pitch, frequency, tuning, spectrum, waveform, and harmonics visualization.
+
+## Optional
+
+- [GitHub Repository](https://github.com/Neko3SE/devsite): Source repository for Neko3SE LAB.
+- [LICENSE](https://neko3se.com/LICENSE.txt): Apache License 2.0 terms for Neko3SE LAB.
