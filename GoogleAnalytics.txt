@@ -1,0 +1,12 @@
+# Google analytics
+https://analytics.google.com/
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-QRJ1BC3PVM"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-QRJ1BC3PVM');
+</script>
