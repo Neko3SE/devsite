@@ -100,7 +100,31 @@
     </section>
   </div>
 </main></div>
-<footer id="n3-site-footer"></footer>
+
+  <section class="n3-labnote" aria-labelledby="n3-labnote-promptgen-title">
+    <div class="n3-labnote-head"><p class="n3-labnote-kicker">LAB NOTE</p><h2 id="n3-labnote-promptgen-title">PROMPT GENERATOR</h2><p class="n3-labnote-theme-label">EXPERIMENT THEME</p><p class="n3-labnote-theme">PROMPT <span>×</span> STRUCTURE</p></div>
+    <section class="n3-labnote-section"><p class="n3-labnote-index">01 / WHY</p><h3><span class="n3-labnote-ja">なぜ作った？</span><span class="n3-labnote-en">Why was it built?</span></h3><div class="n3-labnote-ja">
+          <p>生成AIへの指示を長い文章としてゼロから書くのではなく、目的・条件・制約などの要素に分けて入力すれば、より整理された再利用可能なプロンプトを作れるのではないか。</p>
+          <p>プロンプトそのものではなく、「指示を組み立てる構造」を試すために制作しました。</p>
+        </div><div class="n3-labnote-en">
+          <p>Can reusable prompts be made easier to build by separating goals, conditions and constraints instead of writing a long instruction from scratch?</p>
+          <p>This experiment focuses not on a particular prompt, but on the structure used to assemble instructions.</p>
+        </div></section>
+    <section class="n3-labnote-section"><p class="n3-labnote-index">02 / EXPERIMENT</p><h3><span class="n3-labnote-ja">何を試した？</span><span class="n3-labnote-en">What was tested?</span></h3><p class="n3-labnote-ja">簡易入力と高度入力を用意し、入力内容からMarkdown形式のプロンプトを生成します。生成結果のコピー・保存に加え、複数ファイルをData URL形式のBase64としてプロンプトへ含める仕組みも実装しました。</p><p class="n3-labnote-en">Simple and advanced input modes generate a Markdown prompt from structured fields. The result can be copied or saved, and multiple local files can be embedded in the prompt as Base64 Data URLs.</p></section>
+    <section class="n3-labnote-section"><p class="n3-labnote-index">03 / FINDINGS</p><h3><span class="n3-labnote-ja">何が分かった？</span><span class="n3-labnote-en">What did we learn?</span></h3><div class="n3-labnote-ja">
+          <p>目的、条件、制約、出力形式などを分けて入力することで、利用者自身が「何をAIへ指示したいのか」を整理しながらプロンプトを組み立てられることを確認しました。</p>
+          <p>また、ブラウザだけでもファイルをBase64化してプロンプトへ含められますが、データ量は急速に増加するため、実用上の制限が必要になります。このため添付元ファイルの合計サイズに3MBの上限を設けました。</p>
+          <p>プロンプト生成は文章を自動的に長くすることではなく、指示の構造を明確にすることに価値がある、という位置付けになりました。</p>
+        </div><div class="n3-labnote-en">
+          <p>Separating goals, conditions, constraints and output format helps users organize what they actually want to ask an AI while building the prompt.</p>
+          <p>Files can also be converted to Base64 and embedded entirely in the browser, but the data grows quickly, so the source attachments are limited to a combined 3 MB.</p>
+          <p>The value of prompt generation here is not making instructions longer automatically, but making their structure clearer.</p>
+        </div></section>
+    <section class="n3-labnote-section"><p class="n3-labnote-index">04 / TECHNOLOGY</p><h3><span class="n3-labnote-ja">何を使った？</span><span class="n3-labnote-en">What was used?</span></h3><div class="n3-labnote-tags" aria-label="Technologies"><span>HTML5</span><span>CSS</span><span>JAVASCRIPT</span><span>FILE API</span><span>BASE64</span><span>DATA URL</span><span>CLIPBOARD API</span></div><p class="n3-labnote-ja">入力・ファイル変換・Markdown生成・コピー・保存はブラウザ内で処理します。</p><p class="n3-labnote-en">Input handling, file conversion, Markdown generation, copying and saving are processed in the browser.</p></section>
+    <section class="n3-labnote-section n3-labnote-more"><p class="n3-labnote-index">05 / MORE</p><h3><span class="n3-labnote-ja">さらに詳しく</span><span class="n3-labnote-en">Go deeper</span></h3><div class="n3-labnote-links"><a href="https://github.com/Neko3SE/devsite/blob/main/promptgen/README.md" target="_blank" rel="noopener noreferrer"><strong>TECHNICAL DOCUMENTATION</strong><span class="n3-labnote-ja">技術情報・機能・動作環境・既知の制約を見る。</span><span class="n3-labnote-en">Technical information, features, environments and known limitations.</span><em>README.md →</em></a><a href="https://github.com/Neko3SE/devsite/tree/main/promptgen" target="_blank" rel="noopener noreferrer"><strong>SOURCE CODE</strong><span class="n3-labnote-ja">GitHubで実際の実装を見る。</span><span class="n3-labnote-en">View the implementation on GitHub.</span><em>GitHub →</em></a></div></section>
+  </section>
+
+  <footer id="n3-site-footer"></footer>
 <script>
 (()=>{'use strict';
 const MAX=3*1024*1024;

@@ -123,6 +123,30 @@
     <p>e-Gov 法令検索 Viewer — Neko3SE LABによる非公式閲覧支援ツール / 法令データ：<a href="https://laws.e-gov.go.jp/" target="_blank" rel="noopener noreferrer">e-Gov法令検索 ↗</a></p>
   </section>
 
+  
+  <section class="n3-labnote" aria-labelledby="n3-labnote-egov-title">
+    <div class="n3-labnote-head"><p class="n3-labnote-kicker">LAB NOTE</p><h2 id="n3-labnote-egov-title">e-Gov 法令検索 Viewer β</h2><p class="n3-labnote-theme-label">EXPERIMENT THEME</p><p class="n3-labnote-theme">API <span>×</span> INFORMATION ARCHITECTURE</p></div>
+    <section class="n3-labnote-section"><p class="n3-labnote-index">01 / WHY</p><h3><span class="n3-labnote-ja">なぜ作った？</span><span class="n3-labnote-en">Why was it built?</span></h3><div class="n3-labnote-ja">
+          <p>大量の法令情報を、法令名を知っている人だけでなく、「分野から探したい人」にも見つけやすくできないか。</p>
+          <p>e-Govが提供する法令データを利用し、公式サービスを置き換えるのではなく、独自ジャンルから法令へアクセスする別の入口を試すために制作しました。</p>
+        </div><div class="n3-labnote-en">
+          <p>Can large collections of laws be made easier to explore for people who want to start from a subject area rather than a known law name?</p>
+          <p>Using law data provided by e-Gov, this unofficial viewer explores an alternative entry point through original categories rather than replacing the official service.</p>
+        </div></section>
+    <section class="n3-labnote-section"><p class="n3-labnote-index">02 / EXPERIMENT</p><h3><span class="n3-labnote-ja">何を試した？</span><span class="n3-labnote-en">What was tested?</span></h3><p class="n3-labnote-ja">独自のジャンル分類から法令を選択できる目次を構成し、法令名検索と内容検索を分離しました。PCでは3ペイン、スマートフォンでは画面遷移型のUIを採用し、長大な法令本文、検索語のハイライト、APIエラーや再試行なども含めて検証しました。</p><p class="n3-labnote-en">The viewer provides an original category-based table of contents and separates law-name search from content search. A three-pane layout is used on PC and a navigation-style interface on smartphones, with testing that includes long law texts, highlighting, API errors and retry behavior.</p></section>
+    <section class="n3-labnote-section"><p class="n3-labnote-index">03 / FINDINGS</p><h3><span class="n3-labnote-ja">何が分かった？</span><span class="n3-labnote-en">What did we learn?</span></h3><div class="n3-labnote-ja">
+          <p>公的な法令データを独自に保持しなくても、APIを利用することで、異なる情報設計とUIから法令情報へアクセスできることを確認しました。</p>
+          <p>一方、実際のViewerとして成立させるにはAPIを呼び出すだけでは不十分で、長大な本文の表示、検索結果の視認性、エラー分類、再試行、スマートフォンでの画面構成など、利用者側の体験設計が大きな部分を占めました。</p>
+          <p>データそのものと「どう探し、どう読むか」は別の問題であり、同じデータでも情報設計によって入口を変えられることが、この実験の中心的な結果です。</p>
+        </div><div class="n3-labnote-en">
+          <p>An API makes it possible to present official law data through a different information architecture without maintaining a separate copy of the law text.</p>
+          <p>A usable viewer requires much more than calling an API: long-document presentation, search visibility, error classification, retries and smartphone navigation all became significant parts of the work.</p>
+          <p>The experiment showed that the data itself and the way people find and read it are separate design problems.</p>
+        </div></section>
+    <section class="n3-labnote-section"><p class="n3-labnote-index">04 / TECHNOLOGY</p><h3><span class="n3-labnote-ja">何を使った？</span><span class="n3-labnote-en">What was used?</span></h3><div class="n3-labnote-tags" aria-label="Technologies"><span>HTML5</span><span>CSS</span><span>JAVASCRIPT</span><span>E-GOV LAW API</span><span>FETCH API</span><span>RESPONSIVE UI</span></div><p class="n3-labnote-ja">法令本文を独自に保持せず、e-Gov法令APIから取得したデータをブラウザ上で表示・検索します。</p><p class="n3-labnote-en">Law data is retrieved from the e-Gov Law API and presented and searched in the browser rather than maintained as a separate copy.</p></section>
+    <section class="n3-labnote-section n3-labnote-more"><p class="n3-labnote-index">05 / MORE</p><h3><span class="n3-labnote-ja">さらに詳しく</span><span class="n3-labnote-en">Go deeper</span></h3><div class="n3-labnote-links"><a href="https://github.com/Neko3SE/devsite/blob/main/egov/README.md" target="_blank" rel="noopener noreferrer"><strong>TECHNICAL DOCUMENTATION</strong><span class="n3-labnote-ja">技術情報・機能・動作環境・既知の制約を見る。</span><span class="n3-labnote-en">Technical information, features, environments and known limitations.</span><em>README.md →</em></a><a href="https://github.com/Neko3SE/devsite/tree/main/egov" target="_blank" rel="noopener noreferrer"><strong>SOURCE CODE</strong><span class="n3-labnote-ja">GitHubで実際の実装を見る。</span><span class="n3-labnote-en">View the implementation on GitHub.</span><em>GitHub →</em></a></div></section>
+  </section>
+
   <footer id="n3-site-footer"></footer>
 
   <noscript>

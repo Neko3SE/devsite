@@ -90,6 +90,30 @@
 
   </div>
 
+  
+  <section class="n3-labnote" aria-labelledby="n3-labnote-mudagiken-title">
+    <div class="n3-labnote-head"><p class="n3-labnote-kicker">LAB NOTE</p><h2 id="n3-labnote-mudagiken-title">AI駆動型非生産的Web技術研究所。</h2><p class="n3-labnote-theme-label">EXPERIMENT THEME</p><p class="n3-labnote-theme">AI-DRIVEN CREATION <span>×</span> PLAY</p></div>
+    <section class="n3-labnote-section"><p class="n3-labnote-index">01 / WHY</p><h3><span class="n3-labnote-ja">なぜ作った？</span><span class="n3-labnote-en">Why was it built?</span></h3><div class="n3-labnote-ja">
+          <p>生成AIを実用的なツールの制作だけでなく、「くだらないアイデアを本気で実装する」ために使ったら、どこまで遊べるWebコンテンツを作れるのか。</p>
+          <p>ITエンジニアが思わず反応してしまう題材を使い、生成AIを活用したWeb制作の可能性を試すために制作しました。</p>
+        </div><div class="n3-labnote-en">
+          <p>What happens when generative AI is used not only for practical tools, but to seriously implement deliberately silly ideas?</p>
+          <p>This project explores AI-assisted web creation through ten playful mini-games built around situations familiar to IT engineers.</p>
+        </div></section>
+    <section class="n3-labnote-section"><p class="n3-labnote-index">02 / EXPERIMENT</p><h3><span class="n3-labnote-ja">何を試した？</span><span class="n3-labnote-en">What was tested?</span></h3><p class="n3-labnote-ja">「絶対押すな」「定時退社DEFENSE」「Excel方眼紙クラフト」「本番サーバー神社」など、IT開発や職場文化を題材にした10種類のミニゲームを、1つのWebコンテンツとして実装しました。PCだけでなくスマートフォンでの操作・描画性能を検証し、多言語表示にも展開しました。</p><p class="n3-labnote-en">Ten mini-games inspired by IT development and workplace culture were implemented in a single web experience, including 絶対押すな, 定時退社DEFENSE, Excel方眼紙クラフト and 本番サーバー神社. Interaction and rendering were tested on PCs and smartphones, and the project was expanded to multiple languages.</p></section>
+    <section class="n3-labnote-section"><p class="n3-labnote-index">03 / FINDINGS</p><h3><span class="n3-labnote-ja">何が分かった？</span><span class="n3-labnote-en">What did we learn?</span></h3><div class="n3-labnote-ja">
+          <p>HTML・CSS・JavaScriptだけでも、アイデア、演出、効果音、アニメーションを組み合わせることで、それぞれ性格の異なる複数のゲーム体験を1ページ内に構成できました。</p>
+          <p>一方、スマートフォンではPCと同じ描画や演出をそのまま適用すると、表示のカクつきや要素の点滅などが発生し、端末に合わせた軽量化が必要になりました。</p>
+          <p>また、iPhoneで音が鳴らない問題を調査した結果、コードではなく端末のサイレント設定が原因だったケースもありました。Webコンテンツの実機検証では、実装だけでなく端末側の状態まで含めて確認する必要があることが分かりました。</p>
+        </div><div class="n3-labnote-en">
+          <p>HTML, CSS and JavaScript were enough to combine ideas, visual effects, sound and animation into several distinct game experiences on one page.</p>
+          <p>Applying the same effects unchanged on smartphones caused issues such as stuttering and flicker, making device-oriented optimization necessary.</p>
+          <p>An iPhone no-audio issue also turned out to be caused by the device silent setting rather than the code. Real-device testing needs to consider device state as well as implementation.</p>
+        </div></section>
+    <section class="n3-labnote-section"><p class="n3-labnote-index">04 / TECHNOLOGY</p><h3><span class="n3-labnote-ja">何を使った？</span><span class="n3-labnote-en">What was used?</span></h3><div class="n3-labnote-tags" aria-label="Technologies"><span>HTML5</span><span>CSS</span><span>JAVASCRIPT</span><span>WEB AUDIO</span><span>RESPONSIVE DESIGN</span><span>INTERNATIONALIZATION</span></div><p class="n3-labnote-ja">主要なゲーム処理・演出・多言語表示をブラウザ上で実行しています。</p><p class="n3-labnote-en">Game logic, effects and multilingual presentation run in the browser.</p></section>
+    <section class="n3-labnote-section n3-labnote-more"><p class="n3-labnote-index">05 / MORE</p><h3><span class="n3-labnote-ja">さらに詳しく</span><span class="n3-labnote-en">Go deeper</span></h3><div class="n3-labnote-links"><a href="https://github.com/Neko3SE/devsite/blob/main/mudagiken/README.md" target="_blank" rel="noopener noreferrer"><strong>TECHNICAL DOCUMENTATION</strong><span class="n3-labnote-ja">技術情報・機能・動作環境・既知の制約を見る。</span><span class="n3-labnote-en">Technical information, features, environments and known limitations.</span><em>README.md →</em></a><a href="https://github.com/Neko3SE/devsite/tree/main/mudagiken" target="_blank" rel="noopener noreferrer"><strong>SOURCE CODE</strong><span class="n3-labnote-ja">GitHubで実際の実装を見る。</span><span class="n3-labnote-en">View the implementation on GitHub.</span><em>GitHub →</em></a></div></section>
+  </section>
+
   <footer id="n3-site-footer"></footer>
 
   <script src="i18n/i18n.js"></script>

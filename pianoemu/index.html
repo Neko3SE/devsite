@@ -353,7 +353,31 @@ footer a{color:#b8dfff;text-underline-offset:3px}
   </main>
 </div>
 
-<footer id="n3-site-footer"></footer>
+
+  <section class="n3-labnote" aria-labelledby="n3-labnote-pianoemu-title">
+    <div class="n3-labnote-head"><p class="n3-labnote-kicker">LAB NOTE</p><h2 id="n3-labnote-pianoemu-title">PIANO EMULATOR</h2><p class="n3-labnote-theme-label">EXPERIMENT THEME</p><p class="n3-labnote-theme">WEB AUDIO <span>×</span> INTERACTION</p></div>
+    <section class="n3-labnote-section"><p class="n3-labnote-index">01 / WHY</p><h3><span class="n3-labnote-ja">なぜ作った？</span><span class="n3-labnote-en">Why was it built?</span></h3><div class="n3-labnote-ja">
+          <p>ブラウザ上の鍵盤を直接弾くだけでなく、音階を文字列として記述して再生する仕組みを組み合わせると、どのような音楽インターフェースになるのか。</p>
+          <p>Web Audioと画面操作、テキスト入力を一つの体験として組み合わせるために制作しました。</p>
+        </div><div class="n3-labnote-en">
+          <p>What kind of musical interface emerges when a playable browser keyboard is combined with text-described note playback?</p>
+          <p>This experiment combines Web Audio, direct interaction and text input in a single experience.</p>
+        </div></section>
+    <section class="n3-labnote-section"><p class="n3-labnote-index">02 / EXPERIMENT</p><h3><span class="n3-labnote-ja">何を試した？</span><span class="n3-labnote-en">What was tested?</span></h3><p class="n3-labnote-ja">2オクターブの鍵盤をブラウザ上に配置し、クリック・タップによる演奏と、音名を入力したテキスト演奏を実装しました。C4などのコード表記とドレミ表記、休符R、再生中の鍵盤ハイライト、音量調整を組み合わせ、スマートフォンでは横向きでの利用も検証しました。</p><p class="n3-labnote-en">A two-octave keyboard supports click/tap performance and text-based playback. Code notation such as C4, Japanese note input, rest R, key highlighting and volume control are combined, with landscape use tested on smartphones.</p></section>
+    <section class="n3-labnote-section"><p class="n3-labnote-index">03 / FINDINGS</p><h3><span class="n3-labnote-ja">何が分かった？</span><span class="n3-labnote-en">What did we learn?</span></h3><div class="n3-labnote-ja">
+          <p>ブラウザで音を鳴らすこと自体は比較的シンプルですが、テキスト入力、再生タイミング、鍵盤表示、再生中のハイライトを同期させることで、音声処理以外のインタラクション設計が重要になりました。</p>
+          <p>また、2オクターブの鍵盤をスマートフォンの縦画面へ無理に収めるより、横向きで利用する設計の方が鍵盤サイズと操作性を維持しやすいことが分かりました。</p>
+          <p>同じ音を扱う機能でも、入力方法と表示方法を組み合わせることで、単なる音声再生とは異なる操作体験になります。</p>
+        </div><div class="n3-labnote-en">
+          <p>Generating sound in a browser is relatively straightforward, but synchronizing text input, playback timing, keyboard display and active-key highlighting makes interaction design just as important as audio generation.</p>
+          <p>For a two-octave keyboard, landscape smartphone use preserves key size and usability better than forcing the interface into portrait width.</p>
+          <p>Combining different input and display methods turns the same underlying sounds into a richer interaction than simple audio playback.</p>
+        </div></section>
+    <section class="n3-labnote-section"><p class="n3-labnote-index">04 / TECHNOLOGY</p><h3><span class="n3-labnote-ja">何を使った？</span><span class="n3-labnote-en">What was used?</span></h3><div class="n3-labnote-tags" aria-label="Technologies"><span>HTML5</span><span>CSS</span><span>JAVASCRIPT</span><span>WEB AUDIO API</span><span>TOUCH INTERACTION</span><span>RESPONSIVE DESIGN</span></div><p class="n3-labnote-ja">Web Audio APIによる音生成と、鍵盤・テキスト入力・再生表示をブラウザ内で連動させています。</p><p class="n3-labnote-en">Web Audio sound generation is coordinated with keyboard interaction, text input and playback visualization in the browser.</p></section>
+    <section class="n3-labnote-section n3-labnote-more"><p class="n3-labnote-index">05 / MORE</p><h3><span class="n3-labnote-ja">さらに詳しく</span><span class="n3-labnote-en">Go deeper</span></h3><div class="n3-labnote-links"><a href="https://github.com/Neko3SE/devsite/blob/main/pianoemu/README.md" target="_blank" rel="noopener noreferrer"><strong>TECHNICAL DOCUMENTATION</strong><span class="n3-labnote-ja">技術情報・機能・動作環境・既知の制約を見る。</span><span class="n3-labnote-en">Technical information, features, environments and known limitations.</span><em>README.md →</em></a><a href="https://github.com/Neko3SE/devsite/tree/main/pianoemu" target="_blank" rel="noopener noreferrer"><strong>SOURCE CODE</strong><span class="n3-labnote-ja">GitHubで実際の実装を見る。</span><span class="n3-labnote-en">View the implementation on GitHub.</span><em>GitHub →</em></a></div></section>
+  </section>
+
+  <footer id="n3-site-footer"></footer>
 
 <script>
 (() => {

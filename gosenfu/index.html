@@ -584,6 +584,30 @@ C4からC5まで、音符は線と間を交互に使って半段ずつ連続し�
     </section>
    </article>
   </main>
+  
+  <section class="n3-labnote" aria-labelledby="n3-labnote-gosenfu-title">
+    <div class="n3-labnote-head"><p class="n3-labnote-kicker">LAB NOTE</p><h2 id="n3-labnote-gosenfu-title">五線譜ドレミclip</h2><p class="n3-labnote-theme-label">EXPERIMENT THEME</p><p class="n3-labnote-theme">CONTENT ACCURACY <span>×</span> SELF-CONTAINED WEB</p></div>
+    <section class="n3-labnote-section"><p class="n3-labnote-index">01 / WHY</p><h3><span class="n3-labnote-ja">なぜ作った？</span><span class="n3-labnote-en">Why was it built?</span></h3><div class="n3-labnote-ja">
+          <p>五線譜上の音符、ドレミの音階表示、実際に鳴る音を短いコンテンツとして同期させたとき、ブラウザでどこまでシンプルな音楽教材としてまとめられるのか。</p>
+          <p>表示内容の正確さと、単一HTMLで扱えるコンテンツ形式の両方を試すために制作しました。</p>
+        </div><div class="n3-labnote-en">
+          <p>How simply can staff notation, solfege labels and sounding notes be synchronized into a short browser-based learning clip?</p>
+          <p>This experiment focuses on both musical accuracy and a self-contained single-HTML delivery format.</p>
+        </div></section>
+    <section class="n3-labnote-section"><p class="n3-labnote-index">02 / EXPERIMENT</p><h3><span class="n3-labnote-ja">何を試した？</span><span class="n3-labnote-en">What was tested?</span></h3><p class="n3-labnote-ja">ドレミファソラシドの五線譜と音階の吹鳴を同期させた短編動画を制作し、動画データをBase64としてHTMLへ埋め込みました。外部動画ファイルを別途配置せず、ページ単体で再生できる構成を試しています。</p><p class="n3-labnote-en">A short video synchronizes staff notation for do-re-mi-fa-sol-la-ti-do with the sounding scale. The video data is embedded in the HTML as Base64 so the page can play it without a separate external video file.</p></section>
+    <section class="n3-labnote-section"><p class="n3-labnote-index">03 / FINDINGS</p><h3><span class="n3-labnote-ja">何が分かった？</span><span class="n3-labnote-en">What did we learn?</span></h3><div class="n3-labnote-ja">
+          <p>五線譜では「それらしく見える」だけでは不十分で、音符の位置そのものが音楽的な意味を持つため、表示内容の正確さが特に重要でした。</p>
+          <p>また、動画をBase64としてHTMLへ埋め込むことで単一ファイルとして扱いやすくなる一方、HTMLファイル自体のサイズは大きくなります。</p>
+          <p>自己完結性とファイルサイズにはトレードオフがあり、用途に応じて配置方法を選ぶ必要があることが分かりました。</p>
+        </div><div class="n3-labnote-en">
+          <p>With staff notation, looking plausible is not enough: note position carries musical meaning, so content accuracy is essential.</p>
+          <p>Embedding the video as Base64 makes the page easier to handle as a single file, but increases the HTML file size.</p>
+          <p>Self-contained delivery and file size are a trade-off, so the appropriate packaging depends on the use case.</p>
+        </div></section>
+    <section class="n3-labnote-section"><p class="n3-labnote-index">04 / TECHNOLOGY</p><h3><span class="n3-labnote-ja">何を使った？</span><span class="n3-labnote-en">What was used?</span></h3><div class="n3-labnote-tags" aria-label="Technologies"><span>HTML5</span><span>HTML5 VIDEO</span><span>BASE64</span><span>DATA URL</span><span>RESPONSIVE DESIGN</span></div><p class="n3-labnote-ja">動画データをData URLとしてHTML内へ埋め込み、単一ページで再生できる構成にしています。</p><p class="n3-labnote-en">Video data is embedded as a Data URL so the clip can be played from a self-contained page.</p></section>
+    <section class="n3-labnote-section n3-labnote-more"><p class="n3-labnote-index">05 / MORE</p><h3><span class="n3-labnote-ja">さらに詳しく</span><span class="n3-labnote-en">Go deeper</span></h3><div class="n3-labnote-links"><a href="https://github.com/Neko3SE/devsite/blob/main/gosenfu/README.md" target="_blank" rel="noopener noreferrer"><strong>TECHNICAL DOCUMENTATION</strong><span class="n3-labnote-ja">技術情報・機能・動作環境・既知の制約を見る。</span><span class="n3-labnote-en">Technical information, features, environments and known limitations.</span><em>README.md →</em></a><a href="https://github.com/Neko3SE/devsite/tree/main/gosenfu" target="_blank" rel="noopener noreferrer"><strong>SOURCE CODE</strong><span class="n3-labnote-ja">GitHubで実際の実装を見る。</span><span class="n3-labnote-en">View the implementation on GitHub.</span><em>GitHub →</em></a></div></section>
+  </section>
+
   <footer id="n3-site-footer"></footer>
 
   <script>

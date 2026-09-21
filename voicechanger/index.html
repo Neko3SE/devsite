@@ -283,6 +283,30 @@
     </section>
   </main>
 
+  
+  <section class="n3-labnote" aria-labelledby="n3-labnote-voicechanger-title">
+    <div class="n3-labnote-head"><p class="n3-labnote-kicker">LAB NOTE</p><h2 id="n3-labnote-voicechanger-title">VOICE CHANGER LAB β</h2><p class="n3-labnote-theme-label">EXPERIMENT THEME</p><p class="n3-labnote-theme">AUDIO PROCESSING <span>×</span> VISUALIZATION</p></div>
+    <section class="n3-labnote-section"><p class="n3-labnote-index">01 / WHY</p><h3><span class="n3-labnote-ja">なぜ作った？</span><span class="n3-labnote-en">Why was it built?</span></h3><div class="n3-labnote-ja">
+          <p>ブラウザだけで録音した声を変換し、その変化を「聞く」だけでなく、波形や音声指標として「見る」ことはできるのか。</p>
+          <p>音声変換と分析・可視化を一つのブラウザ実験として組み合わせるために制作しました。</p>
+        </div><div class="n3-labnote-en">
+          <p>Can recorded voice be transformed entirely in the browser and observed not only by listening, but also through waveforms and audio metrics?</p>
+          <p>This experiment combines voice transformation, analysis and visualization in one browser application.</p>
+        </div></section>
+    <section class="n3-labnote-section"><p class="n3-labnote-index">02 / EXPERIMENT</p><h3><span class="n3-labnote-ja">何を試した？</span><span class="n3-labnote-en">What was tested?</span></h3><p class="n3-labnote-ja">最大30秒の音声を録音し、複数のプリセットと手動調整による声質変換を実装しました。さらに波形表示に加え、Pitch、RMS、Peak、Spectral Centroidなどの指標を表示し、変換前後の声を聴覚と数値の両方から観察できるようにしました。</p><p class="n3-labnote-en">Up to 30 seconds of audio can be recorded and transformed using multiple presets or manual controls. Waveform display and metrics including Pitch, RMS, Peak and Spectral Centroid make it possible to observe the transformed voice through both listening and measurement.</p></section>
+    <section class="n3-labnote-section"><p class="n3-labnote-index">03 / FINDINGS</p><h3><span class="n3-labnote-ja">何が分かった？</span><span class="n3-labnote-en">What did we learn?</span></h3><div class="n3-labnote-ja">
+          <p>音声変換と分析値を同時に表示することで、声の変化を「聞こえ方」だけでなく、複数の数値や波形から観察できるようになりました。</p>
+          <p>一方、リアルタイムに変化する情報を小さな画面へ表示すると、音声処理そのものとは別にUIの安定性が問題になります。iPhone SEでは入力警告の表示によってANALYZER領域がリサイズされる問題が発生し、警告領域を固定高にすることで解決しました。</p>
+          <p>音声処理ではアルゴリズムだけでなく、変化する情報を端末上で安定して見せることも実験の一部になることが分かりました。</p>
+        </div><div class="n3-labnote-en">
+          <p>Displaying transformation and analysis together makes changes in the voice observable through measurements and waveforms as well as by ear.</p>
+          <p>On a small screen, continuously changing information introduced UI stability problems separate from the audio processing itself. On iPhone SE, the analyzer area resized when the input warning appeared; reserving a fixed-height warning area resolved it.</p>
+          <p>The experiment showed that stable presentation of changing information on real devices is part of browser audio engineering, not merely a cosmetic detail.</p>
+        </div></section>
+    <section class="n3-labnote-section"><p class="n3-labnote-index">04 / TECHNOLOGY</p><h3><span class="n3-labnote-ja">何を使った？</span><span class="n3-labnote-en">What was used?</span></h3><div class="n3-labnote-tags" aria-label="Technologies"><span>HTML5</span><span>CSS</span><span>JAVASCRIPT</span><span>WEB AUDIO API</span><span>MEDIADEVICES</span><span>MEDIARECORDER</span><span>CANVAS</span><span>AUDIO ANALYSIS</span><span>RESPONSIVE DESIGN</span></div><p class="n3-labnote-ja">録音・音声変換・分析・波形表示の主要処理をブラウザ内で実行しています。</p><p class="n3-labnote-en">Recording, voice transformation, analysis and waveform rendering are primarily processed in the browser.</p></section>
+    <section class="n3-labnote-section n3-labnote-more"><p class="n3-labnote-index">05 / MORE</p><h3><span class="n3-labnote-ja">さらに詳しく</span><span class="n3-labnote-en">Go deeper</span></h3><div class="n3-labnote-links"><a href="https://github.com/Neko3SE/devsite/blob/main/voicechanger/README.md" target="_blank" rel="noopener noreferrer"><strong>TECHNICAL DOCUMENTATION</strong><span class="n3-labnote-ja">技術情報・機能・動作環境・既知の制約を見る。</span><span class="n3-labnote-en">Technical information, features, environments and known limitations.</span><em>README.md →</em></a><a href="https://github.com/Neko3SE/devsite/tree/main/voicechanger" target="_blank" rel="noopener noreferrer"><strong>SOURCE CODE</strong><span class="n3-labnote-ja">GitHubで実際の実装を見る。</span><span class="n3-labnote-en">View the implementation on GitHub.</span><em>GitHub →</em></a></div></section>
+  </section>
+
   <footer id="n3-site-footer"></footer>
 
   <div id="replaceDialog" class="modal" hidden>
