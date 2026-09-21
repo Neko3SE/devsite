@@ -430,3 +430,41 @@
     display: none !important;
   }
 }
+
+/* ABOUT Neko3SE / LAB NOTE shared visual language */
+.n3-about-page {
+  min-height: 100vh;
+  background: radial-gradient(circle at 10% 0%, rgba(98, 230, 167, 0.09), transparent 30rem), #0f141b;
+  color: #edf2f7;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic UI", "Yu Gothic", Meiryo, sans-serif;
+  line-height: 1.75;
+}
+.n3-about-main { width:min(calc(100% - 40px), 960px); margin:0 auto; padding:64px 0 84px; }
+.n3-about-hero { padding:42px 0 48px; border-bottom:1px solid var(--n3-border); }
+.n3-about-eyebrow,.n3-about-number { margin:0; color:var(--n3-accent); font-size:12px; font-weight:800; letter-spacing:.16em; }
+.n3-about-title { margin:8px 0 18px; font-size:clamp(42px,8vw,76px); line-height:1; letter-spacing:-.045em; }
+.n3-about-cat { display:inline-block; margin-left:.18em; font-size:.48em; vertical-align:.16em; }
+.n3-about-lead { max-width:760px; margin:0; color:#c4ced8; font-size:clamp(17px,2.3vw,22px); }
+.n3-about-subline { margin:18px 0 0; color:#9aa8b4; font-size:13px; font-weight:750; letter-spacing:.06em; }
+.n3-about-language { display:flex; justify-content:flex-end; margin-top:22px; }
+.n3-about-language button { appearance:none; border:1px solid rgba(98,230,167,.45); border-radius:999px; background:transparent; color:#edf2f7; padding:6px 12px; font:inherit; font-size:.82rem; font-weight:700; cursor:pointer; }
+.n3-about-language button:hover,.n3-about-language button:focus-visible { border-color:var(--n3-accent); background:rgba(98,230,167,.08); outline:none; }
+.n3-about-section { padding:42px 0; border-bottom:1px solid var(--n3-border); }
+.n3-about-section h2 { margin:7px 0 14px; font-size:clamp(26px,4vw,38px); line-height:1.25; }
+.n3-about-section p { margin:0 0 14px; color:#b8c3cc; }
+.n3-about-cycle { margin:26px 0; padding:16px 18px; border:1px solid rgba(98,230,167,.22); border-radius:14px; color:#dfe8ee; font-weight:800; letter-spacing:.035em; overflow-wrap:anywhere; }
+.n3-about-duo { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:24px; }
+.n3-about-card { padding:22px; border:1px solid var(--n3-border); border-radius:16px; background:#171e27; }
+.n3-about-card h3 { margin:0 0 12px; color:var(--n3-accent); font-size:14px; letter-spacing:.1em; }
+.n3-about-card ul { margin:0; padding-left:1.2em; color:#b8c3cc; }
+.n3-about-tags { display:flex; flex-wrap:wrap; gap:9px; margin-top:20px; }
+.n3-about-tag { padding:7px 10px; border:1px solid rgba(98,230,167,.28); border-radius:999px; color:#cfe4d9; font-size:12px; font-weight:750; }
+.n3-about-connect { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:20px; }
+.n3-about-link { display:block; padding:18px; border:1px solid var(--n3-border); border-radius:14px; background:#171e27; color:#edf2f7 !important; text-decoration:none !important; }
+.n3-about-link strong { display:block; color:var(--n3-accent); }
+.n3-about-link span { display:block; margin-top:4px; color:#9aa8b4; font-size:13px; overflow-wrap:anywhere; }
+.n3-about-link:hover,.n3-about-link:focus-visible { border-color:rgba(98,230,167,.55); outline:none; }
+.n3-about-home-link { display:inline-flex; align-items:center; gap:8px; margin-top:18px; color:var(--n3-link) !important; font-weight:800; text-decoration:none !important; }
+.n3-about-home-link:hover,.n3-about-home-link:focus-visible { color:var(--n3-accent) !important; outline:none; }
+.n3-drawer-about { margin-top:6px; padding-top:12px; border-top:1px solid var(--n3-border); }
+@media (max-width:600px) { .n3-about-main{width:min(calc(100% - 28px),960px);padding-top:38px}.n3-about-duo,.n3-about-connect{grid-template-columns:1fr}.n3-about-cycle{font-size:13px}.n3-about-title{font-size:clamp(38px,13vw,58px)} }
