@@ -2,7 +2,7 @@
 
 Browser-based sound tuner and audio analysis experiment for instruments and vocals.
 
-**Live Site / 実際に使う:** https://www.neko3se.com/soundtuner/
+**Live Site / 実際に使う:** https://neko3se.com/soundtuner/
 
 ## Overview
 
@@ -78,9 +78,9 @@ Real-device testing has been performed on PC, Android and iPhone environments. M
 
 ## Related Links
 
-- Live Site: https://www.neko3se.com/soundtuner/
-- Neko3SE LAB: https://www.neko3se.com/
-- About Neko3SE: https://www.neko3se.com/about/
+- Live Site: https://neko3se.com/soundtuner/
+- Neko3SE LAB: https://neko3se.com/
+- About Neko3SE: https://neko3se.com/about/
 - Source Code: https://github.com/Neko3SE/devsite/tree/main/soundtuner
 
 ## License

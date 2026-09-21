@@ -2,7 +2,7 @@
 
 Neko3SE LAB experimental browser content.
 
-**Live Site / 実際に使う:** https://www.neko3se.com/voicechanger/
+**Live Site / 実際に使う:** https://neko3se.com/voicechanger/
 
 ## Overview / 概要
 
@@ -47,9 +47,9 @@ This content runs in a web browser and has been tested on real devices including
 
 ## Related Links / 関連リンク
 
-- Live Site: https://www.neko3se.com/voicechanger/
+- Live Site: https://neko3se.com/voicechanger/
 - Source directory: https://github.com/Neko3SE/devsite/tree/main/voicechanger
-- Neko3SE LAB: https://www.neko3se.com/
+- Neko3SE LAB: https://neko3se.com/
 
 ## License
 
