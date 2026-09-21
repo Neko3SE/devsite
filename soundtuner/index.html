@@ -203,6 +203,74 @@
       <p class="st-fine" data-i18n="measureDetail">ノイズ抑制、エコーキャンセル、自動ゲイン調整、風切り音低減、空間オーディオなどが入力音へ影響する場合があります。本ツールはブラウザから可能な範囲で音声処理を抑制する設定を要求しますが、端末・OS・ドライバ等による処理を完全には制御できません。楽器音を検出しにくい場合は、音声設定やマイクとの距離を確認するか、楽器収音に適した外部マイクをお試しください。</p>
     </section>
     <section class="st-info"><p class="st-kicker">PRIVACY</p><div class="st-privacybox"><div><span>Audio Analysis</span><strong>LOCAL</strong></div><div><span>Server Upload</span><strong>NONE</strong></div><div><span>Audio Recording</span><strong>NONE</strong></div></div><p class="st-fine" data-i18n="privacyLong">音声の録音・保存は行いません。解析に必要な音声データと解析結果はブラウザ内で一時的に処理されます。</p></section>
+
+    <section class="n3-labnote" aria-labelledby="n3-labnote-title">
+      <div class="n3-labnote-head">
+        <p class="n3-labnote-kicker">LAB NOTE</p>
+        <h2 id="n3-labnote-title">SOUND TUNER LAB β</h2>
+        <p class="n3-labnote-theme-label">EXPERIMENT THEME</p>
+        <p class="n3-labnote-theme">AUDIO ANALYSIS <span>×</span> REAL-DEVICE TESTING</p>
+      </div>
+
+      <section class="n3-labnote-section">
+        <p class="n3-labnote-index">01 / WHY</p>
+        <h3><span class="n3-labnote-ja">なぜ作った？</span><span class="n3-labnote-en">Why was it built?</span></h3>
+        <div class="n3-labnote-ja">
+          <p>スマートフォンのブラウザだけで、楽器や人の声を「音」としてどこまで測定・可視化できるのか。</p>
+          <p>専用アプリをインストールせず、マイク入力から周波数や倍音を解析し、実際に使えるチューナーとして成立するかを試すために制作しました。</p>
+        </div>
+        <div class="n3-labnote-en">
+          <p>How far can instruments and human voices be measured and visualized as sound using only a smartphone browser?</p>
+          <p>SOUND TUNER LAB β was created to explore whether microphone input, frequency analysis and harmonic visualization could form a practical tuner without installing a dedicated app.</p>
+        </div>
+      </section>
+
+      <section class="n3-labnote-section">
+        <p class="n3-labnote-index">02 / EXPERIMENT</p>
+        <h3><span class="n3-labnote-ja">何を試した？</span><span class="n3-labnote-en">What was tested?</span></h3>
+        <p class="n3-labnote-ja">ブラウザのマイク入力から音を取得し、基本周波数、音名、基準音との差、倍音などをリアルタイムに解析・表示します。A4の基準周波数変更、基準音の再生、HOLDによる波形と倍音の確認などを実装し、PC・Android・iPhoneの実機で動作を検証しました。</p>
+        <p class="n3-labnote-en">Microphone input is analyzed in real time to show fundamental frequency, note name, pitch difference from the reference, harmonics and related measurements. The experiment also covers adjustable A4 reference tuning, reference-tone playback, HOLD snapshots, waveform and harmonic observation, with real-device testing on PC, Android and iPhone.</p>
+        <div class="n3-labnote-tags" aria-label="Experiment topics">
+          <span>MIC INPUT</span><span>FREQUENCY</span><span>NOTE</span><span>A4 TUNING</span><span>REFERENCE TONE</span><span>WAVEFORM</span><span>HARMONICS H1–H8</span><span>REAL-DEVICE TEST</span>
+        </div>
+      </section>
+
+      <section class="n3-labnote-section">
+        <p class="n3-labnote-index">03 / FINDINGS</p>
+        <h3><span class="n3-labnote-ja">何が分かった？</span><span class="n3-labnote-en">What did we learn?</span></h3>
+        <div class="n3-labnote-ja">
+          <p>ブラウザだけでも、マイク入力を利用した周波数解析や倍音の可視化、基準音再生まで実装できました。</p>
+          <p>一方、実機検証ではPCとスマートフォンでマイク入力の特性に違いがあり、特に楽器音の取得では端末やマイク環境の影響を受けることが分かりました。</p>
+          <p>また、Windows環境ではマイク使用中の基準音再生に問題が発生し、TONE再生時には一時的にマイク制御を手放すことで解決しました。</p>
+          <p>ブラウザAPIだけでも多くの音響処理が可能ですが、実際の端末で試すことで初めて見える制約があることも、この実験の結果です。</p>
+        </div>
+        <div class="n3-labnote-en">
+          <p>A browser alone can perform microphone-based frequency analysis, harmonic visualization and reference-tone playback.</p>
+          <p>Real-device testing also revealed meaningful differences between PC and smartphone microphone input. Instrument capture in particular is affected by the device, microphone and surrounding environment.</p>
+          <p>On Windows, reference-tone playback caused a problem while the microphone was active. Releasing microphone control temporarily during TONE playback resolved it.</p>
+          <p>Browser APIs can handle a surprising amount of audio processing, but real-device testing revealed constraints that were not apparent from implementation alone.</p>
+        </div>
+      </section>
+
+      <section class="n3-labnote-section">
+        <p class="n3-labnote-index">04 / TECHNOLOGY</p>
+        <h3><span class="n3-labnote-ja">何を使った？</span><span class="n3-labnote-en">What was used?</span></h3>
+        <div class="n3-labnote-tags" aria-label="Technologies">
+          <span>HTML5</span><span>CSS</span><span>JAVASCRIPT</span><span>WEB AUDIO API</span><span>MEDIADEVICES</span><span>MICROPHONE INPUT</span><span>RESPONSIVE WEB DESIGN</span>
+        </div>
+        <p class="n3-labnote-ja">サーバー側の音声処理を使用せず、主要な解析処理をブラウザ上で実行しています。</p>
+        <p class="n3-labnote-en">The main analysis runs in the browser without server-side audio processing.</p>
+      </section>
+
+      <section class="n3-labnote-section n3-labnote-more">
+        <p class="n3-labnote-index">05 / MORE</p>
+        <h3><span class="n3-labnote-ja">さらに詳しく</span><span class="n3-labnote-en">Go deeper</span></h3>
+        <div class="n3-labnote-links">
+          <a href="https://github.com/Neko3SE/devsite/blob/main/soundtuner/README.md" target="_blank" rel="noopener noreferrer"><strong>TECHNICAL DOCUMENTATION</strong><span class="n3-labnote-ja">技術情報・機能・動作環境・既知の制約を見る。</span><span class="n3-labnote-en">Technical information, features, environments and known limitations.</span><em>README.md →</em></a>
+          <a href="https://github.com/Neko3SE/devsite/tree/main/soundtuner" target="_blank" rel="noopener noreferrer"><strong>SOURCE CODE</strong><span class="n3-labnote-ja">GitHubで実際の実装を見る。</span><span class="n3-labnote-en">View the implementation on GitHub.</span><em>GitHub →</em></a>
+        </div>
+      </section>
+    </section>
   </main>
 
   <footer id="n3-site-footer"></footer>
