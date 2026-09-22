@@ -334,7 +334,7 @@
     }
 
     .redirecting .progress-bar {
-      animation: progress 3s cubic-bezier(.2,.65,.2,1) forwards;
+      animation: progress 1s cubic-bezier(.2,.65,.2,1) forwards;
     }
 
     .actions {
@@ -676,32 +676,43 @@
 
         let shown = 0;
         const meter = window.setInterval(() => {
-          shown = Math.min(shown + 2, 96);
+          shown = Math.min(shown + 5, 95);
           progressPercent.textContent = shown + "%";
-        }, 60);
+        }, 50);
 
         window.setTimeout(() => {
           window.clearInterval(meter);
           progressPercent.textContent = "100%";
           window.location.replace(targetUrl);
-        }, 3000);
+        }, 1000);
       } else {
-        app.classList.add("lost");
+        app.classList.add("lost", "redirecting");
 
         eyebrow.textContent = "NO ROUTE DATA FOUND";
-        mainTitle.textContent = "LOST IN THE LAB.";
+        mainTitle.textContent = "RETURNING TO LAB.";
         lead.textContent =
-          "指定されたページは見つかりませんでした。研究対象が行方不明になったようです 😺";
-        routeStatus.textContent = "UNKNOWN ROUTE";
-        targetPath.textContent = "NO MIGRATION DATA";
+          "指定されたページは見つかりませんでした。1秒後にNeko3SE LABのトップページへ移動します。";
+        routeStatus.textContent = "FALLBACK TO HOME";
+        targetPath.textContent = homeUrl;
         primaryAction.href = homeUrl;
         primaryAction.textContent = "BACK TO LAB";
         homeAction.hidden = true;
-        progressWrap.hidden = true;
         message.innerHTML =
-          "<strong>404</strong> / URLを確認するか、Neko3SE LABのトップページから目的のコンテンツを探してください。";
-        systemStatus.textContent = "ROUTE NOT FOUND";
+          "<strong>404</strong> / returning to the Neko3SE LAB home page...";
+        systemStatus.textContent = "FALLBACK ROUTE FOUND";
         panelCode.textContent = "HTTP 404";
+
+        let shown = 0;
+        const meter = window.setInterval(() => {
+          shown = Math.min(shown + 5, 95);
+          progressPercent.textContent = shown + "%";
+        }, 50);
+
+        window.setTimeout(() => {
+          window.clearInterval(meter);
+          progressPercent.textContent = "100%";
+          window.location.replace(homeUrl);
+        }, 1000);
       }
     })();
   </script>
