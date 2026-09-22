@@ -1,0 +1,66 @@
+/* Neko3SE LAB top-page animated thumbnails — prototype: e-Gov + PIANO */
+.content-link--thumb {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.n3-thumb {
+  display: none;
+  grid-column: 1 / -1;
+  width: 100%;
+  aspect-ratio: 2 / 1;
+  overflow: hidden;
+  border: 1px solid rgba(154, 196, 90, 0.18);
+  border-radius: 12px;
+  background: #0d141c;
+}
+
+.n3-thumb.n3-thumb--ready { display: block; }
+.n3-thumb__svg { display: block; width: 100%; height: 100%; }
+.n3-thumb__grid { opacity: 0.22; }
+.n3-thumb__line { fill: none; stroke: #62808a; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.n3-thumb__muted { fill: #263640; stroke: #62808a; stroke-width: 2; }
+.n3-thumb__active { fill: #9ac45a; stroke: #b7e777; }
+.n3-thumb__glow { filter: drop-shadow(0 0 7px rgba(154, 196, 90, 0.78)); }
+.n3-thumb__label { fill: #8da0aa; font: 700 14px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 0.12em; }
+.n3-anim { animation-play-state: paused !important; }
+.n3-thumb.is-visible .n3-anim { animation-play-state: running !important; }
+
+.n3-thumb--piano .n3-piano-key-c1 { animation: n3-key-press 3s ease-in-out infinite; animation-delay: 0.25s; }
+.n3-thumb--piano .n3-piano-key-e  { animation: n3-key-press 3s ease-in-out infinite; animation-delay: 0.75s; }
+.n3-thumb--piano .n3-piano-key-g  { animation: n3-key-press 3s ease-in-out infinite; animation-delay: 1.25s; }
+.n3-thumb--piano .n3-piano-key-c2 { animation: n3-key-press-strong 3s ease-in-out infinite; animation-delay: 1.75s; }
+.n3-thumb--piano .n3-piano-wave { transform-origin: 320px 92px; animation: n3-wave-pulse 3s ease-in-out infinite; }
+
+.n3-thumb--egov .n3-egov-lens { animation: n3-egov-scan 3.6s ease-in-out infinite; }
+.n3-thumb--egov .n3-egov-hit { animation: n3-egov-hit 3.6s ease-in-out infinite; }
+
+@keyframes n3-key-press {
+  0%, 10%, 100% { transform: translateY(0); fill: #d6dde0; stroke: #81949d; filter: none; }
+  3%, 7% { transform: translateY(4px); fill: #9ac45a; stroke: #b7e777; filter: drop-shadow(0 0 8px rgba(154,196,90,.8)); }
+}
+@keyframes n3-key-press-strong {
+  0%, 12%, 100% { transform: translateY(0); fill: #d6dde0; stroke: #81949d; filter: none; }
+  3%, 9% { transform: translateY(4px); fill: #9ac45a; stroke: #c8f58a; filter: drop-shadow(0 0 12px rgba(154,196,90,.95)); }
+}
+@keyframes n3-wave-pulse {
+  0%, 8%, 24%, 40%, 56%, 76%, 100% { transform: scaleY(.62); opacity: .58; }
+  14%, 30%, 46%, 64% { transform: scaleY(1.22); opacity: 1; }
+}
+@keyframes n3-egov-scan {
+  0%, 8% { transform: translateY(-58px); }
+  18% { transform: translateY(-25px); }
+  32% { transform: translateY(10px); }
+  46%, 72% { transform: translateY(48px); }
+  86%, 100% { transform: translateY(-58px); }
+}
+@keyframes n3-egov-hit {
+  0%, 43%, 82%, 100% { opacity: .08; filter: none; }
+  50%, 72% { opacity: 1; filter: drop-shadow(0 0 8px rgba(154,196,90,.85)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .n3-thumb .n3-anim { animation: none !important; }
+  .n3-thumb--egov .n3-egov-hit { opacity: .72; }
+}
