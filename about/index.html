@@ -43,7 +43,7 @@
   <link rel="icon" href="../common/favicon.svg" type="image/svg+xml">
   <link rel="icon" href="../common/favicon.ico" sizes="any">
   <link rel="apple-touch-icon" href="../common/apple-touch-icon.png">
-  <link rel="stylesheet" href="../common/neko3se-site.css?v=20260921about1">
+  <link rel="stylesheet" href="../common/neko3se-site.css?v=20260922legal1">
 </head>
 <body class="n3-about-page" data-n3-page="about" data-n3-root="..">
 <header id="n3-site-header"></header>
@@ -91,6 +91,15 @@
       </div>
       <a class="n3-about-home-link" href="../" data-i18n="homeLink">← Neko3SE LAB</a>
     </section>
+
+    <section class="n3-about-section" aria-labelledby="site-info-heading">
+      <p class="n3-about-number">05 / SITE INFORMATION</p>
+      <h2 id="site-info-heading" data-i18n="siteInfoTitle">サイト運営に関する情報</h2>
+      <div class="n3-about-connect">
+        <a class="n3-about-link" href="privacy/"><strong>PRIVACY →</strong><span data-i18n="privacyDesc">Google Analytics の利用と情報の取り扱いについて。</span></a>
+        <a class="n3-about-link" href="terms/"><strong>TERMS →</strong><span data-i18n="termsDesc">サイトの利用条件と Apache License 2.0 について。</span></a>
+      </div>
+    </section>
   </main>
 
   <footer id="n3-site-footer"></footer>
@@ -108,7 +117,7 @@
       gaidBody2: "Generative AI supports planning, design, implementation, review, and improvement, while goals, decisions, approvals, and real-device testing remain human responsibilities.",
       human1:"Goals", human2:"Ideas", human3:"Requirements & constraints", human4:"Decisions & approval", human5:"Real-device testing",
       ai1:"Research & organization support", ai2:"Design support", ai3:"Implementation support", ai4:"Review support", ai5:"Improvement support",
-      fieldsTitle:"Fields", githubDesc:"Source code and repositories.", emailDesc:"Contact Neko3SE LAB.", homeLink:"← Neko3SE LAB"
+      fieldsTitle:"Fields", githubDesc:"Source code and repositories.", emailDesc:"Contact Neko3SE LAB.", homeLink:"← Neko3SE LAB", siteInfoTitle:"Site Information", privacyDesc:"Google Analytics and how information is handled.", termsDesc:"Site terms and the Apache License 2.0."
     }};
     const nodes = Array.from(document.querySelectorAll("[data-i18n]"));
     const original = new Map(nodes.map(node => [node, node.textContent]));
@@ -132,6 +141,6 @@
     applyLanguage("ja");
   })();
   </script>
-  <script src="../common/neko3se-site.js?v=20260921about1" defer></script>
+  <script src="../common/neko3se-site.js?v=20260922legal1" defer></script>
 </body>
 </html>

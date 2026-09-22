@@ -472,3 +472,33 @@
 /* LAB NOTE --------------------------------------------------------------- */
 body > .n3-labnote{width:min(1160px,calc(100% - 28px));margin-left:auto;margin-right:auto}
 .n3-labnote{margin:72px 0 24px;padding:42px 0 8px;border-top:1px solid rgba(103,232,146,.32);color:#edf6f3}.n3-labnote-head{padding-bottom:28px}.n3-labnote-kicker,.n3-labnote-index,.n3-labnote-theme-label{margin:0;color:#67e892;font-size:.7rem;font-weight:850;letter-spacing:.16em}.n3-labnote-head h2{margin:8px 0 26px;font-size:clamp(1.8rem,5vw,3rem);letter-spacing:-.025em}.n3-labnote-theme-label{color:#93aaa5;font-size:.62rem}.n3-labnote-theme{margin:7px 0 0;font-size:clamp(1.05rem,3vw,1.45rem);font-weight:850;letter-spacing:.04em}.n3-labnote-theme span{color:#67e892}.n3-labnote-section{padding:30px 0;border-top:1px solid rgba(147,170,165,.18)}.n3-labnote-section h3{margin:7px 0 18px;font-size:clamp(1.25rem,4vw,1.65rem)}.n3-labnote-section p{max-width:850px;line-height:1.85;color:#cbd9d5}.n3-labnote-tags{display:flex;flex-wrap:wrap;gap:8px;margin:20px 0}.n3-labnote-tags span{border:1px solid rgba(103,232,146,.32);border-radius:999px;padding:7px 10px;color:#a3f3bf;background:rgba(103,232,146,.045);font-size:.68rem;font-weight:800;letter-spacing:.05em}.n3-labnote-links{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:20px}.n3-labnote-links a{display:flex;min-width:0;min-height:142px;flex-direction:column;padding:18px;border:1px solid rgba(103,232,146,.28);border-radius:14px;background:rgba(103,232,146,.035);color:#edf6f3;text-decoration:none;transition:border-color .15s ease,background .15s ease}.n3-labnote-links a:hover,.n3-labnote-links a:focus-visible{border-color:#67e892;background:rgba(103,232,146,.075)}.n3-labnote-links strong{color:#67e892;font-size:.75rem;letter-spacing:.09em}.n3-labnote-links span{margin-top:9px;color:#cbd9d5;line-height:1.6}.n3-labnote-links em{margin-top:auto;padding-top:16px;color:#a3f3bf;font-style:normal;font-weight:800}.n3-labnote-en{display:none}html[lang="en"] .n3-labnote-ja{display:none}html[lang="en"] .n3-labnote-en{display:block}html[lang="en"] span.n3-labnote-en{display:inline}@media(max-width:640px){.n3-labnote{margin-top:56px;padding-top:34px}.n3-labnote-links{grid-template-columns:1fr}.n3-labnote-links a{min-height:128px}}
+
+/* ABOUT / legal information */
+.n3-site-footer { overflow-x: auto; }
+.n3-site-footer__inner { width: max-content; max-width: 100%; }
+.n3-legal-main { width: min(calc(100% - 40px), 850px); margin: 0 auto; padding: 56px 0 84px; }
+.n3-legal-main h1 { margin: 8px 0 12px; font-size: clamp(32px, 6vw, 54px); line-height: 1.25; }
+.n3-legal-main h2 { margin: 0 0 14px; color: #edf2f7; font-size: clamp(21px, 3vw, 26px); }
+.n3-legal-main p, .n3-legal-main li { color: #c4ced8; }
+.n3-legal-main p { margin: 0 0 16px; }
+.n3-legal-main ul { padding-left: 1.5em; }
+.n3-legal-main li { margin-bottom: 6px; }
+.n3-legal-main a { color: var(--n3-link); overflow-wrap: anywhere; }
+.n3-legal-main a:hover, .n3-legal-main a:focus-visible { color: var(--n3-accent); }
+.n3-legal-main section { padding: 28px 0; border-bottom: 1px solid var(--n3-border); }
+.n3-legal-intro { padding: 32px 0 24px !important; }
+.n3-legal-date { margin-top: 28px !important; color: #9aa8b4 !important; }
+@media (max-width: 600px) {
+  .n3-site-footer__inner { max-width: none; }
+  .n3-legal-main { width: calc(100% - 28px); padding-top: 30px; }
+}
+
+/* Bilingual policy and terms */
+.n3-legal-main h3 { margin: 0 0 14px; color: #edf2f7; font-size: clamp(21px, 3vw, 26px); }
+.n3-legal-language-nav { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
+.n3-legal-language-nav a { display: inline-block; min-width: 88px; padding: 7px 15px; border: 1px solid rgba(98, 230, 167, .45); border-radius: 999px; text-align: center; text-decoration: none; font-weight: 700; }
+.n3-legal-block { scroll-margin-top: 64px; }
+.n3-legal-block + .n3-legal-block { margin-top: 56px; padding-top: 32px; border-top: 2px solid rgba(98, 230, 167, .45); }
+.n3-legal-language-heading { color: var(--n3-accent) !important; font-size: clamp(24px, 4vw, 32px) !important; }
+.n3-legal-main section[aria-labelledby] { scroll-margin-top: 60px; }
+.n3-legal-title-en { font-size: .75em; font-weight: 600; color: #c4ced8; }
