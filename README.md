@@ -41,6 +41,15 @@ Each project includes a **LAB NOTE** describing why it was built, what was teste
 
 ---
 
+## LAB LOG
+
+Neko3SE LAB全体の制作記録、技術メモ、雑記を時系列で掲載します。Zennなど外部で公開した記事も紹介します。  
+LAB LOG is a chronological activity log for Neko3SE LAB, covering development updates, technical notes, miscellaneous observations, and links to articles published on services such as Zenn.
+
+▶ [LAB LOG](https://neko3se.com/log/)
+
+---
+
 ## About Neko3SE 😺
 
 Neko3SEは、心理学を専攻した組み込みシステムエンジニアです。生成AI駆動開発とWeb技術を使い、アイデアを実際に動くものへ変える実験と制作を行っています。  
@@ -48,6 +57,7 @@ Neko3SE is an embedded systems engineer with an academic background in psycholog
 
 ▶ [ABOUT Neko3SE](https://neko3se.com/about/)  
 ▶ [LINKS / RESPECT & RESOURCES](https://neko3se.com/links/)  
+▶ [LAB LOG](https://neko3se.com/log/)  
 ▶ [Privacy Policy](https://neko3se.com/about/privacy/)  
 ▶ [利用規約 / Terms of Use](https://neko3se.com/about/terms/)  
 ▶ [Neko3SE on GitHub](https://github.com/Neko3SE)
@@ -278,10 +288,13 @@ devsite/
 ├─ about/                             # ABOUT Neko3SE / Privacy Policy / Terms of Use
 ├─ links/                             # LINKS / RESPECT & RESOURCES
 │  └─ index.html
+├─ log/                               # LAB LOG / activity log
+│  └─ index.html
 │
 ├─ common/                            # Shared site components
 │  ├─ neko3se-site.css               # Common header / footer styles
 │  ├─ neko3se-site.js                # Common header / footer / navigation
+│  ├─ neko3se-home-log.js            # TOP latest LAB LOG loader
 │  ├─ favicon.svg                    # Shared favicon
 │  ├─ favicon.ico                    # Fallback favicon
 │  └─ apple-touch-icon.png           # Apple touch icon

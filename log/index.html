@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-QRJ1BC3PVM"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-QRJ1BC3PVM');
+</script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LAB LOG | Neko3SE LAB | 制作記録・技術メモ・雑記</title>
+  <meta name="description" content="Neko3SE LABの制作記録、技術メモ、雑記を時系列で掲載。Zennなど外部で公開した記事も紹介します。">
+  <link rel="canonical" href="https://neko3se.com/log/">
+  <meta property="og:title" content="LAB LOG | Neko3SE LAB">
+  <meta property="og:description" content="Neko3SE LABの制作記録、技術メモ、雑記。Zennなど外部で公開した記事も紹介します。">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://neko3se.com/log/">
+  <meta property="og:site_name" content="Neko3SE LAB">
+  <meta property="og:locale" content="ja_JP">
+  <meta property="og:image" content="https://neko3se.com/og_images/Neko3SE_img.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="LAB LOG | Neko3SE LAB">
+  <meta name="twitter:description" content="Neko3SE LABの制作記録、技術メモ、雑記。Zennなど外部で公開した記事も紹介します。">
+  <meta name="twitter:image" content="https://neko3se.com/og_images/Neko3SE_img.png">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "LAB LOG | Neko3SE LAB",
+    "url": "https://neko3se.com/log/",
+    "description": "Neko3SE LABの制作記録、技術メモ、雑記を時系列で掲載。Zennなど外部で公開した記事も紹介します。",
+    "inLanguage": "ja",
+    "isPartOf": {"@id": "https://neko3se.com/#website"},
+    "author": {"@id": "https://neko3se.com/#neko3se"}
+  }
+  </script>
+  <link rel="icon" href="../common/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="../common/favicon.ico" sizes="any">
+  <link rel="apple-touch-icon" href="../common/apple-touch-icon.png">
+  <link rel="stylesheet" href="../common/neko3se-site.css?v=20260922links1">
+  <style>
+    :root {
+      --log-bg: #0f141b;
+      --log-surface: #171e27;
+      --log-text: #edf2f7;
+      --log-muted: #9aa6b2;
+      --log-border: #2a3440;
+      --log-accent: #b1d978;
+    }
+    body.n3-log-page {
+      margin: 0;
+      background: radial-gradient(circle at 10% 0%, rgba(154, 196, 90, 0.10), transparent 28rem), var(--log-bg);
+      color: var(--log-text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif;
+    }
+    .log-main {
+      width: min(calc(100% - 32px), 880px);
+      margin: 0 auto;
+      padding: 64px 0 80px;
+    }
+    .log-hero { margin-bottom: 48px; }
+    .log-eyebrow {
+      margin: 0 0 10px;
+      color: var(--log-accent);
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.16em;
+    }
+    .log-title {
+      margin: 0;
+      font-size: clamp(2.6rem, 8vw, 5.2rem);
+      line-height: 1;
+      letter-spacing: -0.04em;
+    }
+    .log-lead {
+      max-width: 720px;
+      margin: 22px 0 0;
+      color: var(--log-muted);
+      font-size: 1rem;
+      line-height: 1.9;
+    }
+    .log-year { margin-top: 46px; }
+    .log-year__title {
+      margin: 0 0 8px;
+      color: var(--log-accent);
+      font-size: 1.05rem;
+      letter-spacing: 0.12em;
+    }
+    .log-list {
+      border-top: 1px solid var(--log-border);
+    }
+    .log-entry {
+      position: relative;
+      padding: 28px 0 30px 24px;
+      border-bottom: 1px solid var(--log-border);
+      scroll-margin-top: 72px;
+    }
+    .log-entry::before {
+      content: "";
+      position: absolute;
+      top: 35px;
+      left: 0;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--log-accent);
+      box-shadow: 0 0 0 5px rgba(177, 217, 120, 0.10);
+    }
+    .log-entry:target {
+      background: linear-gradient(90deg, rgba(154, 196, 90, 0.08), transparent 72%);
+    }
+    .log-entry__meta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px 12px;
+      margin-bottom: 10px;
+      color: var(--log-muted);
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+    .log-entry__type {
+      display: inline-flex;
+      padding: 3px 8px;
+      border: 1px solid rgba(177, 217, 120, 0.36);
+      border-radius: 999px;
+      color: var(--log-accent);
+      letter-spacing: 0.05em;
+    }
+    .log-entry__title {
+      margin: 0;
+      font-size: clamp(1.2rem, 3vw, 1.55rem);
+      line-height: 1.45;
+    }
+    .log-entry__body {
+      margin-top: 12px;
+      color: #c8d0d8;
+      line-height: 1.85;
+    }
+    .log-entry__body p { margin: 0.55em 0; }
+    .log-entry__link {
+      display: inline-block;
+      margin-top: 12px;
+      color: var(--log-accent);
+      font-weight: 750;
+      text-decoration: none;
+    }
+    .log-entry__link:hover { text-decoration: underline; }
+    .log-entry__link:focus-visible {
+      outline: 2px solid var(--log-accent);
+      outline-offset: 4px;
+    }
+    .log-empty {
+      margin: 0;
+      padding: 26px 0;
+      border-top: 1px solid var(--log-border);
+      border-bottom: 1px solid var(--log-border);
+      color: var(--log-muted);
+    }
+    @media (max-width: 600px) {
+      .log-main { width: min(calc(100% - 28px), 880px); padding: 48px 0 64px; }
+      .log-hero { margin-bottom: 38px; }
+      .log-entry { padding-left: 20px; }
+    }
+  </style>
+</head>
+<body class="n3-log-page" data-n3-page="log" data-n3-root="..">
+  <header id="n3-site-header"></header>
+  <noscript class="n3-noscript"><a href="../">Neko3SE LAB</a></noscript>
+
+  <main class="log-main">
+    <header class="log-hero">
+      <p class="log-eyebrow">ACTIVITY / ARTICLE / MEMO</p>
+      <h1 class="log-title">LAB LOG</h1>
+      <p class="log-lead">Neko3SE LABの制作記録、技術メモ、雑記を時系列で掲載します。Zennなど外部で公開した記事もここから紹介します。</p>
+    </header>
+
+    <!--
+    ============================================================
+     LAB LOG 新規追加方法 / MAINTENANCE GUIDE
+
+     1. 新しいLOGは対象年の .log-list の一番上へ追加します。
+        新しい年になった場合は、既存の .log-year より上に年セクションを追加します。
+
+     2. IDは次の形式に統一します。
+          log-YYYY-MM-DD-NN
+        例:
+          log-2026-09-22-01
+          log-2026-09-22-02
+        同じ日の1件目は01、2件目は02です。
+        一度公開したIDは、内部リンク切れを防ぐため原則変更しません。
+
+     3. 日付は表示・datetimeとも YYYY-MM-DD に統一します。
+          <time datetime="2026-09-22">2026-09-22</time>
+
+     4. TYPEは内容に応じて1つ選びます。
+          ARTICLE        : 外部・公開記事の紹介
+          ARTICLE / ZENN : Zenn記事の紹介
+          LAB            : Neko3SE LABの制作・更新・実験記録
+          MEMO           : 短いメモ・アイデア・気付き
+
+     5. タイトルは .log-entry__title、本文は .log-entry__body に記述します。
+        本文は1～3段落程度を目安とし、長文は専用ページや外部記事へ分離します。
+
+     6. 外部リンク例:
+          <a class="log-entry__link"
+             href="https://example.com/"
+             target="_blank"
+             rel="noopener noreferrer">外部サイトで読む ↗</a>
+
+        内部リンク例:
+          <a class="log-entry__link" href="../soundtuner/">SOUND TUNER LAB βを見る →</a>
+
+        MEMOなどリンク不要のLOGでは <a> 自体を記述しません。
+
+     7. TOPの最新3件は /common/neko3se-home-log.js が自動取得します。
+        TOP index.htmlへのLOG転記は不要です。
+
+     ▼ 投稿テンプレート（コピーしてコメント外へ配置）
+
+     <article class="log-entry" id="log-YYYY-MM-DD-01">
+       <div class="log-entry__meta">
+         <time datetime="YYYY-MM-DD">YYYY-MM-DD</time>
+         <span class="log-entry__type">MEMO</span>
+       </div>
+       <h3 class="log-entry__title">タイトル</h3>
+       <div class="log-entry__body">
+         <p>本文を記述します。</p>
+       </div>
+     </article>
+    ============================================================
+    -->
+
+    <section class="log-year" aria-labelledby="log-year-2026">
+      <h2 id="log-year-2026" class="log-year__title">2026</h2>
+      <div class="log-list">
+              <!-- 新しいLOGはこの直下へ追加 -->
+
+        <article class="log-entry" id="log-2026-09-22-01">
+          <div class="log-entry__meta">
+          <time datetime="2026-09-22">2026-09-22</time>
+          <span class="log-entry__type">ARTICLE / ZENN</span>
+          </div>
+          <h3 class="log-entry__title">外部記事への投稿試行</h3>
+          <div class="log-entry__body">
+          <p>Zennへの記事投稿を試行してみた。
+            <a class="log-entry__link"
+             href="https://zenn.dev/neko3se/articles/63cccc803b562c"
+             target="_blank"
+             rel="noopener noreferrer">外部 Zennで読む ↗</a>
+              </p>
+          </div>
+         </article>
+
+         <article class="log-entry" id="log-2026-09-20-01">
+          <div class="log-entry__meta">
+          <time datetime="2026-09-20">2026-09-20</time>
+          <span class="log-entry__type">LAB</span>
+          </div>
+          <h3 class="log-entry__title">My Domain name!</h3>
+          <div class="log-entry__body">
+          <p>独自ドメイン名の登録を行った記念日。</p>
+          </div>
+         </article>
+
+         <article class="log-entry" id="log-2026-08-29-01">
+          <div class="log-entry__meta">
+          <time datetime="2026-08-29">2026-08-29</time>
+          <span class="log-entry__type">LAB</span>
+          </div>
+          <h3 class="log-entry__title">GitHub sign-up!</h3>
+          <div class="log-entry__body">
+          <p>GitHubのアカウントを登録し、リポジトリを作成した記念日。</p>
+          </div>
+         </article>
+
+
+      </div>
+      <p class="log-empty">まだLOGはありません。 / No logs yet.</p>
+    </section>
+  </main>
+
+  <footer id="n3-site-footer"></footer>
+  <script src="../common/neko3se-site.js?v=20260922brand1" defer></script>
+</body>
+</html>

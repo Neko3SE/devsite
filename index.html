@@ -75,8 +75,8 @@
   text-decoration: none;
 }
 
-/* Keep the vertical rhythm after moving SHARE below CONTENTS */
-.content-grid + .share-panel {
+/* Keep the vertical rhythm between LAB LOG and SHARE */
+.home-log + .share-panel {
   margin-top: clamp(28px, 4vw, 48px);
 }
 
@@ -259,6 +259,20 @@
 
   </section>
 
+  <section class="home-log" aria-labelledby="home-log-title">
+    <div class="home-log__head">
+      <p class="section-label">ACTIVITY</p>
+      <h2 id="home-log-title">LAB LOG</h2>
+      <p>Neko3SE LABの制作記録・技術メモ・雑記。</p>
+    </div>
+
+    <div id="latest-lab-logs" class="home-log__entries" aria-live="polite">
+      <p class="home-log__status">最新LOGを読み込んでいます…</p>
+    </div>
+
+    <a class="home-log__all" href="log/">VIEW ALL LOGS →</a>
+  </section>
+
   <section class="share-panel" aria-labelledby="share-title">
     <div class="share-head">
       <p class="section-label">SHARE</p>
@@ -429,5 +443,6 @@
 </script>
   <script src="common/neko3se-site.js?v=20260922brand1" defer></script>
   <script src="common/neko3se-thumbnails.js?v=20260922thumb1" defer></script>
+  <script src="common/neko3se-home-log.js?v=20260922log1" defer></script>
 </body>
 </html>

@@ -373,6 +373,106 @@ footer a:hover {
   text-decoration: underline;
 }
 
+/* TOP / LAB LOG */
+.home-log {
+  margin-top: clamp(28px, 4vw, 48px);
+  padding: 28px 30px;
+  background: linear-gradient(135deg, rgba(154, 196, 90, 0.07), transparent 55%), var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.home-log__head h2 {
+  margin: 5px 0 0;
+  font-size: 24px;
+  line-height: 1.35;
+}
+
+.home-log__head p:last-child {
+  margin: 10px 0 0;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.home-log__entries {
+  margin-top: 18px;
+  border-top: 1px solid var(--border);
+}
+
+.home-log__entry {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px 18px;
+  padding: 16px 38px 16px 0;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  text-decoration: none;
+  transition: color 0.18s ease, background-color 0.18s ease;
+}
+
+.home-log__entry:hover {
+  color: var(--accent-dark);
+}
+
+.home-log__entry:focus-visible,
+.home-log__all:focus-visible {
+  outline: 2px solid var(--accent-dark);
+  outline-offset: 3px;
+}
+
+.home-log__meta {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.home-log__type {
+  color: var(--accent-dark);
+  letter-spacing: 0.04em;
+}
+
+.home-log__title {
+  min-width: 0;
+  font-size: 0.96rem;
+  line-height: 1.5;
+}
+
+.home-log__arrow {
+  position: absolute;
+  right: 4px;
+  bottom: 17px;
+  color: var(--accent-dark);
+  font-weight: 800;
+}
+
+.home-log__status {
+  margin: 0;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.home-log__all {
+  display: inline-block;
+  margin-top: 18px;
+  color: var(--accent-dark);
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-decoration: none;
+}
+
+.home-log__all:hover {
+  text-decoration: underline;
+}
+
 @media (max-width: 760px) {
   .hero {
     padding: 58px 20px 48px;
@@ -399,6 +499,10 @@ footer a:hover {
 
   .share-panel {
     padding: 20px;
+  }
+
+  .home-log {
+    padding: 22px 20px;
   }
 
   .share-actions {
