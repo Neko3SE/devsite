@@ -107,15 +107,6 @@ h1 {
   letter-spacing: -0.055em;
 }
 
-.brand-sub {
-  display: block;
-  margin-top: 10px;
-  font-size: clamp(18px, 2vw, 28px);
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  color: var(--muted);
-}
-
 .hero-copy {
   max-width: 720px;
   margin: 28px 0 0;
@@ -434,10 +425,6 @@ footer a:hover {
 @media (max-width: 480px) {
   .brand-main {
     font-size: 46px;
-  }
-
-  .brand-sub {
-    font-size: 17px;
   }
 
   .hero-copy {

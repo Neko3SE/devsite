@@ -5,7 +5,7 @@
 生成AIを活用したコンテンツと、IT関連の小ネタ・実験・制作物を公開する個人ラボです。  
 A personal lab for generative AI content, IT experiments, creative ideas, and browser-based projects.
 
-🌐 **Neko3SE LAB on GitHub**  
+🌐 **Neko3SE LAB**  
 https://neko3se.com/
 
 ---
@@ -374,4 +374,4 @@ See [LICENSE](./LICENSE) or [LICENSE.txt](./LICENSE.txt) for details.
 
 ---
 
-on GitHub ©2026 Neko3SE.
+©2026 Neko3SE.
