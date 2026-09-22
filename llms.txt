@@ -13,6 +13,7 @@ Project README.md files are Technical Documentation. Use them for project overvi
 
 - [Neko3SE LAB README](https://neko3se.com/README.md): Overview of Neko3SE LAB, its development philosophy, contents, repository structure, and project information.
 - [ABOUT Neko3SE](https://neko3se.com/about/): Author profile and background behind Neko3SE LAB and its development activities.
+- [LINKS](https://neko3se.com/links/): Sites Neko3SE respects and official resources related to LAB projects.
 - [Privacy Policy](https://neko3se.com/about/privacy/): Google Analytics and information handling.
 - [Terms of Use](https://neko3se.com/about/terms/): Site terms and Apache License 2.0 relationship.
 

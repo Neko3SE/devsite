@@ -502,3 +502,13 @@ body > .n3-labnote{width:min(1160px,calc(100% - 28px));margin-left:auto;margin-r
 .n3-legal-language-heading { color: var(--n3-accent) !important; font-size: clamp(24px, 4vw, 32px) !important; }
 .n3-legal-main section[aria-labelledby] { scroll-margin-top: 60px; }
 .n3-legal-title-en { font-size: .75em; font-weight: 600; color: #c4ced8; }
+
+/* LINKS page */
+.n3-links-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; margin-top:22px; }
+.n3-links-card { display:flex; flex-direction:column; min-height:160px; padding:22px; border:1px solid var(--n3-border); border-radius:16px; background:#171e27; color:#edf2f7 !important; text-decoration:none !important; }
+.n3-links-card--respect { grid-column:1 / -1; min-height:190px; border-color:rgba(98,230,167,.4); }
+.n3-links-card:hover,.n3-links-card:focus-visible { border-color:var(--n3-accent); outline:none; }
+.n3-links-card strong { color:var(--n3-accent); font-size:1.15rem; }
+.n3-links-card span { color:#b8c3cc; margin-top:12px; }
+.n3-links-card small { color:#9aa8b4; margin-top:auto; padding-top:18px; font-weight:800; letter-spacing:.08em; }
+@media(max-width:600px) { .n3-links-grid { grid-template-columns:1fr; } .n3-links-card--respect { grid-column:auto; } }

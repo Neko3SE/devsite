@@ -47,6 +47,7 @@ Neko3SEは、心理学を専攻した組み込みシステムエンジニアで�
 Neko3SE is an embedded systems engineer with an academic background in psychology, experimenting with generative AI-driven development and web technologies to turn ideas into things that actually work.
 
 ▶ [ABOUT Neko3SE](https://neko3se.com/about/)  
+▶ [LINKS / RESPECT & RESOURCES](https://neko3se.com/links/)  
 ▶ [Privacy Policy](https://neko3se.com/about/privacy/)  
 ▶ [利用規約 / Terms of Use](https://neko3se.com/about/terms/)  
 ▶ [Neko3SE on GitHub](https://github.com/Neko3SE)
@@ -275,6 +276,7 @@ devsite/
 ├─ index.css                          # Top page styles
 ├─ 404.html                           # Route Recovery / custom 404
 ├─ about/                             # ABOUT Neko3SE / Privacy Policy / Terms of Use
+├─ links/                             # LINKS / RESPECT & RESOURCES
 │  └─ index.html
 │
 ├─ common/                            # Shared site components
