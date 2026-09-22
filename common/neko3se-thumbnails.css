@@ -3,6 +3,8 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
+  column-gap: 18px;
+  row-gap: 9px;
 }
 
 .n3-thumb {
@@ -10,7 +12,7 @@
   grid-column: 1 / -1;
   width: 78%;
   margin-inline: auto;
-  aspect-ratio: 2 / 1;
+  aspect-ratio: 2.6 / 1;
   overflow: hidden;
   border: 1px solid rgba(154, 196, 90, 0.18);
   border-radius: 12px;
@@ -67,7 +69,7 @@
 }
 
 
-/* Rev.1: compact thumbnail display to reduce vertical scrolling. */
+/* Rev.2: wide 2.6:1 thumbnail + half vertical gap to reduce scrolling. */
 @media (max-width: 600px) {
   .n3-thumb {
     width: 86%;
