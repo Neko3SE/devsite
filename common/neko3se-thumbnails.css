@@ -8,7 +8,8 @@
 .n3-thumb {
   display: none;
   grid-column: 1 / -1;
-  width: 100%;
+  width: 78%;
+  margin-inline: auto;
   aspect-ratio: 2 / 1;
   overflow: hidden;
   border: 1px solid rgba(154, 196, 90, 0.18);
@@ -63,4 +64,12 @@
 @media (prefers-reduced-motion: reduce) {
   .n3-thumb .n3-anim { animation: none !important; }
   .n3-thumb--egov .n3-egov-hit { opacity: .72; }
+}
+
+
+/* Rev.1: compact thumbnail display to reduce vertical scrolling. */
+@media (max-width: 600px) {
+  .n3-thumb {
+    width: 86%;
+  }
 }
