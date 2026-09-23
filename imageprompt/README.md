@@ -16,18 +16,18 @@ How should subject, composition, light, texture and mood be organized when commu
 - Prompt-design template and explanation
 - Breakdown of subject, composition, light, texture and mood
 - Sample prompt and generated-image example
-- Generated example image embedded in the HTML
+- Generated example image stored as an external Base64 text asset and loaded in the page
 
 ## How It Works / 仕組み
 
-生成画像をBase64でHTMLへ埋め込み、プロンプト設計の解説と作例を1ページにまとめています。
+生成画像はバイナリファイルとして配置せず、Base64データを外部テキストファイルとして保持し、JavaScriptで読み込んで表示しています。プロンプト設計の解説と作例は同じページで確認できます。
 
 **English**  
-The generated image is embedded in the HTML as Base64 and presented on the same page as the prompt-design explanation.
+The generated image is stored as an external Base64 text asset rather than a binary file and loaded with JavaScript, while the prompt-design explanation and example remain together on the same page.
 
 ## Technology / 使用技術
 
-HTML5, CSS, JAVASCRIPT, BASE64 EMBEDDED IMAGE, RESPONSIVE DESIGN
+HTML5, CSS, JAVASCRIPT, BASE64 TEXT ASSET, RESPONSIVE DESIGN
 
 ## Environment / 動作環境
 
@@ -40,7 +40,7 @@ This content runs in a web browser and has been tested on real devices including
 
 - Generated results vary by model, version and generation conditions.
 - The page explains prompt design; it does not run an image-generation model in the browser.
-- The embedded example image increases the HTML file size.
+- The example image is kept as a large Base64 text asset, so the repository still contains a large text file even though the HTML itself stays lightweight.
 
 ## Related Links / 関連リンク
 
