@@ -1,0 +1,27 @@
+.n3-manga-guide { position:relative; --n3-manga-preview-aspect:2 / 1; }
+.n3-manga-guide-head { display:flex; align-items:flex-end; justify-content:space-between; gap:18px; margin-bottom:18px; }
+.n3-manga-guide-copy { margin:0 !important; max-width:640px; }
+.n3-manga-stage { min-height:0; display:grid; place-items:center; padding:18px; border:1px solid var(--n3-border); border-radius:16px; background:#111820; }
+.n3-manga-status { margin:0 !important; color:#9aa8b4 !important; font-size:.9rem; text-align:center; }
+.n3-manga-retry { appearance:none; margin-top:12px; border:1px solid rgba(98,230,167,.45); border-radius:999px; background:transparent; color:#edf2f7; padding:7px 13px; font:inherit; font-weight:800; cursor:pointer; }
+.n3-manga-retry:hover,.n3-manga-retry:focus-visible { border-color:var(--n3-accent); background:rgba(98,230,167,.08); outline:none; }
+.n3-manga-pair { display:none; width:100%; align-items:stretch; justify-content:space-between; gap:12px; }
+.n3-manga-pair.is-ready { display:flex; }
+.n3-manga-open { position:relative; flex:1 1 0; min-width:0; aspect-ratio:var(--n3-manga-preview-aspect); padding:0; border:0; border-radius:12px; background:#0c1218; cursor:zoom-in; overflow:hidden; }
+.n3-manga-open::after { content:"CLICK / TAP TO READ ↓"; position:absolute; inset:auto 0 0; z-index:2; display:flex; align-items:flex-end; justify-content:center; min-height:42%; padding:0 8px 12px; box-sizing:border-box; background:linear-gradient(to bottom,rgba(12,18,24,0),rgba(12,18,24,.78) 62%,rgba(12,18,24,.96)); color:#edf2f7; font-size:clamp(.62rem,1.7vw,.82rem); font-weight:800; letter-spacing:.08em; text-shadow:0 1px 3px rgba(0,0,0,.7); pointer-events:none; }
+.n3-manga-open:focus-visible { outline:2px solid var(--n3-accent); outline-offset:4px; }
+.n3-manga-image { position:absolute; inset:0 auto auto 0; display:block; width:100%; height:auto; background:#0c1218; }
+.n3-manga-hint { display:none; }
+.n3-manga-lightbox[hidden] { display:none; }
+.n3-manga-lightbox { position:fixed; inset:0; z-index:1200; display:grid; grid-template-rows:auto 1fr; background:rgba(5,9,13,.94); }
+.n3-manga-lightbox-bar { display:flex; justify-content:flex-end; padding:10px 14px; }
+.n3-manga-close { appearance:none; border:1px solid rgba(98,230,167,.45); border-radius:999px; background:#111820; color:#edf2f7; padding:7px 12px; font:inherit; font-size:.8rem; font-weight:800; cursor:pointer; }
+.n3-manga-close:hover,.n3-manga-close:focus-visible { border-color:var(--n3-accent); color:var(--n3-accent); outline:none; }
+.n3-manga-lightbox-scroll { overflow:auto; overscroll-behavior:contain; padding:0 16px 28px; }
+.n3-manga-lightbox-image { display:block; width:min(100%,1024px); height:auto; margin:0 auto; box-shadow:0 20px 70px rgba(0,0,0,.42); }
+body.n3-manga-modal-open { overflow:hidden; }
+@media (max-width:600px) {
+  .n3-manga-stage { min-height:0; padding:10px; }
+  .n3-manga-pair { gap:8px; }
+  .n3-manga-lightbox-scroll { padding:0 8px 20px; }
+}

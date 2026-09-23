@@ -44,6 +44,7 @@
   <link rel="icon" href="../common/favicon.ico" sizes="any">
   <link rel="apple-touch-icon" href="../common/apple-touch-icon.png">
   <link rel="stylesheet" href="../common/neko3se-site.css?v=20260923menu2">
+  <link rel="stylesheet" href="about-manga.css?v=20260923">
 </head>
 <body class="n3-about-page" data-n3-page="about" data-n3-root="..">
 <header id="n3-site-header"></header>
@@ -64,6 +65,28 @@
       <p data-i18n="labBody1">Neko3SE LABは、生成AIとWeb技術を使って、アイデアを実際に触れて試せるものにする個人実験LABです。</p>
       <p data-i18n="labBody2">実用的なツールから、遊び心のある実験まで。思いついたアイデアを企画・設計し、実際に作り、ブラウザや実機で試します。</p>
       <p data-i18n="labBody3">完成したものだけでなく、実験を通して「何ができたか」「何が分かったか」も公開していきます。</p>
+    </section>
+
+    <section id="manga-guide" class="n3-about-section n3-manga-guide" aria-labelledby="manga-heading">
+      <p class="n3-about-number">MANGA GUIDE</p>
+      <div class="n3-manga-guide-head">
+        <div>
+          <h2 id="manga-heading">マンガで見る Neko3SE LAB</h2>
+          <p class="n3-manga-guide-copy">Neko3SE LABをマンガでざっくり紹介。 / A quick manga introduction to Neko3SE LAB.</p>
+        </div>
+      </div>
+      <div class="n3-manga-stage">
+        <p id="manga-status" class="n3-manga-status">マンガは表示位置に近づくと読み込まれます。</p>
+        <div class="n3-manga-pair">
+          <button class="n3-manga-open" type="button" data-manga-lang="ja" aria-hidden="true">
+            <img class="n3-manga-image" data-manga-image="ja" alt="">
+          </button>
+          <button class="n3-manga-open" type="button" data-manga-lang="en" aria-hidden="true">
+            <img class="n3-manga-image" data-manga-image="en" alt="">
+          </button>
+        </div>
+      </div>
+      <p class="n3-manga-hint">TAP / CLICK TO EXPAND</p>
     </section>
 
     <section class="n3-about-section" aria-labelledby="gaid-heading">
@@ -141,6 +164,11 @@
     applyLanguage("ja");
   })();
   </script>
+  <div id="manga-lightbox" class="n3-manga-lightbox" role="dialog" aria-modal="true" aria-label="MANGA GUIDE" hidden>
+    <div class="n3-manga-lightbox-bar"><button id="manga-close" class="n3-manga-close" type="button">× CLOSE</button></div>
+    <div class="n3-manga-lightbox-scroll"><img id="manga-lightbox-image" class="n3-manga-lightbox-image" alt=""></div>
+  </div>
+  <script src="about-manga.js?v=20260923" defer></script>
   <script src="../common/neko3se-site.js?v=20260923menu2" defer></script>
 </body>
 </html>
