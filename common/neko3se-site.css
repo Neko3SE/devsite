@@ -183,7 +183,7 @@
 
 .n3-drawer-nav {
   display: grid;
-  gap: 22px;
+  gap: 12px;
   margin-top: 12px;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -200,12 +200,12 @@
 
 .n3-drawer-group {
   display: grid;
-  gap: 4px;
+  gap: 2px;
 }
 
 .n3-drawer-category {
-  margin: 0 2px 6px;
-  padding: 0 10px 8px;
+  margin: 0 2px 4px;
+  padding: 0 10px 6px;
   color: var(--n3-accent);
   border-bottom: 1px solid var(--n3-border);
   font-size: 11px;
@@ -467,6 +467,7 @@
 .n3-about-home-link { display:inline-flex; align-items:center; gap:8px; margin-top:18px; color:var(--n3-link) !important; font-weight:800; text-decoration:none !important; }
 .n3-about-home-link:hover,.n3-about-home-link:focus-visible { color:var(--n3-accent) !important; outline:none; }
 .n3-drawer-about { margin-top:6px; padding-top:12px; border-top:1px solid var(--n3-border); }
+.n3-drawer-about + .n3-drawer-about { margin-top:0; padding-top:0; border-top:0; }
 @media (max-width:600px) { .n3-about-main{width:min(calc(100% - 28px),960px);padding-top:38px}.n3-about-duo,.n3-about-connect{grid-template-columns:1fr}.n3-about-cycle{font-size:13px}.n3-about-title{font-size:clamp(38px,13vw,58px)} }
 
 /* LAB NOTE --------------------------------------------------------------- */
