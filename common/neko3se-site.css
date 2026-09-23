@@ -155,6 +155,34 @@
   transition-delay: 0s;
 }
 
+.n3-drawer::after {
+  content: "MORE ↓";
+  position: absolute;
+  right: 14px;
+  bottom: max(8px, env(safe-area-inset-bottom));
+  left: 14px;
+  z-index: 2;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  height: 54px;
+  padding-bottom: 2px;
+  color: var(--n3-accent);
+  background: linear-gradient(to bottom, rgba(21, 28, 36, 0), var(--n3-drawer-bg) 72%);
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0.16em;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(4px);
+  transition: opacity 150ms ease, transform 150ms ease;
+}
+
+.n3-drawer.has-more-below::after {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 .n3-drawer__head {
   display: flex;
   align-items: center;
@@ -183,10 +211,37 @@
 
 .n3-drawer-nav {
   display: grid;
+  flex: 1 1 auto;
   gap: 12px;
+  min-height: 0;
   margin-top: 12px;
+  padding-right: 4px;
   overflow-y: auto;
   overscroll-behavior: contain;
+  scrollbar-color: rgba(98, 230, 167, 0.72) rgba(255, 255, 255, 0.06);
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+}
+
+.n3-drawer-nav::-webkit-scrollbar {
+  width: 10px;
+}
+
+.n3-drawer-nav::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 999px;
+}
+
+.n3-drawer-nav::-webkit-scrollbar-thumb {
+  background: rgba(98, 230, 167, 0.72);
+  background-clip: padding-box;
+  border: 2px solid var(--n3-drawer-bg);
+  border-radius: 999px;
+}
+
+.n3-drawer-nav::-webkit-scrollbar-thumb:hover {
+  background: var(--n3-accent);
+  background-clip: padding-box;
 }
 
 .n3-drawer-home {
@@ -417,7 +472,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .n3-drawer,
-  .n3-drawer-overlay {
+  .n3-drawer-overlay,
+  .n3-drawer::after {
     transition-duration: 1ms !important;
   }
 }
