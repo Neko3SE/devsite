@@ -164,8 +164,8 @@ A research page that explores prompt design for high-quality AI image generation
   Emphasizes concrete visual direction over simply stacking quality keywords
 - 「雨夜の窓辺の仔猫」をテーマにしたサンプルプロンプトと生成結果  
   Includes a sample prompt and generated result themed around a kitten by a rainy nighttime window
-- サンプル画像はBase64としてHTML内に埋め込み  
-  Sample image is embedded directly in the HTML as Base64
+- サンプル画像は外部Base64テキストからJavaScriptで読み込み  
+  Sample image is loaded with JavaScript from an external Base64 text asset
 
 ▶ [PRO IMAGE PROMPT LABを開く / Open PRO IMAGE PROMPT LAB](https://neko3se.com/imageprompt/)
 

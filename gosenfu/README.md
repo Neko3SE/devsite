@@ -15,19 +15,19 @@ How simply can staff notation, solfege labels and sounding notes be synchronized
 
 - Short synchronized staff-notation and scale clip
 - solfege-oriented learning presentation
-- Video embedded in the HTML as a Base64 Data URL
+- Video loaded from an external Base64 text asset
 - Japanese / English presentation
 
 ## How It Works / 仕組み
 
-動画データをData URLとしてHTML内へ埋め込み、単一ページで再生できる構成にしています。
+動画データを外部のBase64テキストとして保持し、JavaScriptでData URLへ復元して再生しています。
 
 **English**  
-Video data is embedded as a Data URL so the clip can be played from a self-contained page.
+Video data is stored as external Base64 text and restored to a Data URL with JavaScript for playback.
 
 ## Technology / 使用技術
 
-HTML5, HTML5 VIDEO, BASE64, DATA URL, RESPONSIVE DESIGN
+HTML5, HTML5 VIDEO, JAVASCRIPT, BASE64 TEXT ASSET, DATA URL, RESPONSIVE DESIGN
 
 ## Environment / 動作環境
 
@@ -38,7 +38,7 @@ This content runs in a web browser and has been tested on real devices including
 
 ## Known Limitations / 既知の制約
 
-- Base64 video embedding increases the HTML file size.
+- Loading the video requires HTTP(S); direct file:// viewing cannot fetch the Base64 text asset in some browsers.
 - Playback behavior depends on browser media support and device settings.
 - The clip is a compact learning aid rather than a full notation editor or score player.
 
