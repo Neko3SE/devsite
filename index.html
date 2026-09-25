@@ -110,33 +110,69 @@
 }
 </style>
 
-<style id="n3-intro-layout-sample-v4">
-:root { --n3-intro-header-h: 0px; }
-.n3-intro-sample {
-  height: calc(100svh - var(--n3-intro-header-h));
-  min-height: 0; box-sizing: border-box;
-  display: grid; grid-template-rows: auto minmax(0,1fr) auto;
-  align-items: center; overflow: hidden;
-  padding: clamp(10px,2svh,24px) 0 clamp(12px,2.5svh,28px);
+<style id="n3-intro-layout-sample-v5">
+:root {
+  --n3-intro-header-h: 0px;
+  --n3-intro-vh: 100svh;
 }
-.n3-intro-sample__label,.n3-intro-sample__cue {
-  position:relative; z-index:2; margin:0; text-align:center; line-height:1.2;
+.n3-intro-sample {
+  height: calc(var(--n3-intro-vh) - var(--n3-intro-header-h));
+  min-height: 0;
+  box-sizing: border-box;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  overflow: hidden;
+  padding: clamp(8px, 1.4svh, 16px) 0 clamp(12px, 2svh, 22px);
+  position: relative;
+}
+.n3-intro-sample::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: .16;
+  background:
+    linear-gradient(rgba(84,255,188,.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(84,255,188,.06) 1px, transparent 1px),
+    radial-gradient(circle at 50% 70%, rgba(84,255,188,.10), transparent 42%);
+  background-size: 42px 42px, 42px 42px, auto;
+  mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,.35) 38%, #000 100%);
+}
+.n3-intro-sample__label,
+.n3-intro-sample__cue {
+  position: relative;
+  z-index: 2;
+  margin: 0;
+  text-align: center;
+  line-height: 1.2;
 }
 .n3-intro-sample__label {
-  padding-bottom:clamp(8px,1.6svh,18px);
-  font-size:clamp(.66rem,1.2vmin,.82rem); letter-spacing:.18em; opacity:.62;
+  padding-bottom: clamp(6px, 1svh, 12px);
+  font-size: clamp(.66rem, 1.2vmin, .82rem);
+  letter-spacing: .18em;
+  opacity: .62;
 }
 .n3-intro-sample__cue {
-  padding-top:clamp(10px,1.8svh,20px);
-  font-size:clamp(.66rem,1.15vmin,.76rem); letter-spacing:.20em; opacity:.55;
+  padding-top: clamp(8px, 1.2svh, 14px);
+  font-size: clamp(.66rem, 1.15vmin, .76rem);
+  letter-spacing: .20em;
+  opacity: .58;
 }
 .n3-intro-sample__stage {
-  position:relative; width:100%; height:100%; min-height:0;
-  overflow:hidden;
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
 }
 .n3-intro-sample__visual {
-  position:absolute; display:block; max-width:none; max-height:none;
-  width:auto; height:auto;
+  position: absolute;
+  display: block;
+  max-width: none;
+  max-height: none;
+  width: auto;
+  height: auto;
 }
 </style>
 
@@ -147,14 +183,12 @@
   <header id="n3-site-header"></header>
   <noscript class="n3-noscript"><a href="./">Neko3SE LAB</a></noscript>
 
-  <!-- INTRO layout sample v4: ratio driven + text-safe crop -->
+  <!-- INTRO layout sample v5: top-biased visual + reserved lower atmosphere -->
   <section class="n3-intro-sample" id="n3-intro-sample" aria-label="Neko3SE LAB visual">
     <p class="n3-intro-sample__label">Neko3SE LAB // VISUAL INTRO</p>
     <div class="n3-intro-sample__stage">
-      <img class="n3-intro-sample__visual"
-           id="n3-intro-image"
-           src="og_images/Neko3SE_img.png"
-           width="1200" height="630"
+      <img class="n3-intro-sample__visual" id="n3-intro-image"
+           src="og_images/Neko3SE_img.png" width="1200" height="630"
            alt="Neko3SE LAB">
     </div>
     <p class="n3-intro-sample__cue">↓&nbsp;&nbsp;SCROLL / ENTER THE LAB</p>
@@ -492,7 +526,7 @@
   <script src="common/neko3se-thumbnails.js?v=20260922thumb1" defer></script>
   <script src="common/neko3se-home-log.js?v=20260922log1" defer></script>
 
-<script id="n3-intro-layout-sample-v4-js">
+<script id="n3-intro-layout-sample-v5-js">
 (() => {
   const intro = document.getElementById('n3-intro-sample');
   const header = document.getElementById('n3-site-header');
@@ -500,16 +534,16 @@
   const image = document.getElementById('n3-intro-image');
   if (!intro || !header || !stage || !image) return;
 
-  const IMAGE_W = 1200;
-  const IMAGE_H = 630;
-  const IMAGE_RATIO = IMAGE_W / IMAGE_H;
-
-  // Per-image crop metadata. Neko3SE_img.png text begins at 15.9%.
-  // Keep a 3.9% source-width margin before it => protected left boundary 12.0%.
+  const IMAGE_W = 1200, IMAGE_H = 630, IMAGE_RATIO = IMAGE_W / IMAGE_H;
   const SAFE_LEFT = 0.120;
-  const TEXT_START = 0.159;
+
+  const setViewport = () => {
+    const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+    document.documentElement.style.setProperty('--n3-intro-vh', `${vh}px`);
+  };
 
   const update = () => {
+    setViewport();
     const headerH = Math.max(0, header.getBoundingClientRect().height);
     document.documentElement.style.setProperty('--n3-intro-header-h', `${headerH}px`);
 
@@ -518,56 +552,41 @@
       const W = r.width, H = r.height;
       if (!W || !H) return;
 
-      const stageRatio = W / H;
-      let scale, x, y;
+      const ratio = W / H;
+      let scale, x, y, iw, ih;
+      const inset = Math.max(8, Math.min(24, W * .025));
 
-      if (stageRatio >= IMAGE_RATIO * 1.16) {
-        // Wide: height-fit. Never crop top/bottom.
+      if (ratio >= IMAGE_RATIO * 1.16) {
         scale = H / IMAGE_H;
-        const iw = IMAGE_W * scale;
-        x = (W - iw) / 2;
-        y = 0;
-      } else if (stageRatio > IMAGE_RATIO * 0.78) {
-        // Balanced: contain.
+        iw = IMAGE_W * scale; ih = IMAGE_H * scale;
+        x = (W - iw) / 2; y = 0;
+      } else if (ratio > IMAGE_RATIO * .78) {
         scale = Math.min(W / IMAGE_W, H / IMAGE_H);
-        const iw = IMAGE_W * scale, ih = IMAGE_H * scale;
+        iw = IMAGE_W * scale; ih = IMAGE_H * scale;
         x = (W - iw) / 2;
-        y = (H - ih) / 2;
+        y = Math.max(0, (H - ih) * .18); // deliberately top-biased
       } else {
-        // Tall/narrow: enlarge to reduce vertical whitespace, but only while
-        // the protected 12% boundary remains visible with a small viewport inset.
-        const desiredScale = Math.max(W * 1.12 / IMAGE_W, Math.min(H / IMAGE_H, W * 1.35 / IMAGE_W));
-        const inset = Math.max(8, Math.min(24, W * 0.025));
+        // Narrow/tall: modest crop, constrained by protected text-left boundary.
+        const targetW = W * 1.18;
+        scale = Math.min(targetW / IMAGE_W, H / IMAGE_H);
+        iw = IMAGE_W * scale; ih = IMAGE_H * scale;
 
-        // Center-ish crop first.
-        scale = desiredScale;
-        let iw = IMAGE_W * scale, ih = IMAGE_H * scale;
-        x = (W - iw) * 0.40;
-
-        // Safe-left constraint: source x=12% must be at or right of viewport inset.
-        const safePoint = IMAGE_W * SAFE_LEFT * scale;
-        const minX = inset - safePoint;
+        x = (W - iw) * .40;
+        const minX = inset - IMAGE_W * SAFE_LEFT * scale;
         if (x < minX) x = minX;
-
-        // Never expose empty space on right. If impossible, reduce enlargement.
         if (x + iw < W) x = W - iw;
-        if (x > 0 || x + iw < W) {
-          scale = W / (IMAGE_W * (1 - SAFE_LEFT)) * (1 - inset / W);
-          iw = IMAGE_W * scale; ih = IMAGE_H * scale;
-          x = inset - IMAGE_W * SAFE_LEFT * scale;
-        }
 
-        // No top/bottom crop; vertically center the image in the remaining stage.
-        if (ih > H) {
-          scale = H / IMAGE_H;
+        // If the crop cannot satisfy both edges, reduce enlargement.
+        if (x > 0 || x + iw < W) {
+          scale = W / IMAGE_W;
           iw = IMAGE_W * scale; ih = IMAGE_H * scale;
-          x = Math.max(inset - IMAGE_W * SAFE_LEFT * scale, W - iw);
+          x = 0;
         }
-        y = (H - ih) / 2;
+        y = Math.max(0, (H - ih) * .12); // move image toward the top
       }
 
-      image.style.width = `${IMAGE_W * scale}px`;
-      image.style.height = `${IMAGE_H * scale}px`;
+      image.style.width = `${iw}px`;
+      image.style.height = `${ih}px`;
       image.style.left = `${x}px`;
       image.style.top = `${y}px`;
     });
@@ -575,10 +594,12 @@
 
   const ro = new ResizeObserver(update);
   ro.observe(header);
-  ro.observe(document.documentElement);
   ro.observe(stage);
   window.addEventListener('resize', update, {passive:true});
   window.addEventListener('orientationchange', update, {passive:true});
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', update, {passive:true});
+  }
   image.addEventListener('load', update, {once:true});
   update();
 })();
