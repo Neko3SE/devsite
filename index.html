@@ -110,7 +110,7 @@
 }
 </style>
 
-<style id="n3-intro-layout-sample-v14">
+<style id="n3-intro-layout-sample-v15">
 :root {
   --n3-intro-header-h: 0px;
   --n3-intro-vh: 100svh;
@@ -187,6 +187,29 @@
     0 0 10px rgba(84,255,188,.55),
     0 0 26px rgba(84,255,188,.22);
 }
+
+.n3-intro-sample__label::before,
+.n3-intro-sample__cue::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  left: 4%; right: 4%; top: 16%; bottom: 16%;
+  border: 1px solid rgba(84,255,188,.24);
+  background: linear-gradient(90deg, transparent, rgba(84,255,188,.08) 18%, rgba(26,210,205,.10) 50%, rgba(84,255,188,.08) 82%, transparent);
+  box-shadow: 0 0 12px rgba(84,255,188,.12), inset 0 0 18px rgba(84,255,188,.06);
+  pointer-events: none;
+}
+.n3-intro-sample__cue::before {
+  left: 5%; right: 5%; top: 10%; bottom: 10%;
+  border-color: rgba(84,255,188,.42);
+  background: linear-gradient(90deg, transparent, rgba(84,255,188,.13) 14%, rgba(26,210,205,.18) 50%, rgba(84,255,188,.13) 86%, transparent);
+  box-shadow: 0 0 18px rgba(84,255,188,.22), 0 0 34px rgba(26,210,205,.10), inset 0 0 22px rgba(84,255,188,.09);
+}
+.n3-intro-sample__cue:hover::before {
+  border-color: rgba(84,255,188,.68);
+  box-shadow: 0 0 22px rgba(84,255,188,.34), 0 0 42px rgba(26,210,205,.16), inset 0 0 26px rgba(84,255,188,.12);
+}
+
 @keyframes n3-intro-cue-pulse {
   0%, 100% { opacity: .72; }
   50% { opacity: 1; }
@@ -244,15 +267,15 @@
   <header id="n3-site-header"></header>
   <noscript class="n3-noscript"><a href="./">Neko3SE LAB</a></noscript>
 
-  <!-- INTRO layout sample v14: v13 design + two-dimensional rendered-text fitting -->
+  <!-- INTRO layout sample v15: accessible intro + luminous text panels + stable rotation -->
   <section class="n3-intro-sample" id="n3-intro-sample" aria-label="Neko3SE LAB visual">
-    <p class="n3-intro-sample__label" id="n3-intro-label">Neko3SE LAB // VISUAL INTRO</p>
+    <p class="n3-intro-sample__label" id="n3-intro-label" aria-hidden="true">Neko3SE LAB // VISUAL INTRO</p>
     <div class="n3-intro-sample__stage">
       <img class="n3-intro-sample__visual" id="n3-intro-image"
            src="og_images/Neko3SE_img.png" width="1200" height="630"
-           alt="Neko3SE LAB">
+           alt="Neko3SE LAB — 生成AI × Web技術の実験ラボ">
     </div>
-    <p class="n3-intro-sample__cue" id="n3-intro-cue">↓&nbsp;&nbsp;SCROLL / ENTER THE LAB</p>
+    <p class="n3-intro-sample__cue" id="n3-intro-cue" aria-hidden="true">↓&nbsp;&nbsp;SCROLL / ENTER THE LAB</p>
   </section>
 
 <div class="site">
@@ -587,7 +610,7 @@
   <script src="common/neko3se-thumbnails.js?v=20260922thumb1" defer></script>
   <script src="common/neko3se-home-log.js?v=20260922log1" defer></script>
 
-<script id="n3-intro-layout-sample-v14-js">
+<script id="n3-intro-layout-sample-v15-js">
 (() => {
   const intro = document.getElementById('n3-intro-sample');
   const header = document.getElementById('n3-site-header');
@@ -733,13 +756,22 @@
   }
   window.addEventListener('load', () => requestAnimationFrame(refitText), {once:true});
 
+  let n3LayoutTimer = 0;
+  const scheduleStableUpdate = () => {
+    clearTimeout(n3LayoutTimer);
+    update();
+    requestAnimationFrame(update);
+    n3LayoutTimer = setTimeout(update, 120);
+    setTimeout(update, 320);
+  };
+
   const ro = new ResizeObserver(update);
   ro.observe(header);
   ro.observe(stage);
-  window.addEventListener('resize', update, {passive:true});
-  window.addEventListener('orientationchange', update, {passive:true});
+  window.addEventListener('resize', scheduleStableUpdate, {passive:true});
+  window.addEventListener('orientationchange', scheduleStableUpdate, {passive:true});
   if (window.visualViewport) {
-    window.visualViewport.addEventListener('resize', update, {passive:true});
+    window.visualViewport.addEventListener('resize', scheduleStableUpdate, {passive:true});
   }
   image.addEventListener('load', update, {once:true});
   update();
