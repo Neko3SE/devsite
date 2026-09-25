@@ -110,7 +110,7 @@
 }
 </style>
 
-<style id="n3-intro-layout-sample-v16">
+<style id="n3-intro-layout-sample-v18">
 :root {
   --n3-intro-header-h: 0px;
   --n3-intro-vh: 100svh;
@@ -214,6 +214,24 @@
 @media (prefers-reduced-motion: reduce) {
   .n3-intro-sample__cue { animation: none; }
 }
+
+.n3-intro-slide {
+  position: absolute;
+  display: block;
+  object-fit: fill;
+  opacity: 0;
+  z-index: 1;
+  transition: opacity 900ms ease-in-out;
+  will-change: opacity;
+}
+.n3-intro-slide.is-active {
+  opacity: 1;
+  z-index: 2;
+}
+@media (prefers-reduced-motion: reduce) {
+  .n3-intro-slide { transition: none; }
+}
+
 .n3-intro-sample__label {
   align-self: stretch;
   display: flex;
@@ -264,13 +282,14 @@
   <header id="n3-site-header"></header>
   <noscript class="n3-noscript"><a href="./">Neko3SE LAB</a></noscript>
 
-  <!-- INTRO layout sample v16: borderless luminous text glow + v15 behavior -->
+  <!-- INTRO layout sample v18: decoded alternating-layer crossfade + v17 behavior -->
   <section class="n3-intro-sample" id="n3-intro-sample" aria-label="Neko3SE LAB visual">
     <p class="n3-intro-sample__label" id="n3-intro-label" aria-hidden="true">Neko3SE LAB // VISUAL INTRO</p>
     <div class="n3-intro-sample__stage">
-      <img class="n3-intro-sample__visual" id="n3-intro-image"
+      <img class="n3-intro-sample__visual" id="n3-intro-image" class="n3-intro-slide n3-intro-slide--front is-active"
            src="og_images/Neko3SE_img.png" width="1200" height="630"
            alt="Neko3SE LAB — 生成AI × Web技術の実験ラボ">
+<img id="n3-intro-image-next" class="n3-intro-slide n3-intro-slide--back" src="og_images/Neko3SE_img.png" alt="" aria-hidden="true" decoding="async">
     </div>
     <p class="n3-intro-sample__cue" id="n3-intro-cue" aria-hidden="true">↓&nbsp;&nbsp;SCROLL / ENTER THE LAB</p>
   </section>
@@ -607,12 +626,13 @@
   <script src="common/neko3se-thumbnails.js?v=20260922thumb1" defer></script>
   <script src="common/neko3se-home-log.js?v=20260922log1" defer></script>
 
-<script id="n3-intro-layout-sample-v16-js">
+<script id="n3-intro-layout-sample-v18-js">
 (() => {
   const intro = document.getElementById('n3-intro-sample');
   const header = document.getElementById('n3-site-header');
   const stage = intro?.querySelector('.n3-intro-sample__stage');
   const image = document.getElementById('n3-intro-image');
+  const imageNext = document.getElementById('n3-intro-image-next');
   const label = document.getElementById('n3-intro-label');
   const cue = document.getElementById('n3-intro-cue');
   if (!intro || !header || !stage || !image) return;
@@ -709,6 +729,12 @@
       image.style.height = `${ih}px`;
       image.style.left = `${x}px`;
       image.style.top = `${y}px`;
+      if (imageNext) {
+        imageNext.style.width = `${iw}px`;
+        imageNext.style.height = `${ih}px`;
+        imageNext.style.left = `${x}px`;
+        imageNext.style.top = `${y}px`;
+      }
 
       // Title protection: position it relative to the real gap above the image.
       // It never moves upward into the persistent header.
@@ -752,6 +778,82 @@
     document.fonts.ready.then(() => requestAnimationFrame(refitText));
   }
   window.addEventListener('load', () => requestAnimationFrame(refitText), {once:true});
+
+
+  // Existing OGP masters, shown in the same order as the LAB content structure.
+  const n3Slides = [
+    'og_images/Neko3SE_img.png',
+    'og_images/mudagiken_img.png',
+    'og_images/egov_img.png',
+    'og_images/promptgen_img.png',
+    'og_images/imageprompt_img.png',
+    'og_images/PianoEmu_img.png',
+    'og_images/gosenfu_doremi_img.png',
+    'og_images/voicechanger_img.png',
+    'og_images/soundtuner_img.png'
+  ];
+  const n3SlideMs = 3200;
+  const n3FadeMs = 900;
+  let n3SlideIndex = 0;
+  let n3SlideTimer = 0;
+  let n3SlideBusy = false;
+  let n3ActiveImage = image;
+  let n3StandbyImage = imageNext;
+
+  const preloadSlide = (index) => {
+    const p = new Image();
+    p.decoding = 'async';
+    p.src = n3Slides[index % n3Slides.length];
+  };
+
+  const waitForImageReady = async (img) => {
+    if (!img.complete || img.naturalWidth === 0) {
+      await new Promise((resolve, reject) => {
+        img.addEventListener('load', resolve, { once: true });
+        img.addEventListener('error', reject, { once: true });
+      });
+    }
+    if (typeof img.decode === 'function') {
+      try { await img.decode(); } catch (_) { /* loaded image remains usable */ }
+    }
+  };
+
+  const showNextSlide = async () => {
+    if (n3SlideBusy || !n3StandbyImage) return;
+    n3SlideBusy = true;
+    const nextIndex = (n3SlideIndex + 1) % n3Slides.length;
+    const outgoing = n3ActiveImage;
+    const incoming = n3StandbyImage;
+
+    try {
+      incoming.classList.remove('is-active');
+      incoming.src = n3Slides[nextIndex];
+      await waitForImageReady(incoming);
+
+      // Commit the crossfade only after the next bitmap is decoded and paintable.
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          incoming.classList.add('is-active');
+          outgoing.classList.remove('is-active');
+
+          window.setTimeout(() => {
+            n3ActiveImage = incoming;
+            n3StandbyImage = outgoing;
+            n3SlideIndex = nextIndex;
+            n3SlideBusy = false;
+            preloadSlide((n3SlideIndex + 1) % n3Slides.length);
+          }, n3FadeMs + 50);
+        });
+      });
+    } catch (_) {
+      n3SlideBusy = false;
+      preloadSlide(nextIndex);
+    }
+  };
+
+  // Keep initial Neko3SE_img.png in HTML, then progressively preload only the next frame.
+  preloadSlide(1);
+  n3SlideTimer = window.setInterval(showNextSlide, n3SlideMs);
 
   let n3LayoutTimer = 0;
   const scheduleStableUpdate = () => {
