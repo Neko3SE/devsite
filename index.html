@@ -110,17 +110,18 @@
 }
 </style>
 
-<style id="n3-intro-layout-sample-v8">
+<style id="n3-intro-layout-sample-v10">
 :root {
   --n3-intro-header-h: 0px;
   --n3-intro-vh: 100svh;
+  --n3-title-shift: 0px;
 }
 .n3-intro-sample {
   height: calc(var(--n3-intro-vh) - var(--n3-intro-header-h));
   min-height: 0;
   box-sizing: border-box;
   display: grid;
-  grid-template-rows: minmax(52px, 12%) minmax(0, 1fr) minmax(70px, 18%);
+  grid-template-rows: minmax(72px, 14%) minmax(0, 1fr) minmax(82px, 20%);
   overflow: hidden;
   padding: clamp(8px, 1.4svh, 16px) 0 clamp(12px, 2svh, 22px);
   position: relative;
@@ -158,6 +159,7 @@
 .n3-intro-sample__cue {
   align-self: stretch;
   display: flex;
+  transform: translateY(var(--n3-cue-shift, 0px));
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
@@ -172,6 +174,7 @@
 .n3-intro-sample__label {
   align-self: stretch;
   display: flex;
+  transform: translateY(var(--n3-title-shift, 0px));
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
@@ -214,7 +217,7 @@
   <header id="n3-site-header"></header>
   <noscript class="n3-noscript"><a href="./">Neko3SE LAB</a></noscript>
 
-  <!-- INTRO layout sample v8: centered responsive one-line labels -->
+  <!-- INTRO layout sample v10: protected title position + responsive cue -->
   <section class="n3-intro-sample" id="n3-intro-sample" aria-label="Neko3SE LAB visual">
     <p class="n3-intro-sample__label" id="n3-intro-label">Neko3SE LAB // VISUAL INTRO</p>
     <div class="n3-intro-sample__stage">
@@ -557,7 +560,7 @@
   <script src="common/neko3se-thumbnails.js?v=20260922thumb1" defer></script>
   <script src="common/neko3se-home-log.js?v=20260922log1" defer></script>
 
-<script id="n3-intro-layout-sample-v8-js">
+<script id="n3-intro-layout-sample-v10-js">
 (() => {
   const intro = document.getElementById('n3-intro-sample');
   const header = document.getElementById('n3-site-header');
@@ -633,9 +636,34 @@
       image.style.height = `${ih}px`;
       image.style.left = `${x}px`;
       image.style.top = `${y}px`;
+
+      // Title protection: position it relative to the real gap above the image.
+      // It never moves upward into the persistent header.
+      if (label) {
+        const introRect = intro.getBoundingClientRect();
+        const imageTopViewport = r.top + y;
+        const gapTop = Math.max(0, imageTopViewport - introRect.top);
+        const rowH = label.getBoundingClientRect().height;
+        const safeInset = Math.max(10, Math.min(22, introRect.height * 0.025));
+        const desiredCenter = Math.max(safeInset + rowH / 2, gapTop / 2);
+        const baseCenter = rowH / 2;
+        const maxShift = Math.max(0, rowH / 2 - safeInset);
+        const titleShift = Math.max(0, Math.min(maxShift, desiredCenter - baseCenter));
+        intro.style.setProperty('--n3-title-shift', `${titleShift}px`);
+      }
       const vw = document.documentElement.clientWidth;
       fitOneLine(label, Math.min(30, Math.max(16, vw * 0.0265)), 13);
       fitOneLine(cue, Math.min(36, Math.max(18, vw * 0.030)), 14);
+
+      // Keep the current cue position on wide layouts.
+      // As the usable area becomes taller/narrower, move it progressively
+      // toward the image while leaving decorated space below it.
+      const stageRatio = W / H;
+      const wideRatio = IMAGE_RATIO * 1.16;
+      const tallRatio = IMAGE_RATIO * 0.78;
+      const t = Math.max(0, Math.min(1, (wideRatio - stageRatio) / (wideRatio - tallRatio)));
+      const maxUp = Math.min(H * 0.13, 92);
+      intro.style.setProperty('--n3-cue-shift', `${-maxUp * t}px`);
     });
   };
 
