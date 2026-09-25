@@ -110,7 +110,7 @@
 }
 </style>
 
-<style id="n3-intro-layout-sample-v15">
+<style id="n3-intro-layout-sample-v16">
 :root {
   --n3-intro-header-h: 0px;
   --n3-intro-vh: 100svh;
@@ -194,19 +194,16 @@
   position: absolute;
   z-index: -1;
   left: 4%; right: 4%; top: 16%; bottom: 16%;
-  border: 1px solid rgba(84,255,188,.24);
   background: linear-gradient(90deg, transparent, rgba(84,255,188,.08) 18%, rgba(26,210,205,.10) 50%, rgba(84,255,188,.08) 82%, transparent);
   box-shadow: 0 0 12px rgba(84,255,188,.12), inset 0 0 18px rgba(84,255,188,.06);
   pointer-events: none;
 }
 .n3-intro-sample__cue::before {
   left: 5%; right: 5%; top: 10%; bottom: 10%;
-  border-color: rgba(84,255,188,.42);
   background: linear-gradient(90deg, transparent, rgba(84,255,188,.13) 14%, rgba(26,210,205,.18) 50%, rgba(84,255,188,.13) 86%, transparent);
   box-shadow: 0 0 18px rgba(84,255,188,.22), 0 0 34px rgba(26,210,205,.10), inset 0 0 22px rgba(84,255,188,.09);
 }
 .n3-intro-sample__cue:hover::before {
-  border-color: rgba(84,255,188,.68);
   box-shadow: 0 0 22px rgba(84,255,188,.34), 0 0 42px rgba(26,210,205,.16), inset 0 0 26px rgba(84,255,188,.12);
 }
 
@@ -267,7 +264,7 @@
   <header id="n3-site-header"></header>
   <noscript class="n3-noscript"><a href="./">Neko3SE LAB</a></noscript>
 
-  <!-- INTRO layout sample v15: accessible intro + luminous text panels + stable rotation -->
+  <!-- INTRO layout sample v16: borderless luminous text glow + v15 behavior -->
   <section class="n3-intro-sample" id="n3-intro-sample" aria-label="Neko3SE LAB visual">
     <p class="n3-intro-sample__label" id="n3-intro-label" aria-hidden="true">Neko3SE LAB // VISUAL INTRO</p>
     <div class="n3-intro-sample__stage">
@@ -610,7 +607,7 @@
   <script src="common/neko3se-thumbnails.js?v=20260922thumb1" defer></script>
   <script src="common/neko3se-home-log.js?v=20260922log1" defer></script>
 
-<script id="n3-intro-layout-sample-v15-js">
+<script id="n3-intro-layout-sample-v16-js">
 (() => {
   const intro = document.getElementById('n3-intro-sample');
   const header = document.getElementById('n3-site-header');
