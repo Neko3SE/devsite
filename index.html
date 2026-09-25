@@ -110,7 +110,7 @@
 }
 </style>
 
-<style id="n3-intro-layout-sample-v13">
+<style id="n3-intro-layout-sample-v14">
 :root {
   --n3-intro-header-h: 0px;
   --n3-intro-vh: 100svh;
@@ -244,7 +244,7 @@
   <header id="n3-site-header"></header>
   <noscript class="n3-noscript"><a href="./">Neko3SE LAB</a></noscript>
 
-  <!-- INTRO layout sample v13: v11 design + rendered-text binary fitting -->
+  <!-- INTRO layout sample v14: v13 design + two-dimensional rendered-text fitting -->
   <section class="n3-intro-sample" id="n3-intro-sample" aria-label="Neko3SE LAB visual">
     <p class="n3-intro-sample__label" id="n3-intro-label">Neko3SE LAB // VISUAL INTRO</p>
     <div class="n3-intro-sample__stage">
@@ -587,7 +587,7 @@
   <script src="common/neko3se-thumbnails.js?v=20260922thumb1" defer></script>
   <script src="common/neko3se-home-log.js?v=20260922log1" defer></script>
 
-<script id="n3-intro-layout-sample-v13-js">
+<script id="n3-intro-layout-sample-v14-js">
 (() => {
   const intro = document.getElementById('n3-intro-sample');
   const header = document.getElementById('n3-site-header');
@@ -613,24 +613,30 @@
     const padX =
       (parseFloat(cs.paddingLeft) || 0) +
       (parseFloat(cs.paddingRight) || 0);
-    const available = Math.max(1, el.clientWidth - padX);
+    const padY =
+      (parseFloat(cs.paddingTop) || 0) +
+      (parseFloat(cs.paddingBottom) || 0);
 
-    // Measure the rendered text itself, not scrollWidth of the padded flex box.
-    // Binary-search the largest font size that fits inside the 5% + 5% safe area.
-    const measure = (px) => {
+    const availableW = Math.max(1, el.clientWidth - padX);
+    const availableH = Math.max(1, el.clientHeight - padY);
+
+    // Measure the actual rendered text rectangle.
+    // A size is accepted only when BOTH width and height fit.
+    const fits = (px) => {
       el.style.fontSize = `${px}px`;
       const range = document.createRange();
       range.selectNodeContents(el);
-      return range.getBoundingClientRect().width;
+      const rect = range.getBoundingClientRect();
+      return rect.width <= availableW && rect.height <= availableH;
     };
 
-    if (measure(preferredPx) <= available) return;
+    if (fits(preferredPx)) return;
 
     let low = 6;
     let high = preferredPx;
     for (let i = 0; i < 14; i++) {
       const mid = (low + high) / 2;
-      if (measure(mid) <= available) low = mid;
+      if (fits(mid)) low = mid;
       else high = mid;
     }
     el.style.fontSize = `${low}px`;
