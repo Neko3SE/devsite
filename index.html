@@ -110,7 +110,7 @@
 }
 </style>
 
-<style id="n3-intro-layout-sample-v18">
+<style id="n3-intro-layout-sample-v19">
 :root {
   --n3-intro-header-h: 0px;
   --n3-intro-vh: 100svh;
@@ -211,6 +211,25 @@
   0%, 100% { opacity: .72; }
   50% { opacity: 1; }
 }
+
+.n3-intro-sample__cue.is-cycle-complete {
+  text-shadow:
+    0 0 8px rgba(137,255,220,.96),
+    0 0 18px rgba(84,255,188,.88),
+    0 0 34px rgba(0,220,255,.64);
+  animation: n3IntroCuePulseFast 900ms ease-in-out infinite;
+}
+.n3-intro-sample__cue.is-cycle-complete::before {
+  opacity: .92;
+  box-shadow:
+    0 0 24px rgba(84,255,188,.42),
+    0 0 46px rgba(0,220,255,.24);
+}
+@keyframes n3IntroCuePulseFast {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .60; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .n3-intro-sample__cue { animation: none; }
 }
@@ -221,7 +240,7 @@
   object-fit: fill;
   opacity: 0;
   z-index: 1;
-  transition: opacity 900ms ease-in-out;
+  transition: opacity 550ms ease-in-out;
   will-change: opacity;
 }
 .n3-intro-slide.is-active {
@@ -230,6 +249,11 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .n3-intro-slide { transition: none; }
+
+  .n3-intro-sample__cue.is-cycle-complete {
+    animation: none;
+    opacity: 1;
+  }
 }
 
 .n3-intro-sample__label {
@@ -282,7 +306,7 @@
   <header id="n3-site-header"></header>
   <noscript class="n3-noscript"><a href="./">Neko3SE LAB</a></noscript>
 
-  <!-- INTRO layout sample v18: decoded alternating-layer crossfade + v17 behavior -->
+  <!-- INTRO layout sample v19: faster crossfade + cycle-complete scroll emphasis -->
   <section class="n3-intro-sample" id="n3-intro-sample" aria-label="Neko3SE LAB visual">
     <p class="n3-intro-sample__label" id="n3-intro-label" aria-hidden="true">Neko3SE LAB // VISUAL INTRO</p>
     <div class="n3-intro-sample__stage">
@@ -626,13 +650,14 @@
   <script src="common/neko3se-thumbnails.js?v=20260922thumb1" defer></script>
   <script src="common/neko3se-home-log.js?v=20260922log1" defer></script>
 
-<script id="n3-intro-layout-sample-v18-js">
+<script id="n3-intro-layout-sample-v19-js">
 (() => {
   const intro = document.getElementById('n3-intro-sample');
   const header = document.getElementById('n3-site-header');
   const stage = intro?.querySelector('.n3-intro-sample__stage');
   const image = document.getElementById('n3-intro-image');
   const imageNext = document.getElementById('n3-intro-image-next');
+  const introCue = document.querySelector('.n3-intro-sample__cue');
   const label = document.getElementById('n3-intro-label');
   const cue = document.getElementById('n3-intro-cue');
   if (!intro || !header || !stage || !image) return;
@@ -792,8 +817,8 @@
     'og_images/voicechanger_img.png',
     'og_images/soundtuner_img.png'
   ];
-  const n3SlideMs = 3200;
-  const n3FadeMs = 900;
+  const n3SlideMs = 1800;
+  const n3FadeMs = 550;
   let n3SlideIndex = 0;
   let n3SlideTimer = 0;
   let n3SlideBusy = false;
@@ -840,6 +865,9 @@
             n3ActiveImage = incoming;
             n3StandbyImage = outgoing;
             n3SlideIndex = nextIndex;
+            if (n3SlideIndex === 0 && introCue) {
+              introCue.classList.add('is-cycle-complete');
+            }
             n3SlideBusy = false;
             preloadSlide((n3SlideIndex + 1) % n3Slides.length);
           }, n3FadeMs + 50);
