@@ -110,7 +110,7 @@
 }
 </style>
 
-<style id="n3-intro-layout-sample-v11">
+<style id="n3-intro-layout-sample-v12">
 :root {
   --n3-intro-header-h: 0px;
   --n3-intro-vh: 100svh;
@@ -164,7 +164,7 @@
   justify-content: center;
   box-sizing: border-box;
   width: 100%;
-  padding: 0 2.5vw;
+  padding: 0 5vw;
   font-family: Arial, "Helvetica Neue", sans-serif;
   font-size: 30px;
   font-weight: 500;
@@ -201,7 +201,7 @@
   justify-content: center;
   box-sizing: border-box;
   width: 100%;
-  padding: 0 2.5vw;
+  padding: 0 5vw;
   font-family: Arial, "Helvetica Neue", sans-serif;
   font-size: 24px;
   font-weight: 600;
@@ -242,7 +242,7 @@
   <header id="n3-site-header"></header>
   <noscript class="n3-noscript"><a href="./">Neko3SE LAB</a></noscript>
 
-  <!-- INTRO layout sample v11: stronger typography + interactive cue -->
+  <!-- INTRO layout sample v12: v11 design + guaranteed one-line safe fitting -->
   <section class="n3-intro-sample" id="n3-intro-sample" aria-label="Neko3SE LAB visual">
     <p class="n3-intro-sample__label" id="n3-intro-label">Neko3SE LAB // VISUAL INTRO</p>
     <div class="n3-intro-sample__stage">
@@ -585,7 +585,7 @@
   <script src="common/neko3se-thumbnails.js?v=20260922thumb1" defer></script>
   <script src="common/neko3se-home-log.js?v=20260922log1" defer></script>
 
-<script id="n3-intro-layout-sample-v11-js">
+<script id="n3-intro-layout-sample-v12-js">
 (() => {
   const intro = document.getElementById('n3-intro-sample');
   const header = document.getElementById('n3-site-header');
@@ -604,13 +604,20 @@
   };
 
 
-  const fitOneLine = (el, preferredPx, minPx) => {
+  const fitOneLine = (el, preferredPx) => {
     if (!el) return;
     el.style.fontSize = `${preferredPx}px`;
-    const available = Math.max(1, el.clientWidth - 12);
-    const required = Math.max(1, el.scrollWidth);
+
+    // clientWidth includes padding; measure the real text-safe content width.
+    const cs = getComputedStyle(el);
+    const padX = parseFloat(cs.paddingLeft || 0) + parseFloat(cs.paddingRight || 0);
+    const available = Math.max(1, el.clientWidth - padX);
+    const required = Math.max(1, el.scrollWidth - padX);
+
+    // Keep the preferred v11 size whenever possible. If it cannot fit,
+    // shrink exactly as far as necessary so the complete line stays visible.
     if (required > available) {
-      el.style.fontSize = `${Math.max(minPx, preferredPx * available / required)}px`;
+      el.style.fontSize = `${preferredPx * available / required}px`;
     }
   };
 
@@ -679,8 +686,8 @@
       const vw = document.documentElement.clientWidth;
       // Prefer readable sizes even on narrow portrait screens.
       // fitOneLine shrinks only when the string would otherwise overflow.
-      fitOneLine(label, vw < 700 ? 24 : Math.min(34, 24 + (vw - 700) * 0.012), 17);
-      fitOneLine(cue, vw < 700 ? 30 : Math.min(42, 30 + (vw - 700) * 0.014), 19);
+      fitOneLine(label, vw < 700 ? 24 : Math.min(34, 24 + (vw - 700) * 0.012));
+      fitOneLine(cue, vw < 700 ? 30 : Math.min(42, 30 + (vw - 700) * 0.014));
 
       // Keep the current cue position on wide layouts.
       // As the usable area becomes taller/narrower, move it progressively
