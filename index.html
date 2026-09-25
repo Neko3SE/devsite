@@ -110,7 +110,7 @@
 }
 </style>
 
-<style id="n3-intro-layout-sample-v5">
+<style id="n3-intro-layout-sample-v6">
 :root {
   --n3-intro-header-h: 0px;
   --n3-intro-vh: 100svh;
@@ -130,13 +130,29 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  opacity: .16;
+  z-index: 0;
+  opacity: .72;
   background:
-    linear-gradient(rgba(84,255,188,.08) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(84,255,188,.06) 1px, transparent 1px),
-    radial-gradient(circle at 50% 70%, rgba(84,255,188,.10), transparent 42%);
+    linear-gradient(rgba(84,255,188,.13) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(84,255,188,.10) 1px, transparent 1px),
+    radial-gradient(ellipse at 50% 72%, rgba(64,255,190,.22) 0%, rgba(26,210,205,.11) 30%, transparent 62%);
   background-size: 42px 42px, 42px 42px, auto;
-  mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,.35) 38%, #000 100%);
+  mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,.10) 42%, rgba(0,0,0,.72) 58%, #000 100%);
+}
+.n3-intro-sample::after {
+  content: "";
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  bottom: 7%;
+  height: 28%;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    linear-gradient(90deg, transparent, rgba(84,255,188,.20) 18%, transparent 18.4%, transparent 81.6%, rgba(84,255,188,.16) 82%, transparent),
+    linear-gradient(180deg, transparent 48%, rgba(84,255,188,.18) 49%, transparent 50%);
+  opacity: .70;
+  filter: blur(.15px);
 }
 .n3-intro-sample__label,
 .n3-intro-sample__cue {
@@ -183,7 +199,7 @@
   <header id="n3-site-header"></header>
   <noscript class="n3-noscript"><a href="./">Neko3SE LAB</a></noscript>
 
-  <!-- INTRO layout sample v5: top-biased visual + reserved lower atmosphere -->
+  <!-- INTRO layout sample v6: stronger lower-atmosphere decoration -->
   <section class="n3-intro-sample" id="n3-intro-sample" aria-label="Neko3SE LAB visual">
     <p class="n3-intro-sample__label">Neko3SE LAB // VISUAL INTRO</p>
     <div class="n3-intro-sample__stage">
@@ -526,7 +542,7 @@
   <script src="common/neko3se-thumbnails.js?v=20260922thumb1" defer></script>
   <script src="common/neko3se-home-log.js?v=20260922log1" defer></script>
 
-<script id="n3-intro-layout-sample-v5-js">
+<script id="n3-intro-layout-sample-v6-js">
 (() => {
   const intro = document.getElementById('n3-intro-sample');
   const header = document.getElementById('n3-site-header');
