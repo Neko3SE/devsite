@@ -177,6 +177,8 @@
     0 0 8px rgba(84,255,188,.28),
     0 0 20px rgba(84,255,188,.10);
   cursor: pointer;
+  color: inherit;
+  text-decoration: none;
   animation: n3-intro-cue-pulse 2.2s ease-in-out infinite;
   transition: opacity .22s ease, text-shadow .22s ease, transform .22s ease;
 }
@@ -186,6 +188,10 @@
   text-shadow:
     0 0 10px rgba(84,255,188,.55),
     0 0 26px rgba(84,255,188,.22);
+}
+.n3-intro-sample__cue:focus-visible {
+  outline: 2px solid rgba(84,255,188,.78);
+  outline-offset: -4px;
 }
 
 .n3-intro-sample__label::before,
@@ -315,7 +321,7 @@
            alt="Neko3SE LAB — 生成AI × Web技術の実験ラボ">
 <img id="n3-intro-image-next" class="n3-intro-slide n3-intro-slide--back" src="og_images/Neko3SE_img.png" alt="" aria-hidden="true" decoding="async">
     </div>
-    <p class="n3-intro-sample__cue" id="n3-intro-cue" aria-hidden="true">↓&nbsp;&nbsp;SCROLL / ENTER THE LAB</p>
+    <a class="n3-intro-sample__cue" id="n3-intro-cue" href="#hero" aria-label="HEROへ移動">↓&nbsp;&nbsp;SCROLL / ENTER THE LAB</a>
   </section>
 
 <div class="site">
@@ -881,7 +887,32 @@
 
   // Keep initial Neko3SE_img.png in HTML, then progressively preload only the next frame.
   preloadSlide(1);
-  n3SlideTimer = window.setInterval(showNextSlide, n3SlideMs);
+
+  const startSlideTimer = () => {
+    if (n3SlideTimer || document.hidden) return;
+    n3SlideTimer = window.setInterval(showNextSlide, n3SlideMs);
+  };
+  const stopSlideTimer = () => {
+    if (!n3SlideTimer) return;
+    window.clearInterval(n3SlideTimer);
+    n3SlideTimer = 0;
+  };
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) stopSlideTimer();
+    else startSlideTimer();
+  });
+  startSlideTimer();
+
+  // Smooth-scroll only for the explicit INTRO cue.
+  // Respect the user's reduced-motion preference.
+  cue?.addEventListener('click', (event) => {
+    const hero = document.getElementById('hero');
+    if (!hero) return;
+    event.preventDefault();
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    hero.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+    if (history.replaceState) history.replaceState(null, '', '#hero');
+  });
 
   let n3LayoutTimer = 0;
   const scheduleStableUpdate = () => {
