@@ -204,8 +204,8 @@
   pointer-events: none;
 }
 .n3-intro-sample__cue {
-  position: relative;
-  top: var(--n3-cue-shift, 0px);
+  margin-top: var(--n3-cue-shift, 0px);
+  margin-bottom: calc(-1 * var(--n3-cue-shift, 0px));
 }
 
 .n3-intro-sample__cue::before {
