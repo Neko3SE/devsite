@@ -1,0 +1,36 @@
+:root {
+  color-scheme: dark;
+  --tpl-bg: #081014;
+  --tpl-panel: rgba(9, 22, 25, .82);
+  --tpl-line: rgba(103, 232, 146, .28);
+  --tpl-accent: #67e892;
+  --tpl-text: #edf6f3;
+  --tpl-muted: #93aaa5;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; color: var(--tpl-text); background-color: var(--tpl-bg); font-family: Inter, "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+button, input, textarea, select { font: inherit; }
+
+.tpl-shell { width: min(1160px, calc(100% - 28px)); margin: 0 auto; }
+.tpl-hero { min-height: min(640px, calc(100svh - 48px)); display: flex; flex-direction: column; justify-content: center; padding: 72px 0 56px; position: relative; }
+.tpl-language { position: absolute; top: 26px; right: 0; }
+.tpl-language button { min-height: 38px; padding: 0 15px; border: 1px solid var(--tpl-line); border-radius: 999px; background: rgba(8, 16, 20, .72); color: var(--tpl-accent); cursor: pointer; font-weight: 800; letter-spacing: .05em; }
+.tpl-language button:hover, .tpl-language button:focus-visible { border-color: var(--tpl-accent); background: rgba(103, 232, 146, .08); outline: none; }
+.tpl-kicker, .tpl-section-label { margin: 0; color: var(--tpl-accent); font-size: .72rem; font-weight: 850; letter-spacing: .16em; }
+.tpl-hero h1 { max-width: 980px; margin: 14px 0 18px; font-size: clamp(2.7rem, 9vw, 6.8rem); line-height: .94; letter-spacing: -.055em; overflow-wrap: anywhere; }
+.tpl-lead { max-width: 760px; margin: 0; color: #cbd9d5; font-size: clamp(1rem, 2.5vw, 1.3rem); line-height: 1.8; }
+.tpl-meta { margin: 28px 0 0; color: var(--tpl-muted); font-size: .68rem; font-weight: 800; letter-spacing: .12em; }
+.tpl-content { padding: 56px 0 18px; border-top: 1px solid var(--tpl-line); }
+.tpl-content h2 { margin: 9px 0 16px; font-size: clamp(1.8rem, 5vw, 3rem); }
+.tpl-content > p:not(.tpl-section-label) { max-width: 820px; color: #cbd9d5; line-height: 1.85; }
+.tpl-stage { min-height: 300px; margin-top: 28px; border: 1px solid var(--tpl-line); border-radius: 18px; background: var(--tpl-panel); display: grid; place-content: center; gap: 8px; padding: 28px; text-align: center; }
+.tpl-stage strong { color: var(--tpl-accent); letter-spacing: .08em; }
+.tpl-stage span { color: var(--tpl-muted); line-height: 1.6; }
+
+@media (max-width: 640px) {
+  .tpl-hero { min-height: 560px; padding-top: 82px; }
+  .tpl-language { top: 20px; }
+  .tpl-content { padding-top: 44px; }
+}

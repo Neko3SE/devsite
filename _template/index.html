@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-QRJ1BC3PVM"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-QRJ1BC3PVM');
+</script>
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#081014">
+  <meta name="copyright" content="© 2026 Neko3SE Apache License 2.0">
+
+  <!-- Neko3SE LAB favicon -->
+  <link rel="icon" href="../common/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="../common/favicon.ico" sizes="any">
+  <link rel="apple-touch-icon" href="../common/apple-touch-icon.png">
+
+  <!--
+    TITLE RULE:
+    {{TITLE}} | Neko3SE LAB | {{TITLE_DESCRIPTION_JA}}
+  -->
+  <title>{{TITLE}} | Neko3SE LAB | {{TITLE_DESCRIPTION_JA}}</title>
+  <meta name="description" content="{{META_DESCRIPTION_JA}}">
+  <link rel="canonical" href="https://neko3se.com/{{SLUG}}/">
+
+  <!-- Open Graph / X -->
+  <meta property="og:title" content="{{TITLE}} | Neko3SE LAB">
+  <meta property="og:description" content="{{OG_DESCRIPTION_JA}}">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://neko3se.com/{{SLUG}}/">
+  <meta property="og:site_name" content="Neko3SE LAB">
+  <meta property="og:locale" content="ja_JP">
+  <meta property="og:locale:alternate" content="en_US">
+  <meta property="og:image" content="https://neko3se.com/og_images/{{SLUG}}_img.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="{{OG_IMAGE_ALT_JA}}">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{{TITLE}} | Neko3SE LAB">
+  <meta name="twitter:description" content="{{OG_DESCRIPTION_JA}}">
+  <meta name="twitter:image" content="https://neko3se.com/og_images/{{SLUG}}_img.png">
+  <meta name="twitter:image:alt" content="{{OG_IMAGE_ALT_JA}}">
+
+  <!-- Default schema: change @type/applicationCategory when the content is not a WebApplication. -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "@id": "https://neko3se.com/{{SLUG}}/#app",
+    "name": "{{TITLE}}",
+    "description": "{{META_DESCRIPTION_JA}}",
+    "url": "https://neko3se.com/{{SLUG}}/",
+    "applicationCategory": "{{APPLICATION_CATEGORY}}",
+    "operatingSystem": "Any",
+    "author": {
+      "@id": "https://neko3se.com/#neko3se"
+    },
+    "isPartOf": {
+      "@id": "https://neko3se.com/#website"
+    }
+  }
+  </script>
+
+  <link rel="stylesheet" href="../common/neko3se-site.css?v=20260923menu2">
+  <link rel="stylesheet" href="../common/neko3se-grid.css?v=20260926bg1">
+  <link rel="stylesheet" href="template.css">
+</head>
+
+<!-- Remove n3-grid-page only when the new content intentionally has its own background. -->
+<body class="n3-grid-page" data-n3-page="{{PAGE_ID}}" data-n3-root="..">
+  <header id="n3-site-header"></header>
+  <noscript class="n3-noscript"><a href="../">Neko3SE LAB</a></noscript>
+
+  <main class="tpl-shell">
+    <section id="hero" class="tpl-hero" aria-labelledby="page-title">
+      <div class="tpl-language">
+        <button id="language-switch" type="button">English</button>
+      </div>
+
+      <p class="tpl-kicker">{{CATEGORY}} / {{SHORT_ENGLISH_LABEL}}</p>
+      <h1 id="page-title">{{TITLE}}</h1>
+      <p class="tpl-lead" data-ja="{{LEAD_JA}}" data-en="{{LEAD_EN}}">{{LEAD_JA}}</p>
+      <p class="tpl-meta">Neko3SE LAB / {{STATUS_LABEL}}</p>
+    </section>
+
+    <!-- CONTENT START: Replace this sample area with the experiment/tool UI. -->
+    <section class="tpl-content" aria-labelledby="content-title">
+      <p class="tpl-section-label">EXPERIMENT</p>
+      <h2 id="content-title" data-ja="{{CONTENT_HEADING_JA}}" data-en="{{CONTENT_HEADING_EN}}">{{CONTENT_HEADING_JA}}</h2>
+      <p data-ja="{{CONTENT_DESCRIPTION_JA}}" data-en="{{CONTENT_DESCRIPTION_EN}}">{{CONTENT_DESCRIPTION_JA}}</p>
+
+      <div class="tpl-stage" role="region" aria-label="Content implementation area">
+        <strong>CONTENT IMPLEMENTATION AREA</strong>
+        <span>Replace this block with the new experiment or application UI.</span>
+      </div>
+    </section>
+    <!-- CONTENT END -->
+
+    <section class="n3-labnote" aria-labelledby="n3-labnote-title">
+      <div class="n3-labnote-head">
+        <p class="n3-labnote-kicker">LAB NOTE</p>
+        <h2 id="n3-labnote-title">{{TITLE}}</h2>
+        <p class="n3-labnote-theme-label">EXPERIMENT THEME</p>
+        <p class="n3-labnote-theme">{{THEME_A}} <span>×</span> {{THEME_B}}</p>
+      </div>
+
+      <section class="n3-labnote-section">
+        <p class="n3-labnote-index">01 / WHY</p>
+        <h3><span class="n3-labnote-ja">なぜ作った？</span><span class="n3-labnote-en">Why was it built?</span></h3>
+        <p class="n3-labnote-ja">{{WHY_JA}}</p>
+        <p class="n3-labnote-en">{{WHY_EN}}</p>
+      </section>
+
+      <section class="n3-labnote-section">
+        <p class="n3-labnote-index">02 / EXPERIMENT</p>
+        <h3><span class="n3-labnote-ja">何を試した？</span><span class="n3-labnote-en">What was tested?</span></h3>
+        <p class="n3-labnote-ja">{{EXPERIMENT_JA}}</p>
+        <p class="n3-labnote-en">{{EXPERIMENT_EN}}</p>
+        <div class="n3-labnote-tags" aria-label="Experiment topics">
+          <span>{{TOPIC_1}}</span><span>{{TOPIC_2}}</span><span>{{TOPIC_3}}</span>
+        </div>
+      </section>
+
+      <section class="n3-labnote-section">
+        <p class="n3-labnote-index">03 / FINDINGS</p>
+        <h3><span class="n3-labnote-ja">何が分かった？</span><span class="n3-labnote-en">What did we learn?</span></h3>
+        <p class="n3-labnote-ja">{{FINDINGS_JA}}</p>
+        <p class="n3-labnote-en">{{FINDINGS_EN}}</p>
+      </section>
+
+      <section class="n3-labnote-section">
+        <p class="n3-labnote-index">04 / TECHNOLOGY</p>
+        <h3><span class="n3-labnote-ja">何を使った？</span><span class="n3-labnote-en">What was used?</span></h3>
+        <div class="n3-labnote-tags" aria-label="Technologies">
+          <span>HTML5</span><span>CSS</span><span>JAVASCRIPT</span><span>{{TECHNOLOGY}}</span>
+        </div>
+        <p class="n3-labnote-ja">{{TECHNOLOGY_NOTE_JA}}</p>
+        <p class="n3-labnote-en">{{TECHNOLOGY_NOTE_EN}}</p>
+      </section>
+
+      <section class="n3-labnote-section n3-labnote-related">
+        <p class="n3-labnote-index">05 / RELATED</p>
+        <h3><span class="n3-labnote-ja">関連する実験・資料</span><span class="n3-labnote-en">Related experiments and resources</span></h3>
+        <div class="n3-labnote-links">
+          <a href="../{{RELATED_SLUG_1}}/">
+            <strong>{{RELATED_TITLE_1}}</strong>
+            <span class="n3-labnote-ja">{{RELATED_DESCRIPTION_JA_1}}</span>
+            <span class="n3-labnote-en">{{RELATED_DESCRIPTION_EN_1}}</span>
+            <em>EXPLORE →</em>
+          </a>
+          <a href="../{{RELATED_SLUG_2}}/">
+            <strong>{{RELATED_TITLE_2}}</strong>
+            <span class="n3-labnote-ja">{{RELATED_DESCRIPTION_JA_2}}</span>
+            <span class="n3-labnote-en">{{RELATED_DESCRIPTION_EN_2}}</span>
+            <em>EXPLORE →</em>
+          </a>
+        </div>
+      </section>
+
+      <section class="n3-labnote-section n3-labnote-more">
+        <p class="n3-labnote-index">06 / MORE</p>
+        <h3><span class="n3-labnote-ja">さらに詳しく</span><span class="n3-labnote-en">Go deeper</span></h3>
+        <div class="n3-labnote-links">
+          <a href="README.md" target="_blank" rel="noopener noreferrer">
+            <strong>TECHNICAL DOCUMENTATION</strong>
+            <span class="n3-labnote-ja">技術情報・機能・動作環境・既知の制約を見る。</span>
+            <span class="n3-labnote-en">Technical information, features, environments and known limitations.</span>
+            <em>README.md →</em>
+          </a>
+          <a href="https://github.com/Neko3SE/devsite/tree/main/{{SLUG}}" target="_blank" rel="noopener noreferrer">
+            <strong>SOURCE CODE</strong>
+            <span class="n3-labnote-ja">GitHubで実際の実装を見る。</span>
+            <span class="n3-labnote-en">View the implementation on GitHub.</span>
+            <em>GitHub →</em>
+          </a>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <footer id="n3-site-footer"></footer>
+
+  <script src="template.js"></script>
+  <script src="../common/neko3se-site.js?v=20260923menu2" defer></script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+:root { color-scheme: dark; background: #081014; color: #edf6f3; font-family: Inter, "Noto Sans JP", system-ui, sans-serif; }
+* { box-sizing: border-box; }
+body { margin: 0; background: #081014; }
+.og-tool { width: min(1320px, calc(100% - 28px)); margin: 0 auto; padding: 40px 0 64px; }
+.og-controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-bottom: 28px; }
+.og-controls > p, .og-controls > h1, .og-controls > button { grid-column: 1 / -1; }
+.og-kicker { margin: 0; color: #67e892; font-size: .72rem; font-weight: 850; letter-spacing: .16em; }
+h1 { margin: 0; font-size: clamp(2rem, 6vw, 4rem); }
+.og-controls p { color: #a9bbb6; }
+label { display: grid; gap: 7px; color: #93aaa5; font-size: .7rem; font-weight: 850; letter-spacing: .08em; }
+input { width: 100%; border: 1px solid rgba(103,232,146,.28); border-radius: 10px; padding: 12px; background: #0d191c; color: #edf6f3; }
+button { min-height: 44px; border: 1px solid #67e892; border-radius: 999px; background: rgba(103,232,146,.08); color: #67e892; font-weight: 900; letter-spacing: .08em; cursor: pointer; }
+.og-preview { overflow: auto; border: 1px solid rgba(103,232,146,.22); border-radius: 14px; background: #04090b; padding: 12px; }
+canvas { display: block; width: min(100%, 1200px); height: auto; background: #081014; }
+#og-status { min-height: 1.2em; margin: 0; color: #67e892; }
+@media (max-width: 700px) { .og-controls { grid-template-columns: 1fr; } }

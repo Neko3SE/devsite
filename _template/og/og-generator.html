@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Neko3SE LAB OGP Generator</title>
+  <link rel="icon" href="../../common/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="og-generator.css">
+</head>
+<body>
+  <main class="og-tool">
+    <section class="og-controls" aria-labelledby="og-tool-title">
+      <p class="og-kicker">NEKO3SE LAB / DEVELOPMENT TOOL</p>
+      <h1 id="og-tool-title">OGP GENERATOR</h1>
+      <p>1200×630 px のNeko3SE LAB用OGPをブラウザ内で生成します。</p>
+
+      <label>TITLE<input id="og-title" value="NEW CONTENT LAB"></label>
+      <label>SUBTITLE<input id="og-subtitle" value="新しい実験の短い説明"></label>
+      <label>CATEGORY<input id="og-category" value="AI / WEB / IDEA / PLAY"></label>
+      <label>VISUAL KEYWORD<input id="og-keyword" value="EXPERIMENT"></label>
+      <label>FILE NAME<input id="og-filename" value="newcontent_img.png"></label>
+      <button id="og-export" type="button">EXPORT PNG</button>
+      <p id="og-status" aria-live="polite"></p>
+    </section>
+
+    <section class="og-preview" aria-label="OGP preview">
+      <canvas id="og-canvas" width="1200" height="630"></canvas>
+    </section>
+  </main>
+  <script src="og-generator.js"></script>
+</body>
+</html>
