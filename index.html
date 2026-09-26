@@ -126,20 +126,6 @@
   padding: clamp(8px, 1.4svh, 16px) 0 clamp(12px, 2svh, 22px);
   position: relative;
 }
-.n3-intro-sample::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-  opacity: .72;
-  background:
-    linear-gradient(rgba(84,255,188,.13) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(84,255,188,.10) 1px, transparent 1px),
-    radial-gradient(ellipse at 50% 72%, rgba(64,255,190,.22) 0%, rgba(26,210,205,.11) 30%, transparent 62%);
-  background-size: 42px 42px, 42px 42px, auto;
-  mask-image: linear-gradient(to bottom, rgba(0,0,0,.78) 0%, #000 32%, #000 100%);
-}
 .n3-intro-sample::after {
   content: "";
   position: absolute;
@@ -307,9 +293,10 @@
 </style>
 
   <link rel="stylesheet" href="common/neko3se-site.css?v=20260923menu2">
+  <link rel="stylesheet" href="common/neko3se-grid.css?v=20260926bg1">
 </head>
 
-<body data-n3-page="top" data-n3-root=".">
+<body class="n3-grid-page" data-n3-page="top" data-n3-root=".">
   <header id="n3-site-header"></header>
   <noscript class="n3-noscript"><a href="./">Neko3SE LAB</a></noscript>
 

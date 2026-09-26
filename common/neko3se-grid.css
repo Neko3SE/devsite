@@ -1,0 +1,25 @@
+@charset "UTF-8";
+
+/*
+ * Neko3SE LAB shared grid background
+ * Based on the TOP visual intro background.
+ * Apply with: <body class="n3-grid-page ...">
+ */
+body.n3-grid-page {
+  position: relative;
+  isolation: isolate;
+}
+
+body.n3-grid-page::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.72;
+  background:
+    linear-gradient(rgba(84, 255, 188, 0.13) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(84, 255, 188, 0.10) 1px, transparent 1px),
+    radial-gradient(ellipse at 50% 72%, rgba(64, 255, 190, 0.22) 0%, rgba(26, 210, 205, 0.11) 30%, transparent 62%);
+  background-size: 42px 42px, 42px 42px, auto;
+}

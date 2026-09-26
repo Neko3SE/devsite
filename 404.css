@@ -38,18 +38,8 @@
       overflow-x: hidden;
     }
 
-    body::before {
-      content: "";
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      z-index: 0;
-      background-image:
-        linear-gradient(rgba(78, 255, 159, 0.045) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(78, 255, 159, 0.045) 1px, transparent 1px);
-      background-size: 38px 38px;
-      mask-image: linear-gradient(to bottom, black, transparent 85%);
-    }
+    /* Shared grid background: common/neko3se-grid.css */
+
 
     body::after {
       content: "";
