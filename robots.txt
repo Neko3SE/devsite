@@ -1,13 +1,30 @@
+# General crawlers
 User-agent: *
+Allow: /
+
+# OpenAI
+User-agent: OAI-SearchBot
 Allow: /
 
 User-agent: GPTBot
 Allow: /
 
+# Anthropic
+User-agent: Claude-SearchBot
+Allow: /
+
+User-agent: Claude-User
+Allow: /
+
 User-agent: ClaudeBot
 Allow: /
 
+# Perplexity
 User-agent: PerplexityBot
 Allow: /
 
+User-agent: Perplexity-User
+Allow: /
+
+# Sitemap
 Sitemap: https://neko3se.com/sitemap.xml
