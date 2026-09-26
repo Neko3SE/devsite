@@ -9,7 +9,7 @@
 3. `{{...}}` プレースホルダーをすべて置換する。
 4. `data-n3-page="{{PAGE_ID}}"` と同じ `id` を `common/neko3se-site.js` の `pages` に追加し、適切な `navGroups` に登録する。
 5. TOP、`sitemap.xml`、root `README.md`、`llms.txt` など、サイト全体の索引を更新する。
-6. `og/og-generator.html` で 1200×630 のOGPを作成し、`/og_images/<slug>_img.png` として配置する。
+6. `og/og-generator.html` で 1200×630 のOGPを作成し、`/og_images/<slug>_img.png` として配置する。ベース画像は `og-base.js` を使い、中央タイトル2行と説明文だけを差し替える。必要に応じて各文字のX / Y座標とSIZEを調整できる。
 7. `TEMPLATE_CHECKLIST.md` で公開前確認を行う。
 
 ## TITLE の規則
@@ -64,6 +64,6 @@
 
 ## OGP Generator
 
-`og/og-generator.html` をブラウザで開き、タイトル・サブコピー・カテゴリ・短いビジュアルキーワードを入力して `EXPORT PNG` を押します。生成処理はブラウザ内だけで行います。
+`og/og-generator.html` をブラウザで開き、`TITLE LINE 1`、`TITLE LINE 2`、`DESCRIPTION`、`FILE NAME` を入力して `EXPORT PNG` を押します。ベース画像 `og-base.js` は固定で読み込まれ、中央の文字だけが差し替わります。必要に応じて `SHOW SAFE AREA` を使い、文字の安全領域を確認できます。各文字には `X` / `Y` / `SIZE` 入力欄があり、レイアウトと文字サイズを微調整できます。生成処理はブラウザ内だけで行います。
 
 生成したPNGを `/og_images/<slug>_img.png` へ配置してください。

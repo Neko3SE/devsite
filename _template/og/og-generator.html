@@ -12,14 +12,45 @@
     <section class="og-controls" aria-labelledby="og-tool-title">
       <p class="og-kicker">NEKO3SE LAB / DEVELOPMENT TOOL</p>
       <h1 id="og-tool-title">OGP GENERATOR</h1>
-      <p>1200×630 px のNeko3SE LAB用OGPをブラウザ内で生成します。</p>
+      <p class="og-intro">ベース画像は固定し、中央のタイトル2行と説明文だけを差し替えて 1200×630 px のOGP画像を生成します。必要に応じて文字位置もX / Yで調整でき、文字サイズも個別に変更できます。</p>
 
-      <label>TITLE<input id="og-title" value="NEW CONTENT LAB"></label>
-      <label>SUBTITLE<input id="og-subtitle" value="新しい実験の短い説明"></label>
-      <label>CATEGORY<input id="og-category" value="AI / WEB / IDEA / PLAY"></label>
-      <label>VISUAL KEYWORD<input id="og-keyword" value="EXPERIMENT"></label>
+      <section class="og-group og-span-2" aria-labelledby="og-line1-title">
+        <h2 id="og-line1-title">TITLE LINE 1</h2>
+        <label>TEXT<input id="og-title-line1" value="CONTENT"></label>
+        <div class="og-pos-grid og-pos-grid-3">
+          <label>X<input id="og-line1-x" type="number" min="0" max="1200" step="1" value="210"></label>
+          <label>Y<input id="og-line1-y" type="number" min="0" max="630" step="1" value="330"></label>
+          <label>SIZE<input id="og-line1-size" type="number" min="12" max="220" step="1" value="110"></label>
+        </div>
+      </section>
+
+      <section class="og-group og-span-2" aria-labelledby="og-line2-title">
+        <h2 id="og-line2-title">TITLE LINE 2</h2>
+        <label>TEXT<input id="og-title-line2" value="TITLE"></label>
+        <div class="og-pos-grid og-pos-grid-3">
+          <label>X<input id="og-line2-x" type="number" min="0" max="1200" step="1" value="325"></label>
+          <label>Y<input id="og-line2-y" type="number" min="0" max="630" step="1" value="465"></label>
+          <label>SIZE<input id="og-line2-size" type="number" min="12" max="240" step="1" value="128"></label>
+        </div>
+      </section>
+
+      <section class="og-group og-span-2" aria-labelledby="og-description-title">
+        <h2 id="og-description-title">DESCRIPTION</h2>
+        <label>TEXT<input id="og-description" value="ここに短い説明文"></label>
+        <div class="og-pos-grid og-pos-grid-3">
+          <label>X<input id="og-description-x" type="number" min="0" max="1200" step="1" value="225"></label>
+          <label>Y<input id="og-description-y" type="number" min="0" max="630" step="1" value="530"></label>
+          <label>SIZE<input id="og-description-size" type="number" min="12" max="120" step="1" value="44"></label>
+        </div>
+      </section>
+
       <label>FILE NAME<input id="og-filename" value="newcontent_img.png"></label>
-      <button id="og-export" type="button">EXPORT PNG</button>
+      <label class="og-check"><input id="og-safe-area" type="checkbox">SHOW SAFE AREA</label>
+
+      <div class="og-actions">
+        <button id="og-reset" type="button">RESET SAMPLE</button>
+        <button id="og-export" type="button">EXPORT PNG</button>
+      </div>
       <p id="og-status" aria-live="polite"></p>
     </section>
 
@@ -27,6 +58,7 @@
       <canvas id="og-canvas" width="1200" height="630"></canvas>
     </section>
   </main>
+  <script src="og-base.js"></script>
   <script src="og-generator.js"></script>
 </body>
 </html>

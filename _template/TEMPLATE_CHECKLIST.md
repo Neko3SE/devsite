@@ -32,7 +32,7 @@
 - [ ] og:image:alt
 - [ ] twitter:card = `summary_large_image`
 - [ ] twitter:title / description / image / image:alt
-- [ ] OGP画像を実際に生成・配置
+- [ ] OGP画像を `og/og-generator.html` で実際に生成・配置
 
 ## 4. Structured Data
 

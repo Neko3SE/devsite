@@ -40,3 +40,10 @@ Neko3SE LAB / `https://neko3se.com/{{SLUG}}/`
 ## License
 
 See the repository root license files and the terms applicable to Neko3SE LAB.
+
+
+## OGP Tool
+
+- `_template/og/og-generator.html` で 1200×630 のOGP画像を生成できます。
+- 固定ベース画像 `og-base.js` に対して、中央タイトル2行と説明文だけを差し替える方式です。各文字のX / Y座標とSIZEも調整できます。
+- 出力PNGは `/og_images/<slug>_img.png` を想定しています。
