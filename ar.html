@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<title>AR DISTANCE LAB - Phase 4.6 Rev.3</title>
+<title>AR DISTANCE LAB - Phase 4.7</title>
 <style>
 :root{
   color-scheme:dark;
@@ -83,7 +83,7 @@ padding:10px;pointer-events:auto}
 <body>
 <main>
 <h1>AR DISTANCE LAB</h1>
-<p class="sub">Phase 4.6 Rev.3 — Raw Camera Aim Quality + Digital Magnifier</p>
+<p class="sub">Phase 4.7 — Anchor Settling Timeline + Raw Camera Magnifier</p>
 
 <section class="card">
 <h2>STATUS</h2>
@@ -97,6 +97,13 @@ padding:10px;pointer-events:auto}
   <div class="cell">Anchor A</div><div class="cell" id="anchorAState">NOT SET</div>
   <div class="cell">Anchor B</div><div class="cell" id="anchorBState">NOT SET</div>
   <div class="cell">Distance</div><div class="cell" id="distanceState">—</div>
+  <div class="cell">Capture Hit distance</div><div class="cell" id="captureDistanceState">—</div>
+  <div class="cell">Initial Anchor distance</div><div class="cell" id="initialAnchorDistanceState">—</div>
+  <div class="cell">Current − Initial</div><div class="cell" id="anchorDeltaState">—</div>
+  <div class="cell">Max |Anchor delta|</div><div class="cell" id="maxAnchorDeltaState">—</div>
+  <div class="cell">Rolling 2 s range</div><div class="cell" id="rollingRangeState">—</div>
+  <div class="cell">Settling</div><div class="cell" id="settlingState">NOT STARTED</div>
+  <div class="cell">First stable at</div><div class="cell" id="stableAtState">—</div>
   <div class="cell">Samples</div><div class="cell" id="stabilitySamples">0</div>
   <div class="cell">Median</div><div class="cell" id="stabilityMedian">—</div>
   <div class="cell">Min / Max</div><div class="cell" id="stabilityMinMax">—</div>
@@ -148,9 +155,9 @@ padding:10px;pointer-events:auto}
 </section>
 
 <section class="card note">
-Raw Camera Accessで中央ROIを解析し、Hit Test距離と画像のdetail scoreからAIM QUALITYを判定します。
-Pixel 10 Pro実測を基に、約35cm以内かつdetailが低い場合はFOCUS LOWとしてSET POINTを一時無効化します。
-白壁など近距離でない低detailはLOW DETAILとして区別します。中央拡大鏡は2× / 3× / 4×のデジタル拡大です。Rev.3では品質解析ROIと拡大表示を分離したまま、拡大鏡用Raw Cameraソースを512×512へ高解像度化し、表示Canvasの内部解像度もdevicePixelRatioに合わせます。
+Phase 4.7は測定値のAnchor settlingを診断します。Point A/Bを置いたHit座標間の距離、両Anchorが同一XR frameで初めて追跡できた距離、その後のAnchor距離を分離して記録します。
+直近2秒のrangeと前半/後半median差からSETTLING / STABLEを判定し、初期Anchor距離から2 / 5 / 10 mmずれた時刻もLOGへ残します。
+Raw CameraのAIM QUALITYと512×512ソースの2× / 3× / 4×拡大鏡はPhase 4.6 Rev.3を維持します。
 </section>
 
 <section class="card">
@@ -180,6 +187,7 @@ Pixel 10 Pro実測を基に、約35cm以内かつdetailが低い場合はFOCUS L
       <div id="qualityText">AIM QUALITY: ANALYZING</div>
       <div id="accuracyText">REF: 50.0 cm / ERROR: —</div>
       <div id="stabilityText">STABILITY: —</div>
+      <div id="settlingText">SETTLING: —</div>
       <div id="pointText">A: NOT SET / B: NOT SET</div>
       <div id="anchorText">ANCHOR A: — / ANCHOR B: —</div>
       <div class="magRow">
@@ -204,15 +212,16 @@ const $ = id => document.getElementById(id);
 const el = {};
 [
   'secure','webxr','arSupport','sessionState','trackingState','surfaceState',
-  'anchorAState','anchorBState','distanceState','stabilitySamples','stabilityMedian',
-  'stabilityMinMax','stabilityRange','cameraAState','cameraBState','viewerRateState',
+  'anchorAState','anchorBState','distanceState','captureDistanceState','initialAnchorDistanceState',
+  'anchorDeltaState','maxAnchorDeltaState','rollingRangeState','settlingState','stableAtState',
+  'stabilitySamples','stabilityMedian','stabilityMinMax','stabilityRange','cameraAState','cameraBState','viewerRateState',
   'hitRateState','anchorARateState','anchorBRateState','referenceState',
   'absErrorState','relErrorState','resetEventState','referenceCm',
   'rawCameraState','hitDistanceState','aimQualityState','edgeMedianState',
   'contrastMedianState','magnifierState','magnifierCanvas','magnifierWrap',
   'magnifierLabel','qualityText',
   'coordA','coordB','startBtn','resetBtn','endBtn','log','xrCanvas','xrOverlay','xrHud',
-  'xrState','xrHint','pointText','anchorText','distanceText','accuracyText','stabilityText','setPointBtn',
+  'xrState','xrHint','pointText','anchorText','distanceText','accuracyText','stabilityText','settlingText','setPointBtn',
   'xrResetBtn','xrEndBtn','topPanel','bottomPanel'
 ].forEach(id => el[id] = $(id));
 
@@ -275,6 +284,29 @@ let cameraASamples = [];
 let cameraBSamples = [];
 let lastMetricsUiTime = 0;
 
+// Phase 4.7: immutable placement points + Anchor settling timeline.
+let capturePointA = null;
+let capturePointB = null;
+let captureResetCountA = null;
+let captureResetCountB = null;
+let captureHitDistance = null;
+
+let initialAnchorDistance = null;
+let currentAnchorDistance = null;
+let maxAnchorDeltaAbs = 0;
+let distanceTimeline = []; // {t, d, elapsed}
+let settlingState = 'NOT STARTED';
+let settlingStableAtMs = null;
+let settlingStableMedian = null;
+let lastTimelineLogMs = -Infinity;
+let deltaThresholdLogged = {0.002:false,0.005:false,0.010:false};
+
+const SETTLING_WINDOW_MS = 2000;
+const SETTLING_MIN_SPAN_MS = 1500;
+const SETTLING_RANGE_M = 0.002;
+const SETTLING_HALF_SHIFT_M = 0.001;
+const TIMELINE_LOG_INTERVAL_MS = 500;
+
 // Absolute accuracy validation.
 let referenceMeters = 0.50;
 let referenceSpaceResetCount = 0;
@@ -321,8 +353,8 @@ const DETAIL_CONTRAST_LOW = 8.0;
 
 let ending = false;
 let cleanupDone = false;
-const LOG_STORAGE_KEY = 'ar-distance-lab-phase4-rev2-log';
-const SUMMARY_STORAGE_KEY = 'ar-distance-lab-phase4-rev2-summary';
+const LOG_STORAGE_KEY = 'ar-distance-lab-phase4-7-log';
+const SUMMARY_STORAGE_KEY = 'ar-distance-lab-phase4-7-summary';
 
 const TRACKING_UNSTABLE_MS = 250;
 const TRACKING_LOST_MS = 1000;
@@ -353,6 +385,12 @@ function persistDiagnostics(){
       referenceSpaceResetCount,
       sessionReferenceSpaceResetCount,
       samples: distanceSamples.length,
+      captureHitDistance,
+      initialAnchorDistance,
+      currentAnchorDistance,
+      maxAnchorDeltaAbs,
+      settlingState,
+      settlingStableAtMs,
       median: median(distanceSamples),
       min: distanceSamples.length ? Math.min(...distanceSamples) : null,
       max: distanceSamples.length ? Math.max(...distanceSamples) : null,
@@ -429,6 +467,165 @@ function distance3(a,b){
   return Math.sqrt(dx*dx+dy*dy+dz*dz);
 }
 
+
+function formatSignedDistanceMeters(m){
+  if(!Number.isFinite(m)) return '—';
+  const mm=m*1000;
+  return `${mm>=0?'+':''}${mm.toFixed(1)} mm`;
+}
+
+function resetSettlingMetrics(){
+  capturePointA = null;
+  capturePointB = null;
+  captureResetCountA = null;
+  captureResetCountB = null;
+  captureHitDistance = null;
+
+  initialAnchorDistance = null;
+  currentAnchorDistance = null;
+  maxAnchorDeltaAbs = 0;
+  distanceTimeline = [];
+  settlingState = 'NOT STARTED';
+  settlingStableAtMs = null;
+  settlingStableMedian = null;
+  lastTimelineLogMs = -Infinity;
+  deltaThresholdLogged = {0.002:false,0.005:false,0.010:false};
+
+  set('captureDistanceState','—','');
+  set('initialAnchorDistanceState','—','');
+  set('anchorDeltaState','—','');
+  set('maxAnchorDeltaState','—','');
+  set('rollingRangeState','—','');
+  set('settlingState','NOT STARTED','');
+  set('stableAtState','—','');
+  if(el.settlingText) el.settlingText.textContent='SETTLING: —';
+}
+
+function rollingSettlingStats(currentTime){
+  const start=currentTime-SETTLING_WINDOW_MS;
+  const w=distanceTimeline.filter(x=>x.t>=start);
+  if(!w.length) return null;
+
+  const values=w.map(x=>x.d);
+  const min=Math.min(...values);
+  const max=Math.max(...values);
+  const range=max-min;
+  const span=w[w.length-1].t-w[0].t;
+
+  const splitTime=w[0].t+span/2;
+  const first=w.filter(x=>x.t<=splitTime).map(x=>x.d);
+  const second=w.filter(x=>x.t>splitTime).map(x=>x.d);
+  const med1=first.length?median(first):null;
+  const med2=second.length?median(second):null;
+  const halfShift=(med1!==null && med2!==null)?Math.abs(med2-med1):null;
+
+  return {
+    n:w.length,
+    span,
+    min,max,range,
+    median:median(values),
+    halfShift
+  };
+}
+
+function updateSettlingState(time,d){
+  if(initialAnchorDistance===null){
+    initialAnchorDistance=d;
+    currentAnchorDistance=d;
+    maxAnchorDeltaAbs=0;
+    settlingState='SETTLING';
+    set('initialAnchorDistanceState',fmtDistance(d),'ok');
+    log(`initial same-frame Anchor distance: ${d.toFixed(6)} m (${fmtDistance(d)})`);
+  }
+
+  currentAnchorDistance=d;
+  const delta=d-initialAnchorDistance;
+  maxAnchorDeltaAbs=Math.max(maxAnchorDeltaAbs,Math.abs(delta));
+
+  const elapsed=distanceTimeline.length
+    ? Math.max(0,time-distanceTimeline[0].t)
+    : 0;
+
+  distanceTimeline.push({t:time,d,elapsed});
+  if(distanceTimeline.length>3600) distanceTimeline.shift();
+
+  for(const threshold of [0.002,0.005,0.010]){
+    if(!deltaThresholdLogged[threshold] && Math.abs(delta)>=threshold){
+      deltaThresholdLogged[threshold]=true;
+      log(
+        `Anchor delta crossed ${(threshold*1000).toFixed(0)} mm at ` +
+        `t=${(elapsed/1000).toFixed(3)} s; current=${d.toFixed(6)} m; ` +
+        `delta=${(delta*1000).toFixed(3)} mm`
+      );
+    }
+  }
+
+  const stats=rollingSettlingStats(time);
+  let isStable=false;
+
+  if(stats && stats.span>=SETTLING_MIN_SPAN_MS && stats.n>=10){
+    isStable =
+      stats.range<=SETTLING_RANGE_M &&
+      stats.halfShift!==null &&
+      stats.halfShift<=SETTLING_HALF_SHIFT_M;
+  }
+
+  if(isStable){
+    if(settlingState!=='STABLE'){
+      settlingState='STABLE';
+      if(settlingStableAtMs===null) settlingStableAtMs=elapsed;
+      settlingStableMedian=stats.median;
+      log(
+        `SETTLING STABLE at t=${(elapsed/1000).toFixed(3)} s; ` +
+        `rollingMedian=${stats.median.toFixed(6)} m; ` +
+        `range=${(stats.range*1000).toFixed(3)} mm; ` +
+        `halfShift=${(stats.halfShift*1000).toFixed(3)} mm`
+      );
+    }
+  }else{
+    if(settlingState==='STABLE'){
+      log(
+        `SETTLING destabilized at t=${(elapsed/1000).toFixed(3)} s; ` +
+        `rollingRange=${stats?(stats.range*1000).toFixed(3):'n/a'} mm`
+      );
+    }
+    settlingState='SETTLING';
+  }
+
+  set('anchorDeltaState',formatSignedDistanceMeters(delta),Math.abs(delta)<=0.002?'ok':'warn');
+  set('maxAnchorDeltaState',`${(maxAnchorDeltaAbs*1000).toFixed(1)} mm`,maxAnchorDeltaAbs<=0.002?'ok':'warn');
+
+  if(stats){
+    set('rollingRangeState',`${(stats.range*1000).toFixed(2)} mm`,isStable?'ok':'warn');
+  }else{
+    set('rollingRangeState','—','');
+  }
+
+  set('settlingState',settlingState,settlingState==='STABLE'?'ok':'warn');
+  set(
+    'stableAtState',
+    settlingStableAtMs===null?'—':`${(settlingStableAtMs/1000).toFixed(2)} s`,
+    settlingStableAtMs===null?'':'ok'
+  );
+
+  if(el.settlingText){
+    el.settlingText.textContent =
+      `SETTLING: ${settlingState}  Δ=${formatSignedDistanceMeters(delta)}` +
+      (stats?`  2s range=${(stats.range*1000).toFixed(1)} mm`:'');
+  }
+
+  if(elapsed-lastTimelineLogMs>=TIMELINE_LOG_INTERVAL_MS){
+    lastTimelineLogMs=elapsed;
+    log(
+      `timeline t=${(elapsed/1000).toFixed(3)} s; ` +
+      `anchor=${d.toFixed(6)} m; delta=${(delta*1000).toFixed(3)} mm; ` +
+      `rollingMedian=${stats?stats.median.toFixed(6):'n/a'} m; ` +
+      `rollingRange=${stats?(stats.range*1000).toFixed(3):'n/a'} mm; ` +
+      `state=${settlingState}`
+    );
+  }
+}
+
 function setReferenceCm(cm){
   const v = Number(cm);
   if(!Number.isFinite(v) || v <= 0) return;
@@ -459,6 +656,7 @@ function resetMeasurementMetrics(){
   lastMetricsUiTime = 0;
 
   referenceSpaceResetCount = 0;
+  resetSettlingMetrics();
 
   set('stabilitySamples','0','');
   set('stabilityMedian','—','');
@@ -499,7 +697,22 @@ function startMeasurementMetrics(){
   cameraBSamples = [];
   referenceSpaceResetCount = 0;
 
+  initialAnchorDistance = null;
+  currentAnchorDistance = null;
+  maxAnchorDeltaAbs = 0;
+  distanceTimeline = [];
+  settlingState = 'SETTLING';
+  settlingStableAtMs = null;
+  settlingStableMedian = null;
+  lastTimelineLogMs = -Infinity;
+  deltaThresholdLogged = {0.002:false,0.005:false,0.010:false};
+
   log(`MEASUREMENT #${measurementIndex} START; reference=${referenceMeters.toFixed(6)} m`);
+  if(captureHitDistance!==null){
+    log(`capture Hit distance: ${captureHitDistance.toFixed(6)} m (${fmtDistance(captureHitDistance)})`);
+  }else{
+    log('capture Hit distance: n/a (reference-space reset occurred between A and B or capture points unavailable)');
+  }
   updateMetricsUI();
 }
 
@@ -533,6 +746,23 @@ function summarizeMeasurement(reason){
     `camera distance median: A=${camAMed===null?'n/a':camAMed.toFixed(6)} m; ` +
     `B=${camBMed===null?'n/a':camBMed.toFixed(6)} m`
   );
+
+  const finalAnchor = currentAnchorDistance;
+  const finalDelta =
+    (finalAnchor!==null && initialAnchorDistance!==null)
+      ? finalAnchor-initialAnchorDistance
+      : null;
+
+  log(
+    `settling: captureHit=${captureHitDistance===null?'n/a':captureHitDistance.toFixed(6)} m; ` +
+    `initialAnchor=${initialAnchorDistance===null?'n/a':initialAnchorDistance.toFixed(6)} m; ` +
+    `finalAnchor=${finalAnchor===null?'n/a':finalAnchor.toFixed(6)} m; ` +
+    `finalDelta=${finalDelta===null?'n/a':(finalDelta*1000).toFixed(3)} mm; ` +
+    `maxAbsDelta=${(maxAnchorDeltaAbs*1000).toFixed(3)} mm; ` +
+    `firstStable=${settlingStableAtMs===null?'n/a':(settlingStableAtMs/1000).toFixed(3)+' s'}; ` +
+    `state=${settlingState}`
+  );
+
   log(
     `quality: ViewerPose=${pct(measureViewerPoseValidFrames,measureFrameTotal)}; ` +
     `HitTest=${pct(measureHitSuccessFrames,measureHitEligibleFrames)}; ` +
@@ -842,15 +1072,22 @@ function configureMagnifierCanvas(){
     Math.round(MAG_CSS_SIZE*magnifierDpr)
   );
 
-  el.magnifierCanvas.width=backing;
-  el.magnifierCanvas.height=backing;
+  const changed =
+    el.magnifierCanvas.width!==backing ||
+    el.magnifierCanvas.height!==backing;
+
+  if(changed){
+    el.magnifierCanvas.width=backing;
+    el.magnifierCanvas.height=backing;
+
+    log(
+      `magnifier canvas configured: css=${MAG_CSS_SIZE}x${MAG_CSS_SIZE}; ` +
+      `backing=${backing}x${backing}; dpr=${magnifierDpr.toFixed(3)}`
+    );
+  }
+
   el.magnifierCanvas.style.width=`${MAG_CSS_SIZE}px`;
   el.magnifierCanvas.style.height=`${MAG_CSS_SIZE}px`;
-
-  log(
-    `magnifier canvas configured: css=${MAG_CSS_SIZE}x${MAG_CSS_SIZE}; ` +
-    `backing=${backing}x${backing}; dpr=${magnifierDpr.toFixed(3)}`
-  );
 }
 
 function updateMagnifierSourceCanvas(){
@@ -899,16 +1136,16 @@ function drawMagnifierPixels(){
   ctx.restore();
 
   if(!magnifierFirstPaintLogged){
-    magnifierFirstPaintLogged=true;
     const rect=el.magnifierCanvas.getBoundingClientRect();
-    log(
-      `magnifier first paint: backing=${dstW}x${dstH}; ` +
-      `css=${Math.round(rect.width)}x${Math.round(rect.height)}; ` +
-      `dpr=${magnifierDpr.toFixed(3)}; ` +
-      `visible=${rect.width>0 && rect.height>0}; ` +
-      `zoom=${magnifierZoom}x; ` +
-      `source=${MAG_SOURCE_SIZE}x${MAG_SOURCE_SIZE}`
-    );
+    if(rect.width>0 && rect.height>0){
+      magnifierFirstPaintLogged=true;
+      log(
+        `magnifier first visible paint: backing=${dstW}x${dstH}; ` +
+        `css=${Math.round(rect.width)}x${Math.round(rect.height)}; ` +
+        `dpr=${magnifierDpr.toFixed(3)}; zoom=${magnifierZoom}x; ` +
+        `source=${MAG_SOURCE_SIZE}x${MAG_SOURCE_SIZE}`
+      );
+    }
   }
 
   el.magnifierLabel.textContent=
@@ -1401,10 +1638,29 @@ function createAnchorFromHit(result,hitPose,slot){
       anchorA = anchor;
       pointA = fallbackPoint;
       matrixA = fallbackMatrix;
+
+      capturePointA = {...fallbackPoint};
+      captureResetCountA = sessionReferenceSpaceResetCount;
+      capturePointB = null;
+      captureResetCountB = null;
+      captureHitDistance = null;
+      set('captureDistanceState','—','');
     }else{
       anchorB = anchor;
       pointB = fallbackPoint;
       matrixB = fallbackMatrix;
+
+      capturePointB = {...fallbackPoint};
+      captureResetCountB = sessionReferenceSpaceResetCount;
+
+      if(capturePointA && captureResetCountA===captureResetCountB){
+        captureHitDistance = calcDistance(capturePointA,capturePointB);
+        set('captureDistanceState',fmtDistance(captureHitDistance),'ok');
+      }else{
+        captureHitDistance = null;
+        set('captureDistanceState','N/A (reference reset)','warn');
+      }
+
       startMeasurementMetrics();
     }
 
@@ -1423,7 +1679,7 @@ function createAnchorFromHit(result,hitPose,slot){
       el.xrState.textContent = 'MEASUREMENT COMPLETE';
       el.xrHint.textContent = 'Move the camera; A/B anchors and line should stay fixed.';
       const d = calcDistance(pointA,pointB);
-      log(`anchored Distance A-B: ${d.toFixed(6)} m (${fmtDistance(d)})`);
+      log(`B-created display distance (A current / B hit): ${d.toFixed(6)} m (${fmtDistance(d)})`);
     }
   }).catch(err=>{
     anchorCreationBusy = false;
@@ -1467,6 +1723,7 @@ function onXRFrame(time,frame){
   // Stability is sampled only when A and B are both tracked in the same XR frame.
   if(measurementActive && aTracked && bTracked && pointA && pointB){
     const d = calcDistance(pointA,pointB);
+    updateSettlingState(time,d);
     distanceSamples.push(d);
 
     const camera = pose.transform.position;
