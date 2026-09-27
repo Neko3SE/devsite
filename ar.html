@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<title>AR DISTANCE LAB - Phase 4.9</title>
+<title>AR DISTANCE LAB - Phase 4.10</title>
 <style>
 :root{
   color-scheme:dark;
@@ -83,7 +83,7 @@ padding:10px;pointer-events:auto}
 <body>
 <main>
 <h1>AR DISTANCE LAB</h1>
-<p class="sub">Phase 4.9 — Frozen Measurement + Live Anchor Diagnostics + Raw Camera Magnifier</p>
+<p class="sub">Phase 4.10 — Hit Capture Stability + Frozen Measurement + Raw Camera Magnifier</p>
 
 <section class="card">
 <h2>STATUS</h2>
@@ -104,6 +104,13 @@ padding:10px;pointer-events:auto}
   <div class="cell">Frozen mean</div><div class="cell" id="repeatMeanState">—</div>
   <div class="cell">Frozen range</div><div class="cell" id="repeatRangeState">—</div>
   <div class="cell">Capture Hit distance</div><div class="cell" id="captureDistanceState">—</div>
+  <div class="cell">A Hit 1 s spread</div><div class="cell" id="hitSpreadAState">—</div>
+  <div class="cell">B Hit 1 s spread</div><div class="cell" id="hitSpreadBState">—</div>
+  <div class="cell">Instant Hit A-B</div><div class="cell" id="hitInstantABState">—</div>
+  <div class="cell">Median 0.3 s A-B</div><div class="cell" id="hitMedian300ABState">—</div>
+  <div class="cell">Median 0.5 s A-B</div><div class="cell" id="hitMedian500ABState">—</div>
+  <div class="cell">Median 1.0 s A-B</div><div class="cell" id="hitMedian1000ABState">—</div>
+  <div class="cell">Median 1.0 s − Instant</div><div class="cell" id="hitMedianDeltaState">—</div>
   <div class="cell">A pre-B elapsed</div><div class="cell" id="preBElapsedState">—</div>
   <div class="cell">A offset from capture Hit</div><div class="cell" id="preBOffsetState">—</div>
   <div class="cell">A drift from first Anchor</div><div class="cell" id="preBDriftState">—</div>
@@ -167,10 +174,11 @@ padding:10px;pointer-events:auto}
 </section>
 
 <section class="card note">
-Phase 4.9ではPoint Bを押したXR frameで、同じframeから取得したPoint Aのcurrent Anchor poseとPoint BのHit Test poseの距離を正式測定値としてFreezeします。
-Freeze後もA/B Anchorは表示・診断用として追跡しますが、画面のDISTANCEと誤差計算は変化しません。
-同一セッション内のFrozen値について回数・平均・rangeを集計し、再現性を確認できます。
-A AnchorがB captureと同じXR frameで追跡できていない場合はFreezeをINVALIDとして扱い、last-known poseでは正式測定しません。
+Phase 4.10ではPhase 4.9の正式Freeze方式を変更せず、Point A/Bを押す直前のHit Test座標を診断します。
+各XR frameのHit座標を保持し、Capture時点の瞬間Hitと、直前0.3秒・0.5秒・1.0秒の座標成分medianを比較します。
+各windowではsample数、coverage、medianからの最大3D半径、RMS spread、X/Y/Z spanをLOGへ記録します。
+B確定時にはInstant A-Bと各median A-Bを並べ、Hit Testの時間的揺らぎが測定差へどの程度寄与するかを確認します。
+正式なDISTANCEは従来どおり、B captureと同じXR frameの「A current Anchor ↔ B Instant Hit」をFreezeした値です。
 </section>
 
 <section class="card">
@@ -228,6 +236,8 @@ const el = {};
   'secure','webxr','arSupport','sessionState','trackingState','surfaceState',
   'anchorAState','anchorBState','distanceState','freezeStatusState','liveDistanceState','liveMinusFrozenState',
   'repeatCountState','repeatMeanState','repeatRangeState','captureDistanceState',
+  'hitSpreadAState','hitSpreadBState','hitInstantABState','hitMedian300ABState',
+  'hitMedian500ABState','hitMedian1000ABState','hitMedianDeltaState',
   'preBElapsedState','preBOffsetState','preBDriftState','preBMaxState',
   'captureAQualityState','captureBQualityState','initialAnchorDistanceState',
   'anchorDeltaState','maxAnchorDeltaState','rollingRangeState','settlingState','stableAtState',
@@ -301,7 +311,7 @@ let cameraASamples = [];
 let cameraBSamples = [];
 let lastMetricsUiTime = 0;
 
-// Phase 4.9: immutable placement points + Anchor settling timeline.
+// Phase 4.10: immutable placement points + Anchor settling timeline.
 let capturePointA = null;
 let capturePointB = null;
 let captureResetCountA = null;
@@ -325,7 +335,7 @@ const SETTLING_HALF_SHIFT_M = 0.001;
 const TIMELINE_LOG_INTERVAL_MS = 500;
 
 
-// Phase 4.9: monitor Point A from its capture until Point B capture.
+// Phase 4.10: monitor Point A from its capture until Point B capture.
 let captureSnapshotA = null;
 let captureSnapshotB = null;
 
@@ -346,7 +356,220 @@ let preBSummaryAtB = null;
 const PREB_LOG_INTERVAL_MS = 1000;
 
 
-// Phase 4.9: formal measurement is frozen at Point B capture.
+
+// Phase 4.10: Hit Test capture stability diagnostic.
+const HIT_HISTORY_RETENTION_MS = 1600;
+const HIT_WINDOW_MS = [300,500,1000];
+let hitHistory = []; // {time, point, cameraDistance}
+let hitStabilitySnapshotA = null;
+let hitStabilitySnapshotB = null;
+let hitABComparison = null;
+
+function resetHitStabilityDiagnostics(){
+  hitStabilitySnapshotA = null;
+  hitStabilitySnapshotB = null;
+  hitABComparison = null;
+
+  set('hitSpreadAState','—','');
+  set('hitSpreadBState','—','');
+  set('hitInstantABState','—','');
+  set('hitMedian300ABState','—','');
+  set('hitMedian500ABState','—','');
+  set('hitMedian1000ABState','—','');
+  set('hitMedianDeltaState','—','');
+}
+
+function recordHitSample(time,point,cameraDistance){
+  if(!point || !Number.isFinite(time)) return;
+
+  hitHistory.push({
+    time,
+    point:clonePoint(point),
+    cameraDistance:Number.isFinite(cameraDistance) ? cameraDistance : null
+  });
+
+  const cutoff=time-HIT_HISTORY_RETENTION_MS;
+  while(hitHistory.length && hitHistory[0].time<cutoff){
+    hitHistory.shift();
+  }
+
+  // Safety cap for unexpectedly high frame rates.
+  if(hitHistory.length>240){
+    hitHistory.splice(0,hitHistory.length-240);
+  }
+}
+
+function coordinateMedian(points){
+  if(!points.length) return null;
+  return {
+    x:median(points.map(p=>p.x)),
+    y:median(points.map(p=>p.y)),
+    z:median(points.map(p=>p.z))
+  };
+}
+
+function hitWindowStats(captureTime,windowMs,instantPoint){
+  const start=captureTime-windowMs;
+  const samples=hitHistory.filter(
+    sample=>sample.time>=start && sample.time<=captureTime+0.01
+  );
+
+  if(!samples.length) return null;
+
+  const points=samples.map(sample=>sample.point);
+  const med=coordinateMedian(points);
+  if(!med) return null;
+
+  const radii=points.map(point=>distance3(point,med));
+  const maxRadius=Math.max(...radii);
+  const rmsRadius=Math.sqrt(
+    radii.reduce((sum,r)=>sum+r*r,0)/radii.length
+  );
+
+  const xs=points.map(p=>p.x);
+  const ys=points.map(p=>p.y);
+  const zs=points.map(p=>p.z);
+
+  const coverageMs=
+    samples.length>1
+      ? samples[samples.length-1].time-samples[0].time
+      : 0;
+
+  const cameraDistances=samples
+    .map(sample=>sample.cameraDistance)
+    .filter(Number.isFinite);
+
+  return {
+    windowMs,
+    n:samples.length,
+    coverageMs,
+    medianPoint:med,
+    instantToMedian:distance3(instantPoint,med),
+    maxRadius,
+    rmsRadius,
+    spanX:Math.max(...xs)-Math.min(...xs),
+    spanY:Math.max(...ys)-Math.min(...ys),
+    spanZ:Math.max(...zs)-Math.min(...zs),
+    cameraDistanceMedian:cameraDistances.length ? median(cameraDistances) : null
+  };
+}
+
+function captureHitStabilitySnapshot(slot,time,instantPoint){
+  const windows={};
+
+  for(const windowMs of HIT_WINDOW_MS){
+    windows[windowMs]=hitWindowStats(time,windowMs,instantPoint);
+  }
+
+  const snapshot={
+    slot,
+    time,
+    frame:frameCount,
+    instantPoint:clonePoint(instantPoint),
+    windows
+  };
+
+  const oneSecond=windows[1000];
+  if(oneSecond){
+    set(
+      slot==='A' ? 'hitSpreadAState' : 'hitSpreadBState',
+      `n=${oneSecond.n} / maxR=${(oneSecond.maxRadius*1000).toFixed(2)} mm / ` +
+      `inst-med=${(oneSecond.instantToMedian*1000).toFixed(2)} mm`,
+      oneSecond.maxRadius<=0.003 ? 'ok' : 'warn'
+    );
+  }
+
+  log(
+    `Point ${slot} Hit stability: instant=${fmtPoint(instantPoint)}; ` +
+    `historySamples=${hitHistory.length}; frame=${frameCount}`
+  );
+
+  for(const windowMs of HIT_WINDOW_MS){
+    const st=windows[windowMs];
+    if(!st){
+      log(`Point ${slot} Hit ${windowMs} ms: n=0`);
+      continue;
+    }
+
+    log(
+      `Point ${slot} Hit ${windowMs} ms: ` +
+      `n=${st.n}; coverage=${st.coverageMs.toFixed(1)} ms; ` +
+      `median=${fmtPoint(st.medianPoint)}; ` +
+      `instantToMedian=${(st.instantToMedian*1000).toFixed(3)} mm; ` +
+      `maxRadius=${(st.maxRadius*1000).toFixed(3)} mm; ` +
+      `rmsRadius=${(st.rmsRadius*1000).toFixed(3)} mm; ` +
+      `spanXYZ=(${(st.spanX*1000).toFixed(3)},` +
+      `${(st.spanY*1000).toFixed(3)},${(st.spanZ*1000).toFixed(3)}) mm; ` +
+      `cameraMedian=${st.cameraDistanceMedian===null?'n/a':st.cameraDistanceMedian.toFixed(6)+' m'}`
+    );
+  }
+
+  return snapshot;
+}
+
+function logHitABComparison(){
+  if(!hitStabilitySnapshotA || !hitStabilitySnapshotB) return null;
+
+  const instant=distance3(
+    hitStabilitySnapshotA.instantPoint,
+    hitStabilitySnapshotB.instantPoint
+  );
+
+  const medians={};
+  for(const windowMs of HIT_WINDOW_MS){
+    const a=hitStabilitySnapshotA.windows[windowMs];
+    const b=hitStabilitySnapshotB.windows[windowMs];
+    medians[windowMs] =
+      a && b ? distance3(a.medianPoint,b.medianPoint) : null;
+  }
+
+  const comparison={
+    instant,
+    median300:medians[300],
+    median500:medians[500],
+    median1000:medians[1000],
+    formalFrozen:frozenMeasurement?.valid ? frozenMeasurement.distance : null,
+    preBDrift:preBSummaryAtB?.driftFromFirst ?? null,
+    preBOffset:preBSummaryAtB?.offsetFromCapture ?? null
+  };
+  hitABComparison=comparison;
+
+  set('hitInstantABState',fmtDistance(instant),'ok');
+
+  const mapping=[
+    [300,'hitMedian300ABState'],
+    [500,'hitMedian500ABState'],
+    [1000,'hitMedian1000ABState']
+  ];
+  for(const [windowMs,id] of mapping){
+    const value=medians[windowMs];
+    set(id,value===null?'—':fmtDistance(value),value===null?'':'ok');
+  }
+
+  if(medians[1000]!==null){
+    const delta=medians[1000]-instant;
+    set(
+      'hitMedianDeltaState',
+      `${delta>=0?'+':''}${(delta*1000).toFixed(2)} mm`,
+      Math.abs(delta)<=0.003 ? 'ok' : 'warn'
+    );
+  }
+
+  log(
+    `HIT A-B COMPARISON: ` +
+    `instant=${instant.toFixed(6)} m; ` +
+    `median300=${medians[300]===null?'n/a':medians[300].toFixed(6)} m; ` +
+    `median500=${medians[500]===null?'n/a':medians[500].toFixed(6)} m; ` +
+    `median1000=${medians[1000]===null?'n/a':medians[1000].toFixed(6)} m; ` +
+    `median1000MinusInstant=${medians[1000]===null?'n/a':((medians[1000]-instant)*1000).toFixed(3)+' mm'}; ` +
+    `formalFrozen=${comparison.formalFrozen===null?'n/a':comparison.formalFrozen.toFixed(6)} m; ` +
+    `preBDrift=${comparison.preBDrift===null?'n/a':(comparison.preBDrift*1000).toFixed(3)+' mm'}`
+  );
+
+  return comparison;
+}
+
+// Phase 4.10: formal measurement is frozen at Point B capture.
 let frozenMeasurement = null;
 let sessionFrozenMeasurements = [];
 let lastAAnchorPoseTime = null;
@@ -436,6 +659,8 @@ function freezeMeasurementAtB(hitPoint,time){
     sessionResetCount:sessionReferenceSpaceResetCount,
     aCaptureSnapshot:captureSnapshotA,
     bCaptureSnapshot:captureSnapshotB,
+    aHitStability:hitStabilitySnapshotA,
+    bHitStability:hitStabilitySnapshotB,
     preB:preBSummaryAtB
   };
 
@@ -519,8 +744,8 @@ const DETAIL_CONTRAST_LOW = 8.0;
 
 let ending = false;
 let cleanupDone = false;
-const LOG_STORAGE_KEY = 'ar-distance-lab-phase4-9-log';
-const SUMMARY_STORAGE_KEY = 'ar-distance-lab-phase4-9-summary';
+const LOG_STORAGE_KEY = 'ar-distance-lab-phase4-10-log';
+const SUMMARY_STORAGE_KEY = 'ar-distance-lab-phase4-10-summary';
 
 const TRACKING_UNSTABLE_MS = 250;
 const TRACKING_LOST_MS = 1000;
@@ -553,6 +778,9 @@ function persistDiagnostics(){
       samples: distanceSamples.length,
       frozenMeasurement,
       sessionFrozenMeasurements,
+      hitStabilitySnapshotA,
+      hitStabilitySnapshotB,
+      hitABComparison,
       captureHitDistance,
       captureSnapshotA,
       captureSnapshotB,
@@ -1084,6 +1312,7 @@ function resetMeasurementMetrics(){
   referenceSpaceResetCount = 0;
   resetSettlingMetrics();
   resetPreBMonitor();
+  resetHitStabilityDiagnostics();
   resetCurrentFrozenMeasurement();
   updateRepeatabilityUI();
 
@@ -1184,6 +1413,15 @@ function summarizeMeasurement(reason){
     (finalAnchor!==null && initialAnchorDistance!==null)
       ? finalAnchor-initialAnchorDistance
       : null;
+
+  if(hitABComparison){
+    log(
+      `hit capture diagnostic: instant=${hitABComparison.instant.toFixed(6)} m; ` +
+      `median300=${hitABComparison.median300===null?'n/a':hitABComparison.median300.toFixed(6)} m; ` +
+      `median500=${hitABComparison.median500===null?'n/a':hitABComparison.median500.toFixed(6)} m; ` +
+      `median1000=${hitABComparison.median1000===null?'n/a':hitABComparison.median1000.toFixed(6)} m`
+    );
+  }
 
   if(preBSummaryAtB){
     log(
@@ -1949,6 +2187,7 @@ async function startAR(){
   cleanupDone = false;
   sessionReferenceSpaceResetCount = 0;
   sessionFrozenMeasurements = [];
+  hitHistory = [];
   updateRepeatabilityUI();
   resetMeasurementMetrics();
 
@@ -2142,10 +2381,17 @@ function createAnchorFromHit(result,hitPose,slot,time,viewerPose){
   if(slot==='A') captureSnapshotA=captureSnapshot;
   else captureSnapshotB=captureSnapshot;
 
+  const hitStabilitySnapshot =
+    captureHitStabilitySnapshot(slot,time,fallbackPoint);
+
+  if(slot==='A') hitStabilitySnapshotA=hitStabilitySnapshot;
+  else hitStabilitySnapshotB=hitStabilitySnapshot;
+
   // Formal measurement is committed immediately on the Point B capture frame.
   // It does not depend on the asynchronous creation or later movement of Anchor B.
   if(slot==='B'){
     freezeMeasurementAtB(fallbackPoint,time);
+    logHitABComparison();
     updateMetricsUI();
     updateDistanceUI();
   }
@@ -2318,6 +2564,11 @@ function onXRFrame(time,frame){
         {x:cam.x,y:cam.y,z:cam.z},
         latestHitPoint
       );
+
+      // Record first, so a button press on this XR frame includes the instant sample
+      // in the 0.3 / 0.5 / 1.0 second diagnostic windows.
+      recordHitSample(time,latestHitPoint,latestHitDistance);
+
       set('hitDistanceState',`${latestHitDistance.toFixed(3)} m`,latestHitDistance>NEAR_RANGE_M?'ok':'warn');
 
       if(!hitSeen){
