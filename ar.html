@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<title>AR DISTANCE LAB - Phase 2</title>
+<title>AR DISTANCE LAB - Phase 3</title>
 <style>
 :root{
   color-scheme:dark;
@@ -15,7 +15,7 @@
 html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);
 font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
 body{padding:16px}
-main{width:min(860px,100%);margin:auto}
+main{width:min(900px,100%);margin:auto}
 h1{font-size:clamp(22px,5vw,34px);margin:0 0 4px}
 .sub,.note{color:var(--muted);font-size:12px;line-height:1.65}
 .sub{margin:0 0 16px}
@@ -29,22 +29,23 @@ button{appearance:none;border:1px solid #36566c;background:#132534;color:var(--t
 border-radius:9px;padding:12px 14px;font:inherit;font-weight:700;min-height:44px}
 button:disabled{opacity:.4}
 button.danger{border-color:#75424a;background:#2b171b}
-pre{white-space:pre-wrap;overflow-wrap:anywhere;margin:0;max-height:220px;overflow:auto;font-size:12px;color:#cbd7e1}
+pre{white-space:pre-wrap;overflow-wrap:anywhere;margin:0;max-height:240px;overflow:auto;font-size:12px;color:#cbd7e1}
 
 #xrOverlay{position:fixed;inset:0;z-index:2147483647;pointer-events:none}
 #xrHud{position:absolute;inset:0;pointer-events:none}
 #centerGuide{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
 font-size:28px;line-height:1;color:#fff;text-shadow:0 0 5px #000}
 #topPanel{position:absolute;left:50%;top:max(12px,env(safe-area-inset-top));transform:translateX(-50%);
-width:min(94vw,520px);background:#071019df;border:1px solid #587086;border-radius:11px;
+width:min(94vw,560px);background:#071019df;border:1px solid #587086;border-radius:11px;
 padding:9px 11px;text-align:center;pointer-events:auto}
 #bottomPanel{position:absolute;left:50%;bottom:max(14px,env(safe-area-inset-bottom));transform:translateX(-50%);
-width:min(94vw,520px);background:#071019df;border:1px solid #587086;border-radius:11px;
+width:min(94vw,560px);background:#071019df;border:1px solid #587086;border-radius:11px;
 padding:10px;pointer-events:auto}
 #xrState{font-weight:700}
-#xrHint,#pointText{font-size:12px;line-height:1.5;margin-top:4px}
+#xrHint,#pointText,#distanceText{font-size:12px;line-height:1.5;margin-top:4px}
 #pointText{color:#cfe8f5}
-.xrActions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px}
+#distanceText{font-size:18px;font-weight:700;color:#fff}
+.xrActions{display:grid;grid-template-columns:1.1fr 1fr 1fr;gap:8px;margin-top:8px}
 .xrActions button{padding:10px 6px}
 canvas{position:fixed;inset:0;width:1px;height:1px;pointer-events:none}
 </style>
@@ -52,7 +53,7 @@ canvas{position:fixed;inset:0;width:1px;height:1px;pointer-events:none}
 <body>
 <main>
 <h1>AR DISTANCE LAB</h1>
-<p class="sub">Phase 2 — Hit Test + Reticle + Single Point Capture</p>
+<p class="sub">Phase 3 — Point A/B + 3D Distance + AR Line</p>
 
 <section class="card">
 <h2>STATUS</h2>
@@ -63,8 +64,11 @@ canvas{position:fixed;inset:0;width:1px;height:1px;pointer-events:none}
   <div class="cell">Session</div><div class="cell" id="sessionState">NOT STARTED</div>
   <div class="cell">Tracking</div><div class="cell" id="trackingState">NOT STARTED</div>
   <div class="cell">Surface</div><div class="cell" id="surfaceState">NOT STARTED</div>
-  <div class="cell">Point A</div><div class="cell" id="pointState">NOT SET</div>
-  <div class="cell">Coordinates</div><div class="cell" id="coords">—</div>
+  <div class="cell">Point A</div><div class="cell" id="pointAState">NOT SET</div>
+  <div class="cell">Point B</div><div class="cell" id="pointBState">NOT SET</div>
+  <div class="cell">Distance</div><div class="cell" id="distanceState">—</div>
+  <div class="cell">Point A coord.</div><div class="cell" id="coordA">—</div>
+  <div class="cell">Point B coord.</div><div class="cell" id="coordB">—</div>
 </div>
 </section>
 
@@ -72,15 +76,15 @@ canvas{position:fixed;inset:0;width:1px;height:1px;pointer-events:none}
 <h2>CONTROLS</h2>
 <div class="actions">
   <button id="startBtn" disabled>START AR</button>
-  <button id="resetBtn" disabled>RESET POINT</button>
+  <button id="resetBtn" disabled>RESET MEASURE</button>
   <button id="endBtn" class="danger" disabled>END AR</button>
 </div>
 </section>
 
 <section class="card note">
-このPhaseでは距離計算を行いません。カメラ中央付近のHit Test結果をWebGLレティクルとして表示し、
-SET POINTまたはAR画面タップでその実空間座標をPoint Aとして固定します。
-座標値はlocal Reference Space基準のメートル値です。
+このPhaseではHit TestでPoint A/Bを取得し、local Reference Space上の3D座標から直線距離を計算します。
+水色は現在のHit位置、黄色はPoint A、赤系の十字はPoint B、A-B間はラインで表示します。
+TrackingとSurface検出は独立して表示します。特徴の少ない白壁ではTrackingが成立していてもSurfaceが見つからない場合があります。
 </section>
 
 <section class="card">
@@ -94,14 +98,17 @@ SET POINTまたはAR画面タップでその実空間座標をPoint Aとして�
 <div id="xrOverlay">
   <div id="xrHud" hidden>
     <div id="centerGuide">＋</div>
+
     <div id="topPanel">
       <div id="xrState">STARTING...</div>
-      <div id="xrHint">Move slowly and point at a floor, desk, or wall.</div>
+      <div id="xrHint">Move slowly and point at a textured floor, desk, or wall.</div>
     </div>
+
     <div id="bottomPanel">
-      <div id="pointText">POINT A: NOT SET</div>
+      <div id="distanceText">DISTANCE: —</div>
+      <div id="pointText">A: NOT SET / B: NOT SET</div>
       <div class="xrActions">
-        <button id="setPointBtn" disabled>SET POINT</button>
+        <button id="setPointBtn" disabled>SET POINT A</button>
         <button id="xrResetBtn" disabled>RESET</button>
         <button id="xrEndBtn" class="danger">END</button>
       </div>
@@ -117,8 +124,10 @@ const $ = id => document.getElementById(id);
 const el = {};
 [
   'secure','webxr','arSupport','sessionState','trackingState','surfaceState',
-  'pointState','coords','startBtn','resetBtn','endBtn','log','xrCanvas',
-  'xrOverlay','xrHud','xrState','xrHint','pointText','setPointBtn','xrResetBtn','xrEndBtn'
+  'pointAState','pointBState','distanceState','coordA','coordB',
+  'startBtn','resetBtn','endBtn','log','xrCanvas','xrOverlay','xrHud',
+  'xrState','xrHint','pointText','distanceText','setPointBtn','xrResetBtn','xrEndBtn',
+  'topPanel','bottomPanel'
 ].forEach(id => el[id] = $(id));
 
 let session = null;
@@ -129,8 +138,11 @@ let uProjection = null;
 let uView = null;
 let uModel = null;
 let uColor = null;
+
 let reticleBuffer = null;
 let pointBuffer = null;
+let lineBuffer = null;
+
 let localSpace = null;
 let viewerSpace = null;
 let hitTestSource = null;
@@ -138,25 +150,52 @@ let raf = 0;
 
 let latestHitMatrix = null;
 let latestHitPoint = null;
-let fixedPointMatrix = null;
-let fixedPoint = null;
+
+let pointA = null;
+let pointB = null;
+let matrixA = null;
+let matrixB = null;
+
 let viewerPoseSeen = false;
+let trackingLost = false;
 let hitSeen = false;
 let frameCount = 0;
+let nullPoseFrames = 0;
+let noHitFrames = 0;
 let logLines = [];
 
+const IDENTITY4 = new Float32Array([
+  1,0,0,0,
+  0,1,0,0,
+  0,0,1,0,
+  0,0,0,1
+]);
+
 function now(){ return new Date().toISOString(); }
+
 function log(msg){
   logLines.push(`${now()}  ${msg}`);
   el.log.textContent = logLines.join('\n');
   el.log.scrollTop = el.log.scrollHeight;
 }
+
 function set(id,text,cls=''){
   el[id].textContent = text;
   el[id].className = 'cell ' + cls;
 }
+
 function fmtPoint(p){
   return `x=${p.x.toFixed(4)} m, y=${p.y.toFixed(4)} m, z=${p.z.toFixed(4)} m`;
+}
+
+function calcDistance(a,b){
+  const dx=b.x-a.x, dy=b.y-a.y, dz=b.z-a.z;
+  return Math.sqrt(dx*dx+dy*dy+dz*dz);
+}
+
+function fmtDistance(m){
+  if(m < 1) return `${(m*100).toFixed(1)} cm`;
+  return `${m.toFixed(3)} m`;
 }
 
 async function preflight(){
@@ -186,6 +225,7 @@ function createShader(type,source){
   const shader = gl.createShader(type);
   gl.shaderSource(shader,source);
   gl.compileShader(shader);
+
   if(!gl.getShaderParameter(shader,gl.COMPILE_STATUS)){
     const info = gl.getShaderInfoLog(shader);
     gl.deleteShader(shader);
@@ -241,7 +281,6 @@ async function setupWebGL(){
   uModel = gl.getUniformLocation(program,'uModel');
   uColor = gl.getUniformLocation(program,'uColor');
 
-  // Surface reticle: 6 cm cross in hit-local X/Z plane.
   reticleBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER,reticleBuffer);
   gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([
@@ -251,7 +290,6 @@ async function setupWebGL(){
     -0.021,0,0.021, 0.021,0,-0.021
   ]),gl.STATIC_DRAW);
 
-  // Fixed point: small 3-axis cross.
   pointBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER,pointBuffer);
   gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([
@@ -260,11 +298,13 @@ async function setupWebGL(){
     0,0,-0.035, 0,0,0.035
   ]),gl.STATIC_DRAW);
 
+  lineBuffer = gl.createBuffer();
+
   gl.enable(gl.DEPTH_TEST);
   gl.depthFunc(gl.LEQUAL);
 }
 
-function drawMarker(buffer,vertexCount,model,color,projection,view){
+function drawBuffer(buffer,vertexCount,model,color,projection,view,mode=gl.LINES){
   gl.useProgram(program);
   gl.bindBuffer(gl.ARRAY_BUFFER,buffer);
   gl.enableVertexAttribArray(positionLoc);
@@ -273,7 +313,70 @@ function drawMarker(buffer,vertexCount,model,color,projection,view){
   gl.uniformMatrix4fv(uView,false,view);
   gl.uniformMatrix4fv(uModel,false,model);
   gl.uniform4fv(uColor,color);
-  gl.drawArrays(gl.LINES,0,vertexCount);
+  gl.drawArrays(mode,0,vertexCount);
+}
+
+function updateLineBuffer(){
+  if(!pointA || !pointB || !gl || !lineBuffer) return;
+  gl.bindBuffer(gl.ARRAY_BUFFER,lineBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([
+    pointA.x,pointA.y,pointA.z,
+    pointB.x,pointB.y,pointB.z
+  ]),gl.DYNAMIC_DRAW);
+}
+
+function updateMeasurementUI(){
+  if(!pointA){
+    set('pointAState','NOT SET','warn');
+    set('coordA','—','');
+  }else{
+    set('pointAState','SET','ok');
+    set('coordA',fmtPoint(pointA),'ok');
+  }
+
+  if(!pointB){
+    set('pointBState','NOT SET','warn');
+    set('coordB','—','');
+  }else{
+    set('pointBState','SET','ok');
+    set('coordB',fmtPoint(pointB),'ok');
+  }
+
+  if(pointA && pointB){
+    const d = calcDistance(pointA,pointB);
+    const text = fmtDistance(d);
+    set('distanceState',text,'ok');
+    el.distanceText.textContent = `DISTANCE: ${text}`;
+    el.pointText.textContent = `A: ${fmtPoint(pointA)}\nB: ${fmtPoint(pointB)}`;
+    el.setPointBtn.disabled = true;
+    el.setPointBtn.textContent = 'MEASURED';
+    el.xrState.textContent = 'MEASUREMENT COMPLETE';
+    el.xrHint.textContent = 'Move the camera to verify that A, B, and the line remain fixed.';
+    el.resetBtn.disabled = false;
+    el.xrResetBtn.disabled = false;
+  }else if(pointA){
+    set('distanceState','—','');
+    el.distanceText.textContent = 'DISTANCE: —';
+    el.pointText.textContent = `A: ${fmtPoint(pointA)} / B: NOT SET`;
+    el.setPointBtn.textContent = 'SET POINT B';
+    el.setPointBtn.disabled = !latestHitPoint;
+    el.xrState.textContent = 'POINT A SET';
+    el.xrHint.textContent = 'Move to Point B and press SET POINT B.';
+    el.resetBtn.disabled = false;
+    el.xrResetBtn.disabled = false;
+  }else{
+    set('distanceState','—','');
+    el.distanceText.textContent = 'DISTANCE: —';
+    el.pointText.textContent = 'A: NOT SET / B: NOT SET';
+    el.setPointBtn.textContent = 'SET POINT A';
+    el.setPointBtn.disabled = !latestHitPoint;
+    el.resetBtn.disabled = true;
+    el.xrResetBtn.disabled = true;
+  }
+}
+
+function preventOverlayXRSelect(e){
+  e.preventDefault();
 }
 
 async function startAR(){
@@ -289,8 +392,11 @@ async function startAR(){
     log(`session started; enabledFeatures=[${session.enabledFeatures ? Array.from(session.enabledFeatures).join(', ') : 'not exposed'}]`);
 
     session.addEventListener('end',onSessionEnd,{once:true});
+
+    // A tap on the camera view may set the current requested point.
+    // DOM Overlay controls are excluded by beforexrselect preventDefault().
     session.addEventListener('select',()=>{
-      if(latestHitPoint) setPoint();
+      if(latestHitPoint && !(pointA && pointB)) captureCurrentPoint('xr-select');
     });
 
     await setupWebGL();
@@ -305,12 +411,15 @@ async function startAR(){
     el.xrHud.hidden = false;
     el.endBtn.disabled = false;
     el.xrEndBtn.disabled = false;
+
     el.xrState.textContent = 'TRACKING...';
-    el.xrHint.textContent = 'Move slowly and point at a floor, desk, or wall.';
+    el.xrHint.textContent = 'Move slowly and point at a textured floor, desk, or wall.';
+
     set('trackingState','PENDING','warn');
     set('surfaceState','SEARCHING','warn');
 
     raf = session.requestAnimationFrame(onXRFrame);
+
   }catch(err){
     set('sessionState','FAILED','ng');
     log(`startAR failed: ${err.name}: ${err.message}`);
@@ -324,24 +433,40 @@ function onXRFrame(_time,frame){
   frameCount++;
 
   const pose = frame.getViewerPose(localSpace);
+
   if(!pose){
-    if(frameCount === 1 || frameCount % 60 === 0){
-      el.xrState.textContent = 'TRACKING...';
+    nullPoseFrames++;
+
+    if(viewerPoseSeen && nullPoseFrames >= 10 && !trackingLost){
+      trackingLost = true;
+      set('trackingState','LOST','ng');
+      set('surfaceState','UNAVAILABLE','warn');
+      el.xrState.textContent = 'TRACKING LOST';
+      el.xrHint.textContent = 'Move slowly toward a textured, well-lit area.';
+      log(`tracking lost after ${nullPoseFrames} consecutive null Viewer Poses`);
+    }else if(!viewerPoseSeen){
       set('trackingState','PENDING','warn');
     }
     return;
   }
 
-  if(!viewerPoseSeen){
+  nullPoseFrames = 0;
+
+  if(!viewerPoseSeen || trackingLost){
     viewerPoseSeen = true;
+    trackingLost = false;
     set('trackingState','ACTIVE','ok');
-    log(`Viewer Pose acquired at frame=${frameCount}`);
+    log(`Viewer Pose active at frame=${frameCount}`);
   }
 
   const results = frame.getHitTestResults(hitTestSource);
+
   if(results.length){
     const hitPose = results[0].getPose(localSpace);
+
     if(hitPose){
+      noHitFrames = 0;
+
       latestHitMatrix = new Float32Array(hitPose.transform.matrix);
       const p = hitPose.transform.position;
       latestHitPoint = {x:p.x,y:p.y,z:p.z};
@@ -352,19 +477,38 @@ function onXRFrame(_time,frame){
       }
 
       set('surfaceState','DETECTED','ok');
-      el.xrState.textContent = fixedPoint ? 'POINT A SET' : 'SURFACE DETECTED';
-      el.xrHint.textContent = fixedPoint
-        ? 'Move the camera; the fixed marker should remain at Point A.'
-        : 'Tap SET POINT or tap the AR view to capture Point A.';
-      el.setPointBtn.disabled = false;
+
+      if(!(pointA && pointB)){
+        el.setPointBtn.disabled = false;
+      }
+
+      if(!pointA){
+        el.xrState.textContent = 'SURFACE DETECTED';
+        el.xrHint.textContent = 'Set Point A.';
+      }else if(!pointB){
+        el.xrState.textContent = 'POINT A SET';
+        el.xrHint.textContent = 'Move to Point B and set it.';
+      }
     }
   }else{
+    noHitFrames++;
     latestHitMatrix = null;
     latestHitPoint = null;
-    set('surfaceState','SEARCHING','warn');
-    el.xrState.textContent = 'SEARCHING SURFACE...';
-    el.xrHint.textContent = 'Move slowly across a textured floor, desk, or wall.';
-    el.setPointBtn.disabled = true;
+
+    if(noHitFrames > 180){
+      set('surfaceState','SEARCHING / LOW FEATURES?','warn');
+      if(!pointA || !pointB){
+        el.xrState.textContent = 'SURFACE NOT FOUND';
+        el.xrHint.textContent = 'Try a textured, well-lit surface. Plain white walls can be difficult.';
+      }
+    }else{
+      set('surfaceState','SEARCHING','warn');
+      if(!pointA || !pointB){
+        el.xrState.textContent = 'SEARCHING SURFACE...';
+      }
+    }
+
+    if(!(pointA && pointB)) el.setPointBtn.disabled = true;
   }
 
   const layer = session.renderState.baseLayer;
@@ -380,72 +524,113 @@ function onXRFrame(_time,frame){
     const viewMatrix = view.transform.inverse.matrix;
 
     if(latestHitMatrix){
-      drawMarker(
+      drawBuffer(
         reticleBuffer,8,latestHitMatrix,
         new Float32Array([0.2,0.85,1.0,1.0]),
         projection,viewMatrix
       );
     }
 
-    if(fixedPointMatrix){
-      drawMarker(
-        pointBuffer,6,fixedPointMatrix,
-        new Float32Array([1.0,0.8,0.2,1.0]),
+    if(matrixA){
+      drawBuffer(
+        pointBuffer,6,matrixA,
+        new Float32Array([1.0,0.80,0.20,1.0]),
+        projection,viewMatrix
+      );
+    }
+
+    if(matrixB){
+      drawBuffer(
+        pointBuffer,6,matrixB,
+        new Float32Array([1.0,0.35,0.30,1.0]),
+        projection,viewMatrix
+      );
+    }
+
+    if(pointA && pointB){
+      drawBuffer(
+        lineBuffer,2,IDENTITY4,
+        new Float32Array([1.0,1.0,1.0,1.0]),
         projection,viewMatrix
       );
     }
   }
 }
 
-function setPoint(){
+function captureCurrentPoint(source){
   if(!latestHitPoint || !latestHitMatrix){
     el.xrHint.textContent = 'No surface hit available. Move slowly and try again.';
     return;
   }
 
-  fixedPoint = {...latestHitPoint};
-  fixedPointMatrix = new Float32Array(latestHitMatrix);
+  if(!pointA){
+    pointA = {...latestHitPoint};
+    matrixA = new Float32Array(latestHitMatrix);
+    log(`Point A set (${source}): ${fmtPoint(pointA)}`);
+  }else if(!pointB){
+    pointB = {...latestHitPoint};
+    matrixB = new Float32Array(latestHitMatrix);
+    updateLineBuffer();
 
-  set('pointState','SET','ok');
-  set('coords',fmtPoint(fixedPoint),'ok');
-  el.pointText.textContent = `POINT A: ${fmtPoint(fixedPoint)}`;
-  el.xrState.textContent = 'POINT A SET';
-  el.xrHint.textContent = 'Move the camera; Point A should stay fixed in the AR space.';
-  el.resetBtn.disabled = false;
-  el.xrResetBtn.disabled = false;
-  log(`Point A set: ${fmtPoint(fixedPoint)}`);
+    const d = calcDistance(pointA,pointB);
+    log(`Point B set (${source}): ${fmtPoint(pointB)}`);
+    log(`Distance A-B: ${d.toFixed(6)} m (${fmtDistance(d)})`);
+  }
+
+  updateMeasurementUI();
 }
 
-function resetPoint(){
-  fixedPoint = null;
-  fixedPointMatrix = null;
-  set('pointState','NOT SET','warn');
-  set('coords','—','');
-  el.pointText.textContent = 'POINT A: NOT SET';
-  el.resetBtn.disabled = true;
-  el.xrResetBtn.disabled = true;
-  el.xrState.textContent = hitSeen ? 'SURFACE DETECTED' : 'SEARCHING SURFACE...';
-  log('Point A reset');
+function resetMeasurement(){
+  pointA = null;
+  pointB = null;
+  matrixA = null;
+  matrixB = null;
+
+  if(gl && lineBuffer){
+    gl.bindBuffer(gl.ARRAY_BUFFER,lineBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([]),gl.DYNAMIC_DRAW);
+  }
+
+  updateMeasurementUI();
+
+  if(session){
+    el.xrState.textContent = latestHitPoint ? 'SURFACE DETECTED' : 'SEARCHING SURFACE...';
+    el.xrHint.textContent = latestHitPoint
+      ? 'Set Point A.'
+      : 'Move slowly and point at a textured surface.';
+  }
+
+  log('measurement reset');
 }
 
 async function endAR(){
   if(!session) return;
-  try{ await session.end(); }
-  catch(err){ log(`session.end failed: ${err.name}: ${err.message}`); }
+  try{
+    await session.end();
+  }catch(err){
+    log(`session.end failed: ${err.name}: ${err.message}`);
+  }
 }
 
 function onSessionEnd(){
   log('session ended');
+
   try{ hitTestSource?.cancel?.(); }catch{}
+
   session = null;
   localSpace = null;
   viewerSpace = null;
   hitTestSource = null;
   latestHitMatrix = null;
   latestHitPoint = null;
+
   viewerPoseSeen = false;
+  trackingLost = false;
   hitSeen = false;
   frameCount = 0;
+  nullPoseFrames = 0;
+  noHitFrames = 0;
+
   gl = null;
   program = null;
 
@@ -453,18 +638,26 @@ function onSessionEnd(){
   el.endBtn.disabled = true;
   el.setPointBtn.disabled = true;
   el.startBtn.disabled = el.arSupport.textContent !== 'SUPPORTED';
+
   set('sessionState','ENDED','warn');
   set('trackingState','ENDED','warn');
   set('surfaceState','ENDED','warn');
 }
 
+// Suppress WebXR select generation for DOM Overlay UI interactions.
+// Camera-view taps outside these panels can still generate XR select.
+el.topPanel.addEventListener('beforexrselect',preventOverlayXRSelect);
+el.bottomPanel.addEventListener('beforexrselect',preventOverlayXRSelect);
+
 el.startBtn.addEventListener('click',startAR);
-el.resetBtn.addEventListener('click',resetPoint);
+el.resetBtn.addEventListener('click',resetMeasurement);
 el.endBtn.addEventListener('click',endAR);
-el.setPointBtn.addEventListener('click',setPoint);
-el.xrResetBtn.addEventListener('click',resetPoint);
+
+el.setPointBtn.addEventListener('click',()=>captureCurrentPoint('dom-button'));
+el.xrResetBtn.addEventListener('click',resetMeasurement);
 el.xrEndBtn.addEventListener('click',endAR);
 
+updateMeasurementUI();
 preflight();
 })();
 </script>
