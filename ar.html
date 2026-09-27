@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<title>AR DISTANCE LAB - Phase 4.6 Rev.2</title>
+<title>AR DISTANCE LAB - Phase 4.6 Rev.3</title>
 <style>
 :root{
   color-scheme:dark;
@@ -83,7 +83,7 @@ padding:10px;pointer-events:auto}
 <body>
 <main>
 <h1>AR DISTANCE LAB</h1>
-<p class="sub">Phase 4.6 Rev.2 — Raw Camera Aim Quality + Digital Magnifier</p>
+<p class="sub">Phase 4.6 Rev.3 — Raw Camera Aim Quality + Digital Magnifier</p>
 
 <section class="card">
 <h2>STATUS</h2>
@@ -150,7 +150,7 @@ padding:10px;pointer-events:auto}
 <section class="card note">
 Raw Camera Accessで中央ROIを解析し、Hit Test距離と画像のdetail scoreからAIM QUALITYを判定します。
 Pixel 10 Pro実測を基に、約35cm以内かつdetailが低い場合はFOCUS LOWとしてSET POINTを一時無効化します。
-白壁など近距離でない低detailはLOW DETAILとして区別します。中央拡大鏡は2× / 3× / 4×のデジタル拡大です。Rev.2では品質解析ROIと拡大表示を分離し、XR描画Canvasと拡大鏡CanvasのCSSも完全に分離しています。
+白壁など近距離でない低detailはLOW DETAILとして区別します。中央拡大鏡は2× / 3× / 4×のデジタル拡大です。Rev.3では品質解析ROIと拡大表示を分離したまま、拡大鏡用Raw Cameraソースを512×512へ高解像度化し、表示Canvasの内部解像度もdevicePixelRatioに合わせます。
 </section>
 
 <section class="card">
@@ -165,7 +165,7 @@ Pixel 10 Pro実測を基に、約35cm以内かつdetailが低い場合はFOCUS L
   <div id="xrHud" hidden>
     <div id="centerGuide">＋</div>
     <div id="magnifierWrap">
-      <canvas id="magnifierCanvas" width="160" height="160"></canvas>
+      <canvas id="magnifierCanvas" width="320" height="320"></canvas>
       <div id="magnifierCross">＋</div>
       <div id="magnifierLabel">MAG 3×</div>
     </div>
@@ -304,7 +304,7 @@ let magnifierSourceCanvas = null;
 let magnifierSourceCtx = null;
 
 const SAMPLE_SIZE = 64;
-const MAG_SOURCE_SIZE = 192;
+const MAG_SOURCE_SIZE = 512;
 const QUALITY_HISTORY_MAX = 5;
 let qualityHistory = [];
 let lastQualitySampleTime = -Infinity;
@@ -312,6 +312,8 @@ let latestHitDistance = null;
 let aimQuality = 'ANALYZING';
 let magnifierZoom = 3;
 let magnifierFirstPaintLogged = false;
+const MAG_CSS_SIZE = 160;
+let magnifierDpr = 1;
 
 const NEAR_RANGE_M = 0.35;
 const DETAIL_EDGE_LOW = 2.5;
@@ -783,6 +785,8 @@ function setupRawCameraPipeline(){
   magnifierSourceCanvas.height=MAG_SOURCE_SIZE;
   magnifierSourceCtx=magnifierSourceCanvas.getContext('2d');
 
+  configureMagnifierCanvas();
+
   sampleReady=true;
   gl.bindFramebuffer(gl.FRAMEBUFFER,null);
   log(`Raw Camera pipelines ready: analysis=${SAMPLE_SIZE}x${SAMPLE_SIZE}; magnifierSource=${MAG_SOURCE_SIZE}x${MAG_SOURCE_SIZE}`);
@@ -824,6 +828,29 @@ function analyzeRawPixels(pix,w,h){
     contrast:Math.sqrt(variance),
     edge:edgeCount ? edgeSum/edgeCount : 0
   };
+}
+
+
+function configureMagnifierCanvas(){
+  magnifierDpr=Math.min(
+    Math.max(window.devicePixelRatio || 1,1),
+    3
+  );
+
+  const backing=Math.max(
+    MAG_CSS_SIZE,
+    Math.round(MAG_CSS_SIZE*magnifierDpr)
+  );
+
+  el.magnifierCanvas.width=backing;
+  el.magnifierCanvas.height=backing;
+  el.magnifierCanvas.style.width=`${MAG_CSS_SIZE}px`;
+  el.magnifierCanvas.style.height=`${MAG_CSS_SIZE}px`;
+
+  log(
+    `magnifier canvas configured: css=${MAG_CSS_SIZE}x${MAG_CSS_SIZE}; ` +
+    `backing=${backing}x${backing}; dpr=${magnifierDpr.toFixed(3)}`
+  );
 }
 
 function updateMagnifierSourceCanvas(){
@@ -875,17 +902,20 @@ function drawMagnifierPixels(){
     magnifierFirstPaintLogged=true;
     const rect=el.magnifierCanvas.getBoundingClientRect();
     log(
-      `magnifier first paint: canvas=${dstW}x${dstH}; ` +
+      `magnifier first paint: backing=${dstW}x${dstH}; ` +
       `css=${Math.round(rect.width)}x${Math.round(rect.height)}; ` +
+      `dpr=${magnifierDpr.toFixed(3)}; ` +
       `visible=${rect.width>0 && rect.height>0}; ` +
-      `zoom=${magnifierZoom}x`
+      `zoom=${magnifierZoom}x; ` +
+      `source=${MAG_SOURCE_SIZE}x${MAG_SOURCE_SIZE}`
     );
   }
 
-  el.magnifierLabel.textContent=`MAG ${magnifierZoom}×`;
+  el.magnifierLabel.textContent=
+    `MAG ${magnifierZoom}× · ${crop}px`;
   set(
     'magnifierState',
-    `${magnifierZoom}× / source ${crop}×${crop}`,
+    `${magnifierZoom}× / source ${crop}×${crop} / DPR ${magnifierDpr.toFixed(2)}`,
     'ok'
   );
 }
@@ -1752,6 +1782,13 @@ function onSessionEnd(){
   persistDiagnostics();
 }
 
+window.addEventListener('resize',()=>{
+  if(el.magnifierCanvas){
+    configureMagnifierCanvas();
+    drawMagnifierPixels();
+  }
+});
+
 document.querySelectorAll('.magBtn').forEach(btn=>{
   btn.addEventListener('click',()=>{
     magnifierZoom = Number(btn.dataset.mag) || 3;
@@ -1767,7 +1804,11 @@ document.querySelectorAll('.magBtn').forEach(btn=>{
       Math.round(MAG_SOURCE_SIZE/magnifierZoom)
     );
     log(
-      `magnifier visual zoom=${magnifierZoom}x; sourceCrop=${crop}x${crop}`
+      `magnifier visual zoom=${magnifierZoom}x; ` +
+      `source=${MAG_SOURCE_SIZE}x${MAG_SOURCE_SIZE}; ` +
+      `sourceCrop=${crop}x${crop}; ` +
+      `canvasBacking=${el.magnifierCanvas.width}x${el.magnifierCanvas.height}; ` +
+      `dpr=${magnifierDpr.toFixed(3)}`
     );
   });
 });
