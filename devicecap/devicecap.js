@@ -63,7 +63,7 @@ function resetAll(){
   document.querySelectorAll(".dc-test").forEach(sec=>{
     const out=sec.querySelector(".dc-test-result");
     const b=sec.querySelector("button");
-    if(out)out.textContent="NOT TESTED";
+    if(out){out.textContent="NOT TESTED";out.className="dc-test-result";}
     if(b)b.disabled=false;
   });
 }
@@ -72,10 +72,10 @@ async function runAutoFromButton(){
   run.classList.remove("dc-attention");
   await runAuto();
   const done=$("run-auto-done");
-  done.textContent="MEASURED";
+  done.textContent="MEASURED ✓";
   done.classList.add("is-done");
 }
 $("run-auto").addEventListener("click",runAutoFromButton);
 $("reset-tests").addEventListener("click",resetAll);
-$("copy-report").addEventListener("click",async()=>{const text=report();try{await navigator.clipboard.writeText(text);$("copy-report").textContent="COPIED";setTimeout(()=>$("copy-report").textContent="COPY REPORT",1400)}catch{const ta=document.createElement("textarea");ta.value=text;document.body.append(ta);ta.select();document.execCommand("copy");ta.remove()}});buildTests();resetAll();
+$("copy-report").addEventListener("click",async()=>{const text=report();try{await navigator.clipboard.writeText(text);$("copy-report").querySelector("span").textContent="COPIED ✓";setTimeout(()=>$("copy-report").querySelector("span").textContent="COPY REPORT",1400)}catch{const ta=document.createElement("textarea");ta.value=text;document.body.append(ta);ta.select();document.execCommand("copy");ta.remove()}});buildTests();resetAll();
 })();
