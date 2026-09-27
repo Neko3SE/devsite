@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<title>AR DISTANCE LAB - Phase 4.6</title>
+<title>AR DISTANCE LAB - Phase 4.6 Rev.1</title>
 <style>
 :root{
   color-scheme:dark;
@@ -78,7 +78,7 @@ canvas{position:fixed;inset:0;width:1px;height:1px;pointer-events:none}
 <body>
 <main>
 <h1>AR DISTANCE LAB</h1>
-<p class="sub">Phase 4.6 — Raw Camera Aim Quality + Digital Magnifier</p>
+<p class="sub">Phase 4.6 Rev.1 — Raw Camera Aim Quality + Digital Magnifier</p>
 
 <section class="card">
 <h2>STATUS</h2>
@@ -145,7 +145,7 @@ canvas{position:fixed;inset:0;width:1px;height:1px;pointer-events:none}
 <section class="card note">
 Raw Camera Accessで中央ROIを解析し、Hit Test距離と画像のdetail scoreからAIM QUALITYを判定します。
 Pixel 10 Pro実測を基に、約35cm以内かつdetailが低い場合はFOCUS LOWとしてSET POINTを一時無効化します。
-白壁など近距離でない低detailはLOW DETAILとして区別します。中央拡大鏡は2× / 3× / 4×のデジタル拡大です。
+白壁など近距離でない低detailはLOW DETAILとして区別します。中央拡大鏡は2× / 3× / 4×のデジタル拡大です。Rev.1では品質解析ROIと拡大表示を分離し、倍率変更はCanvas側の中央クロップとして即時反映します。
 </section>
 
 <section class="card">
@@ -285,10 +285,21 @@ let sampleBuffer = null;
 let sampleFbo = null;
 let sampleTexture = null;
 let samplePixels = null;
-let sampleDisplayPixels = null;
 let sampleReady = false;
 
-const SAMPLE_SIZE = 128;
+// Magnifier rendering is intentionally separated from the quality-analysis ROI.
+// A fixed square source image is read from the XR camera, then Canvas2D performs
+// the visible 2x/3x/4x crop. This makes the visual zoom independent of analysis.
+let magnifierProgram = null;
+let magnifierFbo = null;
+let magnifierTexture = null;
+let magnifierPixels = null;
+let magnifierDisplayPixels = null;
+let magnifierSourceCanvas = null;
+let magnifierSourceCtx = null;
+
+const SAMPLE_SIZE = 64;
+const MAG_SOURCE_SIZE = 192;
 const QUALITY_HISTORY_MAX = 5;
 let qualityHistory = [];
 let lastQualitySampleTime = -Infinity;
@@ -664,39 +675,62 @@ function compileRawShader(type,source){
 }
 
 function setupRawCameraPipeline(){
-  const vs = compileRawShader(gl.VERTEX_SHADER,`
+  const vsSource=`
     attribute vec2 aPos;
     varying vec2 vUv;
     void main(){
       gl_Position = vec4(aPos,0.0,1.0);
       vUv = aPos * 0.5 + 0.5;
     }
-  `);
+  `;
 
-  const fs = compileRawShader(gl.FRAGMENT_SHADER,`
+  // Analysis path: fixed center 50% ROI, matching the successful probe.
+  const analysisFsSource=`
     precision mediump float;
     varying vec2 vUv;
     uniform sampler2D uCamera;
-    uniform float uZoom;
     void main(){
-      vec2 uv = vec2(0.5) + (vUv - vec2(0.5)) / uZoom;
+      vec2 uv = vec2(0.25) + vUv * 0.5;
       gl_FragColor = texture2D(uCamera,uv);
     }
-  `);
+  `;
 
-  sampleProgram = gl.createProgram();
-  gl.attachShader(sampleProgram,vs);
-  gl.attachShader(sampleProgram,fs);
-  gl.linkProgram(sampleProgram);
+  // Magnifier source path: full-width, pixel-square crop centered on camera.
+  // uAspect = camera.width / camera.height.
+  const magnifierFsSource=`
+    precision mediump float;
+    varying vec2 vUv;
+    uniform sampler2D uCamera;
+    uniform float uAspect;
+    void main(){
+      vec2 centered = vUv - vec2(0.5);
+      vec2 uv = vec2(
+        vUv.x,
+        0.5 + centered.y * uAspect
+      );
+      gl_FragColor = texture2D(uCamera,uv);
+    }
+  `;
 
-  if(!gl.getProgramParameter(sampleProgram,gl.LINK_STATUS)){
-    throw new Error(`raw program link: ${gl.getProgramInfoLog(sampleProgram)}`);
-  }
+  const makeProgram=(fsSource)=>{
+    const vs=compileRawShader(gl.VERTEX_SHADER,vsSource);
+    const fs=compileRawShader(gl.FRAGMENT_SHADER,fsSource);
+    const program=gl.createProgram();
+    gl.attachShader(program,vs);
+    gl.attachShader(program,fs);
+    gl.linkProgram(program);
+    if(!gl.getProgramParameter(program,gl.LINK_STATUS)){
+      throw new Error(`raw program link: ${gl.getProgramInfoLog(program)}`);
+    }
+    gl.deleteShader(vs);
+    gl.deleteShader(fs);
+    return program;
+  };
 
-  gl.deleteShader(vs);
-  gl.deleteShader(fs);
+  sampleProgram=makeProgram(analysisFsSource);
+  magnifierProgram=makeProgram(magnifierFsSource);
 
-  sampleBuffer = gl.createBuffer();
+  sampleBuffer=gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER,sampleBuffer);
   gl.bufferData(
     gl.ARRAY_BUFFER,
@@ -704,35 +738,49 @@ function setupRawCameraPipeline(){
     gl.STATIC_DRAW
   );
 
-  sampleTexture = gl.createTexture();
-  gl.bindTexture(gl.TEXTURE_2D,sampleTexture);
-  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
-  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
-  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
-  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
-  gl.texImage2D(
-    gl.TEXTURE_2D,0,gl.RGBA,SAMPLE_SIZE,SAMPLE_SIZE,0,
-    gl.RGBA,gl.UNSIGNED_BYTE,null
-  );
+  const makeTarget=(size)=>{
+    const tex=gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D,tex);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+    gl.texImage2D(
+      gl.TEXTURE_2D,0,gl.RGBA,size,size,0,
+      gl.RGBA,gl.UNSIGNED_BYTE,null
+    );
 
-  sampleFbo = gl.createFramebuffer();
-  gl.bindFramebuffer(gl.FRAMEBUFFER,sampleFbo);
-  gl.framebufferTexture2D(
-    gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,sampleTexture,0
-  );
+    const fbo=gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER,fbo);
+    gl.framebufferTexture2D(
+      gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,tex,0
+    );
+    if(gl.checkFramebufferStatus(gl.FRAMEBUFFER)!==gl.FRAMEBUFFER_COMPLETE){
+      throw new Error(`raw framebuffer incomplete (${size})`);
+    }
+    return {tex,fbo};
+  };
 
-  if(gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE){
-    throw new Error('raw sample framebuffer incomplete');
-  }
+  const analysisTarget=makeTarget(SAMPLE_SIZE);
+  sampleTexture=analysisTarget.tex;
+  sampleFbo=analysisTarget.fbo;
+  samplePixels=new Uint8Array(SAMPLE_SIZE*SAMPLE_SIZE*4);
 
-  samplePixels = new Uint8Array(SAMPLE_SIZE*SAMPLE_SIZE*4);
-  sampleDisplayPixels = new Uint8ClampedArray(SAMPLE_SIZE*SAMPLE_SIZE*4);
-  sampleReady = true;
+  const magTarget=makeTarget(MAG_SOURCE_SIZE);
+  magnifierTexture=magTarget.tex;
+  magnifierFbo=magTarget.fbo;
+  magnifierPixels=new Uint8Array(MAG_SOURCE_SIZE*MAG_SOURCE_SIZE*4);
+  magnifierDisplayPixels=new Uint8ClampedArray(MAG_SOURCE_SIZE*MAG_SOURCE_SIZE*4);
 
+  magnifierSourceCanvas=document.createElement('canvas');
+  magnifierSourceCanvas.width=MAG_SOURCE_SIZE;
+  magnifierSourceCanvas.height=MAG_SOURCE_SIZE;
+  magnifierSourceCtx=magnifierSourceCanvas.getContext('2d');
+
+  sampleReady=true;
   gl.bindFramebuffer(gl.FRAMEBUFFER,null);
-  log(`Raw Camera sample pipeline ready (${SAMPLE_SIZE}x${SAMPLE_SIZE})`);
+  log(`Raw Camera pipelines ready: analysis=${SAMPLE_SIZE}x${SAMPLE_SIZE}; magnifierSource=${MAG_SOURCE_SIZE}x${MAG_SOURCE_SIZE}`);
 }
-
 function analyzeRawPixels(pix,w,h){
   let sum = 0;
   let sumSq = 0;
@@ -772,43 +820,81 @@ function analyzeRawPixels(pix,w,h){
   };
 }
 
-function drawMagnifierPixels(){
-  const ctx=el.magnifierCanvas.getContext('2d');
-  if(!ctx || !samplePixels) return;
+function updateMagnifierSourceCanvas(){
+  if(!magnifierSourceCtx || !magnifierPixels) return;
 
-  // WebGL readPixels() is bottom-up. Flip rows for the DOM canvas.
-  const row=SAMPLE_SIZE*4;
-  for(let y=0;y<SAMPLE_SIZE;y++){
-    const src=(SAMPLE_SIZE-1-y)*row;
+  const row=MAG_SOURCE_SIZE*4;
+  for(let y=0;y<MAG_SOURCE_SIZE;y++){
+    const src=(MAG_SOURCE_SIZE-1-y)*row;
     const dst=y*row;
-    sampleDisplayPixels.set(samplePixels.subarray(src,src+row),dst);
+    magnifierDisplayPixels.set(
+      magnifierPixels.subarray(src,src+row),
+      dst
+    );
   }
 
-  const imageData=new ImageData(sampleDisplayPixels,SAMPLE_SIZE,SAMPLE_SIZE);
-  ctx.putImageData(imageData,0,0);
+  magnifierSourceCtx.putImageData(
+    new ImageData(
+      magnifierDisplayPixels,
+      MAG_SOURCE_SIZE,
+      MAG_SOURCE_SIZE
+    ),
+    0,0
+  );
 }
 
-function sampleRawCamera(cameraTexture,time){
-  if(!sampleReady || !cameraTexture) return;
+function drawMagnifierPixels(){
+  const ctx=el.magnifierCanvas.getContext('2d');
+  if(!ctx || !magnifierSourceCanvas) return;
+
+  const dstW=el.magnifierCanvas.width;
+  const dstH=el.magnifierCanvas.height;
+
+  // 2x/3x/4x is done here, independently from the Raw Camera shader.
+  const crop=Math.max(1,Math.round(MAG_SOURCE_SIZE/magnifierZoom));
+  const sx=Math.floor((MAG_SOURCE_SIZE-crop)/2);
+  const sy=Math.floor((MAG_SOURCE_SIZE-crop)/2);
+
+  ctx.save();
+  ctx.clearRect(0,0,dstW,dstH);
+  ctx.imageSmoothingEnabled=true;
+  ctx.drawImage(
+    magnifierSourceCanvas,
+    sx,sy,crop,crop,
+    0,0,dstW,dstH
+  );
+  ctx.restore();
+
+  el.magnifierLabel.textContent=`MAG ${magnifierZoom}×`;
+  set(
+    'magnifierState',
+    `${magnifierZoom}× / source ${crop}×${crop}`,
+    'ok'
+  );
+}
+function sampleRawCamera(cameraTexture,camera,time){
+  if(!sampleReady || !cameraTexture || !camera) return;
   if(time-lastQualitySampleTime < 100) return; // <=10 Hz
   lastQualitySampleTime=time;
 
-  try{
-    gl.bindFramebuffer(gl.FRAMEBUFFER,sampleFbo);
-    gl.viewport(0,0,SAMPLE_SIZE,SAMPLE_SIZE);
-    gl.disable(gl.DEPTH_TEST);
-
-    gl.useProgram(sampleProgram);
-    const pos=gl.getAttribLocation(sampleProgram,'aPos');
+  const drawQuad=(program)=>{
+    gl.useProgram(program);
+    const pos=gl.getAttribLocation(program,'aPos');
     gl.bindBuffer(gl.ARRAY_BUFFER,sampleBuffer);
     gl.enableVertexAttribArray(pos);
     gl.vertexAttribPointer(pos,2,gl.FLOAT,false,0,0);
-
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D,cameraTexture);
-    gl.uniform1i(gl.getUniformLocation(sampleProgram,'uCamera'),0);
-    gl.uniform1f(gl.getUniformLocation(sampleProgram,'uZoom'),magnifierZoom);
+    gl.uniform1i(gl.getUniformLocation(program,'uCamera'),0);
+  };
 
+  try{
+    gl.disable(gl.DEPTH_TEST);
+
+    // 1) Fixed ROI for aim-quality analysis.
+    gl.bindFramebuffer(gl.FRAMEBUFFER,sampleFbo);
+    gl.viewport(0,0,SAMPLE_SIZE,SAMPLE_SIZE);
+    drawQuad(sampleProgram);
     gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
     gl.readPixels(
       0,0,SAMPLE_SIZE,SAMPLE_SIZE,
@@ -823,11 +909,36 @@ function sampleRawCamera(cameraTexture,time){
     });
     if(qualityHistory.length>QUALITY_HISTORY_MAX) qualityHistory.shift();
 
+    // 2) Separate square camera source for visible magnifier.
+    gl.bindFramebuffer(gl.FRAMEBUFFER,magnifierFbo);
+    gl.viewport(0,0,MAG_SOURCE_SIZE,MAG_SOURCE_SIZE);
+    drawQuad(magnifierProgram);
+
+    const aspect=
+      (Number(camera.width)>0 && Number(camera.height)>0)
+        ? Number(camera.width)/Number(camera.height)
+        : 1.0;
+    gl.uniform1f(
+      gl.getUniformLocation(magnifierProgram,'uAspect'),
+      aspect
+    );
+
+    gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
+    gl.readPixels(
+      0,0,MAG_SOURCE_SIZE,MAG_SOURCE_SIZE,
+      gl.RGBA,gl.UNSIGNED_BYTE,magnifierPixels
+    );
+
+    updateMagnifierSourceCanvas();
     drawMagnifierPixels();
     classifyAimQuality();
 
     rawCameraTextureFrames++;
-    set('rawCameraState',`ACTIVE (${rawCameraTextureFrames} samples)`,'ok');
+    set(
+      'rawCameraState',
+      `ACTIVE (${rawCameraTextureFrames} samples)`,
+      'ok'
+    );
   }catch(err){
     set('rawCameraState',`${err.name}: ${err.message}`,'ng');
     log(`Raw Camera sample failed: ${err.name}: ${err.message}`);
@@ -835,7 +946,10 @@ function sampleRawCamera(cameraTexture,time){
     try{
       gl.enable(gl.DEPTH_TEST);
       if(session?.renderState?.baseLayer){
-        gl.bindFramebuffer(gl.FRAMEBUFFER,session.renderState.baseLayer.framebuffer);
+        gl.bindFramebuffer(
+          gl.FRAMEBUFFER,
+          session.renderState.baseLayer.framebuffer
+        );
       }
     }catch{}
   }
@@ -1401,7 +1515,7 @@ function onXRFrame(time,frame){
       try{
         const cameraTexture = xrBinding.getCameraImage(camera);
         if(cameraTexture){
-          sampleRawCamera(cameraTexture,time);
+          sampleRawCamera(cameraTexture,camera,time);
         }
       }catch(err){
         set('rawCameraState',`${err.name}: ${err.message}`,'ng');
@@ -1624,10 +1738,20 @@ function onSessionEnd(){
 document.querySelectorAll('.magBtn').forEach(btn=>{
   btn.addEventListener('click',()=>{
     magnifierZoom = Number(btn.dataset.mag) || 3;
-    document.querySelectorAll('.magBtn').forEach(b=>b.classList.toggle('active',b===btn));
-    el.magnifierLabel.textContent = `MAG ${magnifierZoom}×`;
-    set('magnifierState',`${magnifierZoom}×`,'ok');
-    log(`magnifier zoom=${magnifierZoom}x`);
+    document.querySelectorAll('.magBtn').forEach(
+      b=>b.classList.toggle('active',b===btn)
+    );
+
+    // Redraw immediately using the latest captured camera source.
+    drawMagnifierPixels();
+
+    const crop=Math.max(
+      1,
+      Math.round(MAG_SOURCE_SIZE/magnifierZoom)
+    );
+    log(
+      `magnifier visual zoom=${magnifierZoom}x; sourceCrop=${crop}x${crop}`
+    );
   });
 });
 
