@@ -77,5 +77,44 @@ async function runAutoFromButton(){
 }
 $("run-auto").addEventListener("click",runAutoFromButton);
 $("reset-tests").addEventListener("click",resetAll);
-$("copy-report").addEventListener("click",async()=>{const text=report();try{await navigator.clipboard.writeText(text);$("copy-report").querySelector("span").textContent="COPIED ✓";setTimeout(()=>$("copy-report").querySelector("span").textContent="COPY REPORT",1400)}catch{const ta=document.createElement("textarea");ta.value=text;document.body.append(ta);ta.select();document.execCommand("copy");ta.remove()}});buildTests();resetAll();
+$("copy-report").addEventListener("click",async()=>{const text=report();try{await navigator.clipboard.writeText(text);$("copy-report").querySelector("span").textContent="COPIED ✓";setTimeout(()=>$("copy-report").querySelector("span").textContent="COPY REPORT",1400)}catch{const ta=document.createElement("textarea");ta.value=text;document.body.append(ta);ta.select();document.execCommand("copy");ta.remove()}});
+const i18n={
+ja:{
+lead:"ブラウザから見える、この端末の能力を調査します。",
+note:"端末名・ハードウェア名・API・実測値を、ブラウザが公開する範囲で取得します。推測で補完しません。",
+privacy:"診断結果はこのページ内で処理されます。位置情報の座標や取得したメディア内容はレポートに保存しません。",
+interactive:"OSやブラウザの確認ダイアログ、デバイス選択画面が表示されるテストです。個別に実行してください。",
+whyH:"なぜ作った？",whyP:"Webアプリでは、同じコードでもiPhone・Android・PC、さらにブラウザによって利用できる端末機能が異なります。その差を実機で確認するための基礎研究ツールです。",
+expH:"何を試す？",expP:"端末情報、表示環境、CPU・メモリ、GPU、カメラ、マイク、センサー、接続系API、ストレージ、WebXRなどを、APIの存在確認だけでなく可能な範囲で実アクセスまで試します。",
+findH:"何が分かる？",findP:"取得できない情報も結果です。NOT SUPPORTED、NOT EXPOSED、PERMISSION DENIED、HARDWARE NOT FOUNDなどを区別し、ブラウザから見える端末能力の境界を観察します。",
+moreH:"さらに詳しく",moreP:"取得項目・テスト方法・既知の制約を見る。",lang:"English"
+},
+en:{
+lead:"Investigate the capabilities of this device as exposed to the browser.",
+note:"Collect device names, hardware names, APIs, and measured values only where the browser exposes them. No guessed values are added.",
+privacy:"Diagnostic results are processed only within this page. Location coordinates and captured media content are not stored in the report.",
+interactive:"These tests may open OS or browser permission dialogs and device selection screens. Run them individually.",
+whyH:"Why build it?",whyP:"The same Web app code can access different device features on iPhone, Android, PC, and across browsers. This tool provides a baseline for testing those differences on real devices.",
+expH:"What is tested?",expP:"Device information, display environment, CPU and memory, GPU, camera, microphone, sensors, connectivity APIs, storage, WebXR, and more are tested beyond simple API detection whenever actual access is possible.",
+findH:"What can we learn?",findP:"Information that cannot be obtained is also a result. NOT SUPPORTED, NOT EXPOSED, PERMISSION DENIED, HARDWARE NOT FOUND, and other states reveal the boundary of device capabilities visible to the browser.",
+moreH:"More details",moreP:"View measured items, test methods, and known limitations.",lang:"Japanese"
+}};
+let uiLang="ja";
+function applyLanguage(){
+ const t=i18n[uiLang]; document.documentElement.lang=uiLang;
+ document.querySelector(".dc-lead").textContent=t.lead;
+ document.querySelector(".dc-note").textContent=t.note;
+ document.querySelector(".dc-privacy").textContent=t.privacy;
+ const heads=document.querySelectorAll(".dc-section-head");
+ if(heads[1]){const p=heads[1].querySelector("p:not(.dc-label)");if(p)p.textContent=t.interactive}
+ const secs=document.querySelectorAll(".n3-labnote-section");
+ if(secs[0]){secs[0].querySelector("h3").textContent=t.whyH;secs[0].querySelector("h3+p").textContent=t.whyP}
+ if(secs[1]){secs[1].querySelector("h3").textContent=t.expH;secs[1].querySelector("h3+p").textContent=t.expP}
+ if(secs[2]){secs[2].querySelector("h3").textContent=t.findH;secs[2].querySelector("h3+p").textContent=t.findP}
+ if(secs[3]){secs[3].querySelector("h3").textContent=t.moreH;const s=secs[3].querySelector(".n3-labnote-links span");if(s)s.textContent=t.moreP}
+ $("lang-toggle").textContent=t.lang;
+ $("lang-toggle").setAttribute("aria-label",uiLang==="ja"?"Switch to English":"日本語に切り替え");
+}
+$("lang-toggle").addEventListener("click",()=>{uiLang=uiLang==="ja"?"en":"ja";applyLanguage()});
+buildTests();resetAll();applyLanguage();
 })();
