@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<title>AR DISTANCE LAB - Phase 3</title>
+<title>AR DISTANCE LAB - Phase 4</title>
 <style>
 :root{
   color-scheme:dark;
@@ -15,13 +15,13 @@
 html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);
 font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
 body{padding:16px}
-main{width:min(900px,100%);margin:auto}
+main{width:min(920px,100%);margin:auto}
 h1{font-size:clamp(22px,5vw,34px);margin:0 0 4px}
 .sub,.note{color:var(--muted);font-size:12px;line-height:1.65}
 .sub{margin:0 0 16px}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;margin:12px 0}
 h2{font-size:14px;letter-spacing:.08em;color:var(--accent);margin:0 0 10px}
-.grid{display:grid;grid-template-columns:minmax(140px,.75fr) minmax(150px,1fr);gap:0}
+.grid{display:grid;grid-template-columns:minmax(145px,.8fr) minmax(150px,1.2fr);gap:0}
 .cell{padding:8px 7px;border-bottom:1px solid #1a2630;overflow-wrap:anywhere}
 .ok{color:var(--ok)}.warn{color:var(--warn)}.ng{color:var(--ng)}
 .actions{display:flex;flex-wrap:wrap;gap:9px}
@@ -29,21 +29,22 @@ button{appearance:none;border:1px solid #36566c;background:#132534;color:var(--t
 border-radius:9px;padding:12px 14px;font:inherit;font-weight:700;min-height:44px}
 button:disabled{opacity:.4}
 button.danger{border-color:#75424a;background:#2b171b}
-pre{white-space:pre-wrap;overflow-wrap:anywhere;margin:0;max-height:240px;overflow:auto;font-size:12px;color:#cbd7e1}
+pre{white-space:pre-wrap;overflow-wrap:anywhere;margin:0;max-height:260px;overflow:auto;font-size:12px;color:#cbd7e1}
 
 #xrOverlay{position:fixed;inset:0;z-index:2147483647;pointer-events:none}
 #xrHud{position:absolute;inset:0;pointer-events:none}
 #centerGuide{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
 font-size:28px;line-height:1;color:#fff;text-shadow:0 0 5px #000}
 #topPanel{position:absolute;left:50%;top:max(12px,env(safe-area-inset-top));transform:translateX(-50%);
-width:min(94vw,560px);background:#071019df;border:1px solid #587086;border-radius:11px;
+width:min(94vw,580px);background:#071019df;border:1px solid #587086;border-radius:11px;
 padding:9px 11px;text-align:center;pointer-events:auto}
 #bottomPanel{position:absolute;left:50%;bottom:max(14px,env(safe-area-inset-bottom));transform:translateX(-50%);
-width:min(94vw,560px);background:#071019df;border:1px solid #587086;border-radius:11px;
+width:min(94vw,580px);background:#071019df;border:1px solid #587086;border-radius:11px;
 padding:10px;pointer-events:auto}
 #xrState{font-weight:700}
-#xrHint,#pointText,#distanceText{font-size:12px;line-height:1.5;margin-top:4px}
+#xrHint,#pointText,#anchorText{font-size:12px;line-height:1.5;margin-top:4px}
 #pointText{color:#cfe8f5}
+#anchorText{color:#f6d98d}
 #distanceText{font-size:18px;font-weight:700;color:#fff}
 .xrActions{display:grid;grid-template-columns:1.1fr 1fr 1fr;gap:8px;margin-top:8px}
 .xrActions button{padding:10px 6px}
@@ -53,7 +54,7 @@ canvas{position:fixed;inset:0;width:1px;height:1px;pointer-events:none}
 <body>
 <main>
 <h1>AR DISTANCE LAB</h1>
-<p class="sub">Phase 3 — Point A/B + 3D Distance + AR Line</p>
+<p class="sub">Phase 4 — Anchored A/B + Time-based Tracking State</p>
 
 <section class="card">
 <h2>STATUS</h2>
@@ -64,8 +65,8 @@ canvas{position:fixed;inset:0;width:1px;height:1px;pointer-events:none}
   <div class="cell">Session</div><div class="cell" id="sessionState">NOT STARTED</div>
   <div class="cell">Tracking</div><div class="cell" id="trackingState">NOT STARTED</div>
   <div class="cell">Surface</div><div class="cell" id="surfaceState">NOT STARTED</div>
-  <div class="cell">Point A</div><div class="cell" id="pointAState">NOT SET</div>
-  <div class="cell">Point B</div><div class="cell" id="pointBState">NOT SET</div>
+  <div class="cell">Anchor A</div><div class="cell" id="anchorAState">NOT SET</div>
+  <div class="cell">Anchor B</div><div class="cell" id="anchorBState">NOT SET</div>
   <div class="cell">Distance</div><div class="cell" id="distanceState">—</div>
   <div class="cell">Point A coord.</div><div class="cell" id="coordA">—</div>
   <div class="cell">Point B coord.</div><div class="cell" id="coordB">—</div>
@@ -82,9 +83,9 @@ canvas{position:fixed;inset:0;width:1px;height:1px;pointer-events:none}
 </section>
 
 <section class="card note">
-このPhaseではHit TestでPoint A/Bを取得し、local Reference Space上の3D座標から直線距離を計算します。
-水色は現在のHit位置、黄色はPoint A、赤系の十字はPoint B、A-B間はラインで表示します。
-TrackingとSurface検出は独立して表示します。特徴の少ない白壁ではTrackingが成立していてもSurfaceが見つからない場合があります。
+Point A/BはHit Test結果からWebXR Anchorとして生成します。AnchorのPoseを毎XR frame追跡し、
+A/Bマーカー・ライン・距離を更新します。Trackingは短時間のPose欠落をUNSTABLE、
+約1秒以上継続した場合をLOSTとして扱います。
 </section>
 
 <section class="card">
@@ -107,6 +108,7 @@ TrackingとSurface検出は独立して表示します。特徴の少ない白�
     <div id="bottomPanel">
       <div id="distanceText">DISTANCE: —</div>
       <div id="pointText">A: NOT SET / B: NOT SET</div>
+      <div id="anchorText">ANCHOR A: — / ANCHOR B: —</div>
       <div class="xrActions">
         <button id="setPointBtn" disabled>SET POINT A</button>
         <button id="xrResetBtn" disabled>RESET</button>
@@ -124,10 +126,10 @@ const $ = id => document.getElementById(id);
 const el = {};
 [
   'secure','webxr','arSupport','sessionState','trackingState','surfaceState',
-  'pointAState','pointBState','distanceState','coordA','coordB',
+  'anchorAState','anchorBState','distanceState','coordA','coordB',
   'startBtn','resetBtn','endBtn','log','xrCanvas','xrOverlay','xrHud',
-  'xrState','xrHint','pointText','distanceText','setPointBtn','xrResetBtn','xrEndBtn',
-  'topPanel','bottomPanel'
+  'xrState','xrHint','pointText','anchorText','distanceText','setPointBtn',
+  'xrResetBtn','xrEndBtn','topPanel','bottomPanel'
 ].forEach(id => el[id] = $(id));
 
 let session = null;
@@ -151,18 +153,26 @@ let raf = 0;
 let latestHitMatrix = null;
 let latestHitPoint = null;
 
+let anchorA = null;
+let anchorB = null;
 let pointA = null;
 let pointB = null;
 let matrixA = null;
 let matrixB = null;
 
+let capturePending = null; // "A" or "B"
+let anchorCreationBusy = false;
+
 let viewerPoseSeen = false;
-let trackingLost = false;
 let hitSeen = false;
 let frameCount = 0;
-let nullPoseFrames = 0;
 let noHitFrames = 0;
+let nullPoseSince = null;
+let trackingMode = 'NOT STARTED';
 let logLines = [];
+
+const TRACKING_UNSTABLE_MS = 250;
+const TRACKING_LOST_MS = 1000;
 
 const IDENTITY4 = new Float32Array([
   1,0,0,0,
@@ -304,7 +314,7 @@ async function setupWebGL(){
   gl.depthFunc(gl.LEQUAL);
 }
 
-function drawBuffer(buffer,vertexCount,model,color,projection,view,mode=gl.LINES){
+function drawBuffer(buffer,vertexCount,model,color,projection,view){
   gl.useProgram(program);
   gl.bindBuffer(gl.ARRAY_BUFFER,buffer);
   gl.enableVertexAttribArray(positionLoc);
@@ -313,7 +323,7 @@ function drawBuffer(buffer,vertexCount,model,color,projection,view,mode=gl.LINES
   gl.uniformMatrix4fv(uView,false,view);
   gl.uniformMatrix4fv(uModel,false,model);
   gl.uniform4fv(uColor,color);
-  gl.drawArrays(mode,0,vertexCount);
+  gl.drawArrays(gl.LINES,0,vertexCount);
 }
 
 function updateLineBuffer(){
@@ -325,21 +335,21 @@ function updateLineBuffer(){
   ]),gl.DYNAMIC_DRAW);
 }
 
-function updateMeasurementUI(){
-  if(!pointA){
-    set('pointAState','NOT SET','warn');
-    set('coordA','—','');
-  }else{
-    set('pointAState','SET','ok');
+function updateDistanceUI(){
+  if(pointA){
     set('coordA',fmtPoint(pointA),'ok');
+    set('anchorAState',anchorA ? 'TRACKED / LAST KNOWN':'PENDING','ok');
+  }else{
+    set('coordA','—','');
+    set('anchorAState','NOT SET','warn');
   }
 
-  if(!pointB){
-    set('pointBState','NOT SET','warn');
-    set('coordB','—','');
-  }else{
-    set('pointBState','SET','ok');
+  if(pointB){
     set('coordB',fmtPoint(pointB),'ok');
+    set('anchorBState',anchorB ? 'TRACKED / LAST KNOWN':'PENDING','ok');
+  }else{
+    set('coordB','—','');
+    set('anchorBState','NOT SET','warn');
   }
 
   if(pointA && pointB){
@@ -348,35 +358,49 @@ function updateMeasurementUI(){
     set('distanceState',text,'ok');
     el.distanceText.textContent = `DISTANCE: ${text}`;
     el.pointText.textContent = `A: ${fmtPoint(pointA)}\nB: ${fmtPoint(pointB)}`;
-    el.setPointBtn.disabled = true;
     el.setPointBtn.textContent = 'MEASURED';
-    el.xrState.textContent = 'MEASUREMENT COMPLETE';
-    el.xrHint.textContent = 'Move the camera to verify that A, B, and the line remain fixed.';
+    el.setPointBtn.disabled = true;
     el.resetBtn.disabled = false;
     el.xrResetBtn.disabled = false;
   }else if(pointA){
     set('distanceState','—','');
     el.distanceText.textContent = 'DISTANCE: —';
     el.pointText.textContent = `A: ${fmtPoint(pointA)} / B: NOT SET`;
-    el.setPointBtn.textContent = 'SET POINT B';
-    el.setPointBtn.disabled = !latestHitPoint;
-    el.xrState.textContent = 'POINT A SET';
-    el.xrHint.textContent = 'Move to Point B and press SET POINT B.';
+    el.setPointBtn.textContent = capturePending === 'B' ? 'CAPTURING B...' : 'SET POINT B';
+    el.setPointBtn.disabled = !latestHitPoint || !!capturePending || anchorCreationBusy;
     el.resetBtn.disabled = false;
     el.xrResetBtn.disabled = false;
   }else{
     set('distanceState','—','');
     el.distanceText.textContent = 'DISTANCE: —';
     el.pointText.textContent = 'A: NOT SET / B: NOT SET';
-    el.setPointBtn.textContent = 'SET POINT A';
-    el.setPointBtn.disabled = !latestHitPoint;
+    el.setPointBtn.textContent = capturePending === 'A' ? 'CAPTURING A...' : 'SET POINT A';
+    el.setPointBtn.disabled = !latestHitPoint || !!capturePending || anchorCreationBusy;
     el.resetBtn.disabled = true;
     el.xrResetBtn.disabled = true;
   }
+
+  el.anchorText.textContent =
+    `ANCHOR A: ${anchorA ? 'YES' : '—'} / ANCHOR B: ${anchorB ? 'YES' : '—'}`;
 }
 
 function preventOverlayXRSelect(e){
   e.preventDefault();
+}
+
+function requestCapture(source){
+  if(anchorCreationBusy || capturePending) return;
+  if(pointA && pointB) return;
+  if(!latestHitPoint){
+    el.xrHint.textContent = 'No surface hit available. Move slowly and try again.';
+    return;
+  }
+
+  capturePending = pointA ? 'B' : 'A';
+  log(`capture requested for Point ${capturePending} (${source})`);
+  el.xrState.textContent = `CAPTURING POINT ${capturePending}...`;
+  el.xrHint.textContent = 'Hold the camera steady until the anchor is created.';
+  updateDistanceUI();
 }
 
 async function startAR(){
@@ -384,7 +408,7 @@ async function startAR(){
 
   try{
     session = await navigator.xr.requestSession('immersive-ar',{
-      requiredFeatures:['hit-test','dom-overlay'],
+      requiredFeatures:['hit-test','dom-overlay','anchors'],
       domOverlay:{root:el.xrOverlay}
     });
 
@@ -393,10 +417,8 @@ async function startAR(){
 
     session.addEventListener('end',onSessionEnd,{once:true});
 
-    // A tap on the camera view may set the current requested point.
-    // DOM Overlay controls are excluded by beforexrselect preventDefault().
     session.addEventListener('select',()=>{
-      if(latestHitPoint && !(pointA && pointB)) captureCurrentPoint('xr-select');
+      if(latestHitPoint && !(pointA && pointB)) requestCapture('xr-select');
     });
 
     await setupWebGL();
@@ -427,42 +449,159 @@ async function startAR(){
   }
 }
 
-function onXRFrame(_time,frame){
+function updateTrackingState(time,pose){
+  if(pose){
+    if(trackingMode !== 'ACTIVE'){
+      trackingMode = 'ACTIVE';
+      set('trackingState','ACTIVE','ok');
+      log(`tracking ACTIVE at frame=${frameCount}`);
+    }
+    nullPoseSince = null;
+    return;
+  }
+
+  if(nullPoseSince === null) nullPoseSince = time;
+  const elapsed = time - nullPoseSince;
+
+  if(elapsed >= TRACKING_LOST_MS){
+    if(trackingMode !== 'LOST'){
+      trackingMode = 'LOST';
+      set('trackingState','LOST','ng');
+      log(`tracking LOST after ${Math.round(elapsed)} ms without Viewer Pose`);
+    }
+    el.xrState.textContent = 'TRACKING LOST';
+    el.xrHint.textContent = 'Move slowly toward a textured, well-lit area.';
+  }else if(elapsed >= TRACKING_UNSTABLE_MS){
+    if(trackingMode !== 'UNSTABLE'){
+      trackingMode = 'UNSTABLE';
+      set('trackingState','UNSTABLE','warn');
+      log(`tracking UNSTABLE after ${Math.round(elapsed)} ms without Viewer Pose`);
+    }
+    el.xrState.textContent = 'TRACKING UNSTABLE';
+    el.xrHint.textContent = 'Hold steady or aim at a more textured area.';
+  }else if(!viewerPoseSeen){
+    set('trackingState','PENDING','warn');
+  }
+}
+
+function updateAnchorPose(frame,which){
+  const anchor = which === 'A' ? anchorA : anchorB;
+  if(!anchor) return false;
+
+  let tracked = false;
+  try{
+    tracked = !!frame.trackedAnchors && frame.trackedAnchors.has(anchor);
+  }catch{}
+
+  if(!tracked){
+    set(which === 'A' ? 'anchorAState' : 'anchorBState','TEMPORARILY NOT TRACKED','warn');
+    return false;
+  }
+
+  const pose = frame.getPose(anchor.anchorSpace,localSpace);
+  if(!pose){
+    set(which === 'A' ? 'anchorAState' : 'anchorBState','POSE UNAVAILABLE','warn');
+    return false;
+  }
+
+  const p = pose.transform.position;
+  const point = {x:p.x,y:p.y,z:p.z};
+  const matrix = new Float32Array(pose.transform.matrix);
+
+  if(which === 'A'){
+    pointA = point;
+    matrixA = matrix;
+    set('anchorAState','TRACKED','ok');
+  }else{
+    pointB = point;
+    matrixB = matrix;
+    set('anchorBState','TRACKED','ok');
+  }
+  return true;
+}
+
+function createAnchorFromHit(result,hitPose,slot){
+  if(anchorCreationBusy) return;
+  anchorCreationBusy = true;
+  capturePending = null;
+
+  const p = hitPose.transform.position;
+  const fallbackPoint = {x:p.x,y:p.y,z:p.z};
+  const fallbackMatrix = new Float32Array(hitPose.transform.matrix);
+
+  if(typeof result.createAnchor !== 'function'){
+    anchorCreationBusy = false;
+    log(`Point ${slot}: createAnchor() unavailable`);
+    el.xrHint.textContent = 'Anchor API unavailable.';
+    updateDistanceUI();
+    return;
+  }
+
+  set(slot === 'A' ? 'anchorAState' : 'anchorBState','CREATING','warn');
+  log(`Point ${slot}: createAnchor() invoked`);
+
+  Promise.resolve(result.createAnchor()).then(anchor=>{
+    if(slot === 'A'){
+      anchorA = anchor;
+      pointA = fallbackPoint;
+      matrixA = fallbackMatrix;
+    }else{
+      anchorB = anchor;
+      pointB = fallbackPoint;
+      matrixB = fallbackMatrix;
+    }
+
+    anchorCreationBusy = false;
+    set(slot === 'A' ? 'anchorAState' : 'anchorBState','CREATED / TRACKING','ok');
+
+    if(pointA && pointB) updateLineBuffer();
+
+    log(`Point ${slot}: anchor created at ${fmtPoint(fallbackPoint)}`);
+    updateDistanceUI();
+
+    if(slot === 'A'){
+      el.xrState.textContent = 'POINT A ANCHORED';
+      el.xrHint.textContent = 'Move to Point B and set it.';
+    }else{
+      el.xrState.textContent = 'MEASUREMENT COMPLETE';
+      el.xrHint.textContent = 'Move the camera; A/B anchors and line should stay fixed.';
+      const d = calcDistance(pointA,pointB);
+      log(`anchored Distance A-B: ${d.toFixed(6)} m (${fmtDistance(d)})`);
+    }
+  }).catch(err=>{
+    anchorCreationBusy = false;
+    set(slot === 'A' ? 'anchorAState' : 'anchorBState','CREATE FAILED','ng');
+    log(`Point ${slot}: createAnchor failed: ${err.name}: ${err.message}`);
+    el.xrHint.textContent = `Anchor creation failed for Point ${slot}. Try again.`;
+    updateDistanceUI();
+  });
+}
+
+function onXRFrame(time,frame){
   if(!session) return;
   raf = session.requestAnimationFrame(onXRFrame);
   frameCount++;
 
   const pose = frame.getViewerPose(localSpace);
+  updateTrackingState(time,pose);
 
-  if(!pose){
-    nullPoseFrames++;
+  if(!pose) return;
 
-    if(viewerPoseSeen && nullPoseFrames >= 10 && !trackingLost){
-      trackingLost = true;
-      set('trackingState','LOST','ng');
-      set('surfaceState','UNAVAILABLE','warn');
-      el.xrState.textContent = 'TRACKING LOST';
-      el.xrHint.textContent = 'Move slowly toward a textured, well-lit area.';
-      log(`tracking lost after ${nullPoseFrames} consecutive null Viewer Poses`);
-    }else if(!viewerPoseSeen){
-      set('trackingState','PENDING','warn');
-    }
-    return;
-  }
+  viewerPoseSeen = true;
 
-  nullPoseFrames = 0;
+  const aTracked = updateAnchorPose(frame,'A');
+  const bTracked = updateAnchorPose(frame,'B');
 
-  if(!viewerPoseSeen || trackingLost){
-    viewerPoseSeen = true;
-    trackingLost = false;
-    set('trackingState','ACTIVE','ok');
-    log(`Viewer Pose active at frame=${frameCount}`);
+  if(aTracked || bTracked){
+    if(pointA && pointB) updateLineBuffer();
+    updateDistanceUI();
   }
 
   const results = frame.getHitTestResults(hitTestSource);
 
   if(results.length){
-    const hitPose = results[0].getPose(localSpace);
+    const result = results[0];
+    const hitPose = result.getPose(localSpace);
 
     if(hitPose){
       noHitFrames = 0;
@@ -478,15 +617,20 @@ function onXRFrame(_time,frame){
 
       set('surfaceState','DETECTED','ok');
 
-      if(!(pointA && pointB)){
+      if(capturePending && !anchorCreationBusy){
+        const slot = capturePending;
+        createAnchorFromHit(result,hitPose,slot);
+      }
+
+      if(!(pointA && pointB) && !capturePending && !anchorCreationBusy){
         el.setPointBtn.disabled = false;
       }
 
-      if(!pointA){
+      if(!pointA && !capturePending){
         el.xrState.textContent = 'SURFACE DETECTED';
         el.xrHint.textContent = 'Set Point A.';
-      }else if(!pointB){
-        el.xrState.textContent = 'POINT A SET';
+      }else if(pointA && !pointB && !capturePending){
+        el.xrState.textContent = 'POINT A ANCHORED';
         el.xrHint.textContent = 'Move to Point B and set it.';
       }
     }
@@ -497,15 +641,12 @@ function onXRFrame(_time,frame){
 
     if(noHitFrames > 180){
       set('surfaceState','SEARCHING / LOW FEATURES?','warn');
-      if(!pointA || !pointB){
+      if(!(pointA && pointB)){
         el.xrState.textContent = 'SURFACE NOT FOUND';
         el.xrHint.textContent = 'Try a textured, well-lit surface. Plain white walls can be difficult.';
       }
     }else{
       set('surfaceState','SEARCHING','warn');
-      if(!pointA || !pointB){
-        el.xrState.textContent = 'SEARCHING SURFACE...';
-      }
     }
 
     if(!(pointA && pointB)) el.setPointBtn.disabled = true;
@@ -557,47 +698,29 @@ function onXRFrame(_time,frame){
   }
 }
 
-function captureCurrentPoint(source){
-  if(!latestHitPoint || !latestHitMatrix){
-    el.xrHint.textContent = 'No surface hit available. Move slowly and try again.';
-    return;
-  }
-
-  if(!pointA){
-    pointA = {...latestHitPoint};
-    matrixA = new Float32Array(latestHitMatrix);
-    log(`Point A set (${source}): ${fmtPoint(pointA)}`);
-  }else if(!pointB){
-    pointB = {...latestHitPoint};
-    matrixB = new Float32Array(latestHitMatrix);
-    updateLineBuffer();
-
-    const d = calcDistance(pointA,pointB);
-    log(`Point B set (${source}): ${fmtPoint(pointB)}`);
-    log(`Distance A-B: ${d.toFixed(6)} m (${fmtDistance(d)})`);
-  }
-
-  updateMeasurementUI();
-}
-
 function resetMeasurement(){
+  try{ anchorA?.delete?.(); }catch{}
+  try{ anchorB?.delete?.(); }catch{}
+
+  anchorA = null;
+  anchorB = null;
   pointA = null;
   pointB = null;
   matrixA = null;
   matrixB = null;
+  capturePending = null;
+  anchorCreationBusy = false;
 
   if(gl && lineBuffer){
     gl.bindBuffer(gl.ARRAY_BUFFER,lineBuffer);
     gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([]),gl.DYNAMIC_DRAW);
   }
 
-  updateMeasurementUI();
+  updateDistanceUI();
 
   if(session){
     el.xrState.textContent = latestHitPoint ? 'SURFACE DETECTED' : 'SEARCHING SURFACE...';
-    el.xrHint.textContent = latestHitPoint
-      ? 'Set Point A.'
-      : 'Move slowly and point at a textured surface.';
+    el.xrHint.textContent = latestHitPoint ? 'Set Point A.' : 'Move slowly and point at a textured surface.';
   }
 
   log('measurement reset');
@@ -616,6 +739,8 @@ function onSessionEnd(){
   log('session ended');
 
   try{ hitTestSource?.cancel?.(); }catch{}
+  try{ anchorA?.delete?.(); }catch{}
+  try{ anchorB?.delete?.(); }catch{}
 
   session = null;
   localSpace = null;
@@ -624,12 +749,17 @@ function onSessionEnd(){
   latestHitMatrix = null;
   latestHitPoint = null;
 
+  anchorA = null;
+  anchorB = null;
+  capturePending = null;
+  anchorCreationBusy = false;
+
   viewerPoseSeen = false;
-  trackingLost = false;
   hitSeen = false;
   frameCount = 0;
-  nullPoseFrames = 0;
   noHitFrames = 0;
+  nullPoseSince = null;
+  trackingMode = 'NOT STARTED';
 
   gl = null;
   program = null;
@@ -642,10 +772,10 @@ function onSessionEnd(){
   set('sessionState','ENDED','warn');
   set('trackingState','ENDED','warn');
   set('surfaceState','ENDED','warn');
+  set('anchorAState',pointA ? 'SESSION ENDED':'NOT SET','warn');
+  set('anchorBState',pointB ? 'SESSION ENDED':'NOT SET','warn');
 }
 
-// Suppress WebXR select generation for DOM Overlay UI interactions.
-// Camera-view taps outside these panels can still generate XR select.
 el.topPanel.addEventListener('beforexrselect',preventOverlayXRSelect);
 el.bottomPanel.addEventListener('beforexrselect',preventOverlayXRSelect);
 
@@ -653,11 +783,11 @@ el.startBtn.addEventListener('click',startAR);
 el.resetBtn.addEventListener('click',resetMeasurement);
 el.endBtn.addEventListener('click',endAR);
 
-el.setPointBtn.addEventListener('click',()=>captureCurrentPoint('dom-button'));
+el.setPointBtn.addEventListener('click',()=>requestCapture('dom-button'));
 el.xrResetBtn.addEventListener('click',resetMeasurement);
 el.xrEndBtn.addEventListener('click',endAR);
 
-updateMeasurementUI();
+updateDistanceUI();
 preflight();
 })();
 </script>
