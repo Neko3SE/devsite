@@ -1,6 +1,27 @@
 (()=>{"use strict";
 const results={automatic:{},interactive:{}};const $=id=>document.getElementById(id);const safe=(fn,fallback="NOT EXPOSED")=>{try{const v=fn();return v===undefined||v===null||v===""?fallback:v}catch{return fallback}};const yes=v=>v?"SUPPORTED":"NOT SUPPORTED";const fmt=v=>typeof v==="boolean"?(v?"YES":"NO"):String(v);const statusClass=v=>/SUPPORTED|AVAILABLE|PASS|GRANTED|FOUND|YES/.test(v)&&!/NOT /.test(v)?"dc-ok":/DENIED|FAILED|NOT SUPPORTED|NOT AVAILABLE|HARDWARE NOT FOUND/.test(v)?"dc-bad":"dc-warn";
 function add(group,key,value){(results.automatic[group]??={})[key]=fmt(value)}
+const AUTO_GROUPS={
+  "DEVICE":["Manufacturer","Model","Logical Processors (reported)","Device Memory (GiB, reported)"],
+  "BROWSER":["Navigator Vendor","User Agent","UA Client Hints"],
+  "ENVIRONMENT":["Secure Context","Online","Language","Platform (navigator reported)"],
+  "DISPLAY":["Screen CSS px","Available CSS px","Viewport CSS px","Device Pixel Ratio","Color Depth","Pixel Depth","Orientation"],
+  "INPUT":["Touch Points","Pointer Fine","Pointer Coarse"],
+  "GPU":["WEBGL","WEBGL2","WebGPU"],
+  "MEDIA":["MediaDevices","getUserMedia","getDisplayMedia","MediaRecorder","Web Audio","Picture-in-Picture"],
+  "STORAGE":["localStorage","sessionStorage","IndexedDB","Cache API","Storage API"],
+  "DEVICE APIs":["Bluetooth","USB","Serial","HID","MIDI","NFC","Geolocation","Clipboard","Web Share","Notifications","Service Worker","Wake Lock","File Picker","Device Orientation","Device Motion","Accelerometer","Gyroscope","Magnetometer","Battery"],
+  "WEBXR":["WebXR API","inline","immersive-vr","immersive-ar"]
+};
+function setAutoPlaceholders(){
+  results.automatic={};
+  for(const [group,keys] of Object.entries(AUTO_GROUPS)){
+    results.automatic[group]={};
+    for(const key of keys)results.automatic[group][key]="NOT MEASURED";
+  }
+  renderAuto();
+}
+
 function renderAuto(){const root=$("auto-results");root.replaceChildren();for(const [group,items] of Object.entries(results.automatic)){const sec=document.createElement("section");sec.className="dc-group";const h=document.createElement("h3");h.textContent=group;const dl=document.createElement("dl");dl.className="dc-rows";for(const [k,v] of Object.entries(items)){const row=document.createElement("div");row.className="dc-row";const dt=document.createElement("dt");dt.textContent=k;const dd=document.createElement("dd");dd.textContent=v;dd.className=statusClass(v);row.append(dt,dd);dl.append(row)}sec.append(h,dl);root.append(sec)}updateReport()}
 async function uaData(){const d=navigator.userAgentData;if(!d){add("BROWSER","UA Client Hints","NOT SUPPORTED");add("DEVICE","Manufacturer","NOT EXPOSED");add("DEVICE","Model","NOT EXPOSED");return}add("BROWSER","Mobile (UA-CH reported)",d.mobile);add("BROWSER","Brands",d.brands?.map(x=>`${x.brand} ${x.version}`).join(", ")||"NOT EXPOSED");try{const hi=await d.getHighEntropyValues(["architecture","bitness","model","platformVersion","fullVersionList","wow64"]);add("DEVICE","Manufacturer","NOT EXPOSED");add("DEVICE","Model",hi.model||"NOT EXPOSED");add("ENVIRONMENT","Architecture (UA-CH reported)",hi.architecture||"NOT EXPOSED");add("ENVIRONMENT","Bitness (UA-CH reported)",hi.bitness||"NOT EXPOSED");add("BROWSER","Platform Version (UA-CH reported)",hi.platformVersion||"NOT EXPOSED");add("BROWSER","Full Versions",hi.fullVersionList?.map(x=>`${x.brand} ${x.version}`).join(", ")||"NOT EXPOSED")}catch(e){add("BROWSER","High Entropy Hints",`NOT AVAILABLE (${e.name})`);add("DEVICE","Manufacturer","NOT EXPOSED");add("DEVICE","Model","NOT EXPOSED")}}
 function webgl(){for(const kind of ["webgl","webgl2"]){const c=document.createElement("canvas"),gl=c.getContext(kind);add("GPU",kind.toUpperCase(),yes(!!gl));if(gl){add("GPU",`${kind} Vendor`,safe(()=>gl.getParameter(gl.VENDOR)));add("GPU",`${kind} Renderer`,safe(()=>gl.getParameter(gl.RENDERER)));const ext=gl.getExtension("WEBGL_debug_renderer_info");add("GPU",`${kind} Unmasked Vendor`,ext?safe(()=>gl.getParameter(ext.UNMASKED_VENDOR_WEBGL)):"NOT EXPOSED");add("GPU",`${kind} Unmasked Renderer`,ext?safe(()=>gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)):"NOT EXPOSED");add("GPU",`${kind} Max Texture`,safe(()=>gl.getParameter(gl.MAX_TEXTURE_SIZE)))}}}
@@ -29,9 +50,8 @@ function buildTests(){const root=$("interactive-tests");for(const [id,title,desc
 function report(){const lines=["DEVICE CAPABILITY LAB β",new Date().toISOString(),"", "[AUTOMATIC]"];for(const [g,items] of Object.entries(results.automatic)){lines.push(`\n${g}`);for(const [k,v] of Object.entries(items))lines.push(`${k}: ${v}`)}lines.push("\n[INTERACTIVE]");for(const [id,items] of Object.entries(results.interactive)){lines.push(`\n${id.toUpperCase()}`);for(const [k,v] of Object.entries(items))lines.push(`${k}: ${v}`)}return lines.join("\n")}
 function updateReport(){$("report-preview").textContent=report()}
 function resetAll(){
-  results.automatic={};
   results.interactive={};
-  $("auto-results").innerHTML="";
+  setAutoPlaceholders();
   $("auto-state").textContent="NOT MEASURED";
   $("report-preview").textContent="NOT MEASURED";
   const run=$("run-auto");
