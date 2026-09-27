@@ -138,13 +138,15 @@
 	Android：ブラウザのままカメラ映像に3Dを重ねる高精度なWebAR（床面認識等）やVRが動きます。
 	iPhone：非対応。iPhoneのカメラでAR（Quick Look等）を開くには、一度ブラウザを離れて専用のビューアー（USDZ形式）へ切り替える必要があります。
 
-・WebGPU（次世代3D・AI描画）従来のWebGLに代わる、低遅延・高効率な3Dグラフィックス・機械学習API。両OSともに対応を完了しており、ブラウザ内での高度な3Dゲームや軽量なAI処理（LLM等）が無料で動かせます。
+・WebGPU（次世代3D・AI描画）従来のWebGLに代わる、低遅延・高効率な3Dグラフィックス・機械学習API。両OSともに対応を完了しており、
+ブラウザ内での高度な3Dゲームや軽量なAI処理（LLM等）が無料で動かせます。
 	Android (Chrome)：◯
 	iPhone (iOS Safari)：◯
 
 ・Web Speech API（音声認識・音声合成）マイクからの音声認識（文字起こし）とAI音声による読み上げ機能。
 	Android (Chrome)：◯
-	iPhone (iOS Safari)：△(一部制限)iPhone（Safari）も対応していますが、音声認識の連続動作時間に制限があったり、バックグラウンドでの動作に制限が強くかかります。
+	iPhone (iOS Safari)：△(一部制限)iPhone（Safari）も対応していますが、音声認識の連続動作時間に制限があったり、
+  バックグラウンドでの動作に制限が強くかかります。
 
 ・WebUSB API（USB機器の直接制御）ブラウザから直接USBケーブル経由で外部機器（Arduino、決済端末、ICリーダー等）と通信する技術。
 	Android (Chrome)：◯
@@ -159,11 +161,13 @@
 	iPhone (iOS Safari)：✕
 	セキュリティの観点から、Android・iPhoneともにモバイルブラウザでは原則「非対応」です。
 
-・Shape Detection API（顔・文字・バーコード検出）カメラで写した映像から、ブラウザが「顔の位置」「バーコード/QRコード」「文字（OCR）」をハードウェア（GPU）を使って高速に検出する技術。
+・Shape Detection API（顔・文字・バーコード検出）カメラで写した映像から、ブラウザが「顔の位置」「バーコード/QRコード」「文字（OCR）」を
+ハードウェア（GPU）を使って高速に検出する技術。
 	Android (Chrome)：◯　Androidは標準対応
 	iPhone (iOS Safari)：✕　iPhoneは非対応のため、JavaScriptの重い外部ライブラリを読み込ませる必要があります。
 
-・Web Share Target API（「共有先」に選ばれる機能）PWAとしてインストールしたWebアプリが、スマホの「写真を共有」「テキストを共有」の一覧（シェアシート）にアプリとして登場できる機能。
+・Web Share Target API（「共有先」に選ばれる機能）PWAとしてインストールしたWebアプリが、スマホの「写真を共有」「テキストを共有」の
+一覧（シェアシート）にアプリとして登場できる機能。
 	Android (Chrome)：◯
 	iPhone (iOS Safari)：✕　iPhoneは、Webアプリが他のアプリからの共有を受け取る「ターゲット」になることを許可していません。
 </pre><BR>
