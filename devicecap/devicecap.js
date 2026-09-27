@@ -87,7 +87,7 @@ interactive:"OSやブラウザの確認ダイアログ、デバイス選択画�
 whyH:"なぜ作った？",whyP:"Webアプリでは、同じコードでもiPhone・Android・PC、さらにブラウザによって利用できる端末機能が異なります。その差を実機で確認するための基礎研究ツールです。",
 expH:"何を試す？",expP:"端末情報、表示環境、CPU・メモリ、GPU、カメラ、マイク、センサー、接続系API、ストレージ、WebXRなどを、APIの存在確認だけでなく可能な範囲で実アクセスまで試します。",
 findH:"何が分かる？",findP:"取得できない情報も結果です。NOT SUPPORTED、NOT EXPOSED、PERMISSION DENIED、HARDWARE NOT FOUNDなどを区別し、ブラウザから見える端末能力の境界を観察します。",
-moreH:"さらに詳しく",moreP:"取得項目・テスト方法・既知の制約を見る。",lang:"English"
+moreH:"さらに詳しく",moreP:"取得項目・テスト方法・既知の制約を見る。",sourceP:"GitHubで実際の実装を見る。",lang:"English"
 },
 en:{
 lead:"Investigate the capabilities of this device as exposed to the browser.",
@@ -97,7 +97,7 @@ interactive:"These tests may open OS or browser permission dialogs and device se
 whyH:"Why build it?",whyP:"The same Web app code can access different device features on iPhone, Android, PC, and across browsers. This tool provides a baseline for testing those differences on real devices.",
 expH:"What is tested?",expP:"Device information, display environment, CPU and memory, GPU, camera, microphone, sensors, connectivity APIs, storage, WebXR, and more are tested beyond simple API detection whenever actual access is possible.",
 findH:"What can we learn?",findP:"Information that cannot be obtained is also a result. NOT SUPPORTED, NOT EXPOSED, PERMISSION DENIED, HARDWARE NOT FOUND, and other states reveal the boundary of device capabilities visible to the browser.",
-moreH:"More details",moreP:"View measured items, test methods, and known limitations.",lang:"Japanese"
+moreH:"More details",moreP:"View measured items, test methods, and known limitations.",sourceP:"View the implementation on GitHub.",lang:"Japanese"
 }};
 let uiLang="ja";
 function applyLanguage(){
@@ -111,7 +111,7 @@ function applyLanguage(){
  if(secs[0]){secs[0].querySelector("h3").textContent=t.whyH;secs[0].querySelector("h3+p").textContent=t.whyP}
  if(secs[1]){secs[1].querySelector("h3").textContent=t.expH;secs[1].querySelector("h3+p").textContent=t.expP}
  if(secs[2]){secs[2].querySelector("h3").textContent=t.findH;secs[2].querySelector("h3+p").textContent=t.findP}
- if(secs[3]){secs[3].querySelector("h3").textContent=t.moreH;const s=secs[3].querySelector(".n3-labnote-links span");if(s)s.textContent=t.moreP}
+ if(secs[3]){secs[3].querySelector("h3").textContent=t.moreH;const ss=secs[3].querySelectorAll(".n3-labnote-links span");if(ss[0])ss[0].textContent=t.moreP;if(ss[1])ss[1].textContent=t.sourceP}
  $("lang-toggle").textContent=t.lang;
  $("lang-toggle").setAttribute("aria-label",uiLang==="ja"?"Switch to English":"日本語に切り替え");
 }

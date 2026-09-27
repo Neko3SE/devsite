@@ -24,6 +24,7 @@ Project README.md files are Technical Documentation. Use them for project overvi
 - [e-Gov 法令検索 Viewer β](https://neko3se.com/egov/README.md): Unofficial browser viewer using the e-Gov Law API, with original genre-based navigation and separate law-name and content search. It does not provide legal advice.
 - [PROMPT GENERATOR](https://neko3se.com/promptgen/README.md): Browser-based tool for building reusable structured Markdown prompts with simple and advanced modes, copying and saving, and Base64 Data URL file attachments.
 - [PRO IMAGE PROMPT LAB](https://neko3se.com/imageprompt/README.md): Experimental guide to image-generation prompt design covering subject, composition, light, texture, mood, sample prompts, and generated examples.
+- [DEVICE CAPABILITY LAB β](https://neko3se.com/devicecap/README.md): Browser-based baseline research tool that measures device, display, CPU/memory, GPU, camera, microphone, sensor, connectivity, storage, permission, and WebXR capabilities as exposed by the current browser, distinguishing unavailable, unexposed, denied, and hardware-not-found states.
 
 ## Entertainment
 

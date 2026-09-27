@@ -171,6 +171,31 @@ A research page that explores prompt design for high-quality AI image generation
 
 ---
 
+#### DEVICE CAPABILITY LAB β
+
+> ブラウザから見える、この端末の能力を実機で調べる。  
+> Measure the capabilities of the current device as exposed to the browser.
+
+端末の物理仕様を推測するのではなく、ブラウザが実際に公開している情報と利用可能なWeb APIを、PC・Android・iPhoneなどの実機で確認する基礎研究ツールです。  
+A baseline research tool for testing the information and Web APIs actually exposed by the browser on real PCs, Android devices, iPhones, and other environments, without guessing hidden hardware specifications.
+
+- OS / ブラウザ / 画面 / CPU・メモリ / GPUなどの自動診断  
+  Automatic diagnostics for OS, browser, display, CPU/memory, GPU, and related environment information
+- Camera / Microphone / Geolocation / Motion・Orientationなどの権限・実機テスト  
+  Permission and real-device tests for camera, microphone, geolocation, motion/orientation, and more
+- Bluetooth / USB / Serial / HID / MIDI / NFCなどの接続系APIを個別確認  
+  Individual checks for connectivity APIs such as Bluetooth, USB, Serial, HID, MIDI, and NFC
+- WebGL / WebGPU / WebXRなどWeb Platform機能を確認  
+  Checks Web Platform capabilities including WebGL, WebGPU, and WebXR
+- `NOT SUPPORTED` / `NOT EXPOSED` / `PERMISSION DENIED` / `HARDWARE NOT FOUND`などを区別  
+  Distinguishes states such as `NOT SUPPORTED`, `NOT EXPOSED`, `PERMISSION DENIED`, and `HARDWARE NOT FOUND`
+- 診断結果をResearch Reportとしてコピー可能  
+  Diagnostic results can be copied as a Research Report
+
+▶ [DEVICE CAPABILITY LAB βを開く / Open DEVICE CAPABILITY LAB β](https://neko3se.com/devicecap/)
+
+---
+
 ### Entertainment / エンターテイメント
 
 #### PIANO EMULATOR
@@ -261,15 +286,6 @@ A browser-based sound analyzer that uses microphone input to observe instrument 
 
 ---
 
-## Coming Soon / 今後の予定
-
-今後、以下のコンテンツを追加予定です。  
-More content is planned, including:
-
-- 開発・企画ノウハウ  
-  Development and planning know-how
-
----
 
 ## Entry URL Policy / エントリURL方針
 
@@ -335,6 +351,12 @@ devsite/
 │
 ├─ imageprompt/
 │  └─ index.html               # PRO IMAGE PROMPT LAB
+│
+├─ devicecap/                          # DEVICE CAPABILITY LAB β
+│  ├─ index.html
+│  ├─ devicecap.css
+│  ├─ devicecap.js
+│  └─ README.md
 │
 ├─ og_images/                         # Open Graph / social preview images
 ├─ sitemap.xml
