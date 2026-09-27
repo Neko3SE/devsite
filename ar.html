@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<title>AR DISTANCE LAB - Phase 4.13</title>
+<title>AR DISTANCE LAB - Phase 4.14</title>
 <style>
 :root{
   color-scheme:dark;
@@ -68,22 +68,36 @@ padding:10px;pointer-events:auto}
 }
 #magnifierCross{
   position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
-  color:#fff;font-size:28px;line-height:1;text-shadow:0 0 4px #000
+  color:#fff;font-size:28px;line-height:1;text-shadow:0 0 4px #000;pointer-events:none
 }
 #magnifierLabel{
   position:absolute;left:6px;top:5px;padding:2px 5px;border-radius:5px;
-  background:#000b;color:#fff;font-size:11px
+  background:#000b;color:#fff;font-size:11px;pointer-events:none
 }
 .magRow{display:flex;gap:6px;margin-top:8px}
 .magBtn{padding:8px 10px;min-height:38px}
 .magBtn.active{border-color:#7dd3fc;background:#17374b}
+.diagRow{display:flex;gap:6px;margin-top:7px;align-items:center;flex-wrap:wrap}
+#alignBtn{padding:8px 10px;min-height:38px}
+#alignBtn.active{border-color:#fde68a;background:#403713;color:#fff}
+#alignmentText{font-size:11px;line-height:1.45;margin-top:4px;color:#fde68a}
+#alignmentGrid{position:absolute;inset:0;display:none;pointer-events:none;background:
+  linear-gradient(90deg,transparent calc(50% - .5px),#fde68a calc(50% - .5px),#fde68a calc(50% + .5px),transparent calc(50% + .5px)),
+  linear-gradient(0deg,transparent calc(50% - .5px),#fde68a calc(50% - .5px),#fde68a calc(50% + .5px),transparent calc(50% + .5px));opacity:.72}
+#alignmentMark{position:absolute;width:14px;height:14px;border:2px solid #fca5a5;border-radius:50%;display:none;pointer-events:none;transform:translate(-50%,-50%);box-shadow:0 0 0 1px #000}
+#xrOverlay.align-mode #centerGuide{color:#fde68a;font-size:34px}
+#xrOverlay.align-mode #centerGuide::after{content:'';position:absolute;left:50%;top:50%;width:34px;height:34px;border:1px solid #fde68a;border-radius:50%;transform:translate(-50%,-50%)}
+#xrOverlay.align-mode #magnifierWrap{border-color:#fde68a;pointer-events:auto;touch-action:none}
+#xrOverlay.align-mode #magnifierCanvas{pointer-events:auto;touch-action:none}
+#xrOverlay.align-mode #alignmentGrid{display:block}
+#xrOverlay.align-mode #magnifierCross{color:#fde68a}
 
 </style>
 </head>
 <body>
 <main>
 <h1>AR DISTANCE LAB</h1>
-<p class="sub">Phase 4.13 — View-space Depth Alignment + Pre-B Integrity Gate</p>
+<p class="sub">Phase 4.14 — Measurement-impact Integrity + Center Alignment Check</p>
 
 <section class="card">
 <h2>STATUS</h2>
@@ -115,7 +129,9 @@ padding:10px;pointer-events:auto}
   <div class="cell">A offset from capture Hit</div><div class="cell" id="preBOffsetState">—</div>
   <div class="cell">A drift from first Anchor</div><div class="cell" id="preBDriftState">—</div>
   <div class="cell">A max pre-B drift</div><div class="cell" id="preBMaxState">—</div>
-  <div class="cell">PRE-B integrity</div><div class="cell" id="preBIntegrityState">UNKNOWN</div>
+  <div class="cell">PRE-B raw drift</div><div class="cell" id="preBIntegrityState">UNKNOWN</div>
+  <div class="cell">A relocation → distance impact</div><div class="cell" id="distanceImpactState">—</div>
+  <div class="cell">Measurement integrity</div><div class="cell" id="measurementIntegrityState">UNKNOWN</div>
   <div class="cell">Point A capture</div><div class="cell" id="captureAQualityState">—</div>
   <div class="cell">Point B capture</div><div class="cell" id="captureBQualityState">—</div>
   <div class="cell">Initial Anchor distance</div><div class="cell" id="initialAnchorDistanceState">—</div>
@@ -144,7 +160,8 @@ padding:10px;pointer-events:auto}
   <div class="cell">Depth config</div><div class="cell" id="depthConfigState">—</div>
   <div class="cell">Depth buffer</div><div class="cell" id="depthBufferState">—</div>
   <div class="cell">Depth center</div><div class="cell" id="depthCenterState">—</div>
-  <div class="cell">Depth 9×9 median</div><div class="cell" id="depthMedianState">—</div>
+  <div class="cell">Depth 3×3 median</div><div class="cell" id="depthMedianState">—</div>
+  <div class="cell">Depth temporal median</div><div class="cell" id="depthTemporalState">—</div>
   <div class="cell">Depth valid samples</div><div class="cell" id="depthValidState">—</div>
   <div class="cell">Depth coherence</div><div class="cell" id="depthCoherenceState">—</div>
   <div class="cell">Hit view (x,y,−z)</div><div class="cell" id="hitViewState">—</div>
@@ -157,6 +174,9 @@ padding:10px;pointer-events:auto}
   <div class="cell">Edge median</div><div class="cell" id="edgeMedianState">—</div>
   <div class="cell">Contrast median</div><div class="cell" id="contrastMedianState">—</div>
   <div class="cell">Magnifier</div><div class="cell" id="magnifierState">3×</div>
+  <div class="cell">Center alignment check</div><div class="cell" id="alignmentState">OFF</div>
+  <div class="cell">Alignment mark offset</div><div class="cell" id="alignmentOffsetState">—</div>
+  <div class="cell">Camera normalized offset</div><div class="cell" id="alignmentUvState">—</div>
   <div class="cell">Point A coord.</div><div class="cell" id="coordA">—</div>
   <div class="cell">Point B coord.</div><div class="cell" id="coordB">—</div>
 </div>
@@ -188,10 +208,10 @@ padding:10px;pointer-events:auto}
 </section>
 
 <section class="card note">
-Phase 4.13ではImmutable Hit Commitを維持しつつ、Hit位置を同じXRViewの座標へ変換して−Z（camera planeからの前方距離）とDepthを比較します。さらにHitを投影したnormalized view座標(UV)のDepthを取得し、中央Depthとの取り違えを避けます。
-DepthはCPU最適化を必須とし、Hit UV周辺9×9についてIQR/MADを計算してCOHERENT / MIXED / LOW COHERENCEを診断します。Depthは引き続きCommit値の補正には使用しません。
-Point A設定後からPoint BまでのAnchor A driftは空間基準の再推定兆候として扱い、5 mm以上をWARN、10 mm以上を暫定INVALIDとします。この閾値はPhase 4.13の診断用で、今後の実測で再調整します。
-Hit Testの直前0.3秒STABLE / MOVINGは引き続きwarning-onlyです。XRReferenceSpace resetがA-B間に発生した場合もCommitをINVALIDにします。
+Phase 4.14ではImmutable Hit Commitを維持しつつ、PRE-B Anchor移動量そのものではなく、Point B取得時に「current A Anchor→B Hit」と「immutable A Hit→B Hit」の差から、Anchor再配置が距離値へ与える影響量を評価します。暫定閾値は2 mm以上WARN、5 mm以上INVALIDです。生のAnchor drift量は診断表示として残し、単独ではCommitを棄却しません。
+Depthは3×3局所サンプル＋直近5サンプルの時間方向中央値へ縮小し、IQR/MADと併せて診断します。Depthは引き続きCommit値の補正・ゲートには使用しません。
+CENTER ALIGN CHECKをONにし、通常パススルー中央の照準へ高コントラストの小さな目標を合わせてから、拡大鏡内で同じ目標をタップしてください。拡大鏡中心からの表示px・512px source換算・camera-normalized offsetを記録します。これはRaw Camera拡大鏡中心とDOM/XR中心レイの整合を人手で確認する診断で、自動補正は行いません。
+Hit Testの直前0.3秒STABLE / MOVINGは引き続きwarning-onlyです。XRReferenceSpace resetがA-B間に発生した場合はCommitをINVALIDにします。
 </section>
 
 <section class="card">
@@ -207,7 +227,9 @@ Hit Testの直前0.3秒STABLE / MOVINGは引き続きwarning-onlyです。XRRefe
     <div id="centerGuide">＋</div>
     <div id="magnifierWrap">
       <canvas id="magnifierCanvas" width="320" height="320"></canvas>
+      <div id="alignmentGrid"></div>
       <div id="magnifierCross">＋</div>
+      <div id="alignmentMark"></div>
       <div id="magnifierLabel">MAG 3×</div>
     </div>
 
@@ -225,12 +247,16 @@ Hit Testの直前0.3秒STABLE / MOVINGは引き続きwarning-onlyです。XRRefe
       <div id="stabilityText">STABILITY: —</div>
       <div id="settlingText">SETTLING: —</div>
       <div id="preBText">PRE-B A DRIFT: —</div>
+      <div id="alignmentText">CENTER ALIGN CHECK: OFF</div>
       <div id="pointText">A: NOT SET / B: NOT SET</div>
       <div id="anchorText">ANCHOR A: — / ANCHOR B: —</div>
       <div class="magRow">
         <button type="button" class="magBtn" data-mag="2">MAG 2×</button>
         <button type="button" class="magBtn active" data-mag="3">MAG 3×</button>
         <button type="button" class="magBtn" data-mag="4">MAG 4×</button>
+      </div>
+      <div class="diagRow">
+        <button type="button" id="alignBtn">CENTER ALIGN CHECK</button>
       </div>
       <div class="xrActions">
         <button type="button" id="setPointBtn" disabled>SET POINT A</button>
@@ -253,17 +279,17 @@ const el = {};
   'repeatCountState','repeatMeanState','repeatRangeState','captureDistanceState',
   'hitSpreadAState','hitSpreadBState','hitInstantABState','hitMedian300ABState',
   'hitMedian500ABState','hitMedian1000ABState','hitMedianDeltaState',
-  'preBElapsedState','preBOffsetState','preBDriftState','preBMaxState','preBIntegrityState',
+  'preBElapsedState','preBOffsetState','preBDriftState','preBMaxState','preBIntegrityState','distanceImpactState','measurementIntegrityState',
   'captureAQualityState','captureBQualityState','initialAnchorDistanceState',
   'anchorDeltaState','maxAnchorDeltaState','rollingRangeState','settlingState','stableAtState',
   'stabilitySamples','stabilityMedian','stabilityMinMax','stabilityRange','cameraAState','cameraBState','viewerRateState',
   'hitRateState','anchorARateState','anchorBRateState','referenceState',
   'absErrorState','relErrorState','resetEventState','referenceCm',
   'rawCameraState','hitDistanceState','depthState','depthConfigState','depthBufferState',
-  'depthCenterState','depthMedianState','depthValidState','depthCoherenceState','hitViewState','hitUvState','depthAtHitState','depthHitDeltaState',
+  'depthCenterState','depthMedianState','depthTemporalState','depthValidState','depthCoherenceState','hitViewState','hitUvState','depthAtHitState','depthHitDeltaState',
   'captureADepthState','captureBDepthState','aimQualityState','edgeMedianState',
-  'contrastMedianState','magnifierState','magnifierCanvas','magnifierWrap',
-  'magnifierLabel','qualityText','hitStabilityText','depthText',
+  'contrastMedianState','magnifierState','magnifierCanvas','magnifierWrap','alignmentGrid','alignmentMark','alignmentState','alignmentOffsetState','alignmentUvState','alignBtn',
+  'magnifierLabel','qualityText','hitStabilityText','depthText','alignmentText',
   'coordA','coordB','startBtn','resetBtn','endBtn','log','xrCanvas','xrOverlay','xrHud',
   'xrState','xrHint','pointText','anchorText','distanceText','accuracyText','stabilityText','settlingText','preBText','setPointBtn',
   'xrResetBtn','xrEndBtn','topPanel','bottomPanel'
@@ -328,7 +354,7 @@ let cameraASamples = [];
 let cameraBSamples = [];
 let lastMetricsUiTime = 0;
 
-// Phase 4.13: immutable placement points + Anchor settling timeline.
+// Phase 4.14: immutable placement points + Anchor settling timeline.
 let capturePointA = null;
 let capturePointB = null;
 let captureResetCountA = null;
@@ -352,7 +378,7 @@ const SETTLING_HALF_SHIFT_M = 0.001;
 const TIMELINE_LOG_INTERVAL_MS = 500;
 
 
-// Phase 4.13: monitor Point A from its capture until Point B capture.
+// Phase 4.14: monitor Point A from its capture until Point B capture.
 let captureSnapshotA = null;
 let captureSnapshotB = null;
 
@@ -370,14 +396,19 @@ let preBThresholdLogged = {
 let preBResetCountAtStart = null;
 let preBSummaryAtB = null;
 let preBIntegrity = 'UNKNOWN';
+let lastDistanceImpact = null;
 
 const PREB_LOG_INTERVAL_MS = 1000;
-const PREB_WARN_M = 0.005;
-const PREB_INVALID_M = 0.010;
+// Raw Anchor drift is diagnostic only in Phase 4.14.
+const PREB_RAW_WARN_M = 0.005;
+const PREB_RAW_LARGE_M = 0.010;
+// Formal integrity uses the actual effect on the A-B distance at Point B capture.
+const DISTANCE_IMPACT_WARN_M = 0.002;
+const DISTANCE_IMPACT_INVALID_M = 0.005;
 
 
 
-// Phase 4.13: Hit Test capture stability diagnostic.
+// Phase 4.14: Hit Test capture stability diagnostic.
 const HIT_HISTORY_RETENTION_MS = 1600;
 const HIT_WINDOW_MS = [300,500,1000];
 // 300 ms is a warning-only short-window diagnostic. It never blocks capture
@@ -646,7 +677,7 @@ function logHitABComparison(){
   return comparison;
 }
 
-// Phase 4.13: formal measurement candidate is frozen at Point B capture.
+// Phase 4.14: formal measurement candidate is frozen at Point B capture.
 let frozenMeasurement = null;
 let sessionFrozenMeasurements = [];
 let lastAAnchorPoseTime = null;
@@ -661,6 +692,9 @@ function resetCurrentFrozenMeasurement(){
   set('freezeStatusState','NOT SET','');
   set('liveDistanceState','—','');
   set('liveMinusFrozenState','—','');
+  set('distanceImpactState','—','');
+  set('measurementIntegrityState','UNKNOWN','');
+  lastDistanceImpact=null;
 }
 
 function updateRepeatabilityUI(){
@@ -745,7 +779,7 @@ function freezeMeasurementAtB(hitPoint,time){
   const distance = distance3(aHit,bHit);
   const absError = distance-referenceMeters;
   const relError = (absError/referenceMeters)*100;
-  const integrity=applyPreBIntegrity(preBSummaryAtB);
+  const integrity=applyMeasurementIntegrity(preBSummaryAtB,aHit,bHit);
 
   captureHitDistance = distance;
   set('captureDistanceState',fmtDistance(distance),integrity.state==='INVALID'?'warn':'ok');
@@ -760,14 +794,14 @@ function freezeMeasurementAtB(hitPoint,time){
       sessionResetCount:sessionReferenceSpaceResetCount,
       aCaptureSnapshot:captureSnapshotA,bCaptureSnapshot:captureSnapshotB,
       aHitStability:hitStabilitySnapshotA,bHitStability:hitStabilitySnapshotB,
-      preB:preBSummaryAtB,integrity:integrity.state
+      preB:preBSummaryAtB,integrity:integrity.state,distanceImpact:integrity.impact,signedDistanceImpact:integrity.signedImpact
     };
     set('distanceState',`INVALID (${fmtDistance(distance)})`,'ng');
     set('freezeStatusState',`REJECTED — ${integrity.reason}`,'ng');
     log(
       `COMMITTED CANDIDATE REJECTED: distance=${distance.toFixed(6)} m (${fmtDistance(distance)}); ` +
       `error=${absError.toFixed(6)} m (${relError.toFixed(3)}%); reason=${integrity.reason}; ` +
-      `maxPreBDrift=${integrity.maxDrift===null?'n/a':(integrity.maxDrift*1000).toFixed(3)+' mm'}; ` +
+      `distanceImpact=${integrity.impact===null?'n/a':(integrity.impact*1000).toFixed(3)+' mm'}; rawMaxPreBDrift=${integrity.maxDrift===null?'n/a':(integrity.maxDrift*1000).toFixed(3)+' mm'}; ` +
       `frame=${frameCount}; source=immutable-hit; excludedFromRepeatability=true`
     );
     return false;
@@ -791,7 +825,9 @@ function freezeMeasurementAtB(hitPoint,time){
     aHitStability:hitStabilitySnapshotA,
     bHitStability:hitStabilitySnapshotB,
     preB:preBSummaryAtB,
-    integrity:integrity.state
+    integrity:integrity.state,
+    distanceImpact:integrity.impact,
+    signedDistanceImpact:integrity.signedImpact
   };
 
   sessionFrozenMeasurements.push({
@@ -802,11 +838,12 @@ function freezeMeasurementAtB(hitPoint,time){
     time,
     frame:frameCount,
     sessionResetCount:sessionReferenceSpaceResetCount,
-    integrity:integrity.state
+    integrity:integrity.state,
+    distanceImpact:integrity.impact
   });
 
   set('distanceState',fmtDistance(distance),'ok');
-  set('freezeStatusState',`${integrity.state==='WARN'?'COMMITTED WITH WARNING':'COMMITTED'} HIT A↔B @ frame ${frameCount}`,integrity.state==='WARN'?'warn':'ok');
+  set('freezeStatusState',`${integrity.state==='WARN'||integrity.state==='UNKNOWN'?'COMMITTED WITH WARNING':'COMMITTED'} HIT A↔B @ frame ${frameCount}`,integrity.state==='WARN'||integrity.state==='UNKNOWN'?'warn':'ok');
   updateRepeatabilityUI();
 
   const values=sessionFrozenMeasurements.map(v=>v.distance);
@@ -864,15 +901,17 @@ let qualityHistory = [];
 let lastQualitySampleTime = -Infinity;
 let latestHitDistance = null;
 
-// Phase 4.13: CPU Depth Sensing × XRView-aligned Hit Test cross-check.
+// Phase 4.14: CPU Depth Sensing × XRView-aligned Hit Test cross-check.
 // Diagnostic only: it never gates capture and never modifies the committed distance.
-const DEPTH_GRID = 9;
-const DEPTH_RADIUS = 0.03; // normalized view coordinates: 0.47 .. 0.53
+const DEPTH_GRID = 3;
+const DEPTH_RADIUS = 0.01; // compact local region around projected Hit / screen center
+const DEPTH_TEMPORAL_SAMPLES = 5;
 const DEPTH_SAMPLE_EVERY_FRAMES = 6;
 let depthAvailable = false;
 let depthBufferSeen = false;
 let depthFirstValidLogged = false;
 let latestDepthSample = null; // center-region summary
+let depthTemporalHistory = []; // recent local medians; diagnostic only
 let latestDepthInfo = null;   // transient XRCPUDepthInformation; only used in the same XR frame
 let latestDepthInfoFrame = -1;
 let latestHitViewDiagnostic = null;
@@ -885,6 +924,8 @@ let magnifierZoom = 3;
 let magnifierFirstPaintLogged = false;
 const MAG_CSS_SIZE = 160;
 let magnifierDpr = 1;
+let alignmentMode = false;
+let alignmentMark = null;
 
 const NEAR_RANGE_M = 0.35;
 const DETAIL_EDGE_LOW = 2.5;
@@ -892,8 +933,8 @@ const DETAIL_CONTRAST_LOW = 8.0;
 
 let ending = false;
 let cleanupDone = false;
-const LOG_STORAGE_KEY = 'ar-distance-lab-phase4-13-log';
-const SUMMARY_STORAGE_KEY = 'ar-distance-lab-phase4-13-summary';
+const LOG_STORAGE_KEY = 'ar-distance-lab-phase4-14-log';
+const SUMMARY_STORAGE_KEY = 'ar-distance-lab-phase4-14-summary';
 
 const TRACKING_UNSTABLE_MS = 250;
 const TRACKING_LOST_MS = 1000;
@@ -933,6 +974,9 @@ function persistDiagnostics(){
       captureSnapshotA,
       captureSnapshotB,
       preBSummaryAtB,
+      lastDistanceImpact,
+      alignmentMode,
+      alignmentMark,
       initialAnchorDistance,
       currentAnchorDistance,
       maxAnchorDeltaAbs,
@@ -1106,6 +1150,7 @@ function resetDepthDiagnostics(){
   depthBufferSeen = false;
   depthFirstValidLogged = false;
   latestDepthSample = null;
+  depthTemporalHistory = [];
   latestDepthInfo = null;
   latestDepthInfoFrame = -1;
   latestHitViewDiagnostic = null;
@@ -1118,6 +1163,7 @@ function resetDepthDiagnostics(){
   set('depthBufferState','—','');
   set('depthCenterState','—','');
   set('depthMedianState','—','');
+  set('depthTemporalState','—','');
   set('depthValidState','—','');
   set('depthCoherenceState','—','');
   set('hitViewState','—','');
@@ -1212,6 +1258,13 @@ function sampleDepthForFrame(frame,pose,time,force=false){
     const stats=depthRegionStats(info,0.5,0.5);
     if(!stats) return null;
 
+    if(stats.median!==null){
+      depthTemporalHistory.push({time,value:stats.median});
+      if(depthTemporalHistory.length>DEPTH_TEMPORAL_SAMPLES) depthTemporalHistory.shift();
+    }
+    const temporalValues=depthTemporalHistory.map(x=>x.value).filter(Number.isFinite);
+    const temporalMedian=temporalValues.length ? median(temporalValues) : null;
+
     latestDepthSample={
       time,
       frame:frameCount,
@@ -1220,6 +1273,8 @@ function sampleDepthForFrame(frame,pose,time,force=false){
       rawValueToMeters:Number.isFinite(info.rawValueToMeters) ? info.rawValueToMeters : null,
       center:stats.center,
       median:stats.median,
+      temporalMedian,
+      temporalSamples:temporalValues.length,
       min:stats.min,
       max:stats.max,
       q1:stats.q1,
@@ -1234,6 +1289,7 @@ function sampleDepthForFrame(frame,pose,time,force=false){
     set('depthState','ACTIVE','ok');
     set('depthCenterState',stats.center===null?'INVALID / ZERO':`${stats.center.toFixed(3)} m`,stats.center===null?'warn':'ok');
     set('depthMedianState',stats.median===null?'NO VALID DEPTH':`${stats.median.toFixed(3)} m`,stats.median===null?'warn':'ok');
+    set('depthTemporalState',temporalMedian===null?'—':`${temporalMedian.toFixed(3)} m / n=${temporalValues.length}`,temporalMedian===null?'':'ok');
     set('depthValidState',`${stats.valid}/${stats.total}`,stats.valid?'ok':'warn');
     set(
       'depthCoherenceState',
@@ -1249,7 +1305,8 @@ function sampleDepthForFrame(frame,pose,time,force=false){
         `median=${stats.median.toFixed(6)} m; min=${stats.min.toFixed(6)} m; max=${stats.max.toFixed(6)} m; ` +
         `IQR=${stats.iqr===null?'n/a':(stats.iqr*1000).toFixed(3)+' mm'}; ` +
         `MAD=${stats.mad===null?'n/a':(stats.mad*1000).toFixed(3)+' mm'}; ` +
-        `coherence=${stats.coherence}; radius=${DEPTH_RADIUS.toFixed(3)} normalized`
+        `temporalMedian=${temporalMedian===null?'n/a':temporalMedian.toFixed(6)+' m'}; temporalN=${temporalValues.length}; ` +
+        `coherence=${stats.coherence}; grid=${DEPTH_GRID}x${DEPTH_GRID}; radius=${DEPTH_RADIUS.toFixed(3)} normalized`
       );
     }
 
@@ -1291,6 +1348,8 @@ function buildDepthHitCrossCheck(time,hitDistance,hitViewDiag=latestHitViewDiagn
     hitUvInView:uv.inView,
     viewerSpacePoint:clonePoint(hitViewDiag.viewerPoint),
     depthCenterScreen:d.center,
+    depthTemporalMedian:d.temporalMedian ?? null,
+    depthTemporalSamples:d.temporalSamples ?? 0,
     depthAtHitUv:hitStats.center,
     depthMedian:hitStats.median,
     depthMin:hitStats.min,
@@ -1364,6 +1423,7 @@ function snapshotDepthCrossCheck(slot,time,hitDistance,hitViewDiag){
     `MAD=${c.depthMad===null?'n/a':(c.depthMad*1000).toFixed(3)+' mm'}; coherence=${c.depthCoherence}; ` +
     `valid=${c.depthValid}/${c.depthTotal}; range=${c.depthMin.toFixed(6)}..${c.depthMax.toFixed(6)} m; ` +
     `screenCenterDepth=${c.depthCenterScreen===null?'n/a':c.depthCenterScreen.toFixed(6)} m; ` +
+    `temporalCenterMedian=${c.depthTemporalMedian===null?'n/a':c.depthTemporalMedian.toFixed(6)} m(n=${c.depthTemporalSamples}); ` +
     `viewerSpace=${c.viewerSpacePoint?fmtPoint(c.viewerSpacePoint):'n/a'}; ` +
     `sampleAge=${c.ageMs===null?'n/a':c.ageMs.toFixed(1)+' ms'}; diagnosticOnly=true`
   );
@@ -1445,12 +1505,15 @@ function resetPreBMonitor(){
   preBResetCountAtStart = null;
   preBSummaryAtB = null;
   preBIntegrity = 'UNKNOWN';
+  lastDistanceImpact = null;
 
   set('preBElapsedState','—','');
   set('preBOffsetState','—','');
   set('preBDriftState','—','');
   set('preBMaxState','—','');
   set('preBIntegrityState','UNKNOWN','');
+  set('distanceImpactState','—','');
+  set('measurementIntegrityState','UNKNOWN','');
   set('captureAQualityState','—','');
   set('captureBQualityState','—','');
   if(el.preBText) el.preBText.textContent='PRE-B A DRIFT: —';
@@ -1571,30 +1634,78 @@ function updatePreBMonitor(time,aPoint,viewerPose){
   }
 }
 
-function assessPreBIntegrity(summary){
+function assessPreBRawDrift(summary){
   if(!summary) return {state:'UNKNOWN',reason:'no PRE-B summary',maxDrift:null};
   if(summary.resetDelta && summary.resetDelta!==0){
     return {state:'INVALID',reason:'XRReferenceSpace reset detected',maxDrift:summary.maxDriftFromFirst};
   }
   const maxDrift=Math.max(summary.maxDriftFromFirst||0,summary.maxOffsetFromCapture||0);
-  if(maxDrift>=PREB_INVALID_M){
-    return {state:'INVALID',reason:`pre-B drift >= ${(PREB_INVALID_M*1000).toFixed(0)} mm`,maxDrift};
+  if(maxDrift>=PREB_RAW_LARGE_M){
+    return {state:'LARGE',reason:`raw pre-B drift >= ${(PREB_RAW_LARGE_M*1000).toFixed(0)} mm`,maxDrift};
   }
-  if(maxDrift>=PREB_WARN_M){
-    return {state:'WARN',reason:`pre-B drift >= ${(PREB_WARN_M*1000).toFixed(0)} mm`,maxDrift};
+  if(maxDrift>=PREB_RAW_WARN_M){
+    return {state:'MOVED',reason:`raw pre-B drift >= ${(PREB_RAW_WARN_M*1000).toFixed(0)} mm`,maxDrift};
   }
-  return {state:'PASS',reason:`pre-B drift < ${(PREB_WARN_M*1000).toFixed(0)} mm`,maxDrift};
+  return {state:'STABLE',reason:`raw pre-B drift < ${(PREB_RAW_WARN_M*1000).toFixed(0)} mm`,maxDrift};
 }
 
-function applyPreBIntegrity(summary){
-  const a=assessPreBIntegrity(summary);
+function updatePreBRawDriftUI(summary){
+  const a=assessPreBRawDrift(summary);
   preBIntegrity=a.state;
   set(
     'preBIntegrityState',
     `${a.state}${a.maxDrift===null?'':` / max ${(a.maxDrift*1000).toFixed(1)} mm`}`,
+    a.state==='STABLE'?'ok':a.state==='MOVED'?'warn':a.state==='LARGE'?'warn':a.state==='INVALID'?'ng':''
+  );
+  log(`PRE-B RAW DRIFT: state=${a.state}; reason=${a.reason}; maxDrift=${a.maxDrift===null?'n/a':(a.maxDrift*1000).toFixed(3)+' mm'}; diagnosticOnly=true`);
+  return a;
+}
+
+function assessMeasurementImpact(summary,aHit,bHit){
+  if(!summary) return {state:'UNKNOWN',reason:'no PRE-B summary',impact:null,currentDistance:null,immutableDistance:null,maxDrift:null};
+  if(summary.resetDelta && summary.resetDelta!==0){
+    return {state:'INVALID',reason:'XRReferenceSpace reset detected',impact:null,currentDistance:null,immutableDistance:null,maxDrift:summary.maxDriftFromFirst};
+  }
+  if(!aHit || !bHit || !summary.currentA){
+    return {state:'UNKNOWN',reason:'A Anchor pose unavailable at Point B capture',impact:null,currentDistance:null,immutableDistance:null,maxDrift:summary.maxDriftFromFirst};
+  }
+  const immutableDistance=distance3(aHit,bHit);
+  const currentDistance=distance3(summary.currentA,bHit);
+  const signedImpact=currentDistance-immutableDistance;
+  const impact=Math.abs(signedImpact);
+  const maxDrift=Math.max(summary.maxDriftFromFirst||0,summary.maxOffsetFromCapture||0);
+  if(impact>=DISTANCE_IMPACT_INVALID_M){
+    return {state:'INVALID',reason:`A relocation changed distance by >= ${(DISTANCE_IMPACT_INVALID_M*1000).toFixed(0)} mm`,impact,signedImpact,currentDistance,immutableDistance,maxDrift};
+  }
+  if(impact>=DISTANCE_IMPACT_WARN_M){
+    return {state:'WARN',reason:`A relocation changed distance by >= ${(DISTANCE_IMPACT_WARN_M*1000).toFixed(0)} mm`,impact,signedImpact,currentDistance,immutableDistance,maxDrift};
+  }
+  return {state:'PASS',reason:`distance impact < ${(DISTANCE_IMPACT_WARN_M*1000).toFixed(0)} mm`,impact,signedImpact,currentDistance,immutableDistance,maxDrift};
+}
+
+function applyMeasurementIntegrity(summary,aHit,bHit){
+  updatePreBRawDriftUI(summary);
+  const a=assessMeasurementImpact(summary,aHit,bHit);
+  lastDistanceImpact=a;
+  set(
+    'distanceImpactState',
+    a.impact===null?'—':`${(a.signedImpact*1000)>=0?'+':''}${(a.signedImpact*1000).toFixed(3)} mm (|Δ| ${(a.impact*1000).toFixed(3)} mm)`,
     a.state==='PASS'?'ok':a.state==='WARN'?'warn':a.state==='INVALID'?'ng':''
   );
-  log(`PRE-B INTEGRITY: state=${a.state}; reason=${a.reason}; maxDrift=${a.maxDrift===null?'n/a':(a.maxDrift*1000).toFixed(3)+' mm'}; thresholds=warn5mm/invalid10mm; provisional=true`);
+  set(
+    'measurementIntegrityState',
+    `${a.state}${a.impact===null?'':` / |Δdistance| ${(a.impact*1000).toFixed(2)} mm`}`,
+    a.state==='PASS'?'ok':a.state==='WARN'?'warn':a.state==='INVALID'?'ng':''
+  );
+  log(
+    `MEASUREMENT IMPACT INTEGRITY: state=${a.state}; reason=${a.reason}; ` +
+    `immutable=${a.immutableDistance===null?'n/a':a.immutableDistance.toFixed(6)} m; ` +
+    `currentAtoB=${a.currentDistance===null?'n/a':a.currentDistance.toFixed(6)} m; ` +
+    `signedImpact=${a.signedImpact===undefined||a.signedImpact===null?'n/a':(a.signedImpact*1000).toFixed(3)+' mm'}; ` +
+    `absImpact=${a.impact===null?'n/a':(a.impact*1000).toFixed(3)+' mm'}; ` +
+    `rawMaxDrift=${a.maxDrift===null?'n/a':(a.maxDrift*1000).toFixed(3)+' mm'}; ` +
+    `thresholds=warn2mm/invalid5mm; provisional=true`
+  );
   return a;
 }
 
@@ -1628,9 +1739,9 @@ function summarizePreB(reason,time){
         : sessionReferenceSpaceResetCount-preBResetCountAtStart
   };
 
-  const integrity=assessPreBIntegrity(summary);
-  summary.integrity=integrity.state;
-  summary.integrityReason=integrity.reason;
+  const rawDrift=assessPreBRawDrift(summary);
+  summary.rawDriftState=rawDrift.state;
+  summary.rawDriftReason=rawDrift.reason;
 
   log(
     `PRE-B SUMMARY (${reason}): ` +
@@ -1639,7 +1750,7 @@ function summarizePreB(reason,time){
     `AdriftFromFirst=${drift===null?'n/a':(drift*1000).toFixed(3)+' mm'}; ` +
     `maxOffset=${(preBMaxOffsetFromCapture*1000).toFixed(3)} mm; ` +
     `maxDrift=${(preBMaxDriftFromFirst*1000).toFixed(3)} mm; ` +
-    `resetDelta=${summary.resetDelta}; integrity=${summary.integrity}; ` +
+    `resetDelta=${summary.resetDelta}; rawDrift=${summary.rawDriftState}; ` +
     `Acurrent=${current?fmtPoint(current):'n/a'}`
   );
 
@@ -1962,6 +2073,16 @@ function summarizeMeasurement(reason){
       `AdriftFromFirst=${preBSummaryAtB.driftFromFirst===null?'n/a':(preBSummaryAtB.driftFromFirst*1000).toFixed(3)+' mm'}; ` +
       `maxDrift=${(preBSummaryAtB.maxDriftFromFirst*1000).toFixed(3)} mm; ` +
       `resetDelta=${preBSummaryAtB.resetDelta}`
+    );
+  }
+
+  if(lastDistanceImpact){
+    log(
+      `measurement-impact integrity: state=${lastDistanceImpact.state}; ` +
+      `signedImpact=${lastDistanceImpact.signedImpact===undefined||lastDistanceImpact.signedImpact===null?'n/a':(lastDistanceImpact.signedImpact*1000).toFixed(3)+' mm'}; ` +
+      `absImpact=${lastDistanceImpact.impact===null?'n/a':(lastDistanceImpact.impact*1000).toFixed(3)+' mm'}; ` +
+      `immutable=${lastDistanceImpact.immutableDistance===null?'n/a':lastDistanceImpact.immutableDistance.toFixed(6)+' m'}; ` +
+      `currentAtoB=${lastDistanceImpact.currentDistance===null?'n/a':lastDistanceImpact.currentDistance.toFixed(6)+' m'}`
     );
   }
 
@@ -2406,6 +2527,82 @@ function drawMagnifierPixels(){
     'ok'
   );
 }
+function resetAlignmentMark(){
+  alignmentMark=null;
+  if(el.alignmentMark) el.alignmentMark.style.display='none';
+  set('alignmentOffsetState','—','');
+  set('alignmentUvState','—','');
+}
+
+function setAlignmentMode(on){
+  alignmentMode=!!on;
+  el.xrOverlay.classList.toggle('align-mode',alignmentMode);
+  el.alignBtn.classList.toggle('active',alignmentMode);
+  el.alignBtn.textContent=alignmentMode?'ALIGN CHECK ON':'CENTER ALIGN CHECK';
+  set('alignmentState',alignmentMode?'ON — align main cross, then tap target in magnifier':'OFF',alignmentMode?'warn':'');
+  if(el.alignmentText){
+    el.alignmentText.textContent=alignmentMode
+      ? 'CENTER ALIGN CHECK: put a small high-contrast target under the MAIN cross, then tap that same target inside MAG.'
+      : 'CENTER ALIGN CHECK: OFF';
+  }
+  if(!alignmentMode) resetAlignmentMark();
+  log(`CENTER ALIGN CHECK ${alignmentMode?'ON':'OFF'}; manualDiagnostic=true; noAutoCorrection=true`);
+}
+
+function markAlignmentAtEvent(ev){
+  if(!alignmentMode || !el.magnifierCanvas) return;
+  const rect=el.magnifierCanvas.getBoundingClientRect();
+  if(!rect.width || !rect.height) return;
+  const x=Math.max(0,Math.min(rect.width,ev.clientX-rect.left));
+  const y=Math.max(0,Math.min(rect.height,ev.clientY-rect.top));
+  const dx=x-rect.width/2;
+  const dy=y-rect.height/2;
+  const crop=Math.max(1,MAG_SOURCE_SIZE/magnifierZoom);
+  const sourceDx=dx/rect.width*crop;
+  const sourceDy=dy/rect.height*crop;
+  const normDx=sourceDx/MAG_SOURCE_SIZE;
+  const normDy=sourceDy/MAG_SOURCE_SIZE;
+  const normMag=Math.hypot(normDx,normDy);
+  const cssMag=Math.hypot(dx,dy);
+  alignmentMark={
+    time:now(),zoom:magnifierZoom,
+    displayX:x,displayY:y,displayDx:dx,displayDy:dy,displayMagnitude:cssMag,
+    sourceDx,sourceDy,normDx,normDy,normMagnitude:normMag,
+    hitUvX:latestHitViewDiagnostic?.uv?.x ?? null,
+    hitUvY:latestHitViewDiagnostic?.uv?.y ?? null,
+    hitOffAxis:latestHitViewDiagnostic?.offAxis ?? null,
+    hitOffAxisAngleDeg:latestHitViewDiagnostic?.offAxisAngleDeg ?? null
+  };
+  if(el.alignmentMark){
+    el.alignmentMark.style.display='block';
+    el.alignmentMark.style.left=`${x}px`;
+    el.alignmentMark.style.top=`${y}px`;
+  }
+  set(
+    'alignmentOffsetState',
+    `display Δ=(${dx.toFixed(1)},${dy.toFixed(1)}) px / source Δ=(${sourceDx.toFixed(1)},${sourceDy.toFixed(1)}) px`,
+    cssMag<=3?'ok':cssMag<=8?'warn':'ng'
+  );
+  set(
+    'alignmentUvState',
+    `Δu=${normDx>=0?'+':''}${normDx.toFixed(5)}, Δv=${normDy>=0?'+':''}${normDy.toFixed(5)} / |Δ|=${normMag.toFixed(5)}`,
+    cssMag<=3?'ok':cssMag<=8?'warn':'ng'
+  );
+  if(el.alignmentText){
+    el.alignmentText.textContent=`ALIGN MARK: display ${cssMag.toFixed(1)} px from MAG center — manual diagnostic only`;
+  }
+  log(
+    `CENTER ALIGN MARK: zoom=${magnifierZoom}x; ` +
+    `displayOffset=(${dx.toFixed(2)},${dy.toFixed(2)}) CSS px; displayRadius=${cssMag.toFixed(2)} px; ` +
+    `source512Offset=(${sourceDx.toFixed(2)},${sourceDy.toFixed(2)}) px; ` +
+    `cameraNormalizedOffset=(${normDx.toFixed(6)},${normDy.toFixed(6)}); normalizedRadius=${normMag.toFixed(6)}; ` +
+    `currentHitUV=${alignmentMark.hitUvX===null?'n/a':alignmentMark.hitUvX.toFixed(6)+','+alignmentMark.hitUvY.toFixed(6)}; ` +
+    `hitOffAxis=${alignmentMark.hitOffAxis===null?'n/a':(alignmentMark.hitOffAxis*1000).toFixed(3)+' mm'}; ` +
+    `hitAngle=${alignmentMark.hitOffAxisAngleDeg===null?'n/a':alignmentMark.hitOffAxisAngleDeg.toFixed(4)+' deg'}; ` +
+    `manualDiagnostic=true; noAutoCorrection=true`
+  );
+}
+
 function sampleRawCamera(cameraTexture,camera,time){
   if(!sampleReady || !cameraTexture || !camera) return;
   if(time-lastQualitySampleTime < 100) return; // <=10 Hz
@@ -2980,6 +3177,7 @@ function createAnchorFromHit(result,hitPose,slot,time,viewerPose){
         `immutableAHit-to-BHit=${immutableAToB===null?'n/a':immutableAToB.toFixed(6)} m; ` +
         `currentAAnchor-to-BHit=${currentAToBHit.toFixed(6)} m; ` +
         `difference=${immutableAToB===null?'n/a':((currentAToBHit-immutableAToB)*1000).toFixed(3)+' mm'}; ` +
+        `absDistanceImpact=${immutableAToB===null?'n/a':(Math.abs(currentAToBHit-immutableAToB)*1000).toFixed(3)+' mm'}; ` +
         `formalSource=immutable-hit`
       );
     }
@@ -3402,6 +3600,8 @@ function onSessionEnd(){
   program = null;
   raf = 0;
 
+  alignmentMode=false;
+  el.xrOverlay.classList.remove('align-mode');
   el.xrHud.hidden = true;
   el.endBtn.disabled = true;
   el.setPointBtn.disabled = true;
@@ -3428,6 +3628,7 @@ window.addEventListener('resize',()=>{
 document.querySelectorAll('.magBtn').forEach(btn=>{
   btn.addEventListener('click',()=>{
     magnifierZoom = Number(btn.dataset.mag) || 3;
+    if(alignmentMark) resetAlignmentMark();
     document.querySelectorAll('.magBtn').forEach(
       b=>b.classList.toggle('active',b===btn)
     );
@@ -3465,6 +3666,14 @@ el.referenceCm.addEventListener('input',()=>{
 
 el.topPanel.addEventListener('beforexrselect',preventOverlayXRSelect);
 el.bottomPanel.addEventListener('beforexrselect',preventOverlayXRSelect);
+el.magnifierWrap.addEventListener('beforexrselect',preventOverlayXRSelect);
+el.alignBtn.addEventListener('click',()=>setAlignmentMode(!alignmentMode));
+el.magnifierWrap.addEventListener('pointerdown',event=>{
+  if(!alignmentMode) return;
+  event.preventDefault();
+  event.stopPropagation();
+  markAlignmentAtEvent(event);
+});
 
 el.startBtn.addEventListener('click',startAR);
 el.resetBtn.addEventListener('click',resetMeasurement);
@@ -3497,6 +3706,9 @@ resetMeasurementMetrics();
 resetDepthDiagnostics();
 resetAimQuality();
 set('magnifierState','3×','ok');
+set('alignmentState','OFF','');
+set('alignmentOffsetState','—','');
+set('alignmentUvState','—','');
 updateDistanceUI();
 preflight();
 })();
