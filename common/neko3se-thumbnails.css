@@ -114,3 +114,8 @@
   .n3-thumb--voice .n3-voice-output,
   .n3-thumb--tuner .n3-tuner-center { opacity: .72; }
 }
+
+/* DEVICE CAPABILITY LAB thumbnail */
+.n3-thumb--devicecap .n3-device-scan{animation:n3-device-scan 2.8s ease-in-out infinite}.n3-thumb--devicecap .n3-device-node{animation:n3-device-node 2.8s ease-in-out infinite}.n3-thumb--devicecap .n3-device-check{animation:n3-device-check 2.8s steps(1,end) infinite}.n3-thumb--devicecap .n3-device-pulse{animation:n3-device-pulse 2.8s ease-in-out infinite}
+@keyframes n3-device-scan{0%,12%{opacity:.18;transform:translateX(-8px)}42%,72%{opacity:1;transform:translateX(7px)}100%{opacity:.18;transform:translateX(-8px)}}@keyframes n3-device-node{0%,18%,100%{opacity:.35}48%,78%{opacity:1;filter:drop-shadow(0 0 7px rgba(154,196,90,.75))}}@keyframes n3-device-check{0%,26%{opacity:.32}28%,82%{opacity:1}84%,100%{opacity:.32}}@keyframes n3-device-pulse{0%,100%{opacity:.25;transform:scale(.72);transform-origin:592px 164px}48%,72%{opacity:1;transform:scale(1.18);transform-origin:592px 164px}}
+@media(prefers-reduced-motion:reduce){.n3-thumb--devicecap .n3-device-node,.n3-thumb--devicecap .n3-device-check,.n3-thumb--devicecap .n3-device-pulse{opacity:.72}}

@@ -123,7 +123,17 @@
     return svg;
   }
 
-  const renderers = { mudagiken: renderMudagiken, egov: renderEgov, prompt: renderPrompt, imageprompt: renderImagePrompt, piano: renderPiano, gosenfu: renderGosenfu, voice: renderVoice, tuner: renderTuner };
+  function renderDeviceCap() {
+    const svg=baseSvg("devicecap"); text(svg,48,42,"DEVICE / CAPABILITY");
+    add(svg,"rect",{x:"62",y:"68",width:"318",height:"132",rx:"12",fill:"#111d25",stroke:"#66818a","stroke-width":"3"});
+    add(svg,"rect",{x:"82",y:"88",width:"278",height:"88",rx:"7",fill:"#091117",stroke:"#334852","stroke-width":"2"});
+    [112,138,164].forEach((y,i)=>{ add(svg,"circle",{cx:"106",cy:String(y-3),r:"8",fill:i===2?"#9ac45a":"#263640",stroke:i===2?"#b7e777":"#62808a","stroke-width":"2",class:"n3-device-check n3-anim"}); add(svg,"path",{d:`M101 ${y-3}l4 4 7-9`,fill:"none",stroke:"#0d141c","stroke-width":"3","stroke-linecap":"round","stroke-linejoin":"round"}); add(svg,"rect",{x:"126",y:String(y-8),width:String(126+i*24),height:"9",rx:"4",fill:"#526b74",opacity:".72"}); });
+    add(svg,"rect",{x:"410",y:"58",width:"92",height:"152",rx:"18",fill:"#15212a",stroke:"#78939c","stroke-width":"4"}); add(svg,"rect",{x:"424",y:"78",width:"64",height:"108",rx:"9",fill:"#091117",stroke:"#334852","stroke-width":"2"}); add(svg,"circle",{cx:"456",cy:"194",r:"5",fill:"#62808a"});
+    [[444,103],[470,103],[444,132],[470,132],[444,161],[470,161]].forEach((p,i)=>add(svg,"circle",{cx:String(p[0]),cy:String(p[1]),r:"8",fill:i<4?"#263640":"#9ac45a",stroke:i<4?"#62808a":"#b7e777","stroke-width":"2",class:"n3-device-node n3-anim"}));
+    add(svg,"path",{d:"M382 104C400 104 400 104 414 104 M382 136C400 136 400 136 414 136 M382 168C400 168 400 168 414 168",fill:"none",stroke:"#9ac45a","stroke-width":"4","stroke-linecap":"round",class:"n3-device-scan n3-anim n3-thumb__glow"}); add(svg,"path",{d:"M526 92h50 M526 116h34 M526 140h58 M526 164h42",fill:"none",stroke:"#66818a","stroke-width":"7","stroke-linecap":"round"}); add(svg,"circle",{cx:"592",cy:"164",r:"10",fill:"#9ac45a",class:"n3-device-pulse n3-anim n3-thumb__glow"}); return svg;
+  }
+
+  const renderers = { mudagiken: renderMudagiken, egov: renderEgov, prompt: renderPrompt, imageprompt: renderImagePrompt, piano: renderPiano, gosenfu: renderGosenfu, voice: renderVoice, tuner: renderTuner, devicecap: renderDeviceCap };
   const targets = Array.from(document.querySelectorAll(".n3-thumb[data-n3-thumb]"));
   const ready = [];
   targets.forEach(target => {
