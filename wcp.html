@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<title>WebXR Capability Probe Rev.5</title>
+<title>WebXR Capability Probe Rev.6</title>
 <style>
 :root{
   color-scheme:dark;
@@ -51,7 +51,7 @@ canvas{position:fixed;inset:0;width:1px;height:1px;pointer-events:none}
 <body>
 <main>
 <h1>WebXR Capability Probe</h1>
-<p class="sub">Phase 1A / Rev.5 — tracking-aware, environment-gated, one button = one requestSession()</p>
+<p class="sub">Phase 1A / Rev.6 — Depth region sampling, tracking-aware, environment-gated</p>
 
 <section class="card">
 <h2>TEST ENVIRONMENT</h2>
@@ -70,7 +70,7 @@ canvas{position:fixed;inset:0;width:1px;height:1px;pointer-events:none}
 
 <section class="card">
 <h2>TESTS</h2>
-<p class="note">BASIC ARでXRSession開始だけでなく、getViewerPose(local) が非nullになるまで確認します。Viewer Pose取得後のみ各Featureテストを有効な端末能力診断として扱います。各テストは独立したユーザー操作です。</p>
+<p class="note">BASIC ARはViewer Poseまで確認します。DepthはCPU方式の場合、中央1点に加えて中央周辺9×9（81点）の有効Depth率・中央値・最小/最大を測定します。0 mは無効Depthとして統計から除外します。</p>
 <div class="actions">
   <button data-test="basic">1. BASIC AR</button>
   <button data-test="hit">2. HIT TEST</button>
@@ -91,6 +91,9 @@ canvas{position:fixed;inset:0;width:1px;height:1px;pointer-events:none}
   <div class="cell">Viewer Pose</div><div class="cell" id="viewerPose">NOT TESTED</div><div class="cell" id="viewerPoseDetail">—</div>
   <div class="cell">HIT TEST</div><div class="cell" id="hitStatus">NOT TESTED</div><div class="cell" id="hitDetail">—</div>
   <div class="cell">DEPTH</div><div class="cell" id="depthStatus">NOT TESTED</div><div class="cell" id="depthDetail">—</div>
+  <div class="cell">Depth Buffer</div><div class="cell" id="depthBuffer">NOT TESTED</div><div class="cell" id="depthBufferDetail">—</div>
+  <div class="cell">Depth Center</div><div class="cell" id="depthCenter">NOT TESTED</div><div class="cell" id="depthCenterDetail">—</div>
+  <div class="cell">Depth Region 9×9</div><div class="cell" id="depthRegion">NOT TESTED</div><div class="cell" id="depthRegionDetail">—</div>
   <div class="cell">DOM OVERLAY</div><div class="cell" id="domStatus">NOT TESTED</div><div class="cell" id="domDetail">—</div>
   <div class="cell">ANCHORS + HIT</div><div class="cell" id="anchorsStatus">NOT TESTED</div><div class="cell" id="anchorsDetail">—</div>
   <div class="cell">LOCAL-FLOOR</div><div class="cell" id="floorStatus">NOT TESTED</div><div class="cell" id="floorDetail">—</div>
@@ -134,7 +137,7 @@ const ids = [
   'envBanner','protocol','protocolDetail','secure','secureDetail','topLevel','topLevelDetail',
   'focus','focusDetail','policy','policyDetail','webxr','webxrDetail',
   'immersiveAr','immersiveArDetail','basicStatus','basicDetail','xrVisibility','xrVisibilityDetail','viewerPose','viewerPoseDetail','hitStatus','hitDetail',
-  'depthStatus','depthDetail','domStatus','domDetail','anchorsStatus','anchorsDetail',
+  'depthStatus','depthDetail','depthBuffer','depthBufferDetail','depthCenter','depthCenterDetail','depthRegion','depthRegionDetail','domStatus','domDetail','anchorsStatus','anchorsDetail',
   'floorStatus','floorDetail','endBtn','resultText','copyBtn','selectBtn','saveBtn',
   'log','xrOverlay','xrPanel','xrTitle','xrMessage','overlayEnd','xrCanvas'
 ];
@@ -229,7 +232,7 @@ function enabledFeatures(session){
 function refreshResult(){
   if(!el.resultText) return;
   const rows = [
-    'WebXR Capability Probe Rev.5', now(), '',
+    'WebXR Capability Probe Rev.6', now(), '',
     '[TEST ENVIRONMENT]',
     `Environment: ${el.envBanner?.textContent || ''}`,
     `Protocol: ${el.protocol?.textContent || ''} | ${el.protocolDetail?.textContent || ''}`,
@@ -249,6 +252,14 @@ function refreshResult(){
     `XR Visibility: ${el.xrVisibility?.textContent || ''} | ${el.xrVisibilityDetail?.textContent || ''}`,
     `Viewer Pose: ${el.viewerPose?.textContent || ''} | ${el.viewerPoseDetail?.textContent || ''}`
   );
+  const depthIndex = rows.findIndex(v => v.startsWith('DEPTH:'));
+  if(depthIndex >= 0){
+    rows.splice(depthIndex + 1, 0,
+      `Depth Buffer: ${el.depthBuffer?.textContent || ''} | ${el.depthBufferDetail?.textContent || ''}`,
+      `Depth Center: ${el.depthCenter?.textContent || ''} | ${el.depthCenterDetail?.textContent || ''}`,
+      `Depth Region 9x9: ${el.depthRegion?.textContent || ''} | ${el.depthRegionDetail?.textContent || ''}`
+    );
+  }
   rows.push('', '[LOG]', ...logLines);
   el.resultText.value = rows.join('\n');
 }
@@ -498,15 +509,33 @@ async function testDepth(){
       dataFormatPreference:['luminance-alpha','float32']
     }
   };
-  const s = await begin('depth',options,'DEPTH: point camera at nearby surfaces');
+
+  const s = await begin('depth',options,'DEPTH: point the center reticle at a nearby flat surface');
   if(!s) return;
+
   try{
     await setupGraphics(s);
     const space = await s.requestReferenceSpace('local');
-    const usage = s.depthUsage || 'not exposed';
-    const format = s.depthDataFormat || 'not exposed';
-    setTest('depth','SESSION ENABLED',`usage=${usage}; format=${format}; waiting for depth information`);
-    log(`depth: session config usage=${usage}; format=${format}`);
+
+    let usage = 'not exposed';
+    let format = 'not exposed';
+    let depthType = 'not exposed';
+    let depthActive = 'not exposed';
+
+    try{ usage = s.depthUsage ?? 'not exposed'; }catch(err){ log(`depthUsage read failed: ${errorText(err)}`); }
+    try{ format = s.depthDataFormat ?? 'not exposed'; }catch(err){ log(`depthDataFormat read failed: ${errorText(err)}`); }
+    try{ depthType = s.depthType ?? 'not exposed'; }catch(err){ log(`depthType read failed: ${errorText(err)}`); }
+    try{ depthActive = s.depthActive ?? 'not exposed'; }catch(err){ log(`depthActive read failed: ${errorText(err)}`); }
+
+    setTest('depth','SESSION ENABLED',
+      `usage=${usage}; format=${format}; type=${depthType}; active=${depthActive}; waiting for depth buffer`);
+    setCell('depthBuffer','WAITING');
+    setCell('depthBufferDetail','Waiting for XRDepthInformation','');
+    setCell('depthCenter','WAITING');
+    setCell('depthCenterDetail','Waiting for first CPU depth frame','');
+    setCell('depthRegion','WAITING');
+    setCell('depthRegionDetail','Sampling a 9×9 region around normalized view center (0.5, 0.5)','');
+    log(`depth: session config usage=${usage}; format=${format}; type=${depthType}; active=${depthActive}`);
 
     let binding = null;
     if(usage === 'gpu-optimized'){
@@ -514,43 +543,157 @@ async function testDepth(){
       binding = new XRWebGLBinding(s,gl);
     }
 
-    let seen = false;
+    let bufferSeen = false;
+    let frameNo = 0;
+    let firstValidRegionLogged = false;
+    let bestValid = 0;
+    let bestMedian = null;
+
+    function median(values){
+      if(!values.length) return null;
+      const a = [...values].sort((x,y)=>x-y);
+      const m = Math.floor(a.length/2);
+      return a.length % 2 ? a[m] : (a[m-1] + a[m]) / 2;
+    }
+
+    function sampleCenterRegion(info){
+      // getDepthInMeters() takes normalized view coordinates.
+      // 9×9 points spanning 0.42..0.58 in both axes.
+      const grid = 9;
+      const radius = 0.08;
+      const values = [];
+
+      for(let iy=0; iy<grid; iy++){
+        const y = 0.5 - radius + (2*radius) * (iy/(grid-1));
+        for(let ix=0; ix<grid; ix++){
+          const x = 0.5 - radius + (2*radius) * (ix/(grid-1));
+          let d = 0;
+          try{ d = info.getDepthInMeters(x,y); }
+          catch{ d = 0; }
+          if(Number.isFinite(d) && d > 0) values.push(d);
+        }
+      }
+
+      const total = grid * grid;
+      if(!values.length){
+        return {valid:0,total,ratio:0,median:null,min:null,max:null};
+      }
+
+      const med = median(values);
+      return {
+        valid:values.length,
+        total,
+        ratio:values.length/total,
+        median:med,
+        min:Math.min(...values),
+        max:Math.max(...values)
+      };
+    }
+
     runLoop(s,(_t,frame)=>{
-      if(seen) return;
+      frameNo++;
       const pose = frame.getViewerPose(space);
       if(!pose?.views?.length) return;
+
       for(const view of pose.views){
         let info = null;
+
         if(usage === 'cpu-optimized'){
-          if(typeof frame.getDepthInformation !== 'function') throw new Error('XRFrame.getDepthInformation() not exposed');
+          if(typeof frame.getDepthInformation !== 'function')
+            throw new Error('XRFrame.getDepthInformation() not exposed');
           info = frame.getDepthInformation(view);
         }else if(usage === 'gpu-optimized'){
           info = binding.getDepthInformation(view);
         }
+
         if(!info) continue;
 
-        seen = true;
-        let center = 'n/a';
-        if(usage === 'cpu-optimized' && typeof info.getDepthInMeters === 'function'){
+        if(!bufferSeen){
+          bufferSeen = true;
+
+          let rawScale = 'not exposed';
           try{
-            const d = info.getDepthInMeters(0.5,0.5);
-            center = Number.isFinite(d) ? `${d.toFixed(3)} m` : String(d);
-          }catch(err){
-            center = `read error: ${err.name}`;
-          }
+            if(Number.isFinite(info.rawValueToMeters))
+              rawScale = String(info.rawValueToMeters);
+          }catch{}
+
+          setCell('depthBuffer','PASS');
+          setCell('depthBufferDetail',
+            `size=${info.width}x${info.height}; rawValueToMeters=${rawScale}; usage=${usage}; format=${format}`,'');
+          setTest('depth','BUFFER PASS',
+            `usage=${usage}; format=${format}; type=${depthType}; active=${depthActive}; size=${info.width}x${info.height}`);
+          log(`depth: buffer received; size=${info.width}x${info.height}; rawValueToMeters=${rawScale}`);
         }
-        setTest('depth','PASS',`usage=${usage}; format=${format}; size=${info.width}x${info.height}; center=${center}`);
-        log(`depth: depth information received; size=${info.width}x${info.height}; center=${center}`);
-        el.xrMessage.textContent = `DEPTH PASS — center ${center} — END TEST`;
+
+        // Exact center point: useful for showing whether the single pixel is valid.
+        if(usage === 'cpu-optimized' && typeof info.getDepthInMeters === 'function'){
+          let center = 0;
+          try{ center = info.getDepthInMeters(0.5,0.5); }catch{}
+
+          if(Number.isFinite(center) && center > 0){
+            setCell('depthCenter','VALID');
+            setCell('depthCenterDetail',`${center.toFixed(3)} m at normalized view (0.5, 0.5)`,'');
+          }else{
+            setCell('depthCenter','INVALID / ZERO');
+            setCell('depthCenterDetail','0 m means depth was invalid or unavailable at the exact center point','');
+          }
+
+          // Sampling every 6 XR frames avoids unnecessary repeated 81-point reads.
+          if(frameNo % 6 !== 0) continue;
+
+          const stats = sampleCenterRegion(info);
+          if(stats.valid > bestValid){
+            bestValid = stats.valid;
+            bestMedian = stats.median;
+          }
+
+          if(stats.valid > 0){
+            const pct = (stats.ratio*100).toFixed(1);
+            setCell('depthRegion','VALID DEPTH OBSERVED');
+            setCell('depthRegionDetail',
+              `valid=${stats.valid}/${stats.total} (${pct}%); median=${stats.median.toFixed(3)} m; min=${stats.min.toFixed(3)} m; max=${stats.max.toFixed(3)} m; bestValid=${bestValid}/${stats.total}`,'');
+            setTest('depth','PASS',
+              `CPU depth usable; region median=${stats.median.toFixed(3)} m; valid=${stats.valid}/${stats.total}; buffer=${info.width}x${info.height}`);
+            el.xrMessage.textContent =
+              `DEPTH ${stats.median.toFixed(2)} m — valid ${stats.valid}/${stats.total}`;
+
+            if(!firstValidRegionLogged){
+              firstValidRegionLogged = true;
+              log(`depth: first valid 9x9 region; valid=${stats.valid}/${stats.total}; median=${stats.median.toFixed(3)} m; min=${stats.min.toFixed(3)} m; max=${stats.max.toFixed(3)} m`);
+            }
+          }else{
+            setCell('depthRegion','NO VALID SAMPLES');
+            setCell('depthRegionDetail',
+              `valid=0/${stats.total}; point the reticle at a nearby textured/structured surface and move slowly; bestValid=${bestValid}/${stats.total}`,'');
+            if(bufferSeen){
+              setTest('depth','BUFFER PASS / RANGE WAITING',
+                `Depth buffer is available, but no >0 depth value has been observed in the center 9×9 region yet`);
+            }
+            el.xrMessage.textContent = 'DEPTH BUFFER OK — searching for valid range...';
+          }
+        }else{
+          // GPU depth is valid Depth Sensing support, but this probe cannot read
+          // individual metric samples without a shader/readback path.
+          setCell('depthCenter','NOT CPU-READABLE');
+          setCell('depthCenterDetail',`usage=${usage}; direct getDepthInMeters() unavailable`,'');
+          setCell('depthRegion','NOT CPU-READABLE');
+          setCell('depthRegionDetail','GPU-optimized depth buffer received; metric region sampling is skipped','');
+          setTest('depth','PASS',
+            `GPU depth information available; usage=${usage}; format=${format}; size=${info.width}x${info.height}`);
+          el.xrMessage.textContent = 'DEPTH GPU BUFFER PASS — END TEST';
+        }
+
         break;
       }
     });
+
   }catch(err){
     setTest('depth','RUNTIME FAILED',errorText(err));
+    setCell('depthBuffer','FAILED');
+    setCell('depthBufferDetail',errorText(err),'');
     log(`depth runtime failed: ${errorText(err)}`);
   }
 }
-
 async function testDom(){
   const options = {requiredFeatures:['dom-overlay'],domOverlay:{root:el.xrOverlay}};
   const s = await begin('dom',options,'DOM OVERLAY: this panel is the test');
@@ -645,6 +788,12 @@ async function preflight(){
   setCell('xrVisibilityDetail','XRSession not started','');
   setCell('viewerPose','NOT TESTED');
   setCell('viewerPoseDetail','BASIC AR not started','');
+  setCell('depthBuffer','NOT TESTED');
+  setCell('depthBufferDetail','Depth test not started','');
+  setCell('depthCenter','NOT TESTED');
+  setCell('depthCenterDetail','Depth test not started','');
+  setCell('depthRegion','NOT TESTED');
+  setCell('depthRegionDetail','Depth test not started','');
 
   const env = determineEnvironment();
   environmentValid = env.valid;
