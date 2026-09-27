@@ -11,6 +11,7 @@
     { id: "piano", label: "PIANO EMULATOR", path: "pianoemu/" },
     { id: "promptgen", label: "PROMPT GENERATOR", path: "promptgen/" },
     { id: "imageprompt", label: "PRO IMAGE PROMPT LAB", path: "imageprompt/" },
+    { id: "devicecap", label: "DEVICE CAPABILITY LAB β", path: "devicecap/" },
     { id: "egov", label: "e-Gov 法令検索 Viewer β", path: "egov/" },
     { id: "voicechanger", label: "VOICE CHANGER LAB β", path: "voicechanger/" },
     { id: "soundtuner", label: "SOUND TUNER LAB β", path: "soundtuner/" },
@@ -21,7 +22,7 @@
     { id: "terms", label: "利用規約", path: "about/terms/" }
   ];
   const navGroups = [
-    { label: "DEVELOPMENT", ids: ["mudagiken", "egov", "promptgen", "imageprompt"] },
+    { label: "DEVELOPMENT", ids: ["mudagiken", "egov", "promptgen", "imageprompt", "devicecap"] },
     { label: "ENTERTAINMENT", ids: ["piano", "gosenfu", "voicechanger", "soundtuner"] }
   ];
   const navLabels = {
