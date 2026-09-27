@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<title>AR DISTANCE LAB - Phase 4 Rev.2</title>
+<title>AR DISTANCE LAB - Phase 4 Rev.3</title>
 <style>
 :root{
   color-scheme:dark;
@@ -46,6 +46,7 @@ padding:10px;pointer-events:auto}
 #pointText{color:#cfe8f5}
 #anchorText{color:#f6d98d}
 #distanceText{font-size:18px;font-weight:700;color:#fff}
+#stabilityText{font-size:12px;font-weight:700;color:#cfe8f5;margin-top:4px}
 .xrActions{display:grid;grid-template-columns:1.1fr 1fr 1fr;gap:8px;margin-top:8px}
 .xrActions button{padding:10px 6px}
 canvas{position:fixed;inset:0;width:1px;height:1px;pointer-events:none}
@@ -54,7 +55,7 @@ canvas{position:fixed;inset:0;width:1px;height:1px;pointer-events:none}
 <body>
 <main>
 <h1>AR DISTANCE LAB</h1>
-<p class="sub">Phase 4 Rev.2 — Anchored A/B + Safe XR Shutdown</p>
+<p class="sub">Phase 4 Rev.3 — Anchor Stability Metrics</p>
 
 <section class="card">
 <h2>STATUS</h2>
@@ -68,6 +69,16 @@ canvas{position:fixed;inset:0;width:1px;height:1px;pointer-events:none}
   <div class="cell">Anchor A</div><div class="cell" id="anchorAState">NOT SET</div>
   <div class="cell">Anchor B</div><div class="cell" id="anchorBState">NOT SET</div>
   <div class="cell">Distance</div><div class="cell" id="distanceState">—</div>
+  <div class="cell">Samples</div><div class="cell" id="stabilitySamples">0</div>
+  <div class="cell">Median</div><div class="cell" id="stabilityMedian">—</div>
+  <div class="cell">Min / Max</div><div class="cell" id="stabilityMinMax">—</div>
+  <div class="cell">Range</div><div class="cell" id="stabilityRange">—</div>
+  <div class="cell">Camera → A</div><div class="cell" id="cameraAState">—</div>
+  <div class="cell">Camera → B</div><div class="cell" id="cameraBState">—</div>
+  <div class="cell">Viewer Pose valid</div><div class="cell" id="viewerRateState">—</div>
+  <div class="cell">Hit Test success</div><div class="cell" id="hitRateState">—</div>
+  <div class="cell">Anchor A tracked</div><div class="cell" id="anchorARateState">—</div>
+  <div class="cell">Anchor B tracked</div><div class="cell" id="anchorBRateState">—</div>
   <div class="cell">Point A coord.</div><div class="cell" id="coordA">—</div>
   <div class="cell">Point B coord.</div><div class="cell" id="coordB">—</div>
 </div>
@@ -108,6 +119,7 @@ Anchor → XRSessionの順で停止し、診断ログをsessionStorageへ退避�
 
     <div id="bottomPanel">
       <div id="distanceText">DISTANCE: —</div>
+      <div id="stabilityText">STABILITY: —</div>
       <div id="pointText">A: NOT SET / B: NOT SET</div>
       <div id="anchorText">ANCHOR A: — / ANCHOR B: —</div>
       <div class="xrActions">
@@ -127,9 +139,11 @@ const $ = id => document.getElementById(id);
 const el = {};
 [
   'secure','webxr','arSupport','sessionState','trackingState','surfaceState',
-  'anchorAState','anchorBState','distanceState','coordA','coordB',
+  'anchorAState','anchorBState','distanceState','stabilitySamples','stabilityMedian',
+  'stabilityMinMax','stabilityRange','cameraAState','cameraBState','viewerRateState',
+  'hitRateState','anchorARateState','anchorBRateState','coordA','coordB',
   'startBtn','resetBtn','endBtn','log','xrCanvas','xrOverlay','xrHud',
-  'xrState','xrHint','pointText','anchorText','distanceText','setPointBtn',
+  'xrState','xrHint','pointText','anchorText','distanceText','stabilityText','setPointBtn',
   'xrResetBtn','xrEndBtn','topPanel','bottomPanel'
 ].forEach(id => el[id] = $(id));
 
@@ -171,6 +185,23 @@ let noHitFrames = 0;
 let nullPoseSince = null;
 let trackingMode = 'NOT STARTED';
 let logLines = [];
+
+// Stability / quality metrics.
+let xrFrameTotal = 0;
+let viewerPoseValidFrames = 0;
+let viewerPoseEligibleHitFrames = 0;
+let hitSuccessFrames = 0;
+
+let anchorAEligibleFrames = 0;
+let anchorATrackedFrames = 0;
+let anchorBEligibleFrames = 0;
+let anchorBTrackedFrames = 0;
+
+let distanceSamples = [];
+let cameraASamples = [];
+let cameraBSamples = [];
+let lastMetricsUiTime = 0;
+
 let ending = false;
 let cleanupDone = false;
 const LOG_STORAGE_KEY = 'ar-distance-lab-phase4-rev2-log';
@@ -199,6 +230,14 @@ function persistDiagnostics(){
       anchorAState: el.anchorAState?.textContent || '',
       anchorBState: el.anchorBState?.textContent || '',
       distance: el.distanceState?.textContent || '',
+      samples: distanceSamples.length,
+      median: median(distanceSamples),
+      min: distanceSamples.length ? Math.min(...distanceSamples) : null,
+      max: distanceSamples.length ? Math.max(...distanceSamples) : null,
+      viewerPoseRate: xrFrameTotal ? viewerPoseValidFrames/xrFrameTotal : null,
+      hitRate: viewerPoseEligibleHitFrames ? hitSuccessFrames/viewerPoseEligibleHitFrames : null,
+      anchorARate: anchorAEligibleFrames ? anchorATrackedFrames/anchorAEligibleFrames : null,
+      anchorBRate: anchorBEligibleFrames ? anchorBTrackedFrames/anchorBEligibleFrames : null,
       pointA: pointA ? {...pointA} : null,
       pointB: pointB ? {...pointB} : null
     };
@@ -244,6 +283,94 @@ function calcDistance(a,b){
 function fmtDistance(m){
   if(m < 1) return `${(m*100).toFixed(1)} cm`;
   return `${m.toFixed(3)} m`;
+}
+
+function median(values){
+  if(!values.length) return null;
+  const a = [...values].sort((x,y)=>x-y);
+  const mid = Math.floor(a.length/2);
+  return a.length % 2 ? a[mid] : (a[mid-1]+a[mid])/2;
+}
+
+function pct(n,d){
+  if(!d) return '—';
+  return `${((n/d)*100).toFixed(1)}% (${n}/${d})`;
+}
+
+function distance3(a,b){
+  const dx=b.x-a.x, dy=b.y-a.y, dz=b.z-a.z;
+  return Math.sqrt(dx*dx+dy*dy+dz*dz);
+}
+
+function resetMetrics(){
+  xrFrameTotal = 0;
+  viewerPoseValidFrames = 0;
+  viewerPoseEligibleHitFrames = 0;
+  hitSuccessFrames = 0;
+
+  anchorAEligibleFrames = 0;
+  anchorATrackedFrames = 0;
+  anchorBEligibleFrames = 0;
+  anchorBTrackedFrames = 0;
+
+  distanceSamples = [];
+  cameraASamples = [];
+  cameraBSamples = [];
+  lastMetricsUiTime = 0;
+
+  set('stabilitySamples','0','');
+  set('stabilityMedian','—','');
+  set('stabilityMinMax','—','');
+  set('stabilityRange','—','');
+  set('cameraAState','—','');
+  set('cameraBState','—','');
+  set('viewerRateState','—','');
+  set('hitRateState','—','');
+  set('anchorARateState','—','');
+  set('anchorBRateState','—','');
+  if(el.stabilityText) el.stabilityText.textContent = 'STABILITY: —';
+}
+
+function updateMetricsUI(){
+  const n = distanceSamples.length;
+
+  set('stabilitySamples',String(n),n ? 'ok':'');
+  set('viewerRateState',pct(viewerPoseValidFrames,xrFrameTotal),viewerPoseValidFrames ? 'ok':'warn');
+  set('hitRateState',pct(hitSuccessFrames,viewerPoseEligibleHitFrames),hitSuccessFrames ? 'ok':'warn');
+  set('anchorARateState',pct(anchorATrackedFrames,anchorAEligibleFrames),anchorATrackedFrames ? 'ok':'warn');
+  set('anchorBRateState',pct(anchorBTrackedFrames,anchorBEligibleFrames),anchorBTrackedFrames ? 'ok':'warn');
+
+  if(cameraASamples.length){
+    const v = cameraASamples[cameraASamples.length-1];
+    set('cameraAState',fmtDistance(v),'ok');
+  }else set('cameraAState','—','');
+
+  if(cameraBSamples.length){
+    const v = cameraBSamples[cameraBSamples.length-1];
+    set('cameraBState',fmtDistance(v),'ok');
+  }else set('cameraBState','—','');
+
+  if(!n){
+    set('stabilityMedian','—','');
+    set('stabilityMinMax','—','');
+    set('stabilityRange','—','');
+    if(el.stabilityText) el.stabilityText.textContent = 'STABILITY: —';
+    return;
+  }
+
+  const med = median(distanceSamples);
+  const min = Math.min(...distanceSamples);
+  const max = Math.max(...distanceSamples);
+  const range = max-min;
+
+  set('stabilityMedian',fmtDistance(med),'ok');
+  set('stabilityMinMax',`${fmtDistance(min)} / ${fmtDistance(max)}`,'ok');
+  set('stabilityRange',fmtDistance(range),range <= 0.005 ? 'ok' : 'warn');
+
+  if(el.stabilityText){
+    el.stabilityText.textContent =
+      `STABILITY: n=${n} median=${fmtDistance(med)} range=${fmtDistance(range)}`;
+  }
 }
 
 async function preflight(){
@@ -445,6 +572,7 @@ async function startAR(){
   el.startBtn.disabled = true;
   ending = false;
   cleanupDone = false;
+  resetMetrics();
 
   try{
     session = await navigator.xr.requestSession('immersive-ar',{
@@ -491,12 +619,26 @@ async function startAR(){
 
 function updateTrackingState(time,pose){
   if(pose){
-    if(trackingMode !== 'ACTIVE'){
+    if(!viewerPoseSeen){
+      viewerPoseSeen = true;
       trackingMode = 'ACTIVE';
       set('trackingState','ACTIVE','ok');
-      log(`tracking ACTIVE at frame=${frameCount}`);
+      log(`tracking ACTIVE after initialization at frame=${frameCount}`);
+    }else if(trackingMode !== 'ACTIVE'){
+      trackingMode = 'ACTIVE';
+      set('trackingState','ACTIVE','ok');
+      log(`tracking ACTIVE recovered at frame=${frameCount}`);
     }
     nullPoseSince = null;
+    return;
+  }
+
+  // Before the first valid Viewer Pose, this is initialization—not instability.
+  if(!viewerPoseSeen){
+    trackingMode = 'INITIALIZING';
+    set('trackingState','INITIALIZING','warn');
+    el.xrState.textContent = 'TRACKING INITIALIZING';
+    el.xrHint.textContent = 'Move slowly and show the camera a textured, well-lit area.';
     return;
   }
 
@@ -519,14 +661,14 @@ function updateTrackingState(time,pose){
     }
     el.xrState.textContent = 'TRACKING UNSTABLE';
     el.xrHint.textContent = 'Hold steady or aim at a more textured area.';
-  }else if(!viewerPoseSeen){
-    set('trackingState','PENDING','warn');
   }
 }
-
 function updateAnchorPose(frame,which){
   const anchor = which === 'A' ? anchorA : anchorB;
   if(!anchor) return false;
+
+  if(which === 'A') anchorAEligibleFrames++;
+  else anchorBEligibleFrames++;
 
   let tracked = false;
   try{
@@ -537,6 +679,9 @@ function updateAnchorPose(frame,which){
     set(which === 'A' ? 'anchorAState' : 'anchorBState','TEMPORARILY NOT TRACKED','warn');
     return false;
   }
+
+  if(which === 'A') anchorATrackedFrames++;
+  else anchorBTrackedFrames++;
 
   const pose = frame.getPose(anchor.anchorSpace,localSpace);
   if(!pose){
@@ -559,7 +704,6 @@ function updateAnchorPose(frame,which){
   }
   return true;
 }
-
 function createAnchorFromHit(result,hitPose,slot){
   if(anchorCreationBusy) return;
   anchorCreationBusy = true;
@@ -621,13 +765,21 @@ function onXRFrame(time,frame){
   if(!session || ending) return;
   raf = session.requestAnimationFrame(onXRFrame);
   frameCount++;
+  xrFrameTotal++;
 
   const pose = frame.getViewerPose(localSpace);
   updateTrackingState(time,pose);
 
-  if(!pose) return;
+  if(!pose){
+    if(time - lastMetricsUiTime > 250){
+      updateMetricsUI();
+      lastMetricsUiTime = time;
+    }
+    return;
+  }
 
-  viewerPoseSeen = true;
+  viewerPoseValidFrames++;
+  viewerPoseEligibleHitFrames++;
 
   const aTracked = updateAnchorPose(frame,'A');
   const bTracked = updateAnchorPose(frame,'B');
@@ -637,9 +789,34 @@ function onXRFrame(time,frame){
     updateDistanceUI();
   }
 
+  // Stability is sampled only when A and B are both tracked in the same XR frame.
+  if(aTracked && bTracked && pointA && pointB){
+    const d = calcDistance(pointA,pointB);
+    distanceSamples.push(d);
+
+    const camera = pose.transform.position;
+    const camPoint = {x:camera.x,y:camera.y,z:camera.z};
+    cameraASamples.push(distance3(camPoint,pointA));
+    cameraBSamples.push(distance3(camPoint,pointB));
+
+    // Keep memory bounded while retaining a long enough measurement history.
+    const MAX_SAMPLES = 3600;
+    if(distanceSamples.length > MAX_SAMPLES){
+      distanceSamples.shift();
+      cameraASamples.shift();
+      cameraBSamples.shift();
+    }
+  }
+
+  if(time - lastMetricsUiTime > 250){
+    updateMetricsUI();
+    lastMetricsUiTime = time;
+  }
+
   const results = frame.getHitTestResults(hitTestSource);
 
   if(results.length){
+    hitSuccessFrames++;
     const result = results[0];
     const hitPose = result.getPose(localSpace);
 
@@ -744,6 +921,15 @@ function resetMeasurement(){
 
   anchorA = null;
   anchorB = null;
+
+  distanceSamples = [];
+  cameraASamples = [];
+  cameraBSamples = [];
+  anchorAEligibleFrames = 0;
+  anchorATrackedFrames = 0;
+  anchorBEligibleFrames = 0;
+  anchorBTrackedFrames = 0;
+
   pointA = null;
   pointB = null;
   matrixA = null;
@@ -757,6 +943,7 @@ function resetMeasurement(){
   }
 
   updateDistanceUI();
+  updateMetricsUI();
 
   if(session){
     el.xrState.textContent = latestHitPoint ? 'SURFACE DETECTED' : 'SEARCHING SURFACE...';
@@ -771,6 +958,15 @@ async function stopXRResourcesBeforeEnd(reason){
   ending = true;
 
   log(`shutdown requested (${reason})`);
+
+  if(distanceSamples.length){
+    const med = median(distanceSamples);
+    const min = Math.min(...distanceSamples);
+    const max = Math.max(...distanceSamples);
+    log(`stability summary: samples=${distanceSamples.length}; median=${med.toFixed(6)} m; min=${min.toFixed(6)} m; max=${max.toFixed(6)} m; range=${(max-min).toFixed(6)} m`);
+    log(`quality summary: ViewerPose=${pct(viewerPoseValidFrames,xrFrameTotal)}; HitTest=${pct(hitSuccessFrames,viewerPoseEligibleHitFrames)}; AnchorA=${pct(anchorATrackedFrames,anchorAEligibleFrames)}; AnchorB=${pct(anchorBTrackedFrames,anchorBEligibleFrames)}`);
+  }
+
   persistDiagnostics();
 
   // Stop the render loop first. This prevents a frame callback from scheduling
@@ -925,6 +1121,7 @@ window.addEventListener('pagehide',()=>{
 });
 
 restoreDiagnostics();
+resetMetrics();
 updateDistanceUI();
 preflight();
 })();
