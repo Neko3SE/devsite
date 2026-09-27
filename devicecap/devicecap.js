@@ -27,5 +27,35 @@ async function testNfc(){if(!window.NDEFReader)return{Result:"NOT SUPPORTED"};tr
 async function testXr(){if(!navigator.xr)return{Result:"NOT SUPPORTED"};try{if(!(await navigator.xr.isSessionSupported("immersive-ar")))return{Result:"NOT SUPPORTED"};const s=await navigator.xr.requestSession("immersive-ar");await s.end();return{Result:"TEST PASSED",Mode:"immersive-ar"}}catch(e){return{Result:e.name==="NotAllowedError"?"PERMISSION DENIED":`TEST FAILED (${e.name})`}}}
 function buildTests(){const root=$("interactive-tests");for(const [id,title,desc,fn] of tests){const sec=document.createElement("section");sec.className="dc-test";sec.dataset.test=id;sec.innerHTML=`<h3>${title}</h3><p>${desc}</p><footer><button type="button">TEST</button><span class="dc-test-result">NOT TESTED</span></footer>`;sec.querySelector("button").addEventListener("click",async e=>{const b=e.currentTarget;b.disabled=true;const out=sec.querySelector(".dc-test-result");out.textContent="RUNNING";try{setInteractive(id,await fn())}catch(err){setInteractive(id,{Result:`TEST FAILED (${err.name||"Error"})`})}finally{b.disabled=false}});root.append(sec)}}
 function report(){const lines=["DEVICE CAPABILITY LAB β",new Date().toISOString(),"", "[AUTOMATIC]"];for(const [g,items] of Object.entries(results.automatic)){lines.push(`\n${g}`);for(const [k,v] of Object.entries(items))lines.push(`${k}: ${v}`)}lines.push("\n[INTERACTIVE]");for(const [id,items] of Object.entries(results.interactive)){lines.push(`\n${id.toUpperCase()}`);for(const [k,v] of Object.entries(items))lines.push(`${k}: ${v}`)}return lines.join("\n")}
-function updateReport(){$("report-preview").textContent=report()}$("run-auto").addEventListener("click",runAuto);$("refresh-display").addEventListener("click",runAuto);$("copy-report").addEventListener("click",async()=>{const text=report();try{await navigator.clipboard.writeText(text);$("copy-report").textContent="COPIED";setTimeout(()=>$("copy-report").textContent="COPY REPORT",1400)}catch{const ta=document.createElement("textarea");ta.value=text;document.body.append(ta);ta.select();document.execCommand("copy");ta.remove()}});buildTests();runAuto();
+function updateReport(){$("report-preview").textContent=report()}
+function resetAll(){
+  results.automatic={};
+  results.interactive={};
+  $("auto-results").innerHTML="";
+  $("auto-state").textContent="NOT MEASURED";
+  $("report-preview").textContent="NOT MEASURED";
+  const run=$("run-auto");
+  run.disabled=false;
+  run.classList.add("dc-attention");
+  const done=$("run-auto-done");
+  done.textContent="NOT MEASURED";
+  done.classList.remove("is-done");
+  document.querySelectorAll(".dc-test").forEach(sec=>{
+    const out=sec.querySelector(".dc-test-result");
+    const b=sec.querySelector("button");
+    if(out)out.textContent="NOT TESTED";
+    if(b)b.disabled=false;
+  });
+}
+async function runAutoFromButton(){
+  const run=$("run-auto");
+  run.classList.remove("dc-attention");
+  await runAuto();
+  const done=$("run-auto-done");
+  done.textContent="MEASURED";
+  done.classList.add("is-done");
+}
+$("run-auto").addEventListener("click",runAutoFromButton);
+$("reset-tests").addEventListener("click",resetAll);
+$("copy-report").addEventListener("click",async()=>{const text=report();try{await navigator.clipboard.writeText(text);$("copy-report").textContent="COPIED";setTimeout(()=>$("copy-report").textContent="COPY REPORT",1400)}catch{const ta=document.createElement("textarea");ta.value=text;document.body.append(ta);ta.select();document.execCommand("copy");ta.remove()}});buildTests();resetAll();
 })();
