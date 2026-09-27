@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<title>AR DISTANCE LAB - Phase 4</title>
+<title>AR DISTANCE LAB - Phase 4 Rev.2</title>
 <style>
 :root{
   color-scheme:dark;
@@ -54,7 +54,7 @@ canvas{position:fixed;inset:0;width:1px;height:1px;pointer-events:none}
 <body>
 <main>
 <h1>AR DISTANCE LAB</h1>
-<p class="sub">Phase 4 — Anchored A/B + Time-based Tracking State</p>
+<p class="sub">Phase 4 Rev.2 — Anchored A/B + Safe XR Shutdown</p>
 
 <section class="card">
 <h2>STATUS</h2>
@@ -76,16 +76,17 @@ canvas{position:fixed;inset:0;width:1px;height:1px;pointer-events:none}
 <section class="card">
 <h2>CONTROLS</h2>
 <div class="actions">
-  <button id="startBtn" disabled>START AR</button>
-  <button id="resetBtn" disabled>RESET MEASURE</button>
-  <button id="endBtn" class="danger" disabled>END AR</button>
+  <button type="button" id="startBtn" disabled>START AR</button>
+  <button type="button" id="resetBtn" disabled>RESET MEASURE</button>
+  <button type="button" id="endBtn" class="danger" disabled>END AR</button>
 </div>
 </section>
 
 <section class="card note">
 Point A/BはHit Test結果からWebXR Anchorとして生成します。AnchorのPoseを毎XR frame追跡し、
 A/Bマーカー・ライン・距離を更新します。Trackingは短時間のPose欠落をUNSTABLE、
-約1秒以上継続した場合をLOSTとして扱います。
+約1秒以上継続した場合をLOSTとして扱います。Rev.2ではEND時にXR animation frame → Hit Test →
+Anchor → XRSessionの順で停止し、診断ログをsessionStorageへ退避します。
 </section>
 
 <section class="card">
@@ -110,9 +111,9 @@ A/Bマーカー・ライン・距離を更新します。Trackingは短時間の
       <div id="pointText">A: NOT SET / B: NOT SET</div>
       <div id="anchorText">ANCHOR A: — / ANCHOR B: —</div>
       <div class="xrActions">
-        <button id="setPointBtn" disabled>SET POINT A</button>
-        <button id="xrResetBtn" disabled>RESET</button>
-        <button id="xrEndBtn" class="danger">END</button>
+        <button type="button" id="setPointBtn" disabled>SET POINT A</button>
+        <button type="button" id="xrResetBtn" disabled>RESET</button>
+        <button type="button" id="xrEndBtn" class="danger">END</button>
       </div>
     </div>
   </div>
@@ -170,6 +171,10 @@ let noHitFrames = 0;
 let nullPoseSince = null;
 let trackingMode = 'NOT STARTED';
 let logLines = [];
+let ending = false;
+let cleanupDone = false;
+const LOG_STORAGE_KEY = 'ar-distance-lab-phase4-rev2-log';
+const SUMMARY_STORAGE_KEY = 'ar-distance-lab-phase4-rev2-summary';
 
 const TRACKING_UNSTABLE_MS = 250;
 const TRACKING_LOST_MS = 1000;
@@ -183,10 +188,43 @@ const IDENTITY4 = new Float32Array([
 
 function now(){ return new Date().toISOString(); }
 
+function persistDiagnostics(){
+  try{
+    sessionStorage.setItem(LOG_STORAGE_KEY,logLines.join('\n'));
+    const summary = {
+      savedAt: now(),
+      sessionState: el.sessionState?.textContent || '',
+      trackingState: el.trackingState?.textContent || '',
+      surfaceState: el.surfaceState?.textContent || '',
+      anchorAState: el.anchorAState?.textContent || '',
+      anchorBState: el.anchorBState?.textContent || '',
+      distance: el.distanceState?.textContent || '',
+      pointA: pointA ? {...pointA} : null,
+      pointB: pointB ? {...pointB} : null
+    };
+    sessionStorage.setItem(SUMMARY_STORAGE_KEY,JSON.stringify(summary));
+  }catch{}
+}
+
 function log(msg){
   logLines.push(`${now()}  ${msg}`);
   el.log.textContent = logLines.join('\n');
   el.log.scrollTop = el.log.scrollHeight;
+  persistDiagnostics();
+}
+
+function restoreDiagnostics(){
+  try{
+    const oldLog = sessionStorage.getItem(LOG_STORAGE_KEY);
+    if(oldLog){
+      logLines = [
+        `${now()}  [RECOVERED PREVIOUS RUN]`,
+        ...oldLog.split('\n').filter(Boolean)
+      ];
+      el.log.textContent = logLines.join('\n');
+      el.log.scrollTop = el.log.scrollHeight;
+    }
+  }catch{}
 }
 
 function set(id,text,cls=''){
@@ -405,6 +443,8 @@ function requestCapture(source){
 
 async function startAR(){
   el.startBtn.disabled = true;
+  ending = false;
+  cleanupDone = false;
 
   try{
     session = await navigator.xr.requestSession('immersive-ar',{
@@ -578,7 +618,7 @@ function createAnchorFromHit(result,hitPose,slot){
 }
 
 function onXRFrame(time,frame){
-  if(!session) return;
+  if(!session || ending) return;
   raf = session.requestAnimationFrame(onXRFrame);
   frameCount++;
 
@@ -726,22 +766,100 @@ function resetMeasurement(){
   log('measurement reset');
 }
 
-async function endAR(){
-  if(!session) return;
+async function stopXRResourcesBeforeEnd(reason){
+  if(!session || ending) return;
+  ending = true;
+
+  log(`shutdown requested (${reason})`);
+  persistDiagnostics();
+
+  // Stop the render loop first. This prevents a frame callback from scheduling
+  // more XR work while the immersive session is being dismantled.
   try{
-    await session.end();
+    if(raf){
+      session.cancelAnimationFrame(raf);
+      log(`XR animation frame cancelled: handle=${raf}`);
+      raf = 0;
+    }
+  }catch(err){
+    log(`cancelAnimationFrame failed: ${err.name}: ${err.message}`);
+  }
+
+  // Stop hit-test subscription while the session is still alive.
+  try{
+    if(hitTestSource){
+      hitTestSource.cancel();
+      log('hit-test source cancelled before session.end()');
+    }
+  }catch(err){
+    log(`hitTestSource.cancel failed: ${err.name}: ${err.message}`);
+  }
+  hitTestSource = null;
+
+  // Remove anchors while their XRSession is still active.
+  try{
+    if(anchorA){
+      anchorA.delete();
+      log('Anchor A deleted before session.end()');
+    }
+  }catch(err){
+    log(`Anchor A delete failed: ${err.name}: ${err.message}`);
+  }
+  try{
+    if(anchorB){
+      anchorB.delete();
+      log('Anchor B deleted before session.end()');
+    }
+  }catch(err){
+    log(`Anchor B delete failed: ${err.name}: ${err.message}`);
+  }
+
+  anchorA = null;
+  anchorB = null;
+  capturePending = null;
+  anchorCreationBusy = false;
+
+  // Hide DOM overlay controls before shutdown to avoid an additional UI action
+  // racing with the XR end sequence.
+  try{ el.xrHud.hidden = true; }catch{}
+
+  persistDiagnostics();
+}
+
+async function endAR(event){
+  if(event){
+    event.preventDefault?.();
+    event.stopPropagation?.();
+  }
+  if(!session || ending) return;
+
+  const endingSession = session;
+
+  await stopXRResourcesBeforeEnd('END button');
+
+  try{
+    await endingSession.end();
+    log('session.end() promise resolved');
   }catch(err){
     log(`session.end failed: ${err.name}: ${err.message}`);
+    // If end() itself fails, restore minimal page controls instead of leaving
+    // the app permanently locked in "ending".
+    ending = false;
+    el.xrHud.hidden = false;
+    el.endBtn.disabled = false;
+    el.xrEndBtn.disabled = false;
+    persistDiagnostics();
   }
 }
 
 function onSessionEnd(){
-  log('session ended');
+  if(cleanupDone) return;
+  cleanupDone = true;
 
-  try{ hitTestSource?.cancel?.(); }catch{}
-  try{ anchorA?.delete?.(); }catch{}
-  try{ anchorB?.delete?.(); }catch{}
+  log('XRSession end event received');
 
+  // Do not call XRAnchor.delete(), hitTestSource.cancel(), or other XR methods
+  // here. At this point the XRSession has already ended.
   session = null;
   localSpace = null;
   viewerSpace = null;
@@ -749,8 +867,6 @@ function onSessionEnd(){
   latestHitMatrix = null;
   latestHitPoint = null;
 
-  anchorA = null;
-  anchorB = null;
   capturePending = null;
   anchorCreationBusy = false;
 
@@ -763,6 +879,7 @@ function onSessionEnd(){
 
   gl = null;
   program = null;
+  raf = 0;
 
   el.xrHud.hidden = true;
   el.endBtn.disabled = true;
@@ -774,6 +891,9 @@ function onSessionEnd(){
   set('surfaceState','ENDED','warn');
   set('anchorAState',pointA ? 'SESSION ENDED':'NOT SET','warn');
   set('anchorBState',pointB ? 'SESSION ENDED':'NOT SET','warn');
+
+  ending = false;
+  persistDiagnostics();
 }
 
 el.topPanel.addEventListener('beforexrselect',preventOverlayXRSelect);
@@ -787,6 +907,24 @@ el.setPointBtn.addEventListener('click',()=>requestCapture('dom-button'));
 el.xrResetBtn.addEventListener('click',resetMeasurement);
 el.xrEndBtn.addEventListener('click',endAR);
 
+window.addEventListener('error',event=>{
+  try{
+    log(`WINDOW ERROR: ${event.message || 'unknown'} @ ${event.filename || ''}:${event.lineno || ''}`);
+  }catch{}
+});
+
+window.addEventListener('unhandledrejection',event=>{
+  try{
+    const r = event.reason;
+    log(`UNHANDLED REJECTION: ${r?.name || ''} ${r?.message || String(r)}`);
+  }catch{}
+});
+
+window.addEventListener('pagehide',()=>{
+  try{ persistDiagnostics(); }catch{}
+});
+
+restoreDiagnostics();
 updateDistanceUI();
 preflight();
 })();
