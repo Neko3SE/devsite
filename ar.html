@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<title>AR DISTANCE LAB - Phase 4.12</title>
+<title>AR DISTANCE LAB - Phase 4.13</title>
 <style>
 :root{
   color-scheme:dark;
@@ -83,7 +83,7 @@ padding:10px;pointer-events:auto}
 <body>
 <main>
 <h1>AR DISTANCE LAB</h1>
-<p class="sub">Phase 4.12 — Hit Test × Depth Cross-check + Immutable Hit Commit</p>
+<p class="sub">Phase 4.13 — View-space Depth Alignment + Pre-B Integrity Gate</p>
 
 <section class="card">
 <h2>STATUS</h2>
@@ -100,9 +100,9 @@ padding:10px;pointer-events:auto}
   <div class="cell">Commit status</div><div class="cell" id="freezeStatusState">NOT SET</div>
   <div class="cell">Live Anchor A-B</div><div class="cell" id="liveDistanceState">—</div>
   <div class="cell">Live Anchor − Commit</div><div class="cell" id="liveMinusFrozenState">—</div>
-  <div class="cell">Committed runs</div><div class="cell" id="repeatCountState">0</div>
-  <div class="cell">Committed mean</div><div class="cell" id="repeatMeanState">—</div>
-  <div class="cell">Committed range</div><div class="cell" id="repeatRangeState">—</div>
+  <div class="cell">Valid committed runs</div><div class="cell" id="repeatCountState">0</div>
+  <div class="cell">Valid committed mean</div><div class="cell" id="repeatMeanState">—</div>
+  <div class="cell">Valid committed range</div><div class="cell" id="repeatRangeState">—</div>
   <div class="cell">Capture Hit distance</div><div class="cell" id="captureDistanceState">—</div>
   <div class="cell">A Hit 0.3 s stability</div><div class="cell" id="hitSpreadAState">—</div>
   <div class="cell">B Hit 0.3 s stability</div><div class="cell" id="hitSpreadBState">—</div>
@@ -115,6 +115,7 @@ padding:10px;pointer-events:auto}
   <div class="cell">A offset from capture Hit</div><div class="cell" id="preBOffsetState">—</div>
   <div class="cell">A drift from first Anchor</div><div class="cell" id="preBDriftState">—</div>
   <div class="cell">A max pre-B drift</div><div class="cell" id="preBMaxState">—</div>
+  <div class="cell">PRE-B integrity</div><div class="cell" id="preBIntegrityState">UNKNOWN</div>
   <div class="cell">Point A capture</div><div class="cell" id="captureAQualityState">—</div>
   <div class="cell">Point B capture</div><div class="cell" id="captureBQualityState">—</div>
   <div class="cell">Initial Anchor distance</div><div class="cell" id="initialAnchorDistanceState">—</div>
@@ -145,9 +146,13 @@ padding:10px;pointer-events:auto}
   <div class="cell">Depth center</div><div class="cell" id="depthCenterState">—</div>
   <div class="cell">Depth 9×9 median</div><div class="cell" id="depthMedianState">—</div>
   <div class="cell">Depth valid samples</div><div class="cell" id="depthValidState">—</div>
-  <div class="cell">Hit − Depth median</div><div class="cell" id="depthHitDeltaState">—</div>
-  <div class="cell">Point A Depth × Hit</div><div class="cell" id="captureADepthState">—</div>
-  <div class="cell">Point B Depth × Hit</div><div class="cell" id="captureBDepthState">—</div>
+  <div class="cell">Depth coherence</div><div class="cell" id="depthCoherenceState">—</div>
+  <div class="cell">Hit view (x,y,−z)</div><div class="cell" id="hitViewState">—</div>
+  <div class="cell">Hit projected UV</div><div class="cell" id="hitUvState">—</div>
+  <div class="cell">Depth @ Hit UV</div><div class="cell" id="depthAtHitState">—</div>
+  <div class="cell">Hit −Z − Depth@UV</div><div class="cell" id="depthHitDeltaState">—</div>
+  <div class="cell">Point A View-Z × Depth</div><div class="cell" id="captureADepthState">—</div>
+  <div class="cell">Point B View-Z × Depth</div><div class="cell" id="captureBDepthState">—</div>
   <div class="cell">Aim quality</div><div class="cell" id="aimQualityState">ANALYZING</div>
   <div class="cell">Edge median</div><div class="cell" id="edgeMedianState">—</div>
   <div class="cell">Contrast median</div><div class="cell" id="contrastMedianState">—</div>
@@ -183,11 +188,10 @@ padding:10px;pointer-events:auto}
 </section>
 
 <section class="card note">
-Phase 4.12ではPhase 4.11のImmutable Hit Commitを維持したまま、同じXR frameの中央視線についてWebXR Depth Sensingを取得し、Hit Testのcamera-to-hit距離とDepth中央領域medianをクロスチェックします。
-DepthはCPU最適化を必須として9×9の中央領域を診断サンプリングします。DepthとHitの差は記録専用で、Captureのブロック・距離の補正・Commit値の置換にはまだ使用しません。
-Anchor A/Bはマーカーとラインを世界空間へ追従表示するためだけに使用し、Anchorの後続再配置は正式な数値を変更しません。
-Hit Testの直前0.3秒をSTABLE / MOVING警告に使いますが、この判定もCaptureをブロックせず、正式値の置換にも使いません。
-Point AとPoint Bの間にXRReferenceSpace resetが発生した場合は、異なる座標基準を混在させないためCommitをINVALIDにします。
+Phase 4.13ではImmutable Hit Commitを維持しつつ、Hit位置を同じXRViewの座標へ変換して−Z（camera planeからの前方距離）とDepthを比較します。さらにHitを投影したnormalized view座標(UV)のDepthを取得し、中央Depthとの取り違えを避けます。
+DepthはCPU最適化を必須とし、Hit UV周辺9×9についてIQR/MADを計算してCOHERENT / MIXED / LOW COHERENCEを診断します。Depthは引き続きCommit値の補正には使用しません。
+Point A設定後からPoint BまでのAnchor A driftは空間基準の再推定兆候として扱い、5 mm以上をWARN、10 mm以上を暫定INVALIDとします。この閾値はPhase 4.13の診断用で、今後の実測で再調整します。
+Hit Testの直前0.3秒STABLE / MOVINGは引き続きwarning-onlyです。XRReferenceSpace resetがA-B間に発生した場合もCommitをINVALIDにします。
 </section>
 
 <section class="card">
@@ -249,14 +253,14 @@ const el = {};
   'repeatCountState','repeatMeanState','repeatRangeState','captureDistanceState',
   'hitSpreadAState','hitSpreadBState','hitInstantABState','hitMedian300ABState',
   'hitMedian500ABState','hitMedian1000ABState','hitMedianDeltaState',
-  'preBElapsedState','preBOffsetState','preBDriftState','preBMaxState',
+  'preBElapsedState','preBOffsetState','preBDriftState','preBMaxState','preBIntegrityState',
   'captureAQualityState','captureBQualityState','initialAnchorDistanceState',
   'anchorDeltaState','maxAnchorDeltaState','rollingRangeState','settlingState','stableAtState',
   'stabilitySamples','stabilityMedian','stabilityMinMax','stabilityRange','cameraAState','cameraBState','viewerRateState',
   'hitRateState','anchorARateState','anchorBRateState','referenceState',
   'absErrorState','relErrorState','resetEventState','referenceCm',
   'rawCameraState','hitDistanceState','depthState','depthConfigState','depthBufferState',
-  'depthCenterState','depthMedianState','depthValidState','depthHitDeltaState',
+  'depthCenterState','depthMedianState','depthValidState','depthCoherenceState','hitViewState','hitUvState','depthAtHitState','depthHitDeltaState',
   'captureADepthState','captureBDepthState','aimQualityState','edgeMedianState',
   'contrastMedianState','magnifierState','magnifierCanvas','magnifierWrap',
   'magnifierLabel','qualityText','hitStabilityText','depthText',
@@ -324,7 +328,7 @@ let cameraASamples = [];
 let cameraBSamples = [];
 let lastMetricsUiTime = 0;
 
-// Phase 4.12: immutable placement points + Anchor settling timeline.
+// Phase 4.13: immutable placement points + Anchor settling timeline.
 let capturePointA = null;
 let capturePointB = null;
 let captureResetCountA = null;
@@ -348,7 +352,7 @@ const SETTLING_HALF_SHIFT_M = 0.001;
 const TIMELINE_LOG_INTERVAL_MS = 500;
 
 
-// Phase 4.12: monitor Point A from its capture until Point B capture.
+// Phase 4.13: monitor Point A from its capture until Point B capture.
 let captureSnapshotA = null;
 let captureSnapshotB = null;
 
@@ -365,12 +369,15 @@ let preBThresholdLogged = {
 };
 let preBResetCountAtStart = null;
 let preBSummaryAtB = null;
+let preBIntegrity = 'UNKNOWN';
 
 const PREB_LOG_INTERVAL_MS = 1000;
+const PREB_WARN_M = 0.005;
+const PREB_INVALID_M = 0.010;
 
 
 
-// Phase 4.12: Hit Test capture stability diagnostic.
+// Phase 4.13: Hit Test capture stability diagnostic.
 const HIT_HISTORY_RETENTION_MS = 1600;
 const HIT_WINDOW_MS = [300,500,1000];
 // 300 ms is a warning-only short-window diagnostic. It never blocks capture
@@ -639,7 +646,7 @@ function logHitABComparison(){
   return comparison;
 }
 
-// Phase 4.12: formal measurement is frozen at Point B capture.
+// Phase 4.13: formal measurement candidate is frozen at Point B capture.
 let frozenMeasurement = null;
 let sessionFrozenMeasurements = [];
 let lastAAnchorPoseTime = null;
@@ -731,15 +738,40 @@ function freezeMeasurementAtB(hitPoint,time){
     return false;
   }
 
-  // Formal distance is based only on the two immutable Hit Test positions.
-  // Anchor poses are deliberately excluded from this calculation.
+  // Formal candidate distance is based only on the two immutable Hit Test positions.
+  // Anchor poses never numerically replace it, but pre-B Anchor drift is used as
+  // an integrity signal because mixing coordinates from different map epochs is unsafe.
   const aHit = clonePoint(capturePointA);
   const distance = distance3(aHit,bHit);
   const absError = distance-referenceMeters;
   const relError = (absError/referenceMeters)*100;
+  const integrity=applyPreBIntegrity(preBSummaryAtB);
 
   captureHitDistance = distance;
-  set('captureDistanceState',fmtDistance(distance),'ok');
+  set('captureDistanceState',fmtDistance(distance),integrity.state==='INVALID'?'warn':'ok');
+
+  if(integrity.state==='INVALID'){
+    frozenMeasurement = {
+      valid:false,
+      reason:integrity.reason,
+      candidateDistance:distance,
+      aHit,bHit,time,frame:frameCount,referenceMeters,absError,relError,
+      resetAtA:captureResetCountA,resetAtB:captureResetCountB,
+      sessionResetCount:sessionReferenceSpaceResetCount,
+      aCaptureSnapshot:captureSnapshotA,bCaptureSnapshot:captureSnapshotB,
+      aHitStability:hitStabilitySnapshotA,bHitStability:hitStabilitySnapshotB,
+      preB:preBSummaryAtB,integrity:integrity.state
+    };
+    set('distanceState',`INVALID (${fmtDistance(distance)})`,'ng');
+    set('freezeStatusState',`REJECTED — ${integrity.reason}`,'ng');
+    log(
+      `COMMITTED CANDIDATE REJECTED: distance=${distance.toFixed(6)} m (${fmtDistance(distance)}); ` +
+      `error=${absError.toFixed(6)} m (${relError.toFixed(3)}%); reason=${integrity.reason}; ` +
+      `maxPreBDrift=${integrity.maxDrift===null?'n/a':(integrity.maxDrift*1000).toFixed(3)+' mm'}; ` +
+      `frame=${frameCount}; source=immutable-hit; excludedFromRepeatability=true`
+    );
+    return false;
+  }
 
   frozenMeasurement = {
     valid:true,
@@ -758,7 +790,8 @@ function freezeMeasurementAtB(hitPoint,time){
     bCaptureSnapshot:captureSnapshotB,
     aHitStability:hitStabilitySnapshotA,
     bHitStability:hitStabilitySnapshotB,
-    preB:preBSummaryAtB
+    preB:preBSummaryAtB,
+    integrity:integrity.state
   };
 
   sessionFrozenMeasurements.push({
@@ -768,11 +801,12 @@ function freezeMeasurementAtB(hitPoint,time){
     relError,
     time,
     frame:frameCount,
-    sessionResetCount:sessionReferenceSpaceResetCount
+    sessionResetCount:sessionReferenceSpaceResetCount,
+    integrity:integrity.state
   });
 
   set('distanceState',fmtDistance(distance),'ok');
-  set('freezeStatusState',`COMMITTED HIT A↔B @ frame ${frameCount}`,'ok');
+  set('freezeStatusState',`${integrity.state==='WARN'?'COMMITTED WITH WARNING':'COMMITTED'} HIT A↔B @ frame ${frameCount}`,integrity.state==='WARN'?'warn':'ok');
   updateRepeatabilityUI();
 
   const values=sessionFrozenMeasurements.map(v=>v.distance);
@@ -784,7 +818,7 @@ function freezeMeasurementAtB(hitPoint,time){
     `distance=${distance.toFixed(6)} m (${fmtDistance(distance)}); ` +
     `AHit=${fmtPoint(aHit)}; BHit=${fmtPoint(bHit)}; ` +
     `error=${absError.toFixed(6)} m (${relError.toFixed(3)}%); ` +
-    `frame=${frameCount}; sessionReset=${sessionReferenceSpaceResetCount}; source=immutable-hit`
+    `frame=${frameCount}; sessionReset=${sessionReferenceSpaceResetCount}; source=immutable-hit; integrity=${integrity.state}`
   );
   log(
     `COMMITTED REPEATABILITY: n=${values.length}; mean=${mean.toFixed(6)} m; ` +
@@ -830,7 +864,7 @@ let qualityHistory = [];
 let lastQualitySampleTime = -Infinity;
 let latestHitDistance = null;
 
-// Phase 4.12: CPU Depth Sensing × center-ray Hit Test cross-check.
+// Phase 4.13: CPU Depth Sensing × XRView-aligned Hit Test cross-check.
 // Diagnostic only: it never gates capture and never modifies the committed distance.
 const DEPTH_GRID = 9;
 const DEPTH_RADIUS = 0.03; // normalized view coordinates: 0.47 .. 0.53
@@ -838,7 +872,10 @@ const DEPTH_SAMPLE_EVERY_FRAMES = 6;
 let depthAvailable = false;
 let depthBufferSeen = false;
 let depthFirstValidLogged = false;
-let latestDepthSample = null; // {time,frame,width,height,center,median,min,max,valid,total,rawValueToMeters}
+let latestDepthSample = null; // center-region summary
+let latestDepthInfo = null;   // transient XRCPUDepthInformation; only used in the same XR frame
+let latestDepthInfoFrame = -1;
+let latestHitViewDiagnostic = null;
 let latestDepthHitCrossCheck = null;
 let captureDepthCrossCheckA = null;
 let captureDepthCrossCheckB = null;
@@ -855,8 +892,8 @@ const DETAIL_CONTRAST_LOW = 8.0;
 
 let ending = false;
 let cleanupDone = false;
-const LOG_STORAGE_KEY = 'ar-distance-lab-phase4-12-log';
-const SUMMARY_STORAGE_KEY = 'ar-distance-lab-phase4-12-summary';
+const LOG_STORAGE_KEY = 'ar-distance-lab-phase4-13-log';
+const SUMMARY_STORAGE_KEY = 'ar-distance-lab-phase4-13-summary';
 
 const TRACKING_UNSTABLE_MS = 250;
 const TRACKING_LOST_MS = 1000;
@@ -912,6 +949,7 @@ function persistDiagnostics(){
       hitDistance: latestHitDistance,
       depthAvailable,
       latestDepthSample,
+      latestHitViewDiagnostic,
       latestDepthHitCrossCheck,
       captureDepthCrossCheckA,
       captureDepthCrossCheckB,
@@ -982,7 +1020,68 @@ function distance3(a,b){
   return Math.sqrt(dx*dx+dy*dy+dz*dz);
 }
 
+function clamp01(v){ return Math.max(0,Math.min(1,v)); }
 
+function quantileSorted(a,q){
+  if(!a.length) return null;
+  if(a.length===1) return a[0];
+  const pos=(a.length-1)*q;
+  const lo=Math.floor(pos), hi=Math.ceil(pos);
+  if(lo===hi) return a[lo];
+  const t=pos-lo;
+  return a[lo]*(1-t)+a[hi]*t;
+}
+
+function transformPointByMatrix(m,p){
+  return {
+    x:m[0]*p.x + m[4]*p.y + m[8]*p.z + m[12],
+    y:m[1]*p.x + m[5]*p.y + m[9]*p.z + m[13],
+    z:m[2]*p.x + m[6]*p.y + m[10]*p.z + m[14]
+  };
+}
+
+function projectViewPointToUv(viewPoint,projection){
+  if(!viewPoint || !projection) return null;
+  const x=viewPoint.x,y=viewPoint.y,z=viewPoint.z;
+  const cx=projection[0]*x+projection[4]*y+projection[8]*z+projection[12];
+  const cy=projection[1]*x+projection[5]*y+projection[9]*z+projection[13];
+  const cw=projection[3]*x+projection[7]*y+projection[11]*z+projection[15];
+  if(!Number.isFinite(cw) || Math.abs(cw)<1e-8) return null;
+  const ndcX=cx/cw, ndcY=cy/cw;
+  return {
+    x:(ndcX+1)/2,
+    y:(1-ndcY)/2,
+    ndcX,ndcY,
+    inView:ndcX>=-1 && ndcX<=1 && ndcY>=-1 && ndcY<=1
+  };
+}
+
+function buildHitViewDiagnostic(result,hitPoint,viewerPose){
+  const view=viewerPose?.views?.[0];
+  if(!view || !hitPoint) return null;
+  let viewPoint=null;
+  try{
+    viewPoint=transformPointByMatrix(view.transform.inverse.matrix,hitPoint);
+  }catch{ return null; }
+
+  const uv=projectViewPointToUv(viewPoint,view.projectionMatrix);
+  let viewerPoint=null;
+  try{
+    const vp=result?.getPose?.(viewerSpace)?.transform?.position;
+    if(vp) viewerPoint={x:vp.x,y:vp.y,z:vp.z};
+  }catch{}
+
+  const forward=-viewPoint.z;
+  const offAxis=Math.hypot(viewPoint.x,viewPoint.y);
+  return {
+    viewPoint,
+    forward,
+    offAxis,
+    offAxisAngleDeg:forward>0 ? Math.atan2(offAxis,forward)*180/Math.PI : null,
+    uv,
+    viewerPoint
+  };
+}
 
 function fmtMaybeNumber(v,digits=3){
   return Number.isFinite(v) ? Number(v).toFixed(digits) : 'n/a';
@@ -1007,6 +1106,9 @@ function resetDepthDiagnostics(){
   depthBufferSeen = false;
   depthFirstValidLogged = false;
   latestDepthSample = null;
+  latestDepthInfo = null;
+  latestDepthInfoFrame = -1;
+  latestHitViewDiagnostic = null;
   latestDepthHitCrossCheck = null;
   captureDepthCrossCheckA = null;
   captureDepthCrossCheckB = null;
@@ -1017,20 +1119,33 @@ function resetDepthDiagnostics(){
   set('depthCenterState','—','');
   set('depthMedianState','—','');
   set('depthValidState','—','');
+  set('depthCoherenceState','—','');
+  set('hitViewState','—','');
+  set('hitUvState','—','');
+  set('depthAtHitState','—','');
   set('depthHitDeltaState','—','');
   set('captureADepthState','—','');
   set('captureBDepthState','—','');
   if(el.depthText) el.depthText.textContent = 'DEPTH × HIT: WAITING — diagnostic only';
 }
 
-function depthRegionStats(info){
+function classifyDepthCoherence(stats){
+  if(!stats || !stats.valid) return 'NO DEPTH';
+  const ratio=stats.valid/stats.total;
+  if(ratio<0.75) return 'LOW VALID';
+  if(stats.iqr!==null && stats.mad!==null && stats.iqr<=0.020 && stats.mad<=0.010) return 'COHERENT';
+  if(stats.iqr!==null && stats.mad!==null && stats.iqr<=0.050 && stats.mad<=0.025) return 'MIXED';
+  return 'LOW COHERENCE';
+}
+
+function depthRegionStats(info,cx=0.5,cy=0.5,radius=DEPTH_RADIUS){
   if(!info || typeof info.getDepthInMeters !== 'function') return null;
 
   const values=[];
   for(let iy=0; iy<DEPTH_GRID; iy++){
-    const y=0.5-DEPTH_RADIUS + (2*DEPTH_RADIUS)*(iy/(DEPTH_GRID-1));
+    const y=clamp01(cy-radius + (2*radius)*(iy/(DEPTH_GRID-1)));
     for(let ix=0; ix<DEPTH_GRID; ix++){
-      const x=0.5-DEPTH_RADIUS + (2*DEPTH_RADIUS)*(ix/(DEPTH_GRID-1));
+      const x=clamp01(cx-radius + (2*radius)*(ix/(DEPTH_GRID-1)));
       let d=0;
       try{ d=info.getDepthInMeters(x,y); }catch{ d=0; }
       if(Number.isFinite(d) && d>0) values.push(d);
@@ -1039,19 +1154,28 @@ function depthRegionStats(info){
 
   let center=null;
   try{
-    const d=info.getDepthInMeters(0.5,0.5);
+    const d=info.getDepthInMeters(clamp01(cx),clamp01(cy));
     if(Number.isFinite(d) && d>0) center=d;
   }catch{}
 
+  const sorted=[...values].sort((a,b)=>a-b);
+  const med=sorted.length ? median(sorted) : null;
+  const q1=sorted.length ? quantileSorted(sorted,0.25) : null;
+  const q3=sorted.length ? quantileSorted(sorted,0.75) : null;
+  const absDev=med===null ? [] : sorted.map(v=>Math.abs(v-med)).sort((a,b)=>a-b);
   const total=DEPTH_GRID*DEPTH_GRID;
-  return {
-    center,
-    valid:values.length,
-    total,
-    median:values.length ? median(values) : null,
-    min:values.length ? Math.min(...values) : null,
-    max:values.length ? Math.max(...values) : null
+  const stats={
+    cx,cy,radius,center,
+    valid:sorted.length,total,
+    median:med,
+    min:sorted.length ? sorted[0] : null,
+    max:sorted.length ? sorted[sorted.length-1] : null,
+    q1,q3,
+    iqr:(q1===null||q3===null)?null:q3-q1,
+    mad:absDev.length ? median(absDev) : null
   };
+  stats.coherence=classifyDepthCoherence(stats);
+  return stats;
 }
 
 function sampleDepthForFrame(frame,pose,time,force=false){
@@ -1082,7 +1206,10 @@ function sampleDepthForFrame(frame,pose,time,force=false){
       );
     }
 
-    const stats=depthRegionStats(info);
+    latestDepthInfo=info;
+    latestDepthInfoFrame=frameCount;
+
+    const stats=depthRegionStats(info,0.5,0.5);
     if(!stats) return null;
 
     latestDepthSample={
@@ -1095,6 +1222,11 @@ function sampleDepthForFrame(frame,pose,time,force=false){
       median:stats.median,
       min:stats.min,
       max:stats.max,
+      q1:stats.q1,
+      q3:stats.q3,
+      iqr:stats.iqr,
+      mad:stats.mad,
+      coherence:stats.coherence,
       valid:stats.valid,
       total:stats.total
     };
@@ -1103,6 +1235,11 @@ function sampleDepthForFrame(frame,pose,time,force=false){
     set('depthCenterState',stats.center===null?'INVALID / ZERO':`${stats.center.toFixed(3)} m`,stats.center===null?'warn':'ok');
     set('depthMedianState',stats.median===null?'NO VALID DEPTH':`${stats.median.toFixed(3)} m`,stats.median===null?'warn':'ok');
     set('depthValidState',`${stats.valid}/${stats.total}`,stats.valid?'ok':'warn');
+    set(
+      'depthCoherenceState',
+      `${stats.coherence} / IQR=${stats.iqr===null?'n/a':(stats.iqr*1000).toFixed(1)+' mm'} / MAD=${stats.mad===null?'n/a':(stats.mad*1000).toFixed(1)+' mm'}`,
+      stats.coherence==='COHERENT'?'ok':stats.coherence==='MIXED'?'warn':'ng'
+    );
 
     if(stats.valid && !depthFirstValidLogged){
       depthFirstValidLogged=true;
@@ -1110,7 +1247,9 @@ function sampleDepthForFrame(frame,pose,time,force=false){
         `Depth first valid center region: valid=${stats.valid}/${stats.total}; ` +
         `center=${stats.center===null?'n/a':stats.center.toFixed(6)} m; ` +
         `median=${stats.median.toFixed(6)} m; min=${stats.min.toFixed(6)} m; max=${stats.max.toFixed(6)} m; ` +
-        `radius=${DEPTH_RADIUS.toFixed(3)} normalized`
+        `IQR=${stats.iqr===null?'n/a':(stats.iqr*1000).toFixed(3)+' mm'}; ` +
+        `MAD=${stats.mad===null?'n/a':(stats.mad*1000).toFixed(3)+' mm'}; ` +
+        `coherence=${stats.coherence}; radius=${DEPTH_RADIUS.toFixed(3)} normalized`
       );
     }
 
@@ -1122,9 +1261,18 @@ function sampleDepthForFrame(frame,pose,time,force=false){
   }
 }
 
-function buildDepthHitCrossCheck(time,hitDistance){
+function buildDepthHitCrossCheck(time,hitDistance,hitViewDiag=latestHitViewDiagnostic){
   const d=latestDepthSample;
-  if(!d || d.median===null || !Number.isFinite(hitDistance)) return null;
+  if(!d || !hitViewDiag || !Number.isFinite(hitViewDiag.forward)) return null;
+
+  const uv=hitViewDiag.uv;
+  if(!uv || !uv.inView) return null;
+
+  let hitStats=null;
+  if(latestDepthInfo && latestDepthInfoFrame===frameCount){
+    hitStats=depthRegionStats(latestDepthInfo,uv.x,uv.y);
+  }
+  if(!hitStats || hitStats.center===null) return null;
 
   const ageMs=Number.isFinite(time) && Number.isFinite(d.time) ? Math.max(0,time-d.time) : null;
   return {
@@ -1132,70 +1280,98 @@ function buildDepthHitCrossCheck(time,hitDistance){
     sampleFrame:d.frame,
     ageMs,
     hitDistance,
-    depthCenter:d.center,
-    depthMedian:d.median,
-    depthMin:d.min,
-    depthMax:d.max,
-    depthValid:d.valid,
-    depthTotal:d.total,
-    deltaHitMinusDepth:hitDistance-d.median
+    hitViewX:hitViewDiag.viewPoint.x,
+    hitViewY:hitViewDiag.viewPoint.y,
+    hitViewZ:hitViewDiag.viewPoint.z,
+    hitViewForward:hitViewDiag.forward,
+    hitOffAxis:hitViewDiag.offAxis,
+    hitOffAxisAngleDeg:hitViewDiag.offAxisAngleDeg,
+    hitUvX:uv.x,
+    hitUvY:uv.y,
+    hitUvInView:uv.inView,
+    viewerSpacePoint:clonePoint(hitViewDiag.viewerPoint),
+    depthCenterScreen:d.center,
+    depthAtHitUv:hitStats.center,
+    depthMedian:hitStats.median,
+    depthMin:hitStats.min,
+    depthMax:hitStats.max,
+    depthQ1:hitStats.q1,
+    depthQ3:hitStats.q3,
+    depthIqr:hitStats.iqr,
+    depthMad:hitStats.mad,
+    depthCoherence:hitStats.coherence,
+    depthValid:hitStats.valid,
+    depthTotal:hitStats.total,
+    deltaViewForwardMinusDepth:hitViewDiag.forward-hitStats.center,
+    deltaViewForwardMinusMedian:hitStats.median===null?null:hitViewDiag.forward-hitStats.median,
+    euclideanMinusDepth: Number.isFinite(hitDistance) ? hitDistance-hitStats.center : null
   };
 }
 
 function updateDepthHitCrossCheck(time){
-  latestDepthHitCrossCheck=buildDepthHitCrossCheck(time,latestHitDistance);
-  const c=latestDepthHitCrossCheck;
-  if(!c){
+  const current=buildDepthHitCrossCheck(time,latestHitDistance,latestHitViewDiagnostic);
+  if(!current){
+    if(latestDepthHitCrossCheck) return;
+    set('hitViewState','—','');
+    set('hitUvState','—','');
+    set('depthAtHitState','—','');
     set('depthHitDeltaState','—','');
-    if(el.depthText) el.depthText.textContent = 'DEPTH × HIT: waiting for valid overlap — diagnostic only';
+    if(el.depthText) el.depthText.textContent = 'VIEW −Z × DEPTH: waiting for same-frame overlap — diagnostic only';
     return;
   }
+  latestDepthHitCrossCheck=current;
+  const c=current;
 
-  const deltaMm=c.deltaHitMinusDepth*1000;
-  set(
-    'depthHitDeltaState',
-    `${deltaMm>=0?'+':''}${deltaMm.toFixed(1)} mm`,
-    Math.abs(deltaMm)<=20?'ok':'warn'
-  );
+  const deltaMm=c.deltaViewForwardMinusDepth*1000;
+  set('hitViewState',`x=${(c.hitViewX*1000).toFixed(1)} / y=${(c.hitViewY*1000).toFixed(1)} / −z=${c.hitViewForward.toFixed(3)} m`,'ok');
+  set('hitUvState',`u=${c.hitUvX.toFixed(4)} / v=${c.hitUvY.toFixed(4)} / off-axis=${(c.hitOffAxis*1000).toFixed(1)} mm`,Math.abs(c.hitUvX-0.5)<=0.03&&Math.abs(c.hitUvY-0.5)<=0.03?'ok':'warn');
+  set('depthAtHitState',`${c.depthAtHitUv.toFixed(3)} m / ${c.depthCoherence}`,c.depthCoherence==='COHERENT'?'ok':c.depthCoherence==='MIXED'?'warn':'ng');
+  set('depthHitDeltaState',`${deltaMm>=0?'+':''}${deltaMm.toFixed(1)} mm`,Math.abs(deltaMm)<=20?'ok':'warn');
+
   if(el.depthText){
     el.depthText.textContent =
-      `DEPTH × HIT: hit=${c.hitDistance.toFixed(3)} m depth=${c.depthMedian.toFixed(3)} m ` +
-      `Δ=${deltaMm>=0?'+':''}${deltaMm.toFixed(1)} mm — diagnostic only`;
+      `VIEW −Z × DEPTH@UV: z=${c.hitViewForward.toFixed(3)} m depth=${c.depthAtHitUv.toFixed(3)} m ` +
+      `Δ=${deltaMm>=0?'+':''}${deltaMm.toFixed(1)} mm / ${c.depthCoherence} — diagnostic only`;
   }
 }
 
-function snapshotDepthCrossCheck(slot,time,hitDistance){
-  const c=buildDepthHitCrossCheck(time,hitDistance);
+function snapshotDepthCrossCheck(slot,time,hitDistance,hitViewDiag){
+  const c=buildDepthHitCrossCheck(time,hitDistance,hitViewDiag);
   const stateId=slot==='A' ? 'captureADepthState' : 'captureBDepthState';
 
   if(!c){
     set(stateId,'N/A','warn');
-    log(`Point ${slot} Depth × Hit: unavailable at capture frame`);
+    log(`Point ${slot} View-Z × Depth: unavailable at capture frame`);
     return null;
   }
 
-  const deltaMm=c.deltaHitMinusDepth*1000;
+  const deltaMm=c.deltaViewForwardMinusDepth*1000;
   const text=
-    `hit ${c.hitDistance.toFixed(3)} / depth ${c.depthMedian.toFixed(3)} m / ` +
-    `Δ ${deltaMm>=0?'+':''}${deltaMm.toFixed(1)} mm / ${c.depthValid}/${c.depthTotal}`;
-  set(stateId,text,Math.abs(deltaMm)<=20?'ok':'warn');
+    `−z ${c.hitViewForward.toFixed(3)} / depth ${c.depthAtHitUv.toFixed(3)} m / ` +
+    `Δ ${deltaMm>=0?'+':''}${deltaMm.toFixed(1)} mm / ${c.depthCoherence}`;
+  set(stateId,text,c.depthCoherence==='LOW COHERENCE'?'ng':Math.abs(deltaMm)<=20?'ok':'warn');
 
   log(
-    `Point ${slot} Depth × Hit: ` +
-    `hit=${c.hitDistance.toFixed(6)} m; ` +
-    `depthCenter=${c.depthCenter===null?'n/a':c.depthCenter.toFixed(6)} m; ` +
-    `depthMedian=${c.depthMedian.toFixed(6)} m; ` +
-    `deltaHitMinusDepth=${deltaMm.toFixed(3)} mm; ` +
-    `valid=${c.depthValid}/${c.depthTotal}; ` +
-    `depthRange=${c.depthMin.toFixed(6)}..${c.depthMax.toFixed(6)} m; ` +
-    `sampleAge=${c.ageMs===null?'n/a':c.ageMs.toFixed(1)+' ms'}; ` +
-    `diagnosticOnly=true`
+    `Point ${slot} View-Z × Depth: ` +
+    `euclidHit=${c.hitDistance===null?'n/a':c.hitDistance.toFixed(6)} m; ` +
+    `view=(x=${c.hitViewX.toFixed(6)},y=${c.hitViewY.toFixed(6)},z=${c.hitViewZ.toFixed(6)}) m; ` +
+    `viewForward=${c.hitViewForward.toFixed(6)} m; ` +
+    `uv=(${c.hitUvX.toFixed(6)},${c.hitUvY.toFixed(6)}); ` +
+    `offAxis=${(c.hitOffAxis*1000).toFixed(3)} mm; angle=${c.hitOffAxisAngleDeg===null?'n/a':c.hitOffAxisAngleDeg.toFixed(4)+' deg'}; ` +
+    `depthAtUv=${c.depthAtHitUv.toFixed(6)} m; depthMedian=${c.depthMedian===null?'n/a':c.depthMedian.toFixed(6)} m; ` +
+    `deltaViewForwardMinusDepth=${deltaMm.toFixed(3)} mm; ` +
+    `IQR=${c.depthIqr===null?'n/a':(c.depthIqr*1000).toFixed(3)+' mm'}; ` +
+    `MAD=${c.depthMad===null?'n/a':(c.depthMad*1000).toFixed(3)+' mm'}; coherence=${c.depthCoherence}; ` +
+    `valid=${c.depthValid}/${c.depthTotal}; range=${c.depthMin.toFixed(6)}..${c.depthMax.toFixed(6)} m; ` +
+    `screenCenterDepth=${c.depthCenterScreen===null?'n/a':c.depthCenterScreen.toFixed(6)} m; ` +
+    `viewerSpace=${c.viewerSpacePoint?fmtPoint(c.viewerSpacePoint):'n/a'}; ` +
+    `sampleAge=${c.ageMs===null?'n/a':c.ageMs.toFixed(1)+' ms'}; diagnosticOnly=true`
   );
 
   return c;
 }
 
-function captureQualitySnapshot(slot,hitPoint,viewerPose,time){
+function captureQualitySnapshot(slot,hitPoint,viewerPose,time,hitViewDiag){
   const viewer=viewerPose?.transform?.position;
   const cameraPoint =
     viewer && Number.isFinite(viewer.x)
@@ -1207,7 +1383,7 @@ function captureQualitySnapshot(slot,hitPoint,viewerPose,time){
       ? distance3(cameraPoint,hitPoint)
       : (Number.isFinite(latestHitDistance) ? latestHitDistance : null);
 
-  const depthCrossCheck = snapshotDepthCrossCheck(slot,time,hitDistance);
+  const depthCrossCheck = snapshotDepthCrossCheck(slot,time,hitDistance,hitViewDiag);
   if(slot==='A') captureDepthCrossCheckA=depthCrossCheck;
   else captureDepthCrossCheckB=depthCrossCheck;
 
@@ -1223,6 +1399,7 @@ function captureQualitySnapshot(slot,hitPoint,viewerPose,time){
     lumaMedian:qualityMedian('mean'),
     nearRange:Number.isFinite(hitDistance) ? hitDistance<=NEAR_RANGE_M : null,
     sessionResetCount:sessionReferenceSpaceResetCount,
+    hitViewDiagnostic:hitViewDiag,
     depthCrossCheck
   };
 
@@ -1267,11 +1444,13 @@ function resetPreBMonitor(){
   };
   preBResetCountAtStart = null;
   preBSummaryAtB = null;
+  preBIntegrity = 'UNKNOWN';
 
   set('preBElapsedState','—','');
   set('preBOffsetState','—','');
   set('preBDriftState','—','');
   set('preBMaxState','—','');
+  set('preBIntegrityState','UNKNOWN','');
   set('captureAQualityState','—','');
   set('captureBQualityState','—','');
   if(el.preBText) el.preBText.textContent='PRE-B A DRIFT: —';
@@ -1392,6 +1571,33 @@ function updatePreBMonitor(time,aPoint,viewerPose){
   }
 }
 
+function assessPreBIntegrity(summary){
+  if(!summary) return {state:'UNKNOWN',reason:'no PRE-B summary',maxDrift:null};
+  if(summary.resetDelta && summary.resetDelta!==0){
+    return {state:'INVALID',reason:'XRReferenceSpace reset detected',maxDrift:summary.maxDriftFromFirst};
+  }
+  const maxDrift=Math.max(summary.maxDriftFromFirst||0,summary.maxOffsetFromCapture||0);
+  if(maxDrift>=PREB_INVALID_M){
+    return {state:'INVALID',reason:`pre-B drift >= ${(PREB_INVALID_M*1000).toFixed(0)} mm`,maxDrift};
+  }
+  if(maxDrift>=PREB_WARN_M){
+    return {state:'WARN',reason:`pre-B drift >= ${(PREB_WARN_M*1000).toFixed(0)} mm`,maxDrift};
+  }
+  return {state:'PASS',reason:`pre-B drift < ${(PREB_WARN_M*1000).toFixed(0)} mm`,maxDrift};
+}
+
+function applyPreBIntegrity(summary){
+  const a=assessPreBIntegrity(summary);
+  preBIntegrity=a.state;
+  set(
+    'preBIntegrityState',
+    `${a.state}${a.maxDrift===null?'':` / max ${(a.maxDrift*1000).toFixed(1)} mm`}`,
+    a.state==='PASS'?'ok':a.state==='WARN'?'warn':a.state==='INVALID'?'ng':''
+  );
+  log(`PRE-B INTEGRITY: state=${a.state}; reason=${a.reason}; maxDrift=${a.maxDrift===null?'n/a':(a.maxDrift*1000).toFixed(3)+' mm'}; thresholds=warn5mm/invalid10mm; provisional=true`);
+  return a;
+}
+
 function summarizePreB(reason,time){
   if(!preBActive || !capturePointA) return null;
 
@@ -1422,6 +1628,10 @@ function summarizePreB(reason,time){
         : sessionReferenceSpaceResetCount-preBResetCountAtStart
   };
 
+  const integrity=assessPreBIntegrity(summary);
+  summary.integrity=integrity.state;
+  summary.integrityReason=integrity.reason;
+
   log(
     `PRE-B SUMMARY (${reason}): ` +
     `elapsed=${elapsed===null?'n/a':(elapsed/1000).toFixed(3)+' s'}; ` +
@@ -1429,7 +1639,7 @@ function summarizePreB(reason,time){
     `AdriftFromFirst=${drift===null?'n/a':(drift*1000).toFixed(3)+' mm'}; ` +
     `maxOffset=${(preBMaxOffsetFromCapture*1000).toFixed(3)} mm; ` +
     `maxDrift=${(preBMaxDriftFromFirst*1000).toFixed(3)} mm; ` +
-    `resetDelta=${summary.resetDelta}; ` +
+    `resetDelta=${summary.resetDelta}; integrity=${summary.integrity}; ` +
     `Acurrent=${current?fmtPoint(current):'n/a'}`
   );
 
@@ -1705,6 +1915,7 @@ function summarizeMeasurement(reason){
   const camBMed = cameraBSamples.length ? median(cameraBSamples) : null;
 
   const formalDistance = frozenMeasurement?.valid ? frozenMeasurement.distance : null;
+  const rejectedCandidate = (!frozenMeasurement?.valid && Number.isFinite(frozenMeasurement?.candidateDistance)) ? frozenMeasurement.candidateDistance : null;
   const absError = formalDistance === null ? null : (formalDistance - referenceMeters);
   const relError = absError === null ? null : (absError / referenceMeters) * 100;
 
@@ -1713,7 +1924,9 @@ function summarizeMeasurement(reason){
     `formal committed Hit (immutable A↔B): reference=${referenceMeters.toFixed(6)} m; ` +
     `distance=${formalDistance===null?'n/a':formalDistance.toFixed(6)} m; ` +
     `error=${absError===null?'n/a':absError.toFixed(6)} m; ` +
-    `relative=${relError===null?'n/a':relError.toFixed(3)}%`
+    `relative=${relError===null?'n/a':relError.toFixed(3)}%; ` +
+    `integrity=${frozenMeasurement?.integrity??(frozenMeasurement?.valid?'PASS':'INVALID')}; ` +
+    `rejectedCandidate=${rejectedCandidate===null?'n/a':rejectedCandidate.toFixed(6)+' m'}`
   );
   log(
     `live Anchor diagnostic: samples=${n}; ` +
@@ -1766,9 +1979,9 @@ function summarizeMeasurement(reason){
     const da=captureDepthCrossCheckA;
     const db=captureDepthCrossCheckB;
     log(
-      `depth-hit capture cross-check: ` +
-      `A[hit=${da?.hitDistance==null?'n/a':da.hitDistance.toFixed(6)+' m'},depth=${da?.depthMedian==null?'n/a':da.depthMedian.toFixed(6)+' m'},delta=${da?.deltaHitMinusDepth==null?'n/a':(da.deltaHitMinusDepth*1000).toFixed(3)+' mm'},valid=${da?da.depthValid+'/'+da.depthTotal:'n/a'}] ` +
-      `B[hit=${db?.hitDistance==null?'n/a':db.hitDistance.toFixed(6)+' m'},depth=${db?.depthMedian==null?'n/a':db.depthMedian.toFixed(6)+' m'},delta=${db?.deltaHitMinusDepth==null?'n/a':(db.deltaHitMinusDepth*1000).toFixed(3)+' mm'},valid=${db?db.depthValid+'/'+db.depthTotal:'n/a'}]`
+      `view-depth capture cross-check: ` +
+      `A[-z=${da?.hitViewForward==null?'n/a':da.hitViewForward.toFixed(6)+' m'},depthUV=${da?.depthAtHitUv==null?'n/a':da.depthAtHitUv.toFixed(6)+' m'},delta=${da?.deltaViewForwardMinusDepth==null?'n/a':(da.deltaViewForwardMinusDepth*1000).toFixed(3)+' mm'},uv=${da?da.hitUvX.toFixed(4)+','+da.hitUvY.toFixed(4):'n/a'},coh=${da?.depthCoherence??'n/a'}] ` +
+      `B[-z=${db?.hitViewForward==null?'n/a':db.hitViewForward.toFixed(6)+' m'},depthUV=${db?.depthAtHitUv==null?'n/a':db.depthAtHitUv.toFixed(6)+' m'},delta=${db?.deltaViewForwardMinusDepth==null?'n/a':(db.deltaViewForwardMinusDepth*1000).toFixed(3)+' mm'},uv=${db?db.hitUvX.toFixed(4)+','+db.hitUvY.toFixed(4):'n/a'},coh=${db?.depthCoherence??'n/a'}]`
     );
   }
 
@@ -2428,7 +2641,7 @@ function updateDistanceUI(){
     el.distanceText.textContent = `DISTANCE (COMMITTED HIT): ${frozenText}`;
   }else if(frozenMeasurement && frozenMeasurement.valid===false){
     set('distanceState','INVALID','ng');
-    el.distanceText.textContent = 'DISTANCE: INVALID — RESET AND RETRY';
+    el.distanceText.textContent = Number.isFinite(frozenMeasurement?.candidateDistance) ? `DISTANCE CANDIDATE: ${fmtDistance(frozenMeasurement.candidateDistance)} — INVALID / RETRY` : 'DISTANCE: INVALID — RESET AND RETRY';
   }else{
     set('distanceState','—','');
     el.distanceText.textContent = 'DISTANCE: —';
@@ -2723,9 +2936,10 @@ function createAnchorFromHit(result,hitPose,slot,time,viewerPose){
   const p = hitPose.transform.position;
   const fallbackPoint = {x:p.x,y:p.y,z:p.z};
   const fallbackMatrix = new Float32Array(hitPose.transform.matrix);
+  const hitViewDiag = buildHitViewDiagnostic(result,fallbackPoint,viewerPose);
 
   const captureSnapshot =
-    captureQualitySnapshot(slot,fallbackPoint,viewerPose,time);
+    captureQualitySnapshot(slot,fallbackPoint,viewerPose,time,hitViewDiag);
 
   if(slot==='A') captureSnapshotA=captureSnapshot;
   else captureSnapshotB=captureSnapshot;
@@ -2815,7 +3029,7 @@ function createAnchorFromHit(result,hitPose,slot,time,viewerPose){
       el.xrState.textContent = 'MEASUREMENT COMPLETE';
       el.xrHint.textContent = 'Move the camera; A/B anchors and line should stay fixed.';
       const d = calcDistance(pointA,pointB);
-      log(`B-created live Anchor distance: ${d.toFixed(6)} m (${fmtDistance(d)}); formalCommit=${frozenMeasurement?.valid?frozenMeasurement.distance.toFixed(6)+' m':'INVALID'}`);
+      log(`B-created live Anchor distance: ${d.toFixed(6)} m (${fmtDistance(d)}); formalCommit=${frozenMeasurement?.valid?frozenMeasurement.distance.toFixed(6)+' m':Number.isFinite(frozenMeasurement?.candidateDistance)?'REJECTED '+frozenMeasurement.candidateDistance.toFixed(6)+' m':'INVALID'}`);
     }
   }).catch(err=>{
     anchorCreationBusy = false;
@@ -2898,6 +3112,7 @@ function onXRFrame(time,frame){
       latestHitMatrix = new Float32Array(hitPose.transform.matrix);
       const p = hitPose.transform.position;
       latestHitPoint = {x:p.x,y:p.y,z:p.z};
+      latestHitViewDiagnostic = buildHitViewDiagnostic(result,latestHitPoint,pose);
 
       const cam = pose.transform.position;
       latestHitDistance = distance3(
