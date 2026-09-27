@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<title>WebXR Raw Camera Access Probe</title>
+<title>WebXR Raw Camera Access Probe Rev.2</title>
 <style>
 :root{
   color-scheme:dark;
@@ -34,7 +34,7 @@ code{color:#cfe8f5}
 
 #xrOverlay{position:fixed;inset:0;z-index:2147483647;pointer-events:none}
 #xrHud{position:absolute;inset:0;pointer-events:none}
-#topPanel{position:absolute;left:50%;top:max(12px,env(safe-area-inset-top));transform:translateX(-50%);
+#topPanel{position:absolute;left:50%;top:calc(env(safe-area-inset-top, 0px) + 36px);transform:translateX(-50%);
 width:min(94vw,620px);background:#071019e8;border:1px solid #587086;border-radius:11px;
 padding:10px 12px;text-align:center;pointer-events:auto}
 #bottomPanel{position:absolute;left:50%;bottom:max(14px,env(safe-area-inset-bottom));transform:translateX(-50%);
@@ -47,7 +47,7 @@ canvas{position:fixed;left:-10000px;top:-10000px;width:1px;height:1px}
 </head>
 <body>
 <main>
-<h1>WebXR Raw Camera Access Probe</h1>
+<h1>WebXR Raw Camera Access Probe Rev.2</h1>
 <p class="sub">camera-access / XRCamera / XRWebGLBinding.getCameraImage() / center pixel readback</p>
 
 <section class="card">
