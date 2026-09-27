@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<title>WebXR Capability Probe Rev.4</title>
+<title>WebXR Capability Probe Rev.5</title>
 <style>
 :root{
   color-scheme:dark;
@@ -51,7 +51,7 @@ canvas{position:fixed;inset:0;width:1px;height:1px;pointer-events:none}
 <body>
 <main>
 <h1>WebXR Capability Probe</h1>
-<p class="sub">Phase 1A / Rev.4 — environment-gated, one button = one requestSession()</p>
+<p class="sub">Phase 1A / Rev.5 — tracking-aware, environment-gated, one button = one requestSession()</p>
 
 <section class="card">
 <h2>TEST ENVIRONMENT</h2>
@@ -70,7 +70,7 @@ canvas{position:fixed;inset:0;width:1px;height:1px;pointer-events:none}
 
 <section class="card">
 <h2>TESTS</h2>
-<p class="note">BASIC ARでXRSessionと最初のXR frameが取得できてから、各Featureの結果を端末能力として扱います。各テストは独立したユーザー操作です。</p>
+<p class="note">BASIC ARでXRSession開始だけでなく、getViewerPose(local) が非nullになるまで確認します。Viewer Pose取得後のみ各Featureテストを有効な端末能力診断として扱います。各テストは独立したユーザー操作です。</p>
 <div class="actions">
   <button data-test="basic">1. BASIC AR</button>
   <button data-test="hit">2. HIT TEST</button>
@@ -87,6 +87,8 @@ canvas{position:fixed;inset:0;width:1px;height:1px;pointer-events:none}
 <div class="grid">
   <div class="cell head">TEST</div><div class="cell head">STATUS</div><div class="cell head">DETAIL</div>
   <div class="cell">BASIC AR</div><div class="cell" id="basicStatus">NOT TESTED</div><div class="cell" id="basicDetail">—</div>
+  <div class="cell">XR Visibility</div><div class="cell" id="xrVisibility">NOT TESTED</div><div class="cell" id="xrVisibilityDetail">—</div>
+  <div class="cell">Viewer Pose</div><div class="cell" id="viewerPose">NOT TESTED</div><div class="cell" id="viewerPoseDetail">—</div>
   <div class="cell">HIT TEST</div><div class="cell" id="hitStatus">NOT TESTED</div><div class="cell" id="hitDetail">—</div>
   <div class="cell">DEPTH</div><div class="cell" id="depthStatus">NOT TESTED</div><div class="cell" id="depthDetail">—</div>
   <div class="cell">DOM OVERLAY</div><div class="cell" id="domStatus">NOT TESTED</div><div class="cell" id="domDetail">—</div>
@@ -131,7 +133,7 @@ const $ = id => document.getElementById(id);
 const ids = [
   'envBanner','protocol','protocolDetail','secure','secureDetail','topLevel','topLevelDetail',
   'focus','focusDetail','policy','policyDetail','webxr','webxrDetail',
-  'immersiveAr','immersiveArDetail','basicStatus','basicDetail','hitStatus','hitDetail',
+  'immersiveAr','immersiveArDetail','basicStatus','basicDetail','xrVisibility','xrVisibilityDetail','viewerPose','viewerPoseDetail','hitStatus','hitDetail',
   'depthStatus','depthDetail','domStatus','domDetail','anchorsStatus','anchorsDetail',
   'floorStatus','floorDetail','endBtn','resultText','copyBtn','selectBtn','saveBtn',
   'log','xrOverlay','xrPanel','xrTitle','xrMessage','overlayEnd','xrCanvas'
@@ -151,6 +153,8 @@ const TEST_IDS = {
 let active = null;
 let gl = null;
 let basicPassed = false;
+let basicSessionStarted = false;
+let viewerPoseSeen = false;
 let environmentValid = false;
 let logLines = [];
 
@@ -225,7 +229,7 @@ function enabledFeatures(session){
 function refreshResult(){
   if(!el.resultText) return;
   const rows = [
-    'WebXR Capability Probe Rev.4', now(), '',
+    'WebXR Capability Probe Rev.5', now(), '',
     '[TEST ENVIRONMENT]',
     `Environment: ${el.envBanner?.textContent || ''}`,
     `Protocol: ${el.protocol?.textContent || ''} | ${el.protocolDetail?.textContent || ''}`,
@@ -241,6 +245,10 @@ function refreshResult(){
     const [sid,did] = TEST_IDS[name];
     rows.push(`${name.toUpperCase()}: ${el[sid]?.textContent || ''} | ${el[did]?.textContent || ''}`);
   }
+  rows.splice(rows.indexOf('[TEST RESULTS]') + 2, 0,
+    `XR Visibility: ${el.xrVisibility?.textContent || ''} | ${el.xrVisibilityDetail?.textContent || ''}`,
+    `Viewer Pose: ${el.viewerPose?.textContent || ''} | ${el.viewerPoseDetail?.textContent || ''}`
+  );
   rows.push('', '[LOG]', ...logLines);
   el.resultText.value = rows.join('\n');
 }
@@ -266,8 +274,8 @@ function precondition(name){
     return false;
   }
   if(name !== 'basic' && !basicPassed){
-    setTest(name,'PREREQUISITE NOT MET','Run BASIC AR successfully first');
-    log(`${name}: blocked; BASIC AR has not passed`);
+    setTest(name,'PREREQUISITE NOT MET','BASIC AR must reach a valid Viewer Pose first');
+    log(`${name}: blocked; BASIC AR tracking has not passed`);
     return false;
   }
   if(active){
@@ -334,6 +342,31 @@ async function begin(name,options,message){
   }
   active = {name,session,raf:0};
   setBusy(true);
+
+  if(name === 'basic'){
+    basicSessionStarted = true;
+    viewerPoseSeen = false;
+  }
+
+  try{
+    setCell('xrVisibility',session.visibilityState || 'NOT EXPOSED');
+    setCell('xrVisibilityDetail','initial XRSession.visibilityState','');
+  }catch(err){
+    setCell('xrVisibility','NOT EXPOSED');
+    setCell('xrVisibilityDetail',errorText(err),'');
+  }
+
+  session.addEventListener('visibilitychange',()=>{
+    try{
+      const state = session.visibilityState || 'NOT EXPOSED';
+      setCell('xrVisibility',state);
+      setCell('xrVisibilityDetail','updated by XRSession visibilitychange','');
+      log(`${name}: XRSession.visibilityState=${state}`);
+    }catch(err){
+      log(`${name}: XR visibility read failed: ${errorText(err)}`);
+    }
+  });
+
   const feats = enabledFeatures(session);
   setTest(name,'SESSION STARTED',`enabledFeatures=[${feats.join(', ') || 'not exposed'}]`);
   log(`${name}: XRSession started; enabledFeatures=[${feats.join(', ') || 'not exposed'}]`);
@@ -344,6 +377,14 @@ async function begin(name,options,message){
 
 function onEnded(name){
   log(`${name}: session ended`);
+
+  if(name === 'basic' && basicSessionStarted && !viewerPoseSeen){
+    setTest('basic','SESSION ENDED / TRACKING NOT OBSERVED',
+      'XRSession started, but no non-null Viewer Pose was observed before session end');
+    setCell('viewerPose','NOT OBSERVED');
+    setCell('viewerPoseDetail','Session ended before getViewerPose(local) returned a pose','');
+  }
+
   if(active?.name === name) active = null;
   gl = null;
   hideOverlay();
@@ -357,28 +398,72 @@ async function stopActive(){
 }
 
 async function testBasic(){
-  const s = await begin('basic',undefined,'BASIC AR: waiting for first XR frame');
+  const s = await begin('basic',undefined,'BASIC AR: waiting for stable Viewer Pose');
   if(!s) return;
+
   try{
     await setupGraphics(s);
     const space = await s.requestReferenceSpace('local');
-    let first = true;
+
+    setTest('basic','SESSION STARTED / TRACKING PENDING','XRSession and local reference space created; waiting for Viewer Pose');
+    setCell('viewerPose','WAITING');
+    setCell('viewerPoseDetail','getViewerPose(local) has not returned a pose yet','');
+    log('basic: XRSession and local reference space ready; tracking pending');
+
+    let frameCount = 0;
+    let nullPoseCount = 0;
+
     runLoop(s,(_t,frame)=>{
-      const pose = frame.getViewerPose(space);
-      if(first){
-        first = false;
+      frameCount++;
+
+      let pose = null;
+      try{
+        pose = frame.getViewerPose(space);
+      }catch(err){
+        setTest('basic','RUNTIME FAILED',errorText(err));
+        setCell('viewerPose','ERROR');
+        setCell('viewerPoseDetail',errorText(err),'');
+        log(`basic: getViewerPose failed: ${errorText(err)}`);
+        return;
+      }
+
+      if(!pose){
+        nullPoseCount++;
+        if(nullPoseCount === 1 || nullPoseCount % 60 === 0){
+          setCell('viewerPose','TRACKING PENDING');
+          setCell('viewerPoseDetail',`null pose; frames=${frameCount}; nullPoses=${nullPoseCount}`,'');
+          log(`basic: Viewer Pose not yet available; frames=${frameCount}; nullPoses=${nullPoseCount}`);
+        }
+        return;
+      }
+
+      if(!viewerPoseSeen){
+        viewerPoseSeen = true;
         basicPassed = true;
-        setTest('basic','PASS',`XR frame received; viewerPose=${pose?'YES':'NO'}; blend=${s.environmentBlendMode || 'not exposed'}`);
-        log(`basic: first XR frame received; viewerPose=${!!pose}; blend=${s.environmentBlendMode || 'not exposed'}`);
-        el.xrMessage.textContent = 'BASIC AR PASS — END TEST';
+
+        let emulated = 'not exposed';
+        try{
+          if('emulatedPosition' in pose) emulated = String(pose.emulatedPosition);
+        }catch{}
+
+        const views = Array.isArray(pose.views) ? pose.views.length : (pose.views?.length ?? 'unknown');
+        const blend = s.environmentBlendMode || 'not exposed';
+
+        setCell('viewerPose','PASS');
+        setCell('viewerPoseDetail',`views=${views}; emulatedPosition=${emulated}; firstPoseFrame=${frameCount}`,'');
+        setTest('basic','PASS',`Viewer Pose acquired; views=${views}; blend=${blend}; emulatedPosition=${emulated}`);
+        log(`basic: Viewer Pose acquired; views=${views}; blend=${blend}; emulatedPosition=${emulated}; frame=${frameCount}`);
+        el.xrMessage.textContent = 'BASIC AR TRACKING PASS — END TEST';
       }
     });
+
   }catch(err){
     setTest('basic','RUNTIME FAILED',errorText(err));
+    setCell('viewerPose','NOT OBSERVED');
+    setCell('viewerPoseDetail',errorText(err),'');
     log(`basic runtime failed: ${errorText(err)}`);
   }
 }
-
 async function testHit(){
   const s = await begin('hit',{requiredFeatures:['hit-test']},'HIT TEST: move slowly over floor/table/wall');
   if(!s) return;
@@ -556,6 +641,11 @@ async function runTest(name){
 }
 
 async function preflight(){
+  setCell('xrVisibility','NOT TESTED');
+  setCell('xrVisibilityDetail','XRSession not started','');
+  setCell('viewerPose','NOT TESTED');
+  setCell('viewerPoseDetail','BASIC AR not started','');
+
   const env = determineEnvironment();
   environmentValid = env.valid;
   el.envBanner.textContent = `${env.label} — ${env.detail}`;
