@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<title>AR DISTANCE LAB - Phase 4.8 Rev.1</title>
+<title>AR DISTANCE LAB - Phase 4.9</title>
 <style>
 :root{
   color-scheme:dark;
@@ -83,7 +83,7 @@ padding:10px;pointer-events:auto}
 <body>
 <main>
 <h1>AR DISTANCE LAB</h1>
-<p class="sub">Phase 4.8 Rev.1 — Pre-B Anchor Drift + Capture Quality + Raw Camera Magnifier</p>
+<p class="sub">Phase 4.9 — Frozen Measurement + Live Anchor Diagnostics + Raw Camera Magnifier</p>
 
 <section class="card">
 <h2>STATUS</h2>
@@ -96,7 +96,13 @@ padding:10px;pointer-events:auto}
   <div class="cell">Surface</div><div class="cell" id="surfaceState">NOT STARTED</div>
   <div class="cell">Anchor A</div><div class="cell" id="anchorAState">NOT SET</div>
   <div class="cell">Anchor B</div><div class="cell" id="anchorBState">NOT SET</div>
-  <div class="cell">Distance</div><div class="cell" id="distanceState">—</div>
+  <div class="cell">Frozen Distance</div><div class="cell" id="distanceState">—</div>
+  <div class="cell">Freeze status</div><div class="cell" id="freezeStatusState">NOT SET</div>
+  <div class="cell">Live Anchor A-B</div><div class="cell" id="liveDistanceState">—</div>
+  <div class="cell">Live − Frozen</div><div class="cell" id="liveMinusFrozenState">—</div>
+  <div class="cell">Frozen runs</div><div class="cell" id="repeatCountState">0</div>
+  <div class="cell">Frozen mean</div><div class="cell" id="repeatMeanState">—</div>
+  <div class="cell">Frozen range</div><div class="cell" id="repeatRangeState">—</div>
   <div class="cell">Capture Hit distance</div><div class="cell" id="captureDistanceState">—</div>
   <div class="cell">A pre-B elapsed</div><div class="cell" id="preBElapsedState">—</div>
   <div class="cell">A offset from capture Hit</div><div class="cell" id="preBOffsetState">—</div>
@@ -161,11 +167,10 @@ padding:10px;pointer-events:auto}
 </section>
 
 <section class="card note">
-Phase 4.8 Rev.1はPoint Aを置いた瞬間からPoint Bを置くまでの変化を監視します。
-AのCapture Hit座標、最初に追跡できたAnchor座標、その後のAnchor座標を分離し、
-AがCapture Hitから何mmずれたか／最初のAnchor poseから何mm動いたかを1秒間隔で記録します。
-Point A/BのCapture時にはカメラ距離、AIM QUALITY、Edge、Contrastも保存します。
-B確定後のAnchor settling診断と512×512ソースの拡大鏡はPhase 4.7を維持します。
+Phase 4.9ではPoint Bを押したXR frameで、同じframeから取得したPoint Aのcurrent Anchor poseとPoint BのHit Test poseの距離を正式測定値としてFreezeします。
+Freeze後もA/B Anchorは表示・診断用として追跡しますが、画面のDISTANCEと誤差計算は変化しません。
+同一セッション内のFrozen値について回数・平均・rangeを集計し、再現性を確認できます。
+A AnchorがB captureと同じXR frameで追跡できていない場合はFreezeをINVALIDとして扱い、last-known poseでは正式測定しません。
 </section>
 
 <section class="card">
@@ -221,7 +226,8 @@ const $ = id => document.getElementById(id);
 const el = {};
 [
   'secure','webxr','arSupport','sessionState','trackingState','surfaceState',
-  'anchorAState','anchorBState','distanceState','captureDistanceState',
+  'anchorAState','anchorBState','distanceState','freezeStatusState','liveDistanceState','liveMinusFrozenState',
+  'repeatCountState','repeatMeanState','repeatRangeState','captureDistanceState',
   'preBElapsedState','preBOffsetState','preBDriftState','preBMaxState',
   'captureAQualityState','captureBQualityState','initialAnchorDistanceState',
   'anchorDeltaState','maxAnchorDeltaState','rollingRangeState','settlingState','stableAtState',
@@ -295,7 +301,7 @@ let cameraASamples = [];
 let cameraBSamples = [];
 let lastMetricsUiTime = 0;
 
-// Phase 4.8 Rev.1: immutable placement points + Anchor settling timeline.
+// Phase 4.9: immutable placement points + Anchor settling timeline.
 let capturePointA = null;
 let capturePointB = null;
 let captureResetCountA = null;
@@ -319,7 +325,7 @@ const SETTLING_HALF_SHIFT_M = 0.001;
 const TIMELINE_LOG_INTERVAL_MS = 500;
 
 
-// Phase 4.8 Rev.1: monitor Point A from its capture until Point B capture.
+// Phase 4.9: monitor Point A from its capture until Point B capture.
 let captureSnapshotA = null;
 let captureSnapshotB = null;
 
@@ -338,6 +344,134 @@ let preBResetCountAtStart = null;
 let preBSummaryAtB = null;
 
 const PREB_LOG_INTERVAL_MS = 1000;
+
+
+// Phase 4.9: formal measurement is frozen at Point B capture.
+let frozenMeasurement = null;
+let sessionFrozenMeasurements = [];
+let lastAAnchorPoseTime = null;
+let lastAAnchorPoseFrame = -1;
+
+function resetCurrentFrozenMeasurement(){
+  frozenMeasurement = null;
+  lastAAnchorPoseTime = null;
+  lastAAnchorPoseFrame = -1;
+
+  set('distanceState','—','');
+  set('freezeStatusState','NOT SET','');
+  set('liveDistanceState','—','');
+  set('liveMinusFrozenState','—','');
+}
+
+function updateRepeatabilityUI(){
+  const values = sessionFrozenMeasurements
+    .map(v=>v.distance)
+    .filter(Number.isFinite);
+
+  set('repeatCountState',String(values.length),values.length?'ok':'');
+
+  if(!values.length){
+    set('repeatMeanState','—','');
+    set('repeatRangeState','—','');
+    return;
+  }
+
+  const mean = values.reduce((a,b)=>a+b,0)/values.length;
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = max-min;
+
+  set('repeatMeanState',fmtDistance(mean),'ok');
+  set(
+    'repeatRangeState',
+    `${(range*1000).toFixed(2)} mm`,
+    range<=0.002?'ok':'warn'
+  );
+}
+
+function freezeMeasurementAtB(hitPoint,time){
+  const aFresh =
+    !!pointA &&
+    lastAAnchorPoseFrame===frameCount &&
+    Number.isFinite(lastAAnchorPoseTime) &&
+    Math.abs(lastAAnchorPoseTime-time)<0.001;
+
+  if(!aFresh){
+    frozenMeasurement = {
+      valid:false,
+      reason:'A Anchor not tracked in the Point B capture frame',
+      time,
+      frame:frameCount,
+      bHit:clonePoint(hitPoint),
+      sessionResetCount:sessionReferenceSpaceResetCount
+    };
+
+    set('distanceState','INVALID','ng');
+    set('freezeStatusState','INVALID — A not tracked same frame','ng');
+    log(
+      `FROZEN MEASUREMENT INVALID: A Anchor was not tracked in B capture frame; ` +
+      `frame=${frameCount}; lastAFrame=${lastAAnchorPoseFrame}; ` +
+      `lastATime=${lastAAnchorPoseTime===null?'n/a':lastAAnchorPoseTime.toFixed(3)}; ` +
+      `Btime=${time.toFixed(3)}`
+    );
+    return false;
+  }
+
+  const aAtB = clonePoint(pointA);
+  const bHit = clonePoint(hitPoint);
+  const distance = distance3(aAtB,bHit);
+  const absError = distance-referenceMeters;
+  const relError = (absError/referenceMeters)*100;
+
+  frozenMeasurement = {
+    valid:true,
+    distance,
+    aAtB,
+    bHit,
+    time,
+    frame:frameCount,
+    referenceMeters,
+    absError,
+    relError,
+    sessionResetCount:sessionReferenceSpaceResetCount,
+    aCaptureSnapshot:captureSnapshotA,
+    bCaptureSnapshot:captureSnapshotB,
+    preB:preBSummaryAtB
+  };
+
+  sessionFrozenMeasurements.push({
+    distance,
+    referenceMeters,
+    absError,
+    relError,
+    time,
+    frame:frameCount,
+    sessionResetCount:sessionReferenceSpaceResetCount
+  });
+
+  set('distanceState',fmtDistance(distance),'ok');
+  set('freezeStatusState',`FROZEN @ frame ${frameCount}`,'ok');
+  updateRepeatabilityUI();
+
+  const values=sessionFrozenMeasurements.map(v=>v.distance);
+  const mean=values.reduce((a,b)=>a+b,0)/values.length;
+  const range=Math.max(...values)-Math.min(...values);
+
+  log(
+    `FROZEN MEASUREMENT #${sessionFrozenMeasurements.length}: ` +
+    `distance=${distance.toFixed(6)} m (${fmtDistance(distance)}); ` +
+    `Acurrent=${fmtPoint(aAtB)}; BHit=${fmtPoint(bHit)}; ` +
+    `error=${absError.toFixed(6)} m (${relError.toFixed(3)}%); ` +
+    `frame=${frameCount}; sessionReset=${sessionReferenceSpaceResetCount}`
+  );
+  log(
+    `FROZEN REPEATABILITY: n=${values.length}; mean=${mean.toFixed(6)} m; ` +
+    `min=${Math.min(...values).toFixed(6)} m; max=${Math.max(...values).toFixed(6)} m; ` +
+    `range=${(range*1000).toFixed(3)} mm`
+  );
+
+  return true;
+}
 
 // Absolute accuracy validation.
 let referenceMeters = 0.50;
@@ -385,8 +519,8 @@ const DETAIL_CONTRAST_LOW = 8.0;
 
 let ending = false;
 let cleanupDone = false;
-const LOG_STORAGE_KEY = 'ar-distance-lab-phase4-8-log';
-const SUMMARY_STORAGE_KEY = 'ar-distance-lab-phase4-8-summary';
+const LOG_STORAGE_KEY = 'ar-distance-lab-phase4-9-log';
+const SUMMARY_STORAGE_KEY = 'ar-distance-lab-phase4-9-summary';
 
 const TRACKING_UNSTABLE_MS = 250;
 const TRACKING_LOST_MS = 1000;
@@ -417,6 +551,8 @@ function persistDiagnostics(){
       referenceSpaceResetCount,
       sessionReferenceSpaceResetCount,
       samples: distanceSamples.length,
+      frozenMeasurement,
+      sessionFrozenMeasurements,
       captureHitDistance,
       captureSnapshotA,
       captureSnapshotB,
@@ -948,6 +1084,8 @@ function resetMeasurementMetrics(){
   referenceSpaceResetCount = 0;
   resetSettlingMetrics();
   resetPreBMonitor();
+  resetCurrentFrozenMeasurement();
+  updateRepeatabilityUI();
 
   set('stabilitySamples','0','');
   set('stabilityMedian','—','');
@@ -1019,19 +1157,22 @@ function summarizeMeasurement(reason){
   const camAMed = cameraASamples.length ? median(cameraASamples) : null;
   const camBMed = cameraBSamples.length ? median(cameraBSamples) : null;
 
-  const absError = med === null ? null : (med - referenceMeters);
+  const formalDistance = frozenMeasurement?.valid ? frozenMeasurement.distance : null;
+  const absError = formalDistance === null ? null : (formalDistance - referenceMeters);
   const relError = absError === null ? null : (absError / referenceMeters) * 100;
 
   log(`MEASUREMENT #${measurementIndex} SUMMARY (${reason})`);
   log(
-    `reference=${referenceMeters.toFixed(6)} m; samples=${n}; ` +
+    `formal frozen: reference=${referenceMeters.toFixed(6)} m; ` +
+    `distance=${formalDistance===null?'n/a':formalDistance.toFixed(6)} m; ` +
+    `error=${absError===null?'n/a':absError.toFixed(6)} m; ` +
+    `relative=${relError===null?'n/a':relError.toFixed(3)}%`
+  );
+  log(
+    `live Anchor diagnostic: samples=${n}; ` +
     `median=${med===null?'n/a':med.toFixed(6)} m; ` +
     `min=${min===null?'n/a':min.toFixed(6)} m; max=${max===null?'n/a':max.toFixed(6)} m; ` +
     `range=${range===null?'n/a':range.toFixed(6)} m`
-  );
-  log(
-    `accuracy: error=${absError===null?'n/a':absError.toFixed(6)} m; ` +
-    `relative=${relError===null?'n/a':relError.toFixed(3)}%`
   );
   log(
     `camera distance median: A=${camAMed===null?'n/a':camAMed.toFixed(6)} m; ` +
@@ -1106,16 +1247,42 @@ function updateMetricsUI(){
     set('cameraBState',fmtDistance(cameraBSamples[cameraBSamples.length-1]),'ok');
   }else set('cameraBState','—','');
 
+  const formalDistance = frozenMeasurement?.valid ? frozenMeasurement.distance : null;
+
+  if(formalDistance!==null){
+    const absError=formalDistance-referenceMeters;
+    const relError=(absError/referenceMeters)*100;
+
+    set('distanceState',fmtDistance(formalDistance),'ok');
+    set(
+      'absErrorState',
+      `${absError>=0?'+':''}${(absError*100).toFixed(2)} cm`,
+      Math.abs(absError)<=0.01?'ok':'warn'
+    );
+    set(
+      'relErrorState',
+      `${relError>=0?'+':''}${relError.toFixed(2)}%`,
+      Math.abs(relError)<=2?'ok':'warn'
+    );
+
+    if(el.accuracyText){
+      el.accuracyText.textContent =
+        `FROZEN: ${fmtDistance(formalDistance)} / REF: ${(referenceMeters*100).toFixed(1)} cm / ` +
+        `ERROR: ${absError>=0?'+':''}${(absError*100).toFixed(2)} cm (${relError>=0?'+':''}${relError.toFixed(2)}%)`;
+    }
+  }else{
+    set('absErrorState','—','');
+    set('relErrorState','—','');
+    if(el.accuracyText){
+      el.accuracyText.textContent = `REF: ${(referenceMeters*100).toFixed(1)} cm / FROZEN: —`;
+    }
+  }
+
   if(!n){
     set('stabilityMedian','—','');
     set('stabilityMinMax','—','');
     set('stabilityRange','—','');
-    set('absErrorState','—','');
-    set('relErrorState','—','');
-    if(el.stabilityText) el.stabilityText.textContent = 'STABILITY: —';
-    if(el.accuracyText) {
-      el.accuracyText.textContent = `REF: ${(referenceMeters*100).toFixed(1)} cm / ERROR: —`;
-    }
+    if(el.stabilityText) el.stabilityText.textContent = 'LIVE ANCHOR: —';
     return;
   }
 
@@ -1123,22 +1290,14 @@ function updateMetricsUI(){
   const min = Math.min(...distanceSamples);
   const max = Math.max(...distanceSamples);
   const range = max-min;
-  const absError = med-referenceMeters;
-  const relError = (absError/referenceMeters)*100;
 
   set('stabilityMedian',fmtDistance(med),'ok');
   set('stabilityMinMax',`${fmtDistance(min)} / ${fmtDistance(max)}`,'ok');
   set('stabilityRange',fmtDistance(range),range <= 0.005 ? 'ok':'warn');
-  set('absErrorState',`${absError>=0?'+':''}${(absError*100).toFixed(2)} cm`,Math.abs(absError)<=0.01?'ok':'warn');
-  set('relErrorState',`${relError>=0?'+':''}${relError.toFixed(2)}%`,Math.abs(relError)<=2?'ok':'warn');
 
   if(el.stabilityText){
     el.stabilityText.textContent =
-      `STABILITY: n=${n} median=${fmtDistance(med)} range=${fmtDistance(range)}`;
-  }
-  if(el.accuracyText){
-    el.accuracyText.textContent =
-      `REF: ${(referenceMeters*100).toFixed(1)} cm / ERROR: ${absError>=0?'+':''}${(absError*100).toFixed(2)} cm (${relError>=0?'+':''}${relError.toFixed(2)}%)`;
+      `LIVE ANCHOR: n=${n} median=${fmtDistance(med)} range=${fmtDistance(range)}`;
   }
 }
 
@@ -1695,27 +1854,54 @@ function updateDistanceUI(){
     set('anchorBState','NOT SET','warn');
   }
 
+  const formalDistance = frozenMeasurement?.valid ? frozenMeasurement.distance : null;
+
+  if(formalDistance!==null){
+    const frozenText=fmtDistance(formalDistance);
+    set('distanceState',frozenText,'ok');
+    el.distanceText.textContent = `DISTANCE (FROZEN): ${frozenText}`;
+  }else if(frozenMeasurement && frozenMeasurement.valid===false){
+    set('distanceState','INVALID','ng');
+    el.distanceText.textContent = 'DISTANCE: INVALID — RESET AND RETRY';
+  }else{
+    set('distanceState','—','');
+    el.distanceText.textContent = 'DISTANCE: —';
+  }
+
   if(pointA && pointB){
-    const d = calcDistance(pointA,pointB);
-    const text = fmtDistance(d);
-    set('distanceState',text,'ok');
-    el.distanceText.textContent = `DISTANCE: ${text}`;
-    el.pointText.textContent = `A: ${fmtPoint(pointA)}\nB: ${fmtPoint(pointB)}`;
+    const live = calcDistance(pointA,pointB);
+    set('liveDistanceState',fmtDistance(live),'ok');
+
+    if(formalDistance!==null){
+      const delta=live-formalDistance;
+      set(
+        'liveMinusFrozenState',
+        `${delta>=0?'+':''}${(delta*1000).toFixed(2)} mm`,
+        Math.abs(delta)<=0.002?'ok':'warn'
+      );
+    }else{
+      set('liveMinusFrozenState','—','');
+    }
+
+    el.pointText.textContent =
+      `FROZEN A: ${frozenMeasurement?.aAtB?fmtPoint(frozenMeasurement.aAtB):'—'}\n` +
+      `FROZEN B: ${frozenMeasurement?.bHit?fmtPoint(frozenMeasurement.bHit):'—'}\n` +
+      `LIVE A: ${fmtPoint(pointA)}\nLIVE B: ${fmtPoint(pointB)}`;
     el.setPointBtn.textContent = 'MEASURED';
     el.setPointBtn.disabled = true;
     el.resetBtn.disabled = false;
     el.xrResetBtn.disabled = false;
   }else if(pointA){
-    set('distanceState','—','');
-    el.distanceText.textContent = 'DISTANCE: —';
+    set('liveDistanceState','—','');
+    set('liveMinusFrozenState','—','');
     el.pointText.textContent = `A: ${fmtPoint(pointA)} / B: NOT SET`;
     el.setPointBtn.textContent = capturePending === 'B' ? 'CAPTURING B...' : 'SET POINT B';
     el.setPointBtn.disabled = !canCapturePoint();
     el.resetBtn.disabled = false;
     el.xrResetBtn.disabled = false;
   }else{
-    set('distanceState','—','');
-    el.distanceText.textContent = 'DISTANCE: —';
+    set('liveDistanceState','—','');
+    set('liveMinusFrozenState','—','');
     el.pointText.textContent = 'A: NOT SET / B: NOT SET';
     el.setPointBtn.textContent = capturePending === 'A' ? 'CAPTURING A...' : 'SET POINT A';
     el.setPointBtn.disabled = !canCapturePoint();
@@ -1762,6 +1948,8 @@ async function startAR(){
   ending = false;
   cleanupDone = false;
   sessionReferenceSpaceResetCount = 0;
+  sessionFrozenMeasurements = [];
+  updateRepeatabilityUI();
   resetMeasurementMetrics();
 
   try{
@@ -1925,6 +2113,8 @@ function updateAnchorPose(frame,which,time,viewerPose){
   if(which === 'A'){
     pointA = point;
     matrixA = matrix;
+    lastAAnchorPoseTime = time;
+    lastAAnchorPoseFrame = frameCount;
     set('anchorAState','TRACKED','ok');
 
     if(preBActive && !pointB){
@@ -1951,6 +2141,14 @@ function createAnchorFromHit(result,hitPose,slot,time,viewerPose){
 
   if(slot==='A') captureSnapshotA=captureSnapshot;
   else captureSnapshotB=captureSnapshot;
+
+  // Formal measurement is committed immediately on the Point B capture frame.
+  // It does not depend on the asynchronous creation or later movement of Anchor B.
+  if(slot==='B'){
+    freezeMeasurementAtB(fallbackPoint,time);
+    updateMetricsUI();
+    updateDistanceUI();
+  }
 
   if(typeof result.createAnchor !== 'function'){
     anchorCreationBusy = false;
@@ -2036,7 +2234,7 @@ function createAnchorFromHit(result,hitPose,slot,time,viewerPose){
       el.xrState.textContent = 'MEASUREMENT COMPLETE';
       el.xrHint.textContent = 'Move the camera; A/B anchors and line should stay fixed.';
       const d = calcDistance(pointA,pointB);
-      log(`B-created display distance (A current / B hit): ${d.toFixed(6)} m (${fmtDistance(d)})`);
+      log(`B-created live Anchor distance: ${d.toFixed(6)} m (${fmtDistance(d)}); formalFrozen=${frozenMeasurement?.valid?frozenMeasurement.distance.toFixed(6)+' m':'INVALID'}`);
     }
   }).catch(err=>{
     anchorCreationBusy = false;
