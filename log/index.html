@@ -123,6 +123,55 @@
       <div class="log-list">
               <!-- 新しいLOGはこの直下へ追加 -->
 
+<article class="log-entry" id="log-2026-09-27-03">
+          <div class="log-entry__meta">
+          <time datetime="2026-09-27">2026-09-27</time>
+          <span class="log-entry__type">MEMO</span>
+          </div>
+          <h3 class="log-entry__title">自由思想Androidと独占制限iPhoneの対応技術比較</h3>
+          <div class="log-entry__body">
+          <p>AndroidとiPhoneの対応技術差は大きく、iPhoneが劣勢となっている。WEB技術研究としてはAndroid寄りになるのは致し方なし😢<BR>
+<pre>■ブラウザ単体・無料で動くWeb技術の比較表
+・技術要素（Web API）技術の概要とスマホにおける挙動の違い
+	WebXR Device API（ブラウザVR/AR）
+	Android (Chrome)：◯
+	iPhone (iOS Safari)：✕
+	Android：ブラウザのままカメラ映像に3Dを重ねる高精度なWebAR（床面認識等）やVRが動きます。
+	iPhone：非対応。iPhoneのカメラでAR（Quick Look等）を開くには、一度ブラウザを離れて専用のビューアー（USDZ形式）へ切り替える必要があります。
+
+・WebGPU（次世代3D・AI描画）従来のWebGLに代わる、低遅延・高効率な3Dグラフィックス・機械学習API。両OSともに対応を完了しており、ブラウザ内での高度な3Dゲームや軽量なAI処理（LLM等）が無料で動かせます。
+	Android (Chrome)：◯
+	iPhone (iOS Safari)：◯
+
+・Web Speech API（音声認識・音声合成）マイクからの音声認識（文字起こし）とAI音声による読み上げ機能。
+	Android (Chrome)：◯
+	iPhone (iOS Safari)：△(一部制限)iPhone（Safari）も対応していますが、音声認識の連続動作時間に制限があったり、バックグラウンドでの動作に制限が強くかかります。
+
+・WebUSB API（USB機器の直接制御）ブラウザから直接USBケーブル経由で外部機器（Arduino、決済端末、ICリーダー等）と通信する技術。
+	Android (Chrome)：◯
+	iPhone (iOS Safari)：✕　iPhoneはセキュリティとAppleのMFi認証方針により一切使用できません。
+
+・Web Serial API（シリアル通信）電子工作やレガシーデバイスなどで使われるシリアル（COMポート）通信をブラウザから行う技術。
+	Android (Chrome)：◯　Android（Chrome 148以降など）でサポートされ始めています
+	iPhone (iOS Safari)：✕　iPhoneは非対応です。
+
+・File System Access API（ローカルファイル保存）
+	Android (Chrome)：(一部のみ)　✕　ユーザーのPCやスマホの「写真」や「書類」フォルダといったリアルなディレクトリに直接ファイルを上書き保存・同期できる機能。
+	iPhone (iOS Safari)：✕
+	セキュリティの観点から、Android・iPhoneともにモバイルブラウザでは原則「非対応」です。
+
+・Shape Detection API（顔・文字・バーコード検出）カメラで写した映像から、ブラウザが「顔の位置」「バーコード/QRコード」「文字（OCR）」をハードウェア（GPU）を使って高速に検出する技術。
+	Android (Chrome)：◯　Androidは標準対応
+	iPhone (iOS Safari)：✕　iPhoneは非対応のため、JavaScriptの重い外部ライブラリを読み込ませる必要があります。
+
+・Web Share Target API（「共有先」に選ばれる機能）PWAとしてインストールしたWebアプリが、スマホの「写真を共有」「テキストを共有」の一覧（シェアシート）にアプリとして登場できる機能。
+	Android (Chrome)：◯
+	iPhone (iOS Safari)：✕　iPhoneは、Webアプリが他のアプリからの共有を受け取る「ターゲット」になることを許可していません。
+</pre><BR>
+	  </p>
+          </div>
+         </article>
+
 <article class="log-entry" id="log-2026-09-27-02">
           <div class="log-entry__meta">
           <time datetime="2026-09-27">2026-09-27</time>
