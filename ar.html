@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<title>WebXR Raw Camera Access Probe Rev.2</title>
+<title>AR DISTANCE LAB - Phase 4.6</title>
 <style>
 :root{
   color-scheme:dark;
@@ -15,13 +15,13 @@
 html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);
 font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
 body{padding:16px}
-main{width:min(960px,100%);margin:auto}
+main{width:min(920px,100%);margin:auto}
 h1{font-size:clamp(22px,5vw,34px);margin:0 0 4px}
 .sub,.note{color:var(--muted);font-size:12px;line-height:1.65}
 .sub{margin:0 0 16px}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;margin:12px 0}
 h2{font-size:14px;letter-spacing:.08em;color:var(--accent);margin:0 0 10px}
-.grid{display:grid;grid-template-columns:minmax(165px,.9fr) minmax(170px,1.1fr);gap:0}
+.grid{display:grid;grid-template-columns:minmax(145px,.8fr) minmax(150px,1.2fr);gap:0}
 .cell{padding:8px 7px;border-bottom:1px solid #1a2630;overflow-wrap:anywhere}
 .ok{color:var(--ok)}.warn{color:var(--warn)}.ng{color:var(--ng)}
 .actions{display:flex;flex-wrap:wrap;gap:9px}
@@ -29,67 +29,123 @@ button{appearance:none;border:1px solid #36566c;background:#132534;color:var(--t
 border-radius:9px;padding:12px 14px;font:inherit;font-weight:700;min-height:44px}
 button:disabled{opacity:.4}
 button.danger{border-color:#75424a;background:#2b171b}
-pre{white-space:pre-wrap;overflow-wrap:anywhere;margin:0;max-height:330px;overflow:auto;font-size:12px;color:#cbd7e1}
-code{color:#cfe8f5}
+pre{white-space:pre-wrap;overflow-wrap:anywhere;margin:0;max-height:260px;overflow:auto;font-size:12px;color:#cbd7e1}
 
 #xrOverlay{position:fixed;inset:0;z-index:2147483647;pointer-events:none}
 #xrHud{position:absolute;inset:0;pointer-events:none}
+#centerGuide{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+font-size:28px;line-height:1;color:#fff;text-shadow:0 0 5px #000}
 #topPanel{position:absolute;left:50%;top:calc(env(safe-area-inset-top, 0px) + 36px);transform:translateX(-50%);
-width:min(94vw,620px);background:#071019e8;border:1px solid #587086;border-radius:11px;
-padding:10px 12px;text-align:center;pointer-events:auto}
+width:min(94vw,580px);background:#071019df;border:1px solid #587086;border-radius:11px;
+padding:9px 11px;text-align:center;pointer-events:auto}
 #bottomPanel{position:absolute;left:50%;bottom:max(14px,env(safe-area-inset-bottom));transform:translateX(-50%);
-width:min(94vw,620px);background:#071019e8;border:1px solid #587086;border-radius:11px;
+width:min(94vw,580px);background:#071019df;border:1px solid #587086;border-radius:11px;
 padding:10px;pointer-events:auto}
-#xrTitle{font-weight:700;color:#fff}
-#xrInfo{font-size:12px;line-height:1.55;margin-top:5px;color:#cfe8f5;white-space:pre-line}
-canvas{position:fixed;left:-10000px;top:-10000px;width:1px;height:1px}
+#xrState{font-weight:700}
+#xrHint,#pointText,#anchorText{font-size:12px;line-height:1.5;margin-top:4px}
+#pointText{color:#cfe8f5}
+#anchorText{color:#f6d98d}
+#distanceText{font-size:18px;font-weight:700;color:#fff}
+#accuracyText,#stabilityText{font-size:12px;font-weight:700;color:#cfe8f5;margin-top:4px}
+.xrActions{display:grid;grid-template-columns:1.1fr 1fr 1fr;gap:8px;margin-top:8px}
+.xrActions button{padding:10px 6px}
+canvas{position:fixed;inset:0;width:1px;height:1px;pointer-events:none}
+
+#qualityText{font-size:12px;font-weight:700;margin-top:4px;color:#cfe8f5}
+#magnifierWrap{
+  position:absolute;right:14px;
+  bottom:calc(env(safe-area-inset-bottom,0px) + 178px);
+  width:164px;height:164px;
+  border:2px solid #7dd3fc;border-radius:12px;
+  overflow:hidden;background:#000;pointer-events:none;
+  box-shadow:0 0 0 1px #0008,0 6px 24px #000a;
+}
+#magnifierCanvas{display:block;width:160px;height:160px;background:#000}
+#magnifierCross{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  color:#fff;font-size:28px;line-height:1;text-shadow:0 0 4px #000
+}
+#magnifierLabel{
+  position:absolute;left:6px;top:5px;padding:2px 5px;border-radius:5px;
+  background:#000b;color:#fff;font-size:11px
+}
+.magRow{display:flex;gap:6px;margin-top:8px}
+.magBtn{padding:8px 10px;min-height:38px}
+.magBtn.active{border-color:#7dd3fc;background:#17374b}
+
 </style>
 </head>
 <body>
 <main>
-<h1>WebXR Raw Camera Access Probe Rev.2</h1>
-<p class="sub">camera-access / XRCamera / XRWebGLBinding.getCameraImage() / center pixel readback</p>
+<h1>AR DISTANCE LAB</h1>
+<p class="sub">Phase 4.6 — Raw Camera Aim Quality + Digital Magnifier</p>
 
 <section class="card">
-<h2>ENVIRONMENT</h2>
+<h2>STATUS</h2>
 <div class="grid">
   <div class="cell">Secure Context</div><div class="cell" id="secure">...</div>
-  <div class="cell">WebXR API</div><div class="cell" id="webxr">...</div>
+  <div class="cell">WebXR</div><div class="cell" id="webxr">...</div>
   <div class="cell">immersive-ar</div><div class="cell" id="arSupport">...</div>
-  <div class="cell">XRWebGLBinding</div><div class="cell" id="bindingApi">...</div>
-  <div class="cell">getCameraImage()</div><div class="cell" id="cameraMethod">...</div>
-  <div class="cell">XRCamera interface</div><div class="cell" id="cameraInterface">...</div>
+  <div class="cell">Session</div><div class="cell" id="sessionState">NOT STARTED</div>
+  <div class="cell">Tracking</div><div class="cell" id="trackingState">NOT STARTED</div>
+  <div class="cell">Surface</div><div class="cell" id="surfaceState">NOT STARTED</div>
+  <div class="cell">Anchor A</div><div class="cell" id="anchorAState">NOT SET</div>
+  <div class="cell">Anchor B</div><div class="cell" id="anchorBState">NOT SET</div>
+  <div class="cell">Distance</div><div class="cell" id="distanceState">—</div>
+  <div class="cell">Samples</div><div class="cell" id="stabilitySamples">0</div>
+  <div class="cell">Median</div><div class="cell" id="stabilityMedian">—</div>
+  <div class="cell">Min / Max</div><div class="cell" id="stabilityMinMax">—</div>
+  <div class="cell">Range</div><div class="cell" id="stabilityRange">—</div>
+  <div class="cell">Camera → A</div><div class="cell" id="cameraAState">—</div>
+  <div class="cell">Camera → B</div><div class="cell" id="cameraBState">—</div>
+  <div class="cell">Viewer Pose valid</div><div class="cell" id="viewerRateState">—</div>
+  <div class="cell">Hit Test success</div><div class="cell" id="hitRateState">—</div>
+  <div class="cell">Anchor A tracked</div><div class="cell" id="anchorARateState">—</div>
+  <div class="cell">Anchor B tracked</div><div class="cell" id="anchorBRateState">—</div>
+  <div class="cell">Reference length</div><div class="cell" id="referenceState">50.0 cm</div>
+  <div class="cell">Absolute error</div><div class="cell" id="absErrorState">—</div>
+  <div class="cell">Relative error</div><div class="cell" id="relErrorState">—</div>
+  <div class="cell">Reference-space resets</div><div class="cell" id="resetEventState">0</div>
+  <div class="cell">Raw Camera Access</div><div class="cell" id="rawCameraState">NOT TESTED</div>
+  <div class="cell">Hit distance</div><div class="cell" id="hitDistanceState">—</div>
+  <div class="cell">Aim quality</div><div class="cell" id="aimQualityState">ANALYZING</div>
+  <div class="cell">Edge median</div><div class="cell" id="edgeMedianState">—</div>
+  <div class="cell">Contrast median</div><div class="cell" id="contrastMedianState">—</div>
+  <div class="cell">Magnifier</div><div class="cell" id="magnifierState">3×</div>
+  <div class="cell">Point A coord.</div><div class="cell" id="coordA">—</div>
+  <div class="cell">Point B coord.</div><div class="cell" id="coordB">—</div>
 </div>
 </section>
 
 <section class="card">
-<h2>RAW CAMERA RESULT</h2>
-<div class="grid">
-  <div class="cell">Session</div><div class="cell" id="sessionState">NOT STARTED</div>
-  <div class="cell">camera-access granted</div><div class="cell" id="cameraAccess">NOT TESTED</div>
-  <div class="cell">Viewer Pose</div><div class="cell" id="poseState">NOT TESTED</div>
-  <div class="cell">view.camera</div><div class="cell" id="viewCamera">NOT TESTED</div>
-  <div class="cell">Camera image size</div><div class="cell" id="cameraSize">—</div>
-  <div class="cell">getCameraImage()</div><div class="cell" id="textureState">NOT TESTED</div>
-  <div class="cell">Camera texture frames</div><div class="cell" id="textureFrames">0</div>
-  <div class="cell">Center pixel copy</div><div class="cell" id="pixelCopy">NOT TESTED</div>
-  <div class="cell">Center mean luma</div><div class="cell" id="meanLuma">—</div>
-  <div class="cell">Center edge score</div><div class="cell" id="edgeScore">—</div>
+<h2>REFERENCE LENGTH</h2>
+<p class="note">実物をメジャー等で測った既知のA-B長を設定してください。AR測定中央値との差を計算します。</p>
+<div class="actions">
+  <button type="button" class="refPreset" data-cm="20">20 cm</button>
+  <button type="button" class="refPreset" data-cm="50">50 cm</button>
+  <button type="button" class="refPreset" data-cm="100">100 cm</button>
+</div>
+<div style="display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap">
+  <label for="referenceCm">Custom</label>
+  <input id="referenceCm" type="number" min="1" max="1000" step="0.1" value="50"
+    style="width:120px;background:#080d12;color:#e8f0f6;border:1px solid #263441;border-radius:8px;padding:10px;font:inherit">
+  <span>cm</span>
 </div>
 </section>
 
 <section class="card">
 <h2>CONTROLS</h2>
 <div class="actions">
-  <button type="button" id="startBtn" disabled>START RAW CAMERA TEST</button>
-  <button type="button" id="endBtn" class="danger" disabled>END XR</button>
+  <button type="button" id="startBtn" disabled>START AR</button>
+  <button type="button" id="resetBtn" disabled>RESET MEASURE</button>
+  <button type="button" id="endBtn" class="danger" disabled>END AR</button>
 </div>
-<p class="note">
-このProbeは<code>camera-access</code>を<strong>requiredFeatures</strong>として要求します。
-セッション開始に失敗した場合は、Raw Camera Accessが利用不可・未許可・実装差異のいずれかとしてLOGに残します。
-Center pixel copyは、取得したカメラテクスチャ中央50%を64×64へ縮小コピーしてCPUへreadPixelsできるかを追加診断します。
-Edge scoreは将来のボケ検出用の「生値」で、現時点ではGOOD/BADの閾値判定には使用しません。
-</p>
+</section>
+
+<section class="card note">
+Raw Camera Accessで中央ROIを解析し、Hit Test距離と画像のdetail scoreからAIM QUALITYを判定します。
+Pixel 10 Pro実測を基に、約35cm以内かつdetailが低い場合はFOCUS LOWとしてSET POINTを一時無効化します。
+白壁など近距離でない低detailはLOW DETAILとして区別します。中央拡大鏡は2× / 3× / 4×のデジタル拡大です。
 </section>
 
 <section class="card">
@@ -98,16 +154,39 @@ Edge scoreは将来のボケ検出用の「生値」で、現時点ではGOOD/BA
 </section>
 </main>
 
-<canvas id="glCanvas"></canvas>
+<canvas id="xrCanvas"></canvas>
 
 <div id="xrOverlay">
   <div id="xrHud" hidden>
-    <div id="topPanel">
-      <div id="xrTitle">RAW CAMERA TEST</div>
-      <div id="xrInfo">Waiting for XR frame...</div>
+    <div id="centerGuide">＋</div>
+    <div id="magnifierWrap">
+      <canvas id="magnifierCanvas" width="128" height="128"></canvas>
+      <div id="magnifierCross">＋</div>
+      <div id="magnifierLabel">MAG 3×</div>
     </div>
+
+    <div id="topPanel">
+      <div id="xrState">STARTING...</div>
+      <div id="xrHint">Move slowly and point at a textured floor, desk, or wall.</div>
+    </div>
+
     <div id="bottomPanel">
-      <button type="button" id="xrEndBtn" class="danger">END</button>
+      <div id="distanceText">DISTANCE: —</div>
+      <div id="qualityText">AIM QUALITY: ANALYZING</div>
+      <div id="accuracyText">REF: 50.0 cm / ERROR: —</div>
+      <div id="stabilityText">STABILITY: —</div>
+      <div id="pointText">A: NOT SET / B: NOT SET</div>
+      <div id="anchorText">ANCHOR A: — / ANCHOR B: —</div>
+      <div class="magRow">
+        <button type="button" class="magBtn" data-mag="2">MAG 2×</button>
+        <button type="button" class="magBtn active" data-mag="3">MAG 3×</button>
+        <button type="button" class="magBtn" data-mag="4">MAG 4×</button>
+      </div>
+      <div class="xrActions">
+        <button type="button" id="setPointBtn" disabled>SET POINT A</button>
+        <button type="button" id="xrResetBtn" disabled>RESET</button>
+        <button type="button" id="xrEndBtn" class="danger">END</button>
+      </div>
     </div>
   </div>
 </div>
@@ -119,187 +198,557 @@ Edge scoreは将来のボケ検出用の「生値」で、現時点ではGOOD/BA
 const $ = id => document.getElementById(id);
 const el = {};
 [
-  'secure','webxr','arSupport','bindingApi','cameraMethod','cameraInterface',
-  'sessionState','cameraAccess','poseState','viewCamera','cameraSize',
-  'textureState','textureFrames','pixelCopy','meanLuma','edgeScore',
-  'startBtn','endBtn','log','glCanvas','xrOverlay','xrHud','xrTitle','xrInfo','xrEndBtn',
-  'topPanel','bottomPanel'
+  'secure','webxr','arSupport','sessionState','trackingState','surfaceState',
+  'anchorAState','anchorBState','distanceState','stabilitySamples','stabilityMedian',
+  'stabilityMinMax','stabilityRange','cameraAState','cameraBState','viewerRateState',
+  'hitRateState','anchorARateState','anchorBRateState','referenceState',
+  'absErrorState','relErrorState','resetEventState','referenceCm',
+  'rawCameraState','hitDistanceState','aimQualityState','edgeMedianState',
+  'contrastMedianState','magnifierState','magnifierCanvas','magnifierWrap',
+  'magnifierLabel','qualityText',
+  'coordA','coordB','startBtn','resetBtn','endBtn','log','xrCanvas','xrOverlay','xrHud',
+  'xrState','xrHint','pointText','anchorText','distanceText','accuracyText','stabilityText','setPointBtn',
+  'xrResetBtn','xrEndBtn','topPanel','bottomPanel'
 ].forEach(id => el[id] = $(id));
 
 let session = null;
-let refSpace = null;
 let gl = null;
-let xrLayer = null;
-let xrBinding = null;
+let program = null;
+let positionLoc = -1;
+let uProjection = null;
+let uView = null;
+let uModel = null;
+let uColor = null;
+
+let reticleBuffer = null;
+let pointBuffer = null;
+let lineBuffer = null;
+
+let localSpace = null;
+let viewerSpace = null;
+let hitTestSource = null;
 let raf = 0;
-let frameNo = 0;
-let cameraTextureFrames = 0;
-let firstPoseLogged = false;
-let firstCameraLogged = false;
-let firstTextureLogged = false;
+
+let latestHitMatrix = null;
+let latestHitPoint = null;
+
+let anchorA = null;
+let anchorB = null;
+let pointA = null;
+let pointB = null;
+let matrixA = null;
+let matrixB = null;
+
+let capturePending = null; // "A" or "B"
+let anchorCreationBusy = false;
+
+let viewerPoseSeen = false;
+let hitSeen = false;
+let frameCount = 0;
+let noHitFrames = 0;
+let nullPoseSince = null;
+let trackingMode = 'NOT STARTED';
+let logLines = [];
+
+// Per-measurement stability / quality metrics.
+let measurementIndex = 0;
+let measurementActive = false;
+let measurementStartedAt = null;
+
+let measureFrameTotal = 0;
+let measureViewerPoseValidFrames = 0;
+let measureHitEligibleFrames = 0;
+let measureHitSuccessFrames = 0;
+
+let anchorAEligibleFrames = 0;
+let anchorATrackedFrames = 0;
+let anchorBEligibleFrames = 0;
+let anchorBTrackedFrames = 0;
+
+let distanceSamples = [];
+let cameraASamples = [];
+let cameraBSamples = [];
+let lastMetricsUiTime = 0;
+
+// Absolute accuracy validation.
+let referenceMeters = 0.50;
+let referenceSpaceResetCount = 0;
+let sessionReferenceSpaceResetCount = 0;
+
+// Raw Camera Access / aim quality.
+let xrBinding = null;
+let rawCameraAvailable = false;
+let rawCameraTextureFrames = 0;
+
 let sampleProgram = null;
 let sampleBuffer = null;
 let sampleFbo = null;
 let sampleTexture = null;
 let samplePixels = null;
+let sampleDisplayPixels = null;
 let sampleReady = false;
-let lastSampleFrame = -999;
-let ending = false;
-const SAMPLE_SIZE = 64;
 
-let logs = [];
+const SAMPLE_SIZE = 128;
+const QUALITY_HISTORY_MAX = 5;
+let qualityHistory = [];
+let lastQualitySampleTime = -Infinity;
+let latestHitDistance = null;
+let aimQuality = 'ANALYZING';
+let magnifierZoom = 3;
+
+const NEAR_RANGE_M = 0.35;
+const DETAIL_EDGE_LOW = 2.5;
+const DETAIL_CONTRAST_LOW = 8.0;
+
+let ending = false;
+let cleanupDone = false;
+const LOG_STORAGE_KEY = 'ar-distance-lab-phase4-rev2-log';
+const SUMMARY_STORAGE_KEY = 'ar-distance-lab-phase4-rev2-summary';
+
+const TRACKING_UNSTABLE_MS = 250;
+const TRACKING_LOST_MS = 1000;
+
+const IDENTITY4 = new Float32Array([
+  1,0,0,0,
+  0,1,0,0,
+  0,0,1,0,
+  0,0,0,1
+]);
 
 function now(){ return new Date().toISOString(); }
 
-function log(msg){
-  logs.push(`${now()}  ${msg}`);
-  el.log.textContent = logs.join('\n');
-  el.log.scrollTop = el.log.scrollHeight;
+function persistDiagnostics(){
+  try{
+    sessionStorage.setItem(LOG_STORAGE_KEY,logLines.join('\n'));
+    const summary = {
+      savedAt: now(),
+      sessionState: el.sessionState?.textContent || '',
+      trackingState: el.trackingState?.textContent || '',
+      surfaceState: el.surfaceState?.textContent || '',
+      anchorAState: el.anchorAState?.textContent || '',
+      anchorBState: el.anchorBState?.textContent || '',
+      distance: el.distanceState?.textContent || '',
+      measurementIndex,
+      measurementActive,
+      referenceMeters,
+      referenceSpaceResetCount,
+      sessionReferenceSpaceResetCount,
+      samples: distanceSamples.length,
+      median: median(distanceSamples),
+      min: distanceSamples.length ? Math.min(...distanceSamples) : null,
+      max: distanceSamples.length ? Math.max(...distanceSamples) : null,
+      viewerPoseRate: measureFrameTotal ? measureViewerPoseValidFrames/measureFrameTotal : null,
+      hitRate: measureHitEligibleFrames ? measureHitSuccessFrames/measureHitEligibleFrames : null,
+      anchorARate: anchorAEligibleFrames ? anchorATrackedFrames/anchorAEligibleFrames : null,
+      anchorBRate: anchorBEligibleFrames ? anchorBTrackedFrames/anchorBEligibleFrames : null,
+      aimQuality,
+      hitDistance: latestHitDistance,
+      edgeMedian: qualityMedian('edge'),
+      contrastMedian: qualityMedian('contrast'),
+      magnifierZoom,
+      pointA: pointA ? {...pointA} : null,
+      pointB: pointB ? {...pointB} : null
+    };
+    sessionStorage.setItem(SUMMARY_STORAGE_KEY,JSON.stringify(summary));
+  }catch{}
 }
 
-function setCell(id,text,cls=''){
+function log(msg){
+  logLines.push(`${now()}  ${msg}`);
+  el.log.textContent = logLines.join('\n');
+  el.log.scrollTop = el.log.scrollHeight;
+  persistDiagnostics();
+}
+
+function restoreDiagnostics(){
+  try{
+    const oldLog = sessionStorage.getItem(LOG_STORAGE_KEY);
+    if(oldLog){
+      logLines = [
+        `${now()}  [RECOVERED PREVIOUS RUN]`,
+        ...oldLog.split('\n').filter(Boolean)
+      ];
+      el.log.textContent = logLines.join('\n');
+      el.log.scrollTop = el.log.scrollHeight;
+    }
+  }catch{}
+}
+
+function set(id,text,cls=''){
   el[id].textContent = text;
   el[id].className = 'cell ' + cls;
 }
 
-async function preflight(){
-  setCell('secure',window.isSecureContext?'YES':'NO',window.isSecureContext?'ok':'ng');
+function fmtPoint(p){
+  return `x=${p.x.toFixed(4)} m, y=${p.y.toFixed(4)} m, z=${p.z.toFixed(4)} m`;
+}
 
-  if(!navigator.xr){
-    setCell('webxr','UNSUPPORTED','ng');
-    setCell('arSupport','NOT TESTED','warn');
+function calcDistance(a,b){
+  const dx=b.x-a.x, dy=b.y-a.y, dz=b.z-a.z;
+  return Math.sqrt(dx*dx+dy*dy+dz*dz);
+}
+
+function fmtDistance(m){
+  if(m < 1) return `${(m*100).toFixed(1)} cm`;
+  return `${m.toFixed(3)} m`;
+}
+
+function median(values){
+  if(!values.length) return null;
+  const a = [...values].sort((x,y)=>x-y);
+  const mid = Math.floor(a.length/2);
+  return a.length % 2 ? a[mid] : (a[mid-1]+a[mid])/2;
+}
+
+function pct(n,d){
+  if(!d) return '—';
+  return `${((n/d)*100).toFixed(1)}% (${n}/${d})`;
+}
+
+function distance3(a,b){
+  const dx=b.x-a.x, dy=b.y-a.y, dz=b.z-a.z;
+  return Math.sqrt(dx*dx+dy*dy+dz*dz);
+}
+
+function setReferenceCm(cm){
+  const v = Number(cm);
+  if(!Number.isFinite(v) || v <= 0) return;
+  referenceMeters = v / 100;
+  el.referenceCm.value = v.toFixed(1).replace(/\.0$/,'');
+  set('referenceState',`${v.toFixed(1)} cm`,'ok');
+  if(el.accuracyText) el.accuracyText.textContent = `REF: ${v.toFixed(1)} cm / ERROR: —`;
+  updateMetricsUI();
+}
+
+function resetMeasurementMetrics(){
+  measurementActive = false;
+  measurementStartedAt = null;
+
+  measureFrameTotal = 0;
+  measureViewerPoseValidFrames = 0;
+  measureHitEligibleFrames = 0;
+  measureHitSuccessFrames = 0;
+
+  anchorAEligibleFrames = 0;
+  anchorATrackedFrames = 0;
+  anchorBEligibleFrames = 0;
+  anchorBTrackedFrames = 0;
+
+  distanceSamples = [];
+  cameraASamples = [];
+  cameraBSamples = [];
+  lastMetricsUiTime = 0;
+
+  referenceSpaceResetCount = 0;
+
+  set('stabilitySamples','0','');
+  set('stabilityMedian','—','');
+  set('stabilityMinMax','—','');
+  set('stabilityRange','—','');
+  set('cameraAState','—','');
+  set('cameraBState','—','');
+  set('viewerRateState','—','');
+  set('hitRateState','—','');
+  set('anchorARateState','—','');
+  set('anchorBRateState','—','');
+  set('absErrorState','—','');
+  set('relErrorState','—','');
+  set('resetEventState',String(referenceSpaceResetCount),'');
+  if(el.stabilityText) el.stabilityText.textContent = 'STABILITY: —';
+  if(el.accuracyText) {
+    el.accuracyText.textContent = `REF: ${(referenceMeters*100).toFixed(1)} cm / ERROR: —`;
+  }
+}
+
+function startMeasurementMetrics(){
+  measurementIndex++;
+  measurementActive = true;
+  measurementStartedAt = now();
+
+  measureFrameTotal = 0;
+  measureViewerPoseValidFrames = 0;
+  measureHitEligibleFrames = 0;
+  measureHitSuccessFrames = 0;
+
+  anchorAEligibleFrames = 0;
+  anchorATrackedFrames = 0;
+  anchorBEligibleFrames = 0;
+  anchorBTrackedFrames = 0;
+
+  distanceSamples = [];
+  cameraASamples = [];
+  cameraBSamples = [];
+  referenceSpaceResetCount = 0;
+
+  log(`MEASUREMENT #${measurementIndex} START; reference=${referenceMeters.toFixed(6)} m`);
+  updateMetricsUI();
+}
+
+function summarizeMeasurement(reason){
+  if(!measurementActive) return;
+
+  const n = distanceSamples.length;
+  const med = n ? median(distanceSamples) : null;
+  const min = n ? Math.min(...distanceSamples) : null;
+  const max = n ? Math.max(...distanceSamples) : null;
+  const range = n ? (max-min) : null;
+
+  const camAMed = cameraASamples.length ? median(cameraASamples) : null;
+  const camBMed = cameraBSamples.length ? median(cameraBSamples) : null;
+
+  const absError = med === null ? null : (med - referenceMeters);
+  const relError = absError === null ? null : (absError / referenceMeters) * 100;
+
+  log(`MEASUREMENT #${measurementIndex} SUMMARY (${reason})`);
+  log(
+    `reference=${referenceMeters.toFixed(6)} m; samples=${n}; ` +
+    `median=${med===null?'n/a':med.toFixed(6)} m; ` +
+    `min=${min===null?'n/a':min.toFixed(6)} m; max=${max===null?'n/a':max.toFixed(6)} m; ` +
+    `range=${range===null?'n/a':range.toFixed(6)} m`
+  );
+  log(
+    `accuracy: error=${absError===null?'n/a':absError.toFixed(6)} m; ` +
+    `relative=${relError===null?'n/a':relError.toFixed(3)}%`
+  );
+  log(
+    `camera distance median: A=${camAMed===null?'n/a':camAMed.toFixed(6)} m; ` +
+    `B=${camBMed===null?'n/a':camBMed.toFixed(6)} m`
+  );
+  log(
+    `quality: ViewerPose=${pct(measureViewerPoseValidFrames,measureFrameTotal)}; ` +
+    `HitTest=${pct(measureHitSuccessFrames,measureHitEligibleFrames)}; ` +
+    `AnchorA=${pct(anchorATrackedFrames,anchorAEligibleFrames)}; ` +
+    `AnchorB=${pct(anchorBTrackedFrames,anchorBEligibleFrames)}; ` +
+    `ReferenceSpaceReset=${referenceSpaceResetCount}`
+  );
+
+  measurementActive = false;
+  persistDiagnostics();
+}
+
+function updateMetricsUI(){
+  const n = distanceSamples.length;
+
+  set('referenceState',`${(referenceMeters*100).toFixed(1)} cm`,'ok');
+  set('stabilitySamples',String(n),n ? 'ok':'');
+  set('viewerRateState',pct(measureViewerPoseValidFrames,measureFrameTotal),measureViewerPoseValidFrames ? 'ok':'warn');
+  set('hitRateState',pct(measureHitSuccessFrames,measureHitEligibleFrames),measureHitSuccessFrames ? 'ok':'warn');
+  set('anchorARateState',pct(anchorATrackedFrames,anchorAEligibleFrames),anchorATrackedFrames ? 'ok':'warn');
+  set('anchorBRateState',pct(anchorBTrackedFrames,anchorBEligibleFrames),anchorBTrackedFrames ? 'ok':'warn');
+  set('resetEventState',String(referenceSpaceResetCount),referenceSpaceResetCount ? 'warn':'ok');
+
+  if(cameraASamples.length){
+    set('cameraAState',fmtDistance(cameraASamples[cameraASamples.length-1]),'ok');
+  }else set('cameraAState','—','');
+
+  if(cameraBSamples.length){
+    set('cameraBState',fmtDistance(cameraBSamples[cameraBSamples.length-1]),'ok');
+  }else set('cameraBState','—','');
+
+  if(!n){
+    set('stabilityMedian','—','');
+    set('stabilityMinMax','—','');
+    set('stabilityRange','—','');
+    set('absErrorState','—','');
+    set('relErrorState','—','');
+    if(el.stabilityText) el.stabilityText.textContent = 'STABILITY: —';
+    if(el.accuracyText) {
+      el.accuracyText.textContent = `REF: ${(referenceMeters*100).toFixed(1)} cm / ERROR: —`;
+    }
     return;
   }
 
-  setCell('webxr','SUPPORTED','ok');
+  const med = median(distanceSamples);
+  const min = Math.min(...distanceSamples);
+  const max = Math.max(...distanceSamples);
+  const range = max-min;
+  const absError = med-referenceMeters;
+  const relError = (absError/referenceMeters)*100;
 
-  setCell(
-    'bindingApi',
-    typeof XRWebGLBinding !== 'undefined' ? 'EXPOSED' : 'NOT EXPOSED',
-    typeof XRWebGLBinding !== 'undefined' ? 'ok' : 'ng'
+  set('stabilityMedian',fmtDistance(med),'ok');
+  set('stabilityMinMax',`${fmtDistance(min)} / ${fmtDistance(max)}`,'ok');
+  set('stabilityRange',fmtDistance(range),range <= 0.005 ? 'ok':'warn');
+  set('absErrorState',`${absError>=0?'+':''}${(absError*100).toFixed(2)} cm`,Math.abs(absError)<=0.01?'ok':'warn');
+  set('relErrorState',`${relError>=0?'+':''}${relError.toFixed(2)}%`,Math.abs(relError)<=2?'ok':'warn');
+
+  if(el.stabilityText){
+    el.stabilityText.textContent =
+      `STABILITY: n=${n} median=${fmtDistance(med)} range=${fmtDistance(range)}`;
+  }
+  if(el.accuracyText){
+    el.accuracyText.textContent =
+      `REF: ${(referenceMeters*100).toFixed(1)} cm / ERROR: ${absError>=0?'+':''}${(absError*100).toFixed(2)} cm (${relError>=0?'+':''}${relError.toFixed(2)}%)`;
+  }
+}
+
+function qualityMedian(key){
+  const vals = qualityHistory.map(v=>v[key]).filter(Number.isFinite);
+  return vals.length ? median(vals) : null;
+}
+
+function resetAimQuality(){
+  qualityHistory = [];
+  latestHitDistance = null;
+  aimQuality = 'ANALYZING';
+  set('hitDistanceState','—','');
+  set('aimQualityState','ANALYZING','warn');
+  set('edgeMedianState','—','');
+  set('contrastMedianState','—','');
+  if(el.qualityText) el.qualityText.textContent = 'AIM QUALITY: ANALYZING';
+}
+
+function classifyAimQuality(){
+  if(!latestHitPoint || !Number.isFinite(latestHitDistance)){
+    aimQuality = 'NO SURFACE';
+    set('aimQualityState',aimQuality,'warn');
+    if(el.qualityText) el.qualityText.textContent = 'AIM QUALITY: NO SURFACE';
+    return;
+  }
+
+  if(qualityHistory.length < 3){
+    aimQuality = 'ANALYZING';
+    set('aimQualityState',aimQuality,'warn');
+    if(el.qualityText) el.qualityText.textContent = 'AIM QUALITY: ANALYZING';
+    return;
+  }
+
+  const edge = qualityMedian('edge');
+  const contrast = qualityMedian('contrast');
+  const lowDetail = (edge !== null && edge < DETAIL_EDGE_LOW) ||
+                    (contrast !== null && contrast < DETAIL_CONTRAST_LOW);
+
+  if(latestHitDistance <= NEAR_RANGE_M && lowDetail){
+    aimQuality = 'FOCUS LOW';
+    set('aimQualityState',`${aimQuality} / TOO CLOSE`,'ng');
+    if(el.qualityText) el.qualityText.textContent =
+      `AIM QUALITY: FOCUS LOW — move farther away (${latestHitDistance.toFixed(2)} m)`;
+  }else if(lowDetail){
+    aimQuality = 'LOW DETAIL';
+    set('aimQualityState',aimQuality,'warn');
+    if(el.qualityText) el.qualityText.textContent =
+      'AIM QUALITY: LOW DETAIL — aim at a clearer edge or texture';
+  }else if(latestHitDistance <= NEAR_RANGE_M){
+    aimQuality = 'NEAR RANGE';
+    set('aimQualityState',aimQuality,'warn');
+    if(el.qualityText) el.qualityText.textContent =
+      `AIM QUALITY: NEAR RANGE — verify focus (${latestHitDistance.toFixed(2)} m)`;
+  }else{
+    aimQuality = 'GOOD';
+    set('aimQualityState',aimQuality,'ok');
+    if(el.qualityText) el.qualityText.textContent = 'AIM QUALITY: GOOD';
+  }
+
+  set('edgeMedianState',edge===null?'—':edge.toFixed(3),edge!==null && edge>=DETAIL_EDGE_LOW?'ok':'warn');
+  set('contrastMedianState',contrast===null?'—':contrast.toFixed(2),contrast!==null && contrast>=DETAIL_CONTRAST_LOW?'ok':'warn');
+}
+
+function aimQualityAllowsCapture(){
+  return aimQuality === 'GOOD' || aimQuality === 'NEAR RANGE';
+}
+
+function canCapturePoint(){
+  return !!latestHitPoint &&
+         !capturePending &&
+         !anchorCreationBusy &&
+         aimQualityAllowsCapture();
+}
+
+function compileRawShader(type,source){
+  const sh = gl.createShader(type);
+  gl.shaderSource(sh,source);
+  gl.compileShader(sh);
+  if(!gl.getShaderParameter(sh,gl.COMPILE_STATUS)){
+    throw new Error(`raw shader compile: ${gl.getShaderInfoLog(sh)}`);
+  }
+  return sh;
+}
+
+function setupRawCameraPipeline(){
+  const vs = compileRawShader(gl.VERTEX_SHADER,`
+    attribute vec2 aPos;
+    varying vec2 vUv;
+    void main(){
+      gl_Position = vec4(aPos,0.0,1.0);
+      vUv = aPos * 0.5 + 0.5;
+    }
+  `);
+
+  const fs = compileRawShader(gl.FRAGMENT_SHADER,`
+    precision mediump float;
+    varying vec2 vUv;
+    uniform sampler2D uCamera;
+    uniform float uZoom;
+    void main(){
+      vec2 uv = vec2(0.5) + (vUv - vec2(0.5)) / uZoom;
+      gl_FragColor = texture2D(uCamera,uv);
+    }
+  `);
+
+  sampleProgram = gl.createProgram();
+  gl.attachShader(sampleProgram,vs);
+  gl.attachShader(sampleProgram,fs);
+  gl.linkProgram(sampleProgram);
+
+  if(!gl.getProgramParameter(sampleProgram,gl.LINK_STATUS)){
+    throw new Error(`raw program link: ${gl.getProgramInfoLog(sampleProgram)}`);
+  }
+
+  gl.deleteShader(vs);
+  gl.deleteShader(fs);
+
+  sampleBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER,sampleBuffer);
+  gl.bufferData(
+    gl.ARRAY_BUFFER,
+    new Float32Array([-1,-1, 1,-1, -1,1, 1,1]),
+    gl.STATIC_DRAW
   );
 
-  let methodPresent = false;
-  try{
-    methodPresent = typeof XRWebGLBinding !== 'undefined' &&
-                    typeof XRWebGLBinding.prototype?.getCameraImage === 'function';
-  }catch{}
-  setCell('cameraMethod',methodPresent?'EXPOSED':'NOT EXPOSED',methodPresent?'ok':'ng');
-
-  setCell(
-    'cameraInterface',
-    typeof XRCamera !== 'undefined' ? 'EXPOSED' : 'NOT EXPOSED',
-    typeof XRCamera !== 'undefined' ? 'ok' : 'warn'
+  sampleTexture = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D,sampleTexture);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+  gl.texImage2D(
+    gl.TEXTURE_2D,0,gl.RGBA,SAMPLE_SIZE,SAMPLE_SIZE,0,
+    gl.RGBA,gl.UNSIGNED_BYTE,null
   );
 
-  try{
-    const ok = await navigator.xr.isSessionSupported('immersive-ar');
-    setCell('arSupport',ok?'SUPPORTED':'UNSUPPORTED',ok?'ok':'ng');
-    el.startBtn.disabled = !ok;
-    log(`immersive-ar support=${ok}`);
-    log(`XRWebGLBinding=${typeof XRWebGLBinding}; getCameraImage=${methodPresent}; XRCamera=${typeof XRCamera}`);
-  }catch(err){
-    setCell('arSupport',`${err.name}: ${err.message}`,'ng');
-    log(`isSessionSupported failed: ${err.name}: ${err.message}`);
+  sampleFbo = gl.createFramebuffer();
+  gl.bindFramebuffer(gl.FRAMEBUFFER,sampleFbo);
+  gl.framebufferTexture2D(
+    gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,sampleTexture,0
+  );
+
+  if(gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE){
+    throw new Error('raw sample framebuffer incomplete');
   }
+
+  samplePixels = new Uint8Array(SAMPLE_SIZE*SAMPLE_SIZE*4);
+  sampleDisplayPixels = new Uint8ClampedArray(SAMPLE_SIZE*SAMPLE_SIZE*4);
+  sampleReady = true;
+
+  gl.bindFramebuffer(gl.FRAMEBUFFER,null);
+  log(`Raw Camera sample pipeline ready (${SAMPLE_SIZE}x${SAMPLE_SIZE})`);
 }
 
-function shader(type,source){
-  const s = gl.createShader(type);
-  gl.shaderSource(s,source);
-  gl.compileShader(s);
-  if(!gl.getShaderParameter(s,gl.COMPILE_STATUS)){
-    throw new Error(`shader compile: ${gl.getShaderInfoLog(s)}`);
-  }
-  return s;
-}
-
-function setupSamplePipeline(){
-  try{
-    const vs = shader(gl.VERTEX_SHADER,`
-      attribute vec2 aPos;
-      varying vec2 vUv;
-      void main(){
-        gl_Position = vec4(aPos,0.0,1.0);
-        vUv = aPos * 0.5 + 0.5;
-      }
-    `);
-
-    const fs = shader(gl.FRAGMENT_SHADER,`
-      precision mediump float;
-      varying vec2 vUv;
-      uniform sampler2D uCamera;
-      void main(){
-        vec2 uv = vec2(0.25) + vUv * 0.5;
-        gl_FragColor = texture2D(uCamera, uv);
-      }
-    `);
-
-    sampleProgram = gl.createProgram();
-    gl.attachShader(sampleProgram,vs);
-    gl.attachShader(sampleProgram,fs);
-    gl.linkProgram(sampleProgram);
-    if(!gl.getProgramParameter(sampleProgram,gl.LINK_STATUS)){
-      throw new Error(`program link: ${gl.getProgramInfoLog(sampleProgram)}`);
-    }
-    gl.deleteShader(vs);
-    gl.deleteShader(fs);
-
-    sampleBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER,sampleBuffer);
-    gl.bufferData(
-      gl.ARRAY_BUFFER,
-      new Float32Array([-1,-1, 1,-1, -1,1, 1,1]),
-      gl.STATIC_DRAW
-    );
-
-    sampleTexture = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D,sampleTexture);
-    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
-    gl.texImage2D(
-      gl.TEXTURE_2D,0,gl.RGBA,SAMPLE_SIZE,SAMPLE_SIZE,0,
-      gl.RGBA,gl.UNSIGNED_BYTE,null
-    );
-
-    sampleFbo = gl.createFramebuffer();
-    gl.bindFramebuffer(gl.FRAMEBUFFER,sampleFbo);
-    gl.framebufferTexture2D(
-      gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,sampleTexture,0
-    );
-
-    const status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
-    if(status !== gl.FRAMEBUFFER_COMPLETE){
-      throw new Error(`sample framebuffer incomplete: 0x${status.toString(16)}`);
-    }
-
-    samplePixels = new Uint8Array(SAMPLE_SIZE*SAMPLE_SIZE*4);
-    sampleReady = true;
-    gl.bindFramebuffer(gl.FRAMEBUFFER,null);
-    log(`center pixel sample pipeline ready (${SAMPLE_SIZE}x${SAMPLE_SIZE})`);
-  }catch(err){
-    sampleReady = false;
-    setCell('pixelCopy',`SETUP FAILED: ${err.message}`,'warn');
-    log(`pixel sample setup failed: ${err.name}: ${err.message}`);
-  }
-}
-
-function analyzePixels(pix,w,h){
-  let lumaSum = 0;
+function analyzeRawPixels(pix,w,h){
+  let sum = 0;
+  let sumSq = 0;
   let edgeSum = 0;
   let edgeCount = 0;
 
   function lumAt(x,y){
-    const i = (y*w+x)*4;
-    return 0.2126*pix[i] + 0.7152*pix[i+1] + 0.0722*pix[i+2];
+    const i=(y*w+x)*4;
+    return 0.2126*pix[i]+0.7152*pix[i+1]+0.0722*pix[i+2];
   }
 
   for(let y=0;y<h;y++){
     for(let x=0;x<w;x++){
-      const l = lumAt(x,y);
-      lumaSum += l;
+      const l=lumAt(x,y);
+      sum += l;
+      sumSq += l*l;
 
       if(x+1<w){
         edgeSum += Math.abs(l-lumAt(x+1,y));
@@ -312,285 +761,907 @@ function analyzePixels(pix,w,h){
     }
   }
 
+  const n=w*h;
+  const mean=sum/n;
+  const variance=Math.max(0,(sumSq/n)-(mean*mean));
+
   return {
-    meanLuma: lumaSum/(w*h),
-    edgeScore: edgeCount ? edgeSum/edgeCount : 0
+    mean,
+    contrast:Math.sqrt(variance),
+    edge:edgeCount ? edgeSum/edgeCount : 0
   };
 }
 
-function tryCenterReadback(cameraTexture){
+function drawMagnifierPixels(){
+  const ctx=el.magnifierCanvas.getContext('2d');
+  if(!ctx || !samplePixels) return;
+
+  // WebGL readPixels() is bottom-up. Flip rows for the DOM canvas.
+  const row=SAMPLE_SIZE*4;
+  for(let y=0;y<SAMPLE_SIZE;y++){
+    const src=(SAMPLE_SIZE-1-y)*row;
+    const dst=y*row;
+    sampleDisplayPixels.set(samplePixels.subarray(src,src+row),dst);
+  }
+
+  const imageData=new ImageData(sampleDisplayPixels,SAMPLE_SIZE,SAMPLE_SIZE);
+  ctx.putImageData(imageData,0,0);
+}
+
+function sampleRawCamera(cameraTexture,time){
   if(!sampleReady || !cameraTexture) return;
+  if(time-lastQualitySampleTime < 100) return; // <=10 Hz
+  lastQualitySampleTime=time;
 
   try{
-    while(gl.getError() !== gl.NO_ERROR){}
-
     gl.bindFramebuffer(gl.FRAMEBUFFER,sampleFbo);
     gl.viewport(0,0,SAMPLE_SIZE,SAMPLE_SIZE);
     gl.disable(gl.DEPTH_TEST);
 
     gl.useProgram(sampleProgram);
-
-    const loc = gl.getAttribLocation(sampleProgram,'aPos');
+    const pos=gl.getAttribLocation(sampleProgram,'aPos');
     gl.bindBuffer(gl.ARRAY_BUFFER,sampleBuffer);
-    gl.enableVertexAttribArray(loc);
-    gl.vertexAttribPointer(loc,2,gl.FLOAT,false,0,0);
+    gl.enableVertexAttribArray(pos);
+    gl.vertexAttribPointer(pos,2,gl.FLOAT,false,0,0);
 
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D,cameraTexture);
-    const sampler = gl.getUniformLocation(sampleProgram,'uCamera');
-    gl.uniform1i(sampler,0);
+    gl.uniform1i(gl.getUniformLocation(sampleProgram,'uCamera'),0);
+    gl.uniform1f(gl.getUniformLocation(sampleProgram,'uZoom'),magnifierZoom);
 
     gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
-
-    const drawErr = gl.getError();
-    if(drawErr !== gl.NO_ERROR){
-      throw new Error(`camera texture sample GL error 0x${drawErr.toString(16)}`);
-    }
-
     gl.readPixels(
       0,0,SAMPLE_SIZE,SAMPLE_SIZE,
       gl.RGBA,gl.UNSIGNED_BYTE,samplePixels
     );
 
-    const readErr = gl.getError();
-    if(readErr !== gl.NO_ERROR){
-      throw new Error(`readPixels GL error 0x${readErr.toString(16)}`);
-    }
+    const info=analyzeRawPixels(samplePixels,SAMPLE_SIZE,SAMPLE_SIZE);
+    qualityHistory.push({
+      edge:info.edge,
+      contrast:info.contrast,
+      mean:info.mean
+    });
+    if(qualityHistory.length>QUALITY_HISTORY_MAX) qualityHistory.shift();
 
-    const a = analyzePixels(samplePixels,SAMPLE_SIZE,SAMPLE_SIZE);
-    setCell('pixelCopy',`SUCCESS (${SAMPLE_SIZE}×${SAMPLE_SIZE})`,'ok');
-    setCell('meanLuma',a.meanLuma.toFixed(2),'ok');
-    setCell('edgeScore',a.edgeScore.toFixed(3),'ok');
+    drawMagnifierPixels();
+    classifyAimQuality();
 
-    el.xrInfo.textContent =
-      `camera ${el.cameraSize.textContent}\n` +
-      `texture frames ${cameraTextureFrames}\n` +
-      `center edge score ${a.edgeScore.toFixed(3)}`;
-
-    log(`center pixel copy SUCCESS; meanLuma=${a.meanLuma.toFixed(2)}; edgeScore=${a.edgeScore.toFixed(3)}`);
+    rawCameraTextureFrames++;
+    set('rawCameraState',`ACTIVE (${rawCameraTextureFrames} samples)`,'ok');
   }catch(err){
-    setCell('pixelCopy',`${err.name || 'Error'}: ${err.message}`,'warn');
-    log(`center pixel copy failed: ${err.name}: ${err.message}`);
+    set('rawCameraState',`${err.name}: ${err.message}`,'ng');
+    log(`Raw Camera sample failed: ${err.name}: ${err.message}`);
   }finally{
-    if(session && xrLayer){
-      try{
-        gl.bindFramebuffer(gl.FRAMEBUFFER,xrLayer.framebuffer);
-      }catch{}
-    }
+    try{
+      gl.enable(gl.DEPTH_TEST);
+      if(session?.renderState?.baseLayer){
+        gl.bindFramebuffer(gl.FRAMEBUFFER,session.renderState.baseLayer.framebuffer);
+      }
+    }catch{}
   }
 }
 
-async function startTest(){
-  if(session) return;
+async function preflight(){
+  set('secure',window.isSecureContext ? 'YES':'NO',window.isSecureContext?'ok':'ng');
 
+  if(!navigator.xr){
+    set('webxr','UNSUPPORTED','ng');
+    set('arSupport','NOT TESTED','warn');
+    log('navigator.xr unavailable');
+    return;
+  }
+
+  set('webxr','SUPPORTED','ok');
+
+  try{
+    const ok = await navigator.xr.isSessionSupported('immersive-ar');
+    set('arSupport',ok?'SUPPORTED':'UNSUPPORTED',ok?'ok':'ng');
+    el.startBtn.disabled = !ok;
+    log(`immersive-ar support=${ok}`);
+  }catch(err){
+    set('arSupport',`${err.name}: ${err.message}`,'ng');
+    log(`isSessionSupported failed: ${err.name}: ${err.message}`);
+  }
+}
+
+function createShader(type,source){
+  const shader = gl.createShader(type);
+  gl.shaderSource(shader,source);
+  gl.compileShader(shader);
+
+  if(!gl.getShaderParameter(shader,gl.COMPILE_STATUS)){
+    const info = gl.getShaderInfoLog(shader);
+    gl.deleteShader(shader);
+    throw new Error(`Shader compile failed: ${info}`);
+  }
+  return shader;
+}
+
+function createProgram(){
+  const vs = createShader(gl.VERTEX_SHADER,`
+    attribute vec3 aPosition;
+    uniform mat4 uProjection;
+    uniform mat4 uView;
+    uniform mat4 uModel;
+    void main(){
+      gl_Position = uProjection * uView * uModel * vec4(aPosition,1.0);
+    }
+  `);
+
+  const fs = createShader(gl.FRAGMENT_SHADER,`
+    precision mediump float;
+    uniform vec4 uColor;
+    void main(){
+      gl_FragColor = uColor;
+    }
+  `);
+
+  const p = gl.createProgram();
+  gl.attachShader(p,vs);
+  gl.attachShader(p,fs);
+  gl.linkProgram(p);
+
+  if(!gl.getProgramParameter(p,gl.LINK_STATUS)){
+    const info = gl.getProgramInfoLog(p);
+    throw new Error(`Program link failed: ${info}`);
+  }
+
+  gl.deleteShader(vs);
+  gl.deleteShader(fs);
+  return p;
+}
+
+async function setupWebGL(){
+  gl = el.xrCanvas.getContext('webgl',{alpha:true,antialias:true});
+  if(!gl) throw new Error('WebGL unavailable');
+
+  if(typeof gl.makeXRCompatible === 'function') await gl.makeXRCompatible();
+
+  program = createProgram();
+  positionLoc = gl.getAttribLocation(program,'aPosition');
+  uProjection = gl.getUniformLocation(program,'uProjection');
+  uView = gl.getUniformLocation(program,'uView');
+  uModel = gl.getUniformLocation(program,'uModel');
+  uColor = gl.getUniformLocation(program,'uColor');
+
+  reticleBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER,reticleBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([
+    -0.03,0,0,  0.03,0,0,
+     0,0,-0.03, 0,0,0.03,
+    -0.021,0,-0.021, 0.021,0,0.021,
+    -0.021,0,0.021, 0.021,0,-0.021
+  ]),gl.STATIC_DRAW);
+
+  pointBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER,pointBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([
+    -0.035,0,0, 0.035,0,0,
+    0,-0.035,0, 0,0.035,0,
+    0,0,-0.035, 0,0,0.035
+  ]),gl.STATIC_DRAW);
+
+  lineBuffer = gl.createBuffer();
+
+  gl.enable(gl.DEPTH_TEST);
+  gl.depthFunc(gl.LEQUAL);
+}
+
+function drawBuffer(buffer,vertexCount,model,color,projection,view){
+  gl.useProgram(program);
+  gl.bindBuffer(gl.ARRAY_BUFFER,buffer);
+  gl.enableVertexAttribArray(positionLoc);
+  gl.vertexAttribPointer(positionLoc,3,gl.FLOAT,false,0,0);
+  gl.uniformMatrix4fv(uProjection,false,projection);
+  gl.uniformMatrix4fv(uView,false,view);
+  gl.uniformMatrix4fv(uModel,false,model);
+  gl.uniform4fv(uColor,color);
+  gl.drawArrays(gl.LINES,0,vertexCount);
+}
+
+function updateLineBuffer(){
+  if(!pointA || !pointB || !gl || !lineBuffer) return;
+  gl.bindBuffer(gl.ARRAY_BUFFER,lineBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([
+    pointA.x,pointA.y,pointA.z,
+    pointB.x,pointB.y,pointB.z
+  ]),gl.DYNAMIC_DRAW);
+}
+
+function updateDistanceUI(){
+  if(pointA){
+    set('coordA',fmtPoint(pointA),'ok');
+    set('anchorAState',anchorA ? 'TRACKED / LAST KNOWN':'PENDING','ok');
+  }else{
+    set('coordA','—','');
+    set('anchorAState','NOT SET','warn');
+  }
+
+  if(pointB){
+    set('coordB',fmtPoint(pointB),'ok');
+    set('anchorBState',anchorB ? 'TRACKED / LAST KNOWN':'PENDING','ok');
+  }else{
+    set('coordB','—','');
+    set('anchorBState','NOT SET','warn');
+  }
+
+  if(pointA && pointB){
+    const d = calcDistance(pointA,pointB);
+    const text = fmtDistance(d);
+    set('distanceState',text,'ok');
+    el.distanceText.textContent = `DISTANCE: ${text}`;
+    el.pointText.textContent = `A: ${fmtPoint(pointA)}\nB: ${fmtPoint(pointB)}`;
+    el.setPointBtn.textContent = 'MEASURED';
+    el.setPointBtn.disabled = true;
+    el.resetBtn.disabled = false;
+    el.xrResetBtn.disabled = false;
+  }else if(pointA){
+    set('distanceState','—','');
+    el.distanceText.textContent = 'DISTANCE: —';
+    el.pointText.textContent = `A: ${fmtPoint(pointA)} / B: NOT SET`;
+    el.setPointBtn.textContent = capturePending === 'B' ? 'CAPTURING B...' : 'SET POINT B';
+    el.setPointBtn.disabled = !canCapturePoint();
+    el.resetBtn.disabled = false;
+    el.xrResetBtn.disabled = false;
+  }else{
+    set('distanceState','—','');
+    el.distanceText.textContent = 'DISTANCE: —';
+    el.pointText.textContent = 'A: NOT SET / B: NOT SET';
+    el.setPointBtn.textContent = capturePending === 'A' ? 'CAPTURING A...' : 'SET POINT A';
+    el.setPointBtn.disabled = !canCapturePoint();
+    el.resetBtn.disabled = true;
+    el.xrResetBtn.disabled = true;
+  }
+
+  el.anchorText.textContent =
+    `ANCHOR A: ${anchorA ? 'YES' : '—'} / ANCHOR B: ${anchorB ? 'YES' : '—'}`;
+}
+
+function preventOverlayXRSelect(e){
+  e.preventDefault();
+}
+
+function requestCapture(source){
+  if(anchorCreationBusy || capturePending) return;
+  if(pointA && pointB) return;
+
+  classifyAimQuality();
+  if(!aimQualityAllowsCapture()){
+    el.xrHint.textContent =
+      aimQuality === 'FOCUS LOW'
+        ? 'Too close / focus low. Move slightly farther away.'
+        : 'Aim quality is low. Point at a clearer edge or texture.';
+    log(`capture blocked by AIM QUALITY=${aimQuality}; hitDistance=${latestHitDistance ?? 'n/a'}; edgeMedian=${qualityMedian('edge') ?? 'n/a'}`);
+    return;
+  }
+
+  if(!latestHitPoint){
+    el.xrHint.textContent = 'No surface hit available. Move slowly and try again.';
+    return;
+  }
+
+  capturePending = pointA ? 'B' : 'A';
+  log(`capture requested for Point ${capturePending} (${source})`);
+  el.xrState.textContent = `CAPTURING POINT ${capturePending}...`;
+  el.xrHint.textContent = 'Hold the camera steady until the anchor is created.';
+  updateDistanceUI();
+}
+
+async function startAR(){
   el.startBtn.disabled = true;
   ending = false;
-
-  setCell('sessionState','REQUESTING...','warn');
-  setCell('cameraAccess','REQUESTING...','warn');
+  cleanupDone = false;
+  sessionReferenceSpaceResetCount = 0;
+  resetMeasurementMetrics();
 
   try{
     session = await navigator.xr.requestSession('immersive-ar',{
-      requiredFeatures:['camera-access','dom-overlay'],
+      requiredFeatures:['hit-test','dom-overlay','anchors','camera-access'],
       domOverlay:{root:el.xrOverlay}
     });
 
-    setCell('sessionState','STARTED','ok');
+    set('sessionState','STARTED','ok');
+    log(`session started; enabledFeatures=[${session.enabledFeatures ? Array.from(session.enabledFeatures).join(', ') : 'not exposed'}]`);
 
-    const features = session.enabledFeatures ? Array.from(session.enabledFeatures) : [];
-    const hasCamera = features.includes('camera-access');
-    setCell('cameraAccess',hasCamera?'GRANTED':'NOT LISTED',hasCamera?'ok':'warn');
-    log(`session started; enabledFeatures=[${features.join(', ')}]`);
+    session.addEventListener('end',onSessionEnd,{once:true});
 
-    session.addEventListener('end',onEnd,{once:true});
+    session.addEventListener('select',()=>{
+      if(latestHitPoint && !(pointA && pointB)) requestCapture('xr-select');
+    });
 
-    gl =
-      el.glCanvas.getContext('webgl',{alpha:true,antialias:false,preserveDrawingBuffer:false}) ||
-      el.glCanvas.getContext('experimental-webgl',{alpha:true,antialias:false});
-
-    if(!gl) throw new Error('WebGL unavailable');
-    if(typeof gl.makeXRCompatible === 'function') await gl.makeXRCompatible();
-
-    xrLayer = new XRWebGLLayer(session,gl,{alpha:true,antialias:false});
-    session.updateRenderState({baseLayer:xrLayer});
+    await setupWebGL();
 
     if(typeof XRWebGLBinding === 'undefined'){
-      throw new Error('XRWebGLBinding is not exposed');
+      throw new Error('XRWebGLBinding not exposed');
     }
 
     xrBinding = new XRWebGLBinding(session,gl);
-
     if(typeof xrBinding.getCameraImage !== 'function'){
-      throw new Error('XRWebGLBinding.getCameraImage() is not exposed');
+      throw new Error('XRWebGLBinding.getCameraImage() not exposed');
     }
 
-    refSpace = await session.requestReferenceSpace('local');
+    setupRawCameraPipeline();
+    rawCameraAvailable = true;
+    set('rawCameraState','READY','ok');
+    resetAimQuality();
 
-    setupSamplePipeline();
+    const layer = new XRWebGLLayer(session,gl,{alpha:true,antialias:true});
+    session.updateRenderState({baseLayer:layer});
+
+    localSpace = await session.requestReferenceSpace('local');
+
+    localSpace.addEventListener('reset',event=>{
+      sessionReferenceSpaceResetCount++;
+      if(measurementActive) referenceSpaceResetCount++;
+
+      let detail = '';
+      try{
+        const p = event.transform?.position;
+        if(p && Number.isFinite(p.x)){
+          detail = ` transform.position=(${p.x.toFixed(4)},${p.y.toFixed(4)},${p.z.toFixed(4)})`;
+        }
+      }catch{}
+
+      log(`XRReferenceSpace reset event; measurementResets=${referenceSpaceResetCount}; sessionResets=${sessionReferenceSpaceResetCount}${detail}`);
+      updateMetricsUI();
+    });
+
+    viewerSpace = await session.requestReferenceSpace('viewer');
+    hitTestSource = await session.requestHitTestSource({space:viewerSpace});
 
     el.xrHud.hidden = false;
     el.endBtn.disabled = false;
     el.xrEndBtn.disabled = false;
 
-    frameNo = 0;
-    cameraTextureFrames = 0;
-    firstPoseLogged = false;
-    firstCameraLogged = false;
-    firstTextureLogged = false;
+    el.xrState.textContent = 'TRACKING...';
+    el.xrHint.textContent = 'Move slowly and point at a textured floor, desk, or wall.';
+
+    set('trackingState','PENDING','warn');
+    set('surfaceState','SEARCHING','warn');
 
     raf = session.requestAnimationFrame(onXRFrame);
 
   }catch(err){
-    log(`START FAILED: ${err.name}: ${err.message}`);
-    setCell('sessionState','FAILED','ng');
-
-    if(!session){
-      setCell('cameraAccess',`${err.name}: ${err.message}`,'ng');
-      el.startBtn.disabled = false;
-    }else{
-      try{ await session.end(); }catch{}
-    }
+    set('sessionState','FAILED','ng');
+    log(`startAR failed: ${err.name}: ${err.message}`);
+    el.startBtn.disabled = false;
   }
+}
+
+function updateTrackingState(time,pose){
+  if(pose){
+    if(!viewerPoseSeen){
+      viewerPoseSeen = true;
+      trackingMode = 'ACTIVE';
+      set('trackingState','ACTIVE','ok');
+      log(`tracking ACTIVE after initialization at frame=${frameCount}`);
+    }else if(trackingMode !== 'ACTIVE'){
+      trackingMode = 'ACTIVE';
+      set('trackingState','ACTIVE','ok');
+      log(`tracking ACTIVE recovered at frame=${frameCount}`);
+    }
+    nullPoseSince = null;
+    return;
+  }
+
+  // Before the first valid Viewer Pose, this is initialization—not instability.
+  if(!viewerPoseSeen){
+    trackingMode = 'INITIALIZING';
+    set('trackingState','INITIALIZING','warn');
+    el.xrState.textContent = 'TRACKING INITIALIZING';
+    el.xrHint.textContent = 'Move slowly and show the camera a textured, well-lit area.';
+    return;
+  }
+
+  if(nullPoseSince === null) nullPoseSince = time;
+  const elapsed = time - nullPoseSince;
+
+  if(elapsed >= TRACKING_LOST_MS){
+    if(trackingMode !== 'LOST'){
+      trackingMode = 'LOST';
+      set('trackingState','LOST','ng');
+      log(`tracking LOST after ${Math.round(elapsed)} ms without Viewer Pose`);
+    }
+    el.xrState.textContent = 'TRACKING LOST';
+    el.xrHint.textContent = 'Move slowly toward a textured, well-lit area.';
+  }else if(elapsed >= TRACKING_UNSTABLE_MS){
+    if(trackingMode !== 'UNSTABLE'){
+      trackingMode = 'UNSTABLE';
+      set('trackingState','UNSTABLE','warn');
+      log(`tracking UNSTABLE after ${Math.round(elapsed)} ms without Viewer Pose`);
+    }
+    el.xrState.textContent = 'TRACKING UNSTABLE';
+    el.xrHint.textContent = 'Hold steady or aim at a more textured area.';
+  }
+}
+function updateAnchorPose(frame,which){
+  const anchor = which === 'A' ? anchorA : anchorB;
+  if(!anchor) return false;
+
+  if(which === 'A') anchorAEligibleFrames++;
+  else anchorBEligibleFrames++;
+
+  let tracked = false;
+  try{
+    tracked = !!frame.trackedAnchors && frame.trackedAnchors.has(anchor);
+  }catch{}
+
+  if(!tracked){
+    set(which === 'A' ? 'anchorAState' : 'anchorBState','TEMPORARILY NOT TRACKED','warn');
+    return false;
+  }
+
+  if(which === 'A') anchorATrackedFrames++;
+  else anchorBTrackedFrames++;
+
+  const pose = frame.getPose(anchor.anchorSpace,localSpace);
+  if(!pose){
+    set(which === 'A' ? 'anchorAState' : 'anchorBState','POSE UNAVAILABLE','warn');
+    return false;
+  }
+
+  const p = pose.transform.position;
+  const point = {x:p.x,y:p.y,z:p.z};
+  const matrix = new Float32Array(pose.transform.matrix);
+
+  if(which === 'A'){
+    pointA = point;
+    matrixA = matrix;
+    set('anchorAState','TRACKED','ok');
+  }else{
+    pointB = point;
+    matrixB = matrix;
+    set('anchorBState','TRACKED','ok');
+  }
+  return true;
+}
+function createAnchorFromHit(result,hitPose,slot){
+  if(anchorCreationBusy) return;
+  anchorCreationBusy = true;
+  capturePending = null;
+
+  const p = hitPose.transform.position;
+  const fallbackPoint = {x:p.x,y:p.y,z:p.z};
+  const fallbackMatrix = new Float32Array(hitPose.transform.matrix);
+
+  if(typeof result.createAnchor !== 'function'){
+    anchorCreationBusy = false;
+    log(`Point ${slot}: createAnchor() unavailable`);
+    el.xrHint.textContent = 'Anchor API unavailable.';
+    updateDistanceUI();
+    return;
+  }
+
+  set(slot === 'A' ? 'anchorAState' : 'anchorBState','CREATING','warn');
+  log(`Point ${slot}: createAnchor() invoked`);
+
+  Promise.resolve(result.createAnchor()).then(anchor=>{
+    if(slot === 'A'){
+      anchorA = anchor;
+      pointA = fallbackPoint;
+      matrixA = fallbackMatrix;
+    }else{
+      anchorB = anchor;
+      pointB = fallbackPoint;
+      matrixB = fallbackMatrix;
+      startMeasurementMetrics();
+    }
+
+    anchorCreationBusy = false;
+    set(slot === 'A' ? 'anchorAState' : 'anchorBState','CREATED / TRACKING','ok');
+
+    if(pointA && pointB) updateLineBuffer();
+
+    log(`Point ${slot}: anchor created at ${fmtPoint(fallbackPoint)}`);
+    updateDistanceUI();
+
+    if(slot === 'A'){
+      el.xrState.textContent = 'POINT A ANCHORED';
+      el.xrHint.textContent = 'Move to Point B and set it.';
+    }else{
+      el.xrState.textContent = 'MEASUREMENT COMPLETE';
+      el.xrHint.textContent = 'Move the camera; A/B anchors and line should stay fixed.';
+      const d = calcDistance(pointA,pointB);
+      log(`anchored Distance A-B: ${d.toFixed(6)} m (${fmtDistance(d)})`);
+    }
+  }).catch(err=>{
+    anchorCreationBusy = false;
+    set(slot === 'A' ? 'anchorAState' : 'anchorBState','CREATE FAILED','ng');
+    log(`Point ${slot}: createAnchor failed: ${err.name}: ${err.message}`);
+    el.xrHint.textContent = `Anchor creation failed for Point ${slot}. Try again.`;
+    updateDistanceUI();
+  });
 }
 
 function onXRFrame(time,frame){
   if(!session || ending) return;
   raf = session.requestAnimationFrame(onXRFrame);
-  frameNo++;
+  frameCount++;
+  if(measurementActive) measureFrameTotal++;
 
-  const pose = frame.getViewerPose(refSpace);
+  const pose = frame.getViewerPose(localSpace);
+  updateTrackingState(time,pose);
+
   if(!pose){
-    setCell('poseState','WAITING','warn');
+    if(time - lastMetricsUiTime > 250){
+      updateMetricsUI();
+      lastMetricsUiTime = time;
+    }
     return;
   }
 
-  setCell('poseState','ACTIVE','ok');
-  if(!firstPoseLogged){
-    firstPoseLogged = true;
-    log(`Viewer Pose active at frame=${frameNo}; views=${pose.views.length}`);
+  if(measurementActive){
+    measureViewerPoseValidFrames++;
+    measureHitEligibleFrames++;
   }
 
-  gl.bindFramebuffer(gl.FRAMEBUFFER,xrLayer.framebuffer);
+  const aTracked = updateAnchorPose(frame,'A');
+  const bTracked = updateAnchorPose(frame,'B');
+
+  if(aTracked || bTracked){
+    if(pointA && pointB) updateLineBuffer();
+    updateDistanceUI();
+  }
+
+  // Stability is sampled only when A and B are both tracked in the same XR frame.
+  if(measurementActive && aTracked && bTracked && pointA && pointB){
+    const d = calcDistance(pointA,pointB);
+    distanceSamples.push(d);
+
+    const camera = pose.transform.position;
+    const camPoint = {x:camera.x,y:camera.y,z:camera.z};
+    cameraASamples.push(distance3(camPoint,pointA));
+    cameraBSamples.push(distance3(camPoint,pointB));
+
+    const MAX_SAMPLES = 3600;
+    if(distanceSamples.length > MAX_SAMPLES){
+      distanceSamples.shift();
+      cameraASamples.shift();
+      cameraBSamples.shift();
+    }
+  }
+
+  if(time - lastMetricsUiTime > 250){
+    updateMetricsUI();
+    lastMetricsUiTime = time;
+  }
+
+  const results = frame.getHitTestResults(hitTestSource);
+
+  if(results.length){
+    if(measurementActive) measureHitSuccessFrames++;
+    const result = results[0];
+    const hitPose = result.getPose(localSpace);
+
+    if(hitPose){
+      noHitFrames = 0;
+
+      latestHitMatrix = new Float32Array(hitPose.transform.matrix);
+      const p = hitPose.transform.position;
+      latestHitPoint = {x:p.x,y:p.y,z:p.z};
+
+      const cam = pose.transform.position;
+      latestHitDistance = distance3(
+        {x:cam.x,y:cam.y,z:cam.z},
+        latestHitPoint
+      );
+      set('hitDistanceState',`${latestHitDistance.toFixed(3)} m`,latestHitDistance>NEAR_RANGE_M?'ok':'warn');
+
+      if(!hitSeen){
+        hitSeen = true;
+        log(`first surface hit: ${fmtPoint(latestHitPoint)}`);
+      }
+
+      set('surfaceState','DETECTED','ok');
+
+      if(capturePending && !anchorCreationBusy){
+        const slot = capturePending;
+        createAnchorFromHit(result,hitPose,slot);
+      }
+
+      if(!(pointA && pointB) && !capturePending && !anchorCreationBusy){
+        classifyAimQuality();
+        el.setPointBtn.disabled = !canCapturePoint();
+      }
+
+      if(!pointA && !capturePending){
+        el.xrState.textContent = 'SURFACE DETECTED';
+        el.xrHint.textContent = 'Set Point A.';
+      }else if(pointA && !pointB && !capturePending){
+        el.xrState.textContent = 'POINT A ANCHORED';
+        el.xrHint.textContent = 'Move to Point B and set it.';
+      }
+    }
+  }else{
+    noHitFrames++;
+    latestHitMatrix = null;
+    latestHitPoint = null;
+    latestHitDistance = null;
+    set('hitDistanceState','—','');
+    classifyAimQuality();
+
+    if(noHitFrames > 180){
+      set('surfaceState','SEARCHING / LOW FEATURES?','warn');
+      if(!(pointA && pointB)){
+        el.xrState.textContent = 'SURFACE NOT FOUND';
+        el.xrHint.textContent = 'Try a textured, well-lit surface. Plain white walls can be difficult.';
+      }
+    }else{
+      set('surfaceState','SEARCHING','warn');
+    }
+
+    if(!(pointA && pointB)) el.setPointBtn.disabled = true;
+  }
+
+  // Raw Camera Access: analyze/display the same XR camera stream.
+  if(rawCameraAvailable && xrBinding && pose.views.length){
+    const view0 = pose.views[0];
+    const camera = view0.camera;
+    if(camera){
+      try{
+        const cameraTexture = xrBinding.getCameraImage(camera);
+        if(cameraTexture){
+          sampleRawCamera(cameraTexture,time);
+        }
+      }catch(err){
+        set('rawCameraState',`${err.name}: ${err.message}`,'ng');
+      }
+    }
+  }
+
+  const layer = session.renderState.baseLayer;
+  gl.bindFramebuffer(gl.FRAMEBUFFER,layer.framebuffer);
   gl.clearColor(0,0,0,0);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-  let anyCamera = false;
-
   for(const view of pose.views){
-    let camera = null;
+    const viewport = layer.getViewport(view);
+    gl.viewport(viewport.x,viewport.y,viewport.width,viewport.height);
 
-    try{
-      camera = view.camera;
-    }catch(err){
-      setCell('viewCamera',`${err.name}: ${err.message}`,'ng');
-      log(`view.camera threw: ${err.name}: ${err.message}`);
-      continue;
+    const projection = view.projectionMatrix;
+    const viewMatrix = view.transform.inverse.matrix;
+
+    if(latestHitMatrix){
+      drawBuffer(
+        reticleBuffer,8,latestHitMatrix,
+        new Float32Array([0.2,0.85,1.0,1.0]),
+        projection,viewMatrix
+      );
     }
 
-    if(!camera) continue;
-    anyCamera = true;
-
-    setCell('viewCamera','AVAILABLE','ok');
-    setCell('cameraSize',`${camera.width} × ${camera.height}`,'ok');
-
-    if(!firstCameraLogged){
-      firstCameraLogged = true;
-      log(`view.camera available; size=${camera.width}x${camera.height}`);
+    if(matrixA){
+      drawBuffer(
+        pointBuffer,6,matrixA,
+        new Float32Array([1.0,0.80,0.20,1.0]),
+        projection,viewMatrix
+      );
     }
 
-    let tex = null;
-    try{
-      tex = xrBinding.getCameraImage(camera);
-    }catch(err){
-      setCell('textureState',`${err.name}: ${err.message}`,'ng');
-      log(`getCameraImage failed: ${err.name}: ${err.message}`);
-      continue;
+    if(matrixB){
+      drawBuffer(
+        pointBuffer,6,matrixB,
+        new Float32Array([1.0,0.35,0.30,1.0]),
+        projection,viewMatrix
+      );
     }
 
-    if(!tex){
-      setCell('textureState','NULL','warn');
-      continue;
-    }
-
-    cameraTextureFrames++;
-    setCell('textureState','WEBGL TEXTURE AVAILABLE','ok');
-    setCell('textureFrames',String(cameraTextureFrames),'ok');
-
-    if(!firstTextureLogged){
-      firstTextureLogged = true;
-      log(`getCameraImage SUCCESS at frame=${frameNo}; texture=${Object.prototype.toString.call(tex)}`);
-    }
-
-    // Read only a few times per second. This is a diagnostic, not the final blur detector.
-    if(frameNo-lastSampleFrame >= 15){
-      lastSampleFrame = frameNo;
-      tryCenterReadback(tex);
-    }
-
-    break;
-  }
-
-  if(!anyCamera){
-    setCell('viewCamera','NULL / NOT AVAILABLE','warn');
-    if(frameNo === 60 || frameNo === 180){
-      log(`view.camera still unavailable at frame=${frameNo}`);
+    if(pointA && pointB){
+      drawBuffer(
+        lineBuffer,2,IDENTITY4,
+        new Float32Array([1.0,1.0,1.0,1.0]),
+        projection,viewMatrix
+      );
     }
   }
 }
 
-async function endTest(evt){
-  evt?.preventDefault?.();
-  evt?.stopPropagation?.();
+function resetMeasurement(){
+  summarizeMeasurement('RESET');
 
+  try{ anchorA?.delete?.(); }catch{}
+  try{ anchorB?.delete?.(); }catch{}
+
+  anchorA = null;
+  anchorB = null;
+
+  resetMeasurementMetrics();
+
+  pointA = null;
+  pointB = null;
+  matrixA = null;
+  matrixB = null;
+  capturePending = null;
+  anchorCreationBusy = false;
+
+  if(gl && lineBuffer){
+    gl.bindBuffer(gl.ARRAY_BUFFER,lineBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([]),gl.DYNAMIC_DRAW);
+  }
+
+  updateDistanceUI();
+  updateMetricsUI();
+
+  if(session){
+    el.xrState.textContent = latestHitPoint ? 'SURFACE DETECTED' : 'SEARCHING SURFACE...';
+    el.xrHint.textContent = latestHitPoint ? 'Set Point A.' : 'Move slowly and point at a textured surface.';
+  }
+
+  log('measurement reset');
+}
+
+async function stopXRResourcesBeforeEnd(reason){
   if(!session || ending) return;
   ending = true;
 
-  const s = session;
-  log('END requested');
+  log(`shutdown requested (${reason})`);
 
+  summarizeMeasurement('END');
+  persistDiagnostics();
+
+  // Stop the render loop first. This prevents a frame callback from scheduling
+  // more XR work while the immersive session is being dismantled.
   try{
     if(raf){
-      s.cancelAnimationFrame(raf);
+      session.cancelAnimationFrame(raf);
+      log(`XR animation frame cancelled: handle=${raf}`);
       raf = 0;
     }
-  }catch{}
+  }catch(err){
+    log(`cancelAnimationFrame failed: ${err.name}: ${err.message}`);
+  }
+
+  // Stop hit-test subscription while the session is still alive.
+  try{
+    if(hitTestSource){
+      hitTestSource.cancel();
+      log('hit-test source cancelled before session.end()');
+    }
+  }catch(err){
+    log(`hitTestSource.cancel failed: ${err.name}: ${err.message}`);
+  }
+  hitTestSource = null;
+
+  // Remove anchors while their XRSession is still active.
+  try{
+    if(anchorA){
+      anchorA.delete();
+      log('Anchor A deleted before session.end()');
+    }
+  }catch(err){
+    log(`Anchor A delete failed: ${err.name}: ${err.message}`);
+  }
+  try{
+    if(anchorB){
+      anchorB.delete();
+      log('Anchor B deleted before session.end()');
+    }
+  }catch(err){
+    log(`Anchor B delete failed: ${err.name}: ${err.message}`);
+  }
+
+  anchorA = null;
+  anchorB = null;
+  capturePending = null;
+  anchorCreationBusy = false;
+
+  // Hide DOM overlay controls before shutdown to avoid an additional UI action
+  // racing with the XR end sequence.
+  try{ el.xrHud.hidden = true; }catch{}
+
+  persistDiagnostics();
+}
+
+async function endAR(event){
+  if(event){
+    event.preventDefault?.();
+    event.stopPropagation?.();
+  }
+  if(!session || ending) return;
+
+  const endingSession = session;
+
+  await stopXRResourcesBeforeEnd('END button');
 
   try{
-    await s.end();
+    await endingSession.end();
+    log('session.end() promise resolved');
   }catch(err){
     log(`session.end failed: ${err.name}: ${err.message}`);
+    // If end() itself fails, restore minimal page controls instead of leaving
+    // the app permanently locked in "ending".
     ending = false;
+    el.xrHud.hidden = false;
+    el.endBtn.disabled = false;
+    el.xrEndBtn.disabled = false;
+    persistDiagnostics();
   }
 }
 
-function onEnd(){
-  log(`XRSession ended; frames=${frameNo}; cameraTextureFrames=${cameraTextureFrames}`);
+function onSessionEnd(){
+  if(cleanupDone) return;
+  cleanupDone = true;
 
+  log('XRSession end event received');
+
+  // Do not call XRAnchor.delete(), hitTestSource.cancel(), or other XR methods
+  // here. At this point the XRSession has already ended.
   session = null;
-  refSpace = null;
-  xrLayer = null;
-  xrBinding = null;
+  localSpace = null;
+  viewerSpace = null;
+  hitTestSource = null;
+  latestHitMatrix = null;
+  latestHitPoint = null;
+
+  capturePending = null;
+  anchorCreationBusy = false;
+
+  viewerPoseSeen = false;
+  hitSeen = false;
+  frameCount = 0;
+  noHitFrames = 0;
+  nullPoseSince = null;
+  trackingMode = 'NOT STARTED';
+
   gl = null;
-  sampleReady = false;
+  program = null;
   raf = 0;
-  ending = false;
 
   el.xrHud.hidden = true;
   el.endBtn.disabled = true;
+  el.setPointBtn.disabled = true;
   el.startBtn.disabled = el.arSupport.textContent !== 'SUPPORTED';
 
-  setCell('sessionState','ENDED','warn');
+  set('sessionState','ENDED','warn');
+  set('trackingState','ENDED','warn');
+  set('surfaceState','ENDED','warn');
+  set('anchorAState',pointA ? 'SESSION ENDED':'NOT SET','warn');
+  set('anchorBState',pointB ? 'SESSION ENDED':'NOT SET','warn');
+
+  ending = false;
+  persistDiagnostics();
 }
 
-el.topPanel.addEventListener('beforexrselect',e=>e.preventDefault());
-el.bottomPanel.addEventListener('beforexrselect',e=>e.preventDefault());
-el.startBtn.addEventListener('click',startTest);
-el.endBtn.addEventListener('click',endTest);
-el.xrEndBtn.addEventListener('click',endTest);
+document.querySelectorAll('.magBtn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    magnifierZoom = Number(btn.dataset.mag) || 3;
+    document.querySelectorAll('.magBtn').forEach(b=>b.classList.toggle('active',b===btn));
+    el.magnifierLabel.textContent = `MAG ${magnifierZoom}×`;
+    set('magnifierState',`${magnifierZoom}×`,'ok');
+    log(`magnifier zoom=${magnifierZoom}x`);
+  });
+});
+
+document.querySelectorAll('.refPreset').forEach(btn=>{
+  btn.addEventListener('click',()=>setReferenceCm(btn.dataset.cm));
+});
+
+el.referenceCm.addEventListener('change',()=>setReferenceCm(el.referenceCm.value));
+el.referenceCm.addEventListener('input',()=>{
+  const v = Number(el.referenceCm.value);
+  if(Number.isFinite(v) && v > 0){
+    referenceMeters = v/100;
+    set('referenceState',`${v.toFixed(1)} cm`,'ok');
+    if(el.accuracyText) el.accuracyText.textContent = `REF: ${v.toFixed(1)} cm / ERROR: —`;
+  }
+});
+
+el.topPanel.addEventListener('beforexrselect',preventOverlayXRSelect);
+el.bottomPanel.addEventListener('beforexrselect',preventOverlayXRSelect);
+
+el.startBtn.addEventListener('click',startAR);
+el.resetBtn.addEventListener('click',resetMeasurement);
+el.endBtn.addEventListener('click',endAR);
+
+el.setPointBtn.addEventListener('click',()=>requestCapture('dom-button'));
+el.xrResetBtn.addEventListener('click',resetMeasurement);
+el.xrEndBtn.addEventListener('click',endAR);
 
 window.addEventListener('error',event=>{
-  try{ log(`WINDOW ERROR: ${event.message || 'unknown'} @ ${event.filename || ''}:${event.lineno || ''}`); }catch{}
+  try{
+    log(`WINDOW ERROR: ${event.message || 'unknown'} @ ${event.filename || ''}:${event.lineno || ''}`);
+  }catch{}
 });
+
 window.addEventListener('unhandledrejection',event=>{
   try{
     const r = event.reason;
@@ -598,6 +1669,16 @@ window.addEventListener('unhandledrejection',event=>{
   }catch{}
 });
 
+window.addEventListener('pagehide',()=>{
+  try{ persistDiagnostics(); }catch{}
+});
+
+restoreDiagnostics();
+setReferenceCm(el.referenceCm.value);
+resetMeasurementMetrics();
+resetAimQuality();
+set('magnifierState','3×','ok');
+updateDistanceUI();
 preflight();
 })();
 </script>
