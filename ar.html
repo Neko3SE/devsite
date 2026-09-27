@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<title>AR DISTANCE LAB - Phase 4.6 Rev.1</title>
+<title>AR DISTANCE LAB - Phase 4.6 Rev.2</title>
 <style>
 :root{
   color-scheme:dark;
@@ -33,12 +33,12 @@ pre{white-space:pre-wrap;overflow-wrap:anywhere;margin:0;max-height:260px;overfl
 
 #xrOverlay{position:fixed;inset:0;z-index:2147483647;pointer-events:none}
 #xrHud{position:absolute;inset:0;pointer-events:none}
-#centerGuide{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+#centerGuide{position:absolute;z-index:25;left:50%;top:50%;transform:translate(-50%,-50%);
 font-size:28px;line-height:1;color:#fff;text-shadow:0 0 5px #000}
-#topPanel{position:absolute;left:50%;top:calc(env(safe-area-inset-top, 0px) + 36px);transform:translateX(-50%);
+#topPanel{position:absolute;z-index:20;left:50%;top:calc(env(safe-area-inset-top, 0px) + 36px);transform:translateX(-50%);
 width:min(94vw,580px);background:#071019df;border:1px solid #587086;border-radius:11px;
 padding:9px 11px;text-align:center;pointer-events:auto}
-#bottomPanel{position:absolute;left:50%;bottom:max(14px,env(safe-area-inset-bottom));transform:translateX(-50%);
+#bottomPanel{position:absolute;z-index:20;left:50%;bottom:max(14px,env(safe-area-inset-bottom));transform:translateX(-50%);
 width:min(94vw,580px);background:#071019df;border:1px solid #587086;border-radius:11px;
 padding:10px;pointer-events:auto}
 #xrState{font-weight:700}
@@ -49,18 +49,23 @@ padding:10px;pointer-events:auto}
 #accuracyText,#stabilityText{font-size:12px;font-weight:700;color:#cfe8f5;margin-top:4px}
 .xrActions{display:grid;grid-template-columns:1.1fr 1fr 1fr;gap:8px;margin-top:8px}
 .xrActions button{padding:10px 6px}
-canvas{position:fixed;inset:0;width:1px;height:1px;pointer-events:none}
+#xrCanvas{position:fixed;inset:0;width:1px;height:1px;pointer-events:none}
 
 #qualityText{font-size:12px;font-weight:700;margin-top:4px;color:#cfe8f5}
 #magnifierWrap{
   position:absolute;right:14px;
-  bottom:calc(env(safe-area-inset-bottom,0px) + 178px);
+  top:calc(env(safe-area-inset-top,0px) + 142px);
   width:164px;height:164px;
+  z-index:30;
   border:2px solid #7dd3fc;border-radius:12px;
   overflow:hidden;background:#000;pointer-events:none;
   box-shadow:0 0 0 1px #0008,0 6px 24px #000a;
 }
-#magnifierCanvas{display:block;width:160px;height:160px;background:#000}
+#magnifierCanvas{
+  position:static;inset:auto;
+  display:block;width:160px;height:160px;
+  background:#000;pointer-events:none;
+}
 #magnifierCross{
   position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
   color:#fff;font-size:28px;line-height:1;text-shadow:0 0 4px #000
@@ -78,7 +83,7 @@ canvas{position:fixed;inset:0;width:1px;height:1px;pointer-events:none}
 <body>
 <main>
 <h1>AR DISTANCE LAB</h1>
-<p class="sub">Phase 4.6 Rev.1 — Raw Camera Aim Quality + Digital Magnifier</p>
+<p class="sub">Phase 4.6 Rev.2 — Raw Camera Aim Quality + Digital Magnifier</p>
 
 <section class="card">
 <h2>STATUS</h2>
@@ -145,7 +150,7 @@ canvas{position:fixed;inset:0;width:1px;height:1px;pointer-events:none}
 <section class="card note">
 Raw Camera Accessで中央ROIを解析し、Hit Test距離と画像のdetail scoreからAIM QUALITYを判定します。
 Pixel 10 Pro実測を基に、約35cm以内かつdetailが低い場合はFOCUS LOWとしてSET POINTを一時無効化します。
-白壁など近距離でない低detailはLOW DETAILとして区別します。中央拡大鏡は2× / 3× / 4×のデジタル拡大です。Rev.1では品質解析ROIと拡大表示を分離し、倍率変更はCanvas側の中央クロップとして即時反映します。
+白壁など近距離でない低detailはLOW DETAILとして区別します。中央拡大鏡は2× / 3× / 4×のデジタル拡大です。Rev.2では品質解析ROIと拡大表示を分離し、XR描画Canvasと拡大鏡CanvasのCSSも完全に分離しています。
 </section>
 
 <section class="card">
@@ -160,7 +165,7 @@ Pixel 10 Pro実測を基に、約35cm以内かつdetailが低い場合はFOCUS L
   <div id="xrHud" hidden>
     <div id="centerGuide">＋</div>
     <div id="magnifierWrap">
-      <canvas id="magnifierCanvas" width="128" height="128"></canvas>
+      <canvas id="magnifierCanvas" width="160" height="160"></canvas>
       <div id="magnifierCross">＋</div>
       <div id="magnifierLabel">MAG 3×</div>
     </div>
@@ -306,6 +311,7 @@ let lastQualitySampleTime = -Infinity;
 let latestHitDistance = null;
 let aimQuality = 'ANALYZING';
 let magnifierZoom = 3;
+let magnifierFirstPaintLogged = false;
 
 const NEAR_RANGE_M = 0.35;
 const DETAIL_EDGE_LOW = 2.5;
@@ -864,6 +870,17 @@ function drawMagnifierPixels(){
     0,0,dstW,dstH
   );
   ctx.restore();
+
+  if(!magnifierFirstPaintLogged){
+    magnifierFirstPaintLogged=true;
+    const rect=el.magnifierCanvas.getBoundingClientRect();
+    log(
+      `magnifier first paint: canvas=${dstW}x${dstH}; ` +
+      `css=${Math.round(rect.width)}x${Math.round(rect.height)}; ` +
+      `visible=${rect.width>0 && rect.height>0}; ` +
+      `zoom=${magnifierZoom}x`
+    );
+  }
 
   el.magnifierLabel.textContent=`MAG ${magnifierZoom}×`;
   set(
