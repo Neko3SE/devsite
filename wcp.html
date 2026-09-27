@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<title>WebXR Capability Probe Rev.6</title>
+<title>WebXR Capability Probe Rev.7</title>
 <style>
 :root{
   color-scheme:dark;
@@ -51,7 +51,7 @@ canvas{position:fixed;inset:0;width:1px;height:1px;pointer-events:none}
 <body>
 <main>
 <h1>WebXR Capability Probe</h1>
-<p class="sub">Phase 1A / Rev.6 — Depth region sampling, tracking-aware, environment-gated</p>
+<p class="sub">Phase 1A / Rev.7 — Anchor tracking fix + Depth region sampling</p>
 
 <section class="card">
 <h2>TEST ENVIRONMENT</h2>
@@ -70,7 +70,7 @@ canvas{position:fixed;inset:0;width:1px;height:1px;pointer-events:none}
 
 <section class="card">
 <h2>TESTS</h2>
-<p class="note">BASIC ARはViewer Poseまで確認します。DepthはCPU方式の場合、中央1点に加えて中央周辺9×9（81点）の有効Depth率・中央値・最小/最大を測定します。0 mは無効Depthとして統計から除外します。</p>
+<p class="note">BASIC ARはViewer Poseまで確認します。Depthは中央周辺9×9を測定します。Anchorsはlocal Viewer Pose→Hit Result→createAnchor()→frame.trackedAnchors→anchorSpace poseまで段階判定します。</p>
 <div class="actions">
   <button data-test="basic">1. BASIC AR</button>
   <button data-test="hit">2. HIT TEST</button>
@@ -232,7 +232,7 @@ function enabledFeatures(session){
 function refreshResult(){
   if(!el.resultText) return;
   const rows = [
-    'WebXR Capability Probe Rev.6', now(), '',
+    'WebXR Capability Probe Rev.7', now(), '',
     '[TEST ENVIRONMENT]',
     `Environment: ${el.envBanner?.textContent || ''}`,
     `Protocol: ${el.protocol?.textContent || ''} | ${el.protocolDetail?.textContent || ''}`,
@@ -721,42 +721,122 @@ async function testDom(){
 }
 
 async function testAnchors(){
-  const s = await begin('anchors',{requiredFeatures:['anchors','hit-test']},'ANCHORS: find a stable surface');
+  const options = {requiredFeatures:['local','hit-test','anchors']};
+  const s = await begin('anchors',options,'ANCHORS: scan a stable textured surface');
+
   if(!s) return;
+
   try{
     await setupGraphics(s);
+
     const viewer = await s.requestReferenceSpace('viewer');
+    const local = await s.requestReferenceSpace('local');
     const source = await s.requestHitTestSource({space:viewer});
-    setTest('anchors','WAITING FOR HIT','anchors + hit-test session started');
-    let attempted = false;
-    runLoop(s,async(_t,frame)=>{
-      if(attempted) return;
-      const results = frame.getHitTestResults(source);
-      if(!results.length) return;
-      attempted = true;
-      const result = results[0];
-      if(typeof result.createAnchor !== 'function'){
-        setTest('anchors','RUNTIME FAILED','Hit result received, but createAnchor() is not exposed');
-        log('anchors: createAnchor() not exposed on hit result');
+
+    setTest('anchors','WAITING FOR TRACKING',
+      'viewer/local spaces created; waiting for Viewer Pose and Hit Result');
+    log('anchors: viewer + local reference spaces created; hit-test source created');
+
+    let hitSeen = false;
+    let anchorRequested = false;
+    let createdAnchor = null;
+    let anchorTracked = false;
+    let frameCount = 0;
+    let poseCount = 0;
+    let hitCount = 0;
+
+    runLoop(s,(_t,frame)=>{
+      frameCount++;
+
+      const viewerPose = frame.getViewerPose(local);
+      if(!viewerPose){
+        if(frameCount === 1 || frameCount % 60 === 0){
+          setTest('anchors','WAITING FOR TRACKING',
+            `No Viewer Pose yet; frames=${frameCount}`);
+        }
         return;
       }
-      try{
-        const anchor = await result.createAnchor();
-        setTest('anchors','PASS',`Anchor created; anchorSpace=${anchor?.anchorSpace?'YES':'NO'}`);
-        log('anchors: anchor created successfully');
-        el.xrMessage.textContent = 'ANCHORS PASS — END TEST';
-        try{ anchor?.delete?.(); }catch{}
-      }catch(err){
-        setTest('anchors','RUNTIME FAILED',errorText(err));
-        log(`anchors create failed: ${errorText(err)}`);
+
+      poseCount++;
+
+      const results = frame.getHitTestResults(source);
+      if(!results.length){
+        if(!hitSeen && (poseCount === 1 || poseCount % 60 === 0)){
+          setTest('anchors','WAITING FOR HIT',
+            `Viewer Pose active; waiting for surface hit; poseFrames=${poseCount}`);
+        }
+        return;
       }
+
+      hitCount += results.length;
+
+      const result = results[0];
+      const hitPose = result.getPose(local);
+
+      if(!hitSeen){
+        hitSeen = true;
+        setTest('anchors','HIT DETECTED',
+          `Hit Result received; getPose(local)=${hitPose ? 'YES':'NO'}; count=${results.length}`);
+        log(`anchors: first hit detected; getPose(local)=${!!hitPose}; count=${results.length}; frame=${frameCount}`);
+        el.xrMessage.textContent = 'ANCHOR HIT DETECTED — creating anchor...';
+      }
+
+      if(anchorRequested) {
+        if(createdAnchor && !anchorTracked){
+          try{
+            if(frame.trackedAnchors && frame.trackedAnchors.has(createdAnchor)){
+              anchorTracked = true;
+              const anchorPose = frame.getPose(createdAnchor.anchorSpace, local);
+              setTest('anchors','PASS',
+                `Anchor created and tracked; anchorPose=${anchorPose ? 'YES':'NO'}; hitFrames=${hitCount}`);
+              log(`anchors: anchor entered frame.trackedAnchors; anchorPose=${!!anchorPose}`);
+              el.xrMessage.textContent = 'ANCHOR PASS — END TEST';
+            }
+          }catch(err){
+            log(`anchors: trackedAnchors validation failed: ${errorText(err)}`);
+          }
+        }
+        return;
+      }
+
+      anchorRequested = true;
+
+      if(typeof result.createAnchor !== 'function'){
+        setTest('anchors','RUNTIME FAILED',
+          'XRHitTestResult.createAnchor() is not exposed');
+        log('anchors: XRHitTestResult.createAnchor() is not exposed');
+        return;
+      }
+
+      // Invoke createAnchor() immediately while this XRFrame / hit result is active.
+      let promise;
+      try{
+        promise = result.createAnchor();
+        setTest('anchors','ANCHOR REQUESTED',
+          'Hit Result received and createAnchor() invoked on active XRFrame');
+        log('anchors: createAnchor() invoked on active hit-test frame');
+      }catch(err){
+        setTest('anchors','ANCHOR CREATION FAILED',errorText(err));
+        log(`anchors: createAnchor() threw synchronously: ${errorText(err)}`);
+        return;
+      }
+
+      Promise.resolve(promise).then(anchor=>{
+        createdAnchor = anchor;
+        setTest('anchors','ANCHOR CREATED / TRACKING PENDING',
+          `Promise resolved; anchorSpace=${anchor?.anchorSpace ? 'YES':'NO'}; waiting for frame.trackedAnchors`);
+        log(`anchors: createAnchor promise resolved; anchorSpace=${!!anchor?.anchorSpace}`);
+      }).catch(err=>{
+        setTest('anchors','ANCHOR CREATION FAILED',errorText(err));
+        log(`anchors: createAnchor promise rejected: ${errorText(err)}`);
+      });
     });
+
   }catch(err){
     setTest('anchors','RUNTIME FAILED',errorText(err));
     log(`anchors runtime failed: ${errorText(err)}`);
   }
 }
-
 async function testFloor(){
   const s = await begin('floor',{requiredFeatures:['local-floor']},'LOCAL-FLOOR: waiting for first frame');
   if(!s) return;
