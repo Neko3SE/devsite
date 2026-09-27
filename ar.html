@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<title>AR DISTANCE LAB - Phase 4.8</title>
+<title>AR DISTANCE LAB - Phase 4.8 Rev.1</title>
 <style>
 :root{
   color-scheme:dark;
@@ -83,7 +83,7 @@ padding:10px;pointer-events:auto}
 <body>
 <main>
 <h1>AR DISTANCE LAB</h1>
-<p class="sub">Phase 4.8 — Pre-B Anchor Drift + Capture Quality + Raw Camera Magnifier</p>
+<p class="sub">Phase 4.8 Rev.1 — Pre-B Anchor Drift + Capture Quality + Raw Camera Magnifier</p>
 
 <section class="card">
 <h2>STATUS</h2>
@@ -161,7 +161,7 @@ padding:10px;pointer-events:auto}
 </section>
 
 <section class="card note">
-Phase 4.8はPoint Aを置いた瞬間からPoint Bを置くまでの変化を監視します。
+Phase 4.8 Rev.1はPoint Aを置いた瞬間からPoint Bを置くまでの変化を監視します。
 AのCapture Hit座標、最初に追跡できたAnchor座標、その後のAnchor座標を分離し、
 AがCapture Hitから何mmずれたか／最初のAnchor poseから何mm動いたかを1秒間隔で記録します。
 Point A/BのCapture時にはカメラ距離、AIM QUALITY、Edge、Contrastも保存します。
@@ -295,7 +295,7 @@ let cameraASamples = [];
 let cameraBSamples = [];
 let lastMetricsUiTime = 0;
 
-// Phase 4.8: immutable placement points + Anchor settling timeline.
+// Phase 4.8 Rev.1: immutable placement points + Anchor settling timeline.
 let capturePointA = null;
 let capturePointB = null;
 let captureResetCountA = null;
@@ -319,7 +319,7 @@ const SETTLING_HALF_SHIFT_M = 0.001;
 const TIMELINE_LOG_INTERVAL_MS = 500;
 
 
-// Phase 4.8: monitor Point A from its capture until Point B capture.
+// Phase 4.8 Rev.1: monitor Point A from its capture until Point B capture.
 let captureSnapshotA = null;
 let captureSnapshotB = null;
 
@@ -1996,17 +1996,25 @@ function createAnchorFromHit(result,hitPose,slot,time,viewerPose){
       preBSummaryAtB = summarizePreB('POINT B CAPTURE',time);
       preBActive = false;
 
-      if(preBCurrentAnchorPoint && capturePointB){
-        const currentAToBHit =
-          distance3(preBCurrentAnchorPoint,capturePointB);
-        const immutableAToB =
-          capturePointA ? distance3(capturePointA,capturePointB) : null;
+      // Diagnostic cross-check must never stop the measurement path.
+      try{
+        if(preBCurrentAnchorPoint && capturePointB){
+          const currentAToBHit =
+            distance3(preBCurrentAnchorPoint,capturePointB);
+          const immutableAToB =
+            capturePointA ? distance3(capturePointA,capturePointB) : null;
 
+          log(
+            `B capture cross-check: ` +
+            `immutableAHit-to-BHit=${immutableAToB===null?'n/a':immutableAToB.toFixed(6)} m; ` +
+            `currentAAnchor-to-BHit=${currentAToBHit.toFixed(6)} m; ` +
+            `difference=${immutableAToB===null?'n/a':((currentAToBHit-immutableAToB)*1000).toFixed(3)+' mm'}`
+          );
+        }
+      }catch(diagErr){
         log(
-          `B capture cross-check: ` +
-          `immutableAHit-to-BHit=${immutableAToB===null?'n/a':immutableAToB.toFixed(6)} m; ` +
-          `currentAAnchor-to-BHit=${currentAToBHit.toFixed(6)} m; ` +
-          `difference=${immutableAToB===null?'n/a':((currentAToB-immutableAToB)*1000).toFixed(3)+' mm'}`
+          `B capture cross-check diagnostic failed: ` +
+          `${diagErr.name}: ${diagErr.message}`
         );
       }
 
