@@ -84,7 +84,13 @@ padding:10px;pointer-events:auto}
 #alignmentGrid{position:absolute;inset:0;display:none;pointer-events:none;background:
   linear-gradient(90deg,transparent calc(50% - .5px),#fde68a calc(50% - .5px),#fde68a calc(50% + .5px),transparent calc(50% + .5px)),
   linear-gradient(0deg,transparent calc(50% - .5px),#fde68a calc(50% - .5px),#fde68a calc(50% + .5px),transparent calc(50% + .5px));opacity:.72}
-#alignmentMark{position:absolute;width:14px;height:14px;border:2px solid #fca5a5;border-radius:50%;display:none;pointer-events:none;transform:translate(-50%,-50%);box-shadow:0 0 0 1px #000}
+#alignmentMark{position:absolute;width:26px;height:26px;border:3px solid #fca5a5;border-radius:50%;display:none;pointer-events:none;transform:translate(-50%,-50%);box-shadow:0 0 0 2px #000,0 0 14px #fca5a5;z-index:62}
+#alignmentMark::before,#alignmentMark::after{content:'';position:absolute;left:50%;top:50%;background:#fca5a5;transform:translate(-50%,-50%)}
+#alignmentMark::before{width:18px;height:2px}
+#alignmentMark::after{width:2px;height:18px}
+#alignmentTapLayer{position:absolute;inset:0;z-index:60;display:none;pointer-events:none;touch-action:none;background:transparent}
+#alignmentCapturedBadge{position:absolute;right:5px;bottom:5px;z-index:64;display:none;padding:3px 6px;border-radius:6px;background:#14532dcc;color:#dcfce7;border:1px solid #86efac;font-size:10px;font-weight:800;pointer-events:none}
+#xrOverlay.align-mode #alignmentTapLayer{display:block;pointer-events:auto}
 #xrOverlay.align-mode #centerGuide{color:#fde68a;font-size:34px}
 #xrOverlay.align-mode #centerGuide::after{content:'';position:absolute;left:50%;top:50%;width:34px;height:34px;border:1px solid #fde68a;border-radius:50%;transform:translate(-50%,-50%)}
 #xrOverlay.align-mode #magnifierWrap{border-color:#fde68a;pointer-events:auto;touch-action:none}
@@ -97,7 +103,7 @@ padding:10px;pointer-events:auto}
 <body>
 <main>
 <h1>AR DISTANCE LAB</h1>
-<p class="sub">Phase 4.14 — Measurement-impact Integrity + Center Alignment Check</p>
+<p class="sub">Phase 4.14 Rev.1 — Measurement-impact Integrity + Reliable Center Alignment Capture</p>
 
 <section class="card">
 <h2>STATUS</h2>
@@ -230,6 +236,8 @@ Hit Testの直前0.3秒STABLE / MOVINGは引き続きwarning-onlyです。XRRefe
       <div id="alignmentGrid"></div>
       <div id="magnifierCross">＋</div>
       <div id="alignmentMark"></div>
+      <div id="alignmentTapLayer" aria-label="Tap the aligned target in the magnifier"></div>
+      <div id="alignmentCapturedBadge">ALIGN CAPTURED ✓</div>
       <div id="magnifierLabel">MAG 3×</div>
     </div>
 
@@ -288,7 +296,7 @@ const el = {};
   'rawCameraState','hitDistanceState','depthState','depthConfigState','depthBufferState',
   'depthCenterState','depthMedianState','depthTemporalState','depthValidState','depthCoherenceState','hitViewState','hitUvState','depthAtHitState','depthHitDeltaState',
   'captureADepthState','captureBDepthState','aimQualityState','edgeMedianState',
-  'contrastMedianState','magnifierState','magnifierCanvas','magnifierWrap','alignmentGrid','alignmentMark','alignmentState','alignmentOffsetState','alignmentUvState','alignBtn',
+  'contrastMedianState','magnifierState','magnifierCanvas','magnifierWrap','alignmentGrid','alignmentMark','alignmentTapLayer','alignmentCapturedBadge','alignmentState','alignmentOffsetState','alignmentUvState','alignBtn',
   'magnifierLabel','qualityText','hitStabilityText','depthText','alignmentText',
   'coordA','coordB','startBtn','resetBtn','endBtn','log','xrCanvas','xrOverlay','xrHud',
   'xrState','xrHint','pointText','anchorText','distanceText','accuracyText','stabilityText','settlingText','preBText','setPointBtn',
@@ -2530,6 +2538,7 @@ function drawMagnifierPixels(){
 function resetAlignmentMark(){
   alignmentMark=null;
   if(el.alignmentMark) el.alignmentMark.style.display='none';
+  if(el.alignmentCapturedBadge) el.alignmentCapturedBadge.style.display='none';
   set('alignmentOffsetState','—','');
   set('alignmentUvState','—','');
 }
@@ -2538,18 +2547,18 @@ function setAlignmentMode(on){
   alignmentMode=!!on;
   el.xrOverlay.classList.toggle('align-mode',alignmentMode);
   el.alignBtn.classList.toggle('active',alignmentMode);
-  el.alignBtn.textContent=alignmentMode?'ALIGN CHECK ON':'CENTER ALIGN CHECK';
-  set('alignmentState',alignmentMode?'ON — align main cross, then tap target in magnifier':'OFF',alignmentMode?'warn':'');
+  el.alignBtn.textContent=alignmentMode?'ALIGN WAITING TAP':'CENTER ALIGN CHECK';
+  set('alignmentState',alignmentMode?'WAITING TAP — align MAIN cross, then tap target in MAG':'OFF',alignmentMode?'warn':'');
   if(el.alignmentText){
     el.alignmentText.textContent=alignmentMode
-      ? 'CENTER ALIGN CHECK: put a small high-contrast target under the MAIN cross, then tap that same target inside MAG.'
+      ? 'CENTER ALIGN CHECK: align the small target under the MAIN cross, then TAP THAT TARGET INSIDE MAG.'
       : 'CENTER ALIGN CHECK: OFF';
   }
   if(!alignmentMode) resetAlignmentMark();
-  log(`CENTER ALIGN CHECK ${alignmentMode?'ON':'OFF'}; manualDiagnostic=true; noAutoCorrection=true`);
+  log(`CENTER ALIGN CHECK ${alignmentMode?'ON':'OFF'}; manualDiagnostic=true; noAutoCorrection=true; captureLayer=${alignmentMode?'armed':'off'}`);
 }
 
-function markAlignmentAtEvent(ev){
+function markAlignmentAtEvent(ev, inputSource='pointer'){
   if(!alignmentMode || !el.magnifierCanvas) return;
   const rect=el.magnifierCanvas.getBoundingClientRect();
   if(!rect.width || !rect.height) return;
@@ -2578,6 +2587,9 @@ function markAlignmentAtEvent(ev){
     el.alignmentMark.style.left=`${x}px`;
     el.alignmentMark.style.top=`${y}px`;
   }
+  if(el.alignmentCapturedBadge) el.alignmentCapturedBadge.style.display='block';
+  el.alignBtn.textContent='ALIGN CAPTURED ✓';
+  set('alignmentState','ALIGN CAPTURED ✓ — tap MAG again to replace mark, or press button to exit','ok');
   set(
     'alignmentOffsetState',
     `display Δ=(${dx.toFixed(1)},${dy.toFixed(1)}) px / source Δ=(${sourceDx.toFixed(1)},${sourceDy.toFixed(1)}) px`,
@@ -2589,10 +2601,10 @@ function markAlignmentAtEvent(ev){
     cssMag<=3?'ok':cssMag<=8?'warn':'ng'
   );
   if(el.alignmentText){
-    el.alignmentText.textContent=`ALIGN MARK: display ${cssMag.toFixed(1)} px from MAG center — manual diagnostic only`;
+    el.alignmentText.textContent=`ALIGN CAPTURED ✓ — display ${cssMag.toFixed(1)} px from MAG center — manual diagnostic only`;
   }
   log(
-    `CENTER ALIGN MARK: zoom=${magnifierZoom}x; ` +
+    `CENTER ALIGN MARK: input=${inputSource}; zoom=${magnifierZoom}x; ` +
     `displayOffset=(${dx.toFixed(2)},${dy.toFixed(2)}) CSS px; displayRadius=${cssMag.toFixed(2)} px; ` +
     `source512Offset=(${sourceDx.toFixed(2)},${sourceDy.toFixed(2)}) px; ` +
     `cameraNormalizedOffset=(${normDx.toFixed(6)},${normDy.toFixed(6)}); normalizedRadius=${normMag.toFixed(6)}; ` +
@@ -3667,13 +3679,37 @@ el.referenceCm.addEventListener('input',()=>{
 el.topPanel.addEventListener('beforexrselect',preventOverlayXRSelect);
 el.bottomPanel.addEventListener('beforexrselect',preventOverlayXRSelect);
 el.magnifierWrap.addEventListener('beforexrselect',preventOverlayXRSelect);
+el.alignmentTapLayer?.addEventListener('beforexrselect',preventOverlayXRSelect);
 el.alignBtn.addEventListener('click',()=>setAlignmentMode(!alignmentMode));
-el.magnifierWrap.addEventListener('pointerdown',event=>{
+
+// Dedicated top-most transparent capture layer: unlike the camera canvas itself,
+// this remains an explicit DOM interaction target while CENTER ALIGN CHECK is armed.
+// Use pointerup as primary input, click as a fallback for Android DOM Overlay, and
+// de-duplicate the synthetic click that normally follows a pointer event.
+let lastAlignmentPointerCaptureMs=-Infinity;
+el.alignmentTapLayer?.addEventListener('pointerup',event=>{
   if(!alignmentMode) return;
   event.preventDefault();
   event.stopPropagation();
-  markAlignmentAtEvent(event);
+  lastAlignmentPointerCaptureMs=performance.now();
+  markAlignmentAtEvent(event,'pointerup');
 });
+el.alignmentTapLayer?.addEventListener('click',event=>{
+  if(!alignmentMode) return;
+  event.preventDefault();
+  event.stopPropagation();
+  if(performance.now()-lastAlignmentPointerCaptureMs < 700) return;
+  markAlignmentAtEvent(event,'click-fallback');
+});
+el.alignmentTapLayer?.addEventListener('touchend',event=>{
+  if(!alignmentMode || !event.changedTouches?.length) return;
+  // Pointer Events should normally handle Chrome/Android. This is a final fallback.
+  if(performance.now()-lastAlignmentPointerCaptureMs < 700) return;
+  event.preventDefault();
+  event.stopPropagation();
+  const t=event.changedTouches[0];
+  markAlignmentAtEvent({clientX:t.clientX,clientY:t.clientY},'touchend-fallback');
+},{passive:false});
 
 el.startBtn.addEventListener('click',startAR);
 el.resetBtn.addEventListener('click',resetMeasurement);
