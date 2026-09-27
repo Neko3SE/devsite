@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<title>WebXR Capability Probe Rev.7</title>
+<title>WebXR Capability Probe Rev.8</title>
 <style>
 :root{
   color-scheme:dark;
@@ -51,7 +51,7 @@ canvas{position:fixed;inset:0;width:1px;height:1px;pointer-events:none}
 <body>
 <main>
 <h1>WebXR Capability Probe</h1>
-<p class="sub">Phase 1A / Rev.7 — Anchor tracking fix + Depth region sampling</p>
+<p class="sub">Phase 1A / Rev.8 — local-floor tracking fix + Anchor/Depth diagnostics</p>
 
 <section class="card">
 <h2>TEST ENVIRONMENT</h2>
@@ -70,7 +70,7 @@ canvas{position:fixed;inset:0;width:1px;height:1px;pointer-events:none}
 
 <section class="card">
 <h2>TESTS</h2>
-<p class="note">BASIC ARはViewer Poseまで確認します。Depthは中央周辺9×9を測定します。Anchorsはlocal Viewer Pose→Hit Result→createAnchor()→frame.trackedAnchors→anchorSpace poseまで段階判定します。</p>
+<p class="note">BASIC ARとlocal-floorはViewer Pose取得まで確認します。Depthは中央周辺9×9を測定し、AnchorsはHit Result→createAnchor()→trackedAnchors→anchorSpace Poseまで段階判定します。</p>
 <div class="actions">
   <button data-test="basic">1. BASIC AR</button>
   <button data-test="hit">2. HIT TEST</button>
@@ -157,6 +157,7 @@ let active = null;
 let gl = null;
 let basicPassed = false;
 let basicSessionStarted = false;
+let floorPoseSeen = false;
 let viewerPoseSeen = false;
 let environmentValid = false;
 let logLines = [];
@@ -232,7 +233,7 @@ function enabledFeatures(session){
 function refreshResult(){
   if(!el.resultText) return;
   const rows = [
-    'WebXR Capability Probe Rev.7', now(), '',
+    'WebXR Capability Probe Rev.8', now(), '',
     '[TEST ENVIRONMENT]',
     `Environment: ${el.envBanner?.textContent || ''}`,
     `Protocol: ${el.protocol?.textContent || ''} | ${el.protocolDetail?.textContent || ''}`,
@@ -394,6 +395,14 @@ function onEnded(name){
       'XRSession started, but no non-null Viewer Pose was observed before session end');
     setCell('viewerPose','NOT OBSERVED');
     setCell('viewerPoseDetail','Session ended before getViewerPose(local) returned a pose','');
+  }
+
+  if(name === 'floor' && !floorPoseSeen){
+    const current = el.floorStatus.textContent;
+    if(current === 'TRACKING PENDING' || current === 'REFERENCE SPACE CREATED'){
+      setTest('floor','REFERENCE SPACE OK / TRACKING NOT OBSERVED',
+        'local-floor was created, but no non-null Viewer Pose was observed before session end');
+    }
   }
 
   if(active?.name === name) active = null;
@@ -838,27 +847,72 @@ async function testAnchors(){
   }
 }
 async function testFloor(){
-  const s = await begin('floor',{requiredFeatures:['local-floor']},'LOCAL-FLOOR: waiting for first frame');
+  const s = await begin('floor',{requiredFeatures:['local-floor']},
+    'LOCAL-FLOOR: waiting for a valid floor-relative Viewer Pose');
   if(!s) return;
+
+  floorPoseSeen = false;
+
   try{
     await setupGraphics(s);
     const space = await s.requestReferenceSpace('local-floor');
-    let first = true;
+
+    setTest('floor','REFERENCE SPACE CREATED',
+      'local-floor reference space created; waiting for Viewer Pose');
+    log('floor: local-floor reference space created; tracking pending');
+
+    let frameCount = 0;
+    let nullPoseCount = 0;
+
     runLoop(s,(_t,frame)=>{
-      const pose = frame.getViewerPose(space);
-      if(first){
-        first = false;
-        setTest('floor','PASS',`local-floor created; viewerPose=${pose?'YES':'NO'}`);
-        log(`floor: local-floor frame received; viewerPose=${!!pose}`);
-        el.xrMessage.textContent = 'LOCAL-FLOOR PASS — END TEST';
+      frameCount++;
+
+      let pose = null;
+      try{
+        pose = frame.getViewerPose(space);
+      }catch(err){
+        setTest('floor','RUNTIME FAILED',errorText(err));
+        log(`floor: getViewerPose(local-floor) failed: ${errorText(err)}`);
+        return;
       }
+
+      if(!pose){
+        nullPoseCount++;
+        if(nullPoseCount === 1 || nullPoseCount % 60 === 0){
+          setTest('floor','TRACKING PENDING',
+            `local-floor exists; no Viewer Pose yet; frames=${frameCount}; nullPoses=${nullPoseCount}`);
+          log(`floor: Viewer Pose pending; frames=${frameCount}; nullPoses=${nullPoseCount}`);
+        }
+        return;
+      }
+
+      if(floorPoseSeen) return;
+      floorPoseSeen = true;
+
+      let y = null;
+      let emulated = 'not exposed';
+      let views = pose.views?.length ?? 'unknown';
+
+      try{
+        y = pose.transform?.position?.y;
+      }catch{}
+      try{
+        if('emulatedPosition' in pose) emulated = String(pose.emulatedPosition);
+      }catch{}
+
+      const yText = Number.isFinite(y) ? `${y.toFixed(3)} m` : 'not exposed';
+
+      setTest('floor','PASS',
+        `Viewer Pose acquired; floor-relative Y=${yText}; views=${views}; emulatedPosition=${emulated}; frame=${frameCount}`);
+      log(`floor: Viewer Pose acquired; floorY=${yText}; views=${views}; emulatedPosition=${emulated}; frame=${frameCount}`);
+      el.xrMessage.textContent = `LOCAL-FLOOR PASS — Y ${yText} — END TEST`;
     });
+
   }catch(err){
     setTest('floor','RUNTIME FAILED',errorText(err));
     log(`floor runtime failed: ${errorText(err)}`);
   }
 }
-
 async function runTest(name){
   ({basic:testBasic,hit:testHit,depth:testDepth,dom:testDom,anchors:testAnchors,floor:testFloor}[name])();
 }
