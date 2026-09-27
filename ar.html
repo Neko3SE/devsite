@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<title>AR DISTANCE LAB - Phase 4.10</title>
+<title>AR DISTANCE LAB - Phase 4.11</title>
 <style>
 :root{
   color-scheme:dark;
@@ -83,7 +83,7 @@ padding:10px;pointer-events:auto}
 <body>
 <main>
 <h1>AR DISTANCE LAB</h1>
-<p class="sub">Phase 4.10 — Hit Capture Stability + Frozen Measurement + Raw Camera Magnifier</p>
+<p class="sub">Phase 4.11 — Immutable Hit Commit + Anchor Display Separation + Raw Camera Magnifier</p>
 
 <section class="card">
 <h2>STATUS</h2>
@@ -96,17 +96,17 @@ padding:10px;pointer-events:auto}
   <div class="cell">Surface</div><div class="cell" id="surfaceState">NOT STARTED</div>
   <div class="cell">Anchor A</div><div class="cell" id="anchorAState">NOT SET</div>
   <div class="cell">Anchor B</div><div class="cell" id="anchorBState">NOT SET</div>
-  <div class="cell">Frozen Distance</div><div class="cell" id="distanceState">—</div>
-  <div class="cell">Freeze status</div><div class="cell" id="freezeStatusState">NOT SET</div>
+  <div class="cell">Committed Hit Distance</div><div class="cell" id="distanceState">—</div>
+  <div class="cell">Commit status</div><div class="cell" id="freezeStatusState">NOT SET</div>
   <div class="cell">Live Anchor A-B</div><div class="cell" id="liveDistanceState">—</div>
-  <div class="cell">Live − Frozen</div><div class="cell" id="liveMinusFrozenState">—</div>
-  <div class="cell">Frozen runs</div><div class="cell" id="repeatCountState">0</div>
-  <div class="cell">Frozen mean</div><div class="cell" id="repeatMeanState">—</div>
-  <div class="cell">Frozen range</div><div class="cell" id="repeatRangeState">—</div>
+  <div class="cell">Live Anchor − Commit</div><div class="cell" id="liveMinusFrozenState">—</div>
+  <div class="cell">Committed runs</div><div class="cell" id="repeatCountState">0</div>
+  <div class="cell">Committed mean</div><div class="cell" id="repeatMeanState">—</div>
+  <div class="cell">Committed range</div><div class="cell" id="repeatRangeState">—</div>
   <div class="cell">Capture Hit distance</div><div class="cell" id="captureDistanceState">—</div>
-  <div class="cell">A Hit 1 s spread</div><div class="cell" id="hitSpreadAState">—</div>
-  <div class="cell">B Hit 1 s spread</div><div class="cell" id="hitSpreadBState">—</div>
-  <div class="cell">Instant Hit A-B</div><div class="cell" id="hitInstantABState">—</div>
+  <div class="cell">A Hit 0.3 s stability</div><div class="cell" id="hitSpreadAState">—</div>
+  <div class="cell">B Hit 0.3 s stability</div><div class="cell" id="hitSpreadBState">—</div>
+  <div class="cell">Committed / Instant Hit A-B</div><div class="cell" id="hitInstantABState">—</div>
   <div class="cell">Median 0.3 s A-B</div><div class="cell" id="hitMedian300ABState">—</div>
   <div class="cell">Median 0.5 s A-B</div><div class="cell" id="hitMedian500ABState">—</div>
   <div class="cell">Median 1.0 s A-B</div><div class="cell" id="hitMedian1000ABState">—</div>
@@ -174,11 +174,11 @@ padding:10px;pointer-events:auto}
 </section>
 
 <section class="card note">
-Phase 4.10ではPhase 4.9の正式Freeze方式を変更せず、Point A/Bを押す直前のHit Test座標を診断します。
-各XR frameのHit座標を保持し、Capture時点の瞬間Hitと、直前0.3秒・0.5秒・1.0秒の座標成分medianを比較します。
-各windowではsample数、coverage、medianからの最大3D半径、RMS spread、X/Y/Z spanをLOGへ記録します。
-B確定時にはInstant A-Bと各median A-Bを並べ、Hit Testの時間的揺らぎが測定差へどの程度寄与するかを確認します。
-正式なDISTANCEは従来どおり、B captureと同じXR frameの「A current Anchor ↔ B Instant Hit」をFreezeした値です。
+Phase 4.11では正式なDISTANCEを、Point Aを押した瞬間のImmutable HitとPoint Bを押した瞬間のImmutable Hitの3D距離としてCommitします。
+Anchor A/Bはマーカーとラインを世界空間へ追従表示するためだけに使用し、Anchorの後続再配置は正式な数値を変更しません。
+Hit Testの直前0.3秒をSTABLE / MOVING警告に使いますが、この判定はCaptureをブロックせず、正式値の置換にも使いません。
+0.3秒・0.5秒・1.0秒median、spread、Anchor driftは診断LOGへ残し、Instant Hitとの比較材料として扱います。
+Point AとPoint Bの間にXRReferenceSpace resetが発生した場合は、異なる座標基準を混在させないためCommitをINVALIDにします。
 </section>
 
 <section class="card">
@@ -206,6 +206,7 @@ B確定時にはInstant A-Bと各median A-Bを並べ、Hit Testの時間的揺�
     <div id="bottomPanel">
       <div id="distanceText">DISTANCE: —</div>
       <div id="qualityText">AIM QUALITY: ANALYZING</div>
+      <div id="hitStabilityText">HIT STABILITY: ANALYZING — warning only</div>
       <div id="accuracyText">REF: 50.0 cm / ERROR: —</div>
       <div id="stabilityText">STABILITY: —</div>
       <div id="settlingText">SETTLING: —</div>
@@ -246,7 +247,7 @@ const el = {};
   'absErrorState','relErrorState','resetEventState','referenceCm',
   'rawCameraState','hitDistanceState','aimQualityState','edgeMedianState',
   'contrastMedianState','magnifierState','magnifierCanvas','magnifierWrap',
-  'magnifierLabel','qualityText',
+  'magnifierLabel','qualityText','hitStabilityText',
   'coordA','coordB','startBtn','resetBtn','endBtn','log','xrCanvas','xrOverlay','xrHud',
   'xrState','xrHint','pointText','anchorText','distanceText','accuracyText','stabilityText','settlingText','preBText','setPointBtn',
   'xrResetBtn','xrEndBtn','topPanel','bottomPanel'
@@ -311,7 +312,7 @@ let cameraASamples = [];
 let cameraBSamples = [];
 let lastMetricsUiTime = 0;
 
-// Phase 4.10: immutable placement points + Anchor settling timeline.
+// Phase 4.11: immutable placement points + Anchor settling timeline.
 let capturePointA = null;
 let capturePointB = null;
 let captureResetCountA = null;
@@ -335,7 +336,7 @@ const SETTLING_HALF_SHIFT_M = 0.001;
 const TIMELINE_LOG_INTERVAL_MS = 500;
 
 
-// Phase 4.10: monitor Point A from its capture until Point B capture.
+// Phase 4.11: monitor Point A from its capture until Point B capture.
 let captureSnapshotA = null;
 let captureSnapshotB = null;
 
@@ -357,9 +358,17 @@ const PREB_LOG_INTERVAL_MS = 1000;
 
 
 
-// Phase 4.10: Hit Test capture stability diagnostic.
+// Phase 4.11: Hit Test capture stability diagnostic.
 const HIT_HISTORY_RETENTION_MS = 1600;
 const HIT_WINDOW_MS = [300,500,1000];
+// 300 ms is a warning-only short-window diagnostic. It never blocks capture
+// and never replaces the immutable Instant Hit used for the formal commit.
+const HIT_STABILITY_WINDOW_MS = 300;
+const HIT_STABLE_MAX_RADIUS_M = 0.003;
+const HIT_STABLE_MIN_COVERAGE_MS = 200;
+const HIT_STABLE_MIN_SAMPLES = 6;
+let liveHitStability = 'ANALYZING';
+let lastHitStabilityUiMs = -Infinity;
 let hitHistory = []; // {time, point, cameraDistance}
 let hitStabilitySnapshotA = null;
 let hitStabilitySnapshotB = null;
@@ -377,6 +386,11 @@ function resetHitStabilityDiagnostics(){
   set('hitMedian500ABState','—','');
   set('hitMedian1000ABState','—','');
   set('hitMedianDeltaState','—','');
+  liveHitStability = 'ANALYZING';
+  lastHitStabilityUiMs = -Infinity;
+  if(el.hitStabilityText){
+    el.hitStabilityText.textContent = 'HIT STABILITY: ANALYZING — warning only';
+  }
 }
 
 function recordHitSample(time,point,cameraDistance){
@@ -454,6 +468,45 @@ function hitWindowStats(captureTime,windowMs,instantPoint){
   };
 }
 
+function classifyHitStability(stats){
+  if(!stats || stats.n < HIT_STABLE_MIN_SAMPLES ||
+     stats.coverageMs < HIT_STABLE_MIN_COVERAGE_MS){
+    return 'ANALYZING';
+  }
+  return stats.maxRadius <= HIT_STABLE_MAX_RADIUS_M ? 'STABLE' : 'MOVING';
+}
+
+function updateLiveHitStability(time){
+  if(!latestHitPoint){
+    liveHitStability = 'NO SURFACE';
+    if(el.hitStabilityText){
+      el.hitStabilityText.textContent = 'HIT STABILITY: NO SURFACE — warning only';
+    }
+    return;
+  }
+
+  // UI update is intentionally throttled; capture logic remains independent.
+  if(time-lastHitStabilityUiMs < 150) return;
+  lastHitStabilityUiMs = time;
+
+  const stats=hitWindowStats(time,HIT_STABILITY_WINDOW_MS,latestHitPoint);
+  liveHitStability=classifyHitStability(stats);
+
+  if(!el.hitStabilityText) return;
+  if(!stats || liveHitStability==='ANALYZING'){
+    el.hitStabilityText.textContent = 'HIT STABILITY: ANALYZING — warning only';
+    return;
+  }
+
+  const maxR=(stats.maxRadius*1000).toFixed(1);
+  const suffix=`maxR ${maxR} mm / 300 ms / warning only`;
+  if(liveHitStability==='STABLE'){
+    el.hitStabilityText.textContent = `HIT STABILITY: STABLE — ${suffix}`;
+  }else{
+    el.hitStabilityText.textContent = `HIT STABILITY: MOVING — ${suffix}`;
+  }
+}
+
 function captureHitStabilitySnapshot(slot,time,instantPoint){
   const windows={};
 
@@ -469,13 +522,18 @@ function captureHitStabilitySnapshot(slot,time,instantPoint){
     windows
   };
 
-  const oneSecond=windows[1000];
-  if(oneSecond){
+  const shortWindow=windows[HIT_STABILITY_WINDOW_MS];
+  if(shortWindow){
+    const state=classifyHitStability(shortWindow);
     set(
       slot==='A' ? 'hitSpreadAState' : 'hitSpreadBState',
-      `n=${oneSecond.n} / maxR=${(oneSecond.maxRadius*1000).toFixed(2)} mm / ` +
-      `inst-med=${(oneSecond.instantToMedian*1000).toFixed(2)} mm`,
-      oneSecond.maxRadius<=0.003 ? 'ok' : 'warn'
+      `${state} / maxR=${(shortWindow.maxRadius*1000).toFixed(2)} mm / ` +
+      `inst-med=${(shortWindow.instantToMedian*1000).toFixed(2)} mm`,
+      state==='STABLE' ? 'ok' : 'warn'
+    );
+    log(
+      `Point ${slot} Hit warning: state=${state}; window=${HIT_STABILITY_WINDOW_MS} ms; ` +
+      `maxRadius=${(shortWindow.maxRadius*1000).toFixed(3)} mm; warningOnly=true`
     );
   }
 
@@ -528,7 +586,7 @@ function logHitABComparison(){
     median300:medians[300],
     median500:medians[500],
     median1000:medians[1000],
-    formalFrozen:frozenMeasurement?.valid ? frozenMeasurement.distance : null,
+    formalCommitted:frozenMeasurement?.valid ? frozenMeasurement.distance : null,
     preBDrift:preBSummaryAtB?.driftFromFirst ?? null,
     preBOffset:preBSummaryAtB?.offsetFromCapture ?? null
   };
@@ -562,14 +620,14 @@ function logHitABComparison(){
     `median500=${medians[500]===null?'n/a':medians[500].toFixed(6)} m; ` +
     `median1000=${medians[1000]===null?'n/a':medians[1000].toFixed(6)} m; ` +
     `median1000MinusInstant=${medians[1000]===null?'n/a':((medians[1000]-instant)*1000).toFixed(3)+' mm'}; ` +
-    `formalFrozen=${comparison.formalFrozen===null?'n/a':comparison.formalFrozen.toFixed(6)} m; ` +
+    `formalCommitted=${comparison.formalCommitted===null?'n/a':comparison.formalCommitted.toFixed(6)} m; ` +
     `preBDrift=${comparison.preBDrift===null?'n/a':(comparison.preBDrift*1000).toFixed(3)+' mm'}`
   );
 
   return comparison;
 }
 
-// Phase 4.10: formal measurement is frozen at Point B capture.
+// Phase 4.11: formal measurement is frozen at Point B capture.
 let frozenMeasurement = null;
 let sessionFrozenMeasurements = [];
 let lastAAnchorPoseTime = null;
@@ -613,49 +671,76 @@ function updateRepeatabilityUI(){
 }
 
 function freezeMeasurementAtB(hitPoint,time){
-  const aFresh =
-    !!pointA &&
-    lastAAnchorPoseFrame===frameCount &&
-    Number.isFinite(lastAAnchorPoseTime) &&
-    Math.abs(lastAAnchorPoseTime-time)<0.001;
+  const bHit = clonePoint(hitPoint);
 
-  if(!aFresh){
+  if(!capturePointA){
     frozenMeasurement = {
       valid:false,
-      reason:'A Anchor not tracked in the Point B capture frame',
+      reason:'Point A immutable Hit is unavailable',
       time,
       frame:frameCount,
-      bHit:clonePoint(hitPoint),
+      bHit,
       sessionResetCount:sessionReferenceSpaceResetCount
     };
 
+    captureHitDistance = null;
+    set('captureDistanceState','—','warn');
     set('distanceState','INVALID','ng');
-    set('freezeStatusState','INVALID — A not tracked same frame','ng');
+    set('freezeStatusState','INVALID — A Hit unavailable','ng');
     log(
-      `FROZEN MEASUREMENT INVALID: A Anchor was not tracked in B capture frame; ` +
-      `frame=${frameCount}; lastAFrame=${lastAAnchorPoseFrame}; ` +
-      `lastATime=${lastAAnchorPoseTime===null?'n/a':lastAAnchorPoseTime.toFixed(3)}; ` +
-      `Btime=${time.toFixed(3)}`
+      `COMMITTED MEASUREMENT INVALID: Point A immutable Hit unavailable; ` +
+      `frame=${frameCount}; sessionReset=${sessionReferenceSpaceResetCount}`
     );
     return false;
   }
 
-  const aAtB = clonePoint(pointA);
-  const bHit = clonePoint(hitPoint);
-  const distance = distance3(aAtB,bHit);
+  if(captureResetCountA===null || captureResetCountB===null ||
+     captureResetCountA!==captureResetCountB){
+    frozenMeasurement = {
+      valid:false,
+      reason:'XRReferenceSpace reset occurred between Point A and Point B',
+      time,
+      frame:frameCount,
+      aHit:clonePoint(capturePointA),
+      bHit,
+      resetAtA:captureResetCountA,
+      resetAtB:captureResetCountB,
+      sessionResetCount:sessionReferenceSpaceResetCount
+    };
+
+    captureHitDistance = null;
+    set('captureDistanceState','N/A (reference reset)','warn');
+    set('distanceState','INVALID','ng');
+    set('freezeStatusState','INVALID — reference reset A→B','ng');
+    log(
+      `COMMITTED MEASUREMENT INVALID: XRReferenceSpace reset count changed between A and B; ` +
+      `resetAtA=${captureResetCountA}; resetAtB=${captureResetCountB}; frame=${frameCount}`
+    );
+    return false;
+  }
+
+  // Formal distance is based only on the two immutable Hit Test positions.
+  // Anchor poses are deliberately excluded from this calculation.
+  const aHit = clonePoint(capturePointA);
+  const distance = distance3(aHit,bHit);
   const absError = distance-referenceMeters;
   const relError = (absError/referenceMeters)*100;
+
+  captureHitDistance = distance;
+  set('captureDistanceState',fmtDistance(distance),'ok');
 
   frozenMeasurement = {
     valid:true,
     distance,
-    aAtB,
+    aHit,
     bHit,
     time,
     frame:frameCount,
     referenceMeters,
     absError,
     relError,
+    resetAtA:captureResetCountA,
+    resetAtB:captureResetCountB,
     sessionResetCount:sessionReferenceSpaceResetCount,
     aCaptureSnapshot:captureSnapshotA,
     bCaptureSnapshot:captureSnapshotB,
@@ -675,7 +760,7 @@ function freezeMeasurementAtB(hitPoint,time){
   });
 
   set('distanceState',fmtDistance(distance),'ok');
-  set('freezeStatusState',`FROZEN @ frame ${frameCount}`,'ok');
+  set('freezeStatusState',`COMMITTED HIT A↔B @ frame ${frameCount}`,'ok');
   updateRepeatabilityUI();
 
   const values=sessionFrozenMeasurements.map(v=>v.distance);
@@ -683,14 +768,14 @@ function freezeMeasurementAtB(hitPoint,time){
   const range=Math.max(...values)-Math.min(...values);
 
   log(
-    `FROZEN MEASUREMENT #${sessionFrozenMeasurements.length}: ` +
+    `COMMITTED MEASUREMENT #${sessionFrozenMeasurements.length}: ` +
     `distance=${distance.toFixed(6)} m (${fmtDistance(distance)}); ` +
-    `Acurrent=${fmtPoint(aAtB)}; BHit=${fmtPoint(bHit)}; ` +
+    `AHit=${fmtPoint(aHit)}; BHit=${fmtPoint(bHit)}; ` +
     `error=${absError.toFixed(6)} m (${relError.toFixed(3)}%); ` +
-    `frame=${frameCount}; sessionReset=${sessionReferenceSpaceResetCount}`
+    `frame=${frameCount}; sessionReset=${sessionReferenceSpaceResetCount}; source=immutable-hit`
   );
   log(
-    `FROZEN REPEATABILITY: n=${values.length}; mean=${mean.toFixed(6)} m; ` +
+    `COMMITTED REPEATABILITY: n=${values.length}; mean=${mean.toFixed(6)} m; ` +
     `min=${Math.min(...values).toFixed(6)} m; max=${Math.max(...values).toFixed(6)} m; ` +
     `range=${(range*1000).toFixed(3)} mm`
   );
@@ -1392,7 +1477,7 @@ function summarizeMeasurement(reason){
 
   log(`MEASUREMENT #${measurementIndex} SUMMARY (${reason})`);
   log(
-    `formal frozen: reference=${referenceMeters.toFixed(6)} m; ` +
+    `formal committed Hit (immutable A↔B): reference=${referenceMeters.toFixed(6)} m; ` +
     `distance=${formalDistance===null?'n/a':formalDistance.toFixed(6)} m; ` +
     `error=${absError===null?'n/a':absError.toFixed(6)} m; ` +
     `relative=${relError===null?'n/a':relError.toFixed(3)}%`
@@ -1505,14 +1590,14 @@ function updateMetricsUI(){
 
     if(el.accuracyText){
       el.accuracyText.textContent =
-        `FROZEN: ${fmtDistance(formalDistance)} / REF: ${(referenceMeters*100).toFixed(1)} cm / ` +
+        `COMMITTED HIT: ${fmtDistance(formalDistance)} / REF: ${(referenceMeters*100).toFixed(1)} cm / ` +
         `ERROR: ${absError>=0?'+':''}${(absError*100).toFixed(2)} cm (${relError>=0?'+':''}${relError.toFixed(2)}%)`;
     }
   }else{
     set('absErrorState','—','');
     set('relErrorState','—','');
     if(el.accuracyText){
-      el.accuracyText.textContent = `REF: ${(referenceMeters*100).toFixed(1)} cm / FROZEN: —`;
+      el.accuracyText.textContent = `REF: ${(referenceMeters*100).toFixed(1)} cm / COMMITTED HIT: —`;
     }
   }
 
@@ -2097,7 +2182,7 @@ function updateDistanceUI(){
   if(formalDistance!==null){
     const frozenText=fmtDistance(formalDistance);
     set('distanceState',frozenText,'ok');
-    el.distanceText.textContent = `DISTANCE (FROZEN): ${frozenText}`;
+    el.distanceText.textContent = `DISTANCE (COMMITTED HIT): ${frozenText}`;
   }else if(frozenMeasurement && frozenMeasurement.valid===false){
     set('distanceState','INVALID','ng');
     el.distanceText.textContent = 'DISTANCE: INVALID — RESET AND RETRY';
@@ -2122,8 +2207,8 @@ function updateDistanceUI(){
     }
 
     el.pointText.textContent =
-      `FROZEN A: ${frozenMeasurement?.aAtB?fmtPoint(frozenMeasurement.aAtB):'—'}\n` +
-      `FROZEN B: ${frozenMeasurement?.bHit?fmtPoint(frozenMeasurement.bHit):'—'}\n` +
+      `COMMIT HIT A: ${frozenMeasurement?.aHit?fmtPoint(frozenMeasurement.aHit):'—'}\n` +
+      `COMMIT HIT B: ${frozenMeasurement?.bHit?fmtPoint(frozenMeasurement.bHit):'—'}\n` +
       `LIVE A: ${fmtPoint(pointA)}\nLIVE B: ${fmtPoint(pointB)}`;
     el.setPointBtn.textContent = 'MEASURED';
     el.setPointBtn.disabled = true;
@@ -2175,7 +2260,7 @@ function requestCapture(source){
   }
 
   capturePending = pointA ? 'B' : 'A';
-  log(`capture requested for Point ${capturePending} (${source})`);
+  log(`capture requested for Point ${capturePending} (${source}); hitStability=${liveHitStability}; hitStabilityGate=false`);
   el.xrState.textContent = `CAPTURING POINT ${capturePending}...`;
   el.xrHint.textContent = 'Hold the camera steady until the anchor is created.';
   updateDistanceUI();
@@ -2384,14 +2469,43 @@ function createAnchorFromHit(result,hitPose,slot,time,viewerPose){
   const hitStabilitySnapshot =
     captureHitStabilitySnapshot(slot,time,fallbackPoint);
 
-  if(slot==='A') hitStabilitySnapshotA=hitStabilitySnapshot;
-  else hitStabilitySnapshotB=hitStabilitySnapshot;
+  if(slot==='A'){
+    hitStabilitySnapshotA=hitStabilitySnapshot;
 
-  // Formal measurement is committed immediately on the Point B capture frame.
-  // It does not depend on the asynchronous creation or later movement of Anchor B.
-  if(slot==='B'){
+    // Store the immutable Hit immediately, before asynchronous Anchor creation.
+    capturePointA = {...fallbackPoint};
+    captureResetCountA = sessionReferenceSpaceResetCount;
+    capturePointB = null;
+    captureResetCountB = null;
+    captureHitDistance = null;
+    preBSummaryAtB = null;
+    set('captureDistanceState','—','');
+  }else{
+    hitStabilitySnapshotB=hitStabilitySnapshot;
+
+    // Point B completes the immutable Hit pair. Snapshot PRE-B Anchor diagnostics
+    // first so the A drift value is already available to the comparison log.
+    capturePointB = {...fallbackPoint};
+    captureResetCountB = sessionReferenceSpaceResetCount;
+    preBSummaryAtB = summarizePreB('POINT B CAPTURE',time);
+    preBActive = false;
+
     freezeMeasurementAtB(fallbackPoint,time);
     logHitABComparison();
+
+    // Anchor-vs-Hit is diagnostic only; it never changes the committed value.
+    if(preBCurrentAnchorPoint && capturePointB){
+      const currentAToBHit=distance3(preBCurrentAnchorPoint,capturePointB);
+      const immutableAToB=capturePointA ? distance3(capturePointA,capturePointB) : null;
+      log(
+        `B capture cross-check: ` +
+        `immutableAHit-to-BHit=${immutableAToB===null?'n/a':immutableAToB.toFixed(6)} m; ` +
+        `currentAAnchor-to-BHit=${currentAToBHit.toFixed(6)} m; ` +
+        `difference=${immutableAToB===null?'n/a':((currentAToBHit-immutableAToB)*1000).toFixed(3)+' mm'}; ` +
+        `formalSource=immutable-hit`
+      );
+    }
+
     updateMetricsUI();
     updateDistanceUI();
   }
@@ -2413,54 +2527,11 @@ function createAnchorFromHit(result,hitPose,slot,time,viewerPose){
       pointA = fallbackPoint;
       matrixA = fallbackMatrix;
 
-      capturePointA = {...fallbackPoint};
-      captureResetCountA = sessionReferenceSpaceResetCount;
-      capturePointB = null;
-      captureResetCountB = null;
-      captureHitDistance = null;
-      set('captureDistanceState','—','');
-
       startPreBMonitor(time);
     }else{
       anchorB = anchor;
       pointB = fallbackPoint;
       matrixB = fallbackMatrix;
-
-      capturePointB = {...fallbackPoint};
-      captureResetCountB = sessionReferenceSpaceResetCount;
-
-      if(capturePointA && captureResetCountA===captureResetCountB){
-        captureHitDistance = calcDistance(capturePointA,capturePointB);
-        set('captureDistanceState',fmtDistance(captureHitDistance),'ok');
-      }else{
-        captureHitDistance = null;
-        set('captureDistanceState','N/A (reference reset)','warn');
-      }
-
-      preBSummaryAtB = summarizePreB('POINT B CAPTURE',time);
-      preBActive = false;
-
-      // Diagnostic cross-check must never stop the measurement path.
-      try{
-        if(preBCurrentAnchorPoint && capturePointB){
-          const currentAToBHit =
-            distance3(preBCurrentAnchorPoint,capturePointB);
-          const immutableAToB =
-            capturePointA ? distance3(capturePointA,capturePointB) : null;
-
-          log(
-            `B capture cross-check: ` +
-            `immutableAHit-to-BHit=${immutableAToB===null?'n/a':immutableAToB.toFixed(6)} m; ` +
-            `currentAAnchor-to-BHit=${currentAToBHit.toFixed(6)} m; ` +
-            `difference=${immutableAToB===null?'n/a':((currentAToBHit-immutableAToB)*1000).toFixed(3)+' mm'}`
-          );
-        }
-      }catch(diagErr){
-        log(
-          `B capture cross-check diagnostic failed: ` +
-          `${diagErr.name}: ${diagErr.message}`
-        );
-      }
 
       startMeasurementMetrics();
     }
@@ -2480,7 +2551,7 @@ function createAnchorFromHit(result,hitPose,slot,time,viewerPose){
       el.xrState.textContent = 'MEASUREMENT COMPLETE';
       el.xrHint.textContent = 'Move the camera; A/B anchors and line should stay fixed.';
       const d = calcDistance(pointA,pointB);
-      log(`B-created live Anchor distance: ${d.toFixed(6)} m (${fmtDistance(d)}); formalFrozen=${frozenMeasurement?.valid?frozenMeasurement.distance.toFixed(6)+' m':'INVALID'}`);
+      log(`B-created live Anchor distance: ${d.toFixed(6)} m (${fmtDistance(d)}); formalCommit=${frozenMeasurement?.valid?frozenMeasurement.distance.toFixed(6)+' m':'INVALID'}`);
     }
   }).catch(err=>{
     anchorCreationBusy = false;
@@ -2568,6 +2639,7 @@ function onXRFrame(time,frame){
       // Record first, so a button press on this XR frame includes the instant sample
       // in the 0.3 / 0.5 / 1.0 second diagnostic windows.
       recordHitSample(time,latestHitPoint,latestHitDistance);
+      updateLiveHitStability(time);
 
       set('hitDistanceState',`${latestHitDistance.toFixed(3)} m`,latestHitDistance>NEAR_RANGE_M?'ok':'warn');
 
@@ -2602,6 +2674,7 @@ function onXRFrame(time,frame){
     latestHitPoint = null;
     latestHitDistance = null;
     set('hitDistanceState','—','');
+    updateLiveHitStability(time);
     classifyAimQuality();
 
     if(noHitFrames > 180){
