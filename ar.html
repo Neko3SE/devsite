@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<title>AR DISTANCE LAB - Phase 4.29</title>
+<title>AR DISTANCE LAB - Phase 4.30</title>
 <style>
 :root{
   color-scheme:dark;
@@ -122,7 +122,7 @@ padding:10px;pointer-events:auto}
 <body>
 <main>
 <h1>AR DISTANCE LAB</h1>
-<p class="sub">Phase 4.29 — A4 Direct Edge Fit + 4-of-5 Outlier QC + LM Convergence</p>
+<p class="sub">Phase 4.30 — A4 Projected-Line Pose Fit + 4-of-5 Outlier QC</p>
 
 <section class="card">
 <h2>STATUS</h2>
@@ -265,7 +265,7 @@ padding:10px;pointer-events:auto}
 <section class="card">
 <h2>A4 PLANAR TARGET / EDGE CALIBRATION</h2>
 <p class="note">
-診断専用です。Phase 4.29ではA4用紙上に作った150.00 × 237.00 mmの長方形を使用します。Raw Cameraの同一フレームを固定し、TOP → RIGHT → BOTTOM → LEFT の各直線部分を5点ずつタップします。各辺はまず5点の2D直線QCを行い、1点を除く4点でRMSが大幅に改善し、その除外候補だけが直線から十分離れている場合に限って、その1点を外れ値として姿勢計算から除外します。残った16〜20個のViewer Rayを既知長方形の対応する物理辺セグメントへ直接フィットします。交点・仮想四隅は生成しません。LMは収束状態・終了理由も記録します。Hit Test / Depthは姿勢推定に使用せず、補正係数も適用しません。
+診断専用です。Phase 4.30ではA4用紙上に作った150.00 × 237.00 mmの長方形を使用します。Raw Cameraの同一フレームを固定し、TOP → RIGHT → BOTTOM → LEFT の各直線部分を5点ずつタップします。各辺は5点の2D直線QCと4-of-5外れ値判定を行います。姿勢推定では仮想四隅を作らず、辺上位置uも自由変数にせず、既知150 × 237 mm剛体長方形をFrozen画像へ投影した4本の線と、残った16〜20個の画像タップ点との垂直ピクセル距離を直接最小化して6DOF姿勢を解きます。Hit Test / Depthは姿勢推定に使用せず、補正係数も適用しません。
 </p>
 <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
   <label for="calibrationWidthMm">Width</label>
@@ -283,7 +283,7 @@ padding:10px;pointer-events:auto}
   <div class="cell">Line RMS TOP / RIGHT</div><div class="cell" id="calibrationWidthState">—</div>
   <div class="cell">Line RMS BOTTOM / LEFT</div><div class="cell" id="calibrationHeightState">—</div>
   <div class="cell">Line span T / R / B / L</div><div class="cell" id="calibrationDiagonalState">—</div>
-  <div class="cell">Direct active-ray RMS</div><div class="cell" id="calibrationWidthErrorState">—</div>
+  <div class="cell">Projected-line RMS</div><div class="cell" id="calibrationWidthErrorState">—</div>
   <div class="cell">Direct max Ray-to-edge miss</div><div class="cell" id="calibrationHeightErrorState">—</div>
   <div class="cell">Rigid pose quality</div><div class="cell" id="calibrationScaleState">—</div>
   <div class="cell">Per-edge Ray RMS T / R / B / L</div><div class="cell" id="calibrationScaleSpreadState">—</div>
@@ -296,7 +296,7 @@ padding:10px;pointer-events:auto}
 <div class="actions" style="margin-top:10px">
   <button type="button" id="calibrationResetBtn">RESET A4 CAL</button>
 </div>
-<pre id="calibrationText" style="margin-top:10px;max-height:240px">A4 DIRECT EDGE FIT + OUTLIER QC: start AR, fit the complete 150 × 237 mm rectangle inside the frozen source, then press FREEZE A4 FRAME.</pre>
+<pre id="calibrationText" style="margin-top:10px;max-height:240px">A4 PROJECTED-LINE FIT + OUTLIER QC: start AR, fit the complete 150 × 237 mm rectangle inside the frozen source, then press FREEZE A4 FRAME.</pre>
 </section>
 
 <section class="card">
@@ -310,7 +310,7 @@ padding:10px;pointer-events:auto}
   <li>外れ値除外後の16〜20個のViewer Rayと対応する物理辺セグメントの距離を直接最小化して150 × 237 mm剛体長方形の6DOF姿勢を推定します。辺方向の正確なタップ位置は未知量として内部で吸収します。</li>
   <li>LMは収束フラグ、終了理由、最終step量、cost改善量、採択/棄却step数をログへ記録します。反復上限到達だけの解はGOOD扱いにしません。</li>
   <li>途中でやり直す場合は RESET CURRENT EDGE、4辺完了後は同じボタンで20タップを最初からやり直せます。撮り直す場合は LIVE / RETAKE → FREEZE A4 FRAME を使用します。</li>
-  <li>ログの CARD EDGE TAP / CARD EDGE OUTLIER REMOVED / CARD EDGE LINE / CARD DIRECT EDGE FIT SUMMARY を共有してください。A/B測距と20 / 50 / 100 cm sweepは今回不要です。</li>
+  <li>ログの CARD EDGE TAP / CARD EDGE OUTLIER REMOVED / CARD EDGE LINE / CARD PROJECTED EDGE FIT SUMMARY を共有してください。A/B測距と20 / 50 / 100 cm sweepは今回不要です。</li>
 </ol>
 </section>
 
@@ -324,7 +324,7 @@ padding:10px;pointer-events:auto}
 </section>
 
 <section class="card note">
-Phase 4.29でも通常の正式単発距離値はimmutable Hit-Hitのままです。A4校正を開始するとA/B測距はRESET A4 CALまたはEND ARまでロックします。A4校正は1枚のRaw Camera静止画像を使い、各辺5点を4-of-5外れ値QCした後、残った16〜20 Viewer Rayを既知150 × 237 mm剛体長方形の4辺セグメントへ直接フィットします。2D直線フィットは入力QCだけに使用し、仮想四隅は作りません。LMの収束診断を明示します。Hit Test / Depthは姿勢推定に使用せず、結果は診断専用で補正係数や絶対精度判定には使用しません。MAP integrity、Depth agreement、Hit entity probeなど従来の距離診断はそのまま維持します。
+Phase 4.30でも通常の正式単発距離値はimmutable Hit-Hitのままです。A4校正を開始するとA/B測距はRESET A4 CALまたはEND ARまでロックします。A4校正は1枚のRaw Camera静止画像を使い、各辺5点を4-of-5外れ値QCした後、既知150 × 237 mm剛体長方形をFrozen画像へ投影した4辺と残った16〜20画像点の垂直距離を直接フィットします。仮想四隅も独立した辺上uも姿勢変数として使いません。LMの収束診断を明示します。Hit Test / Depthは姿勢推定に使用せず、結果は診断専用で補正係数や絶対精度判定には使用しません。MAP integrity、Depth agreement、Hit entity probeなど従来の距離診断はそのまま維持します。
 </section>
 
 <section class="card">
@@ -454,7 +454,7 @@ let raf = 0;
 let latestHitMatrix = null;
 let latestHitPoint = null;
 
-// Phase 4.29: one frozen Raw Camera frame + five manual samples per edge + deterministic 4-of-5 outlier QC + direct active-ray-to-rigid-edge pose solve with LM convergence diagnostics.
+// Phase 4.30: one frozen Raw Camera frame + five manual samples per edge + deterministic 4-of-5 outlier QC + direct image-point-to-projected-rigid-edge pose solve with LM convergence diagnostics.
 const CALIBRATION_CORNERS = ['TL','TR','BR','BL'];
 const DEFAULT_CALIBRATION_WIDTH_MM = 85.60;
 const DEFAULT_CALIBRATION_HEIGHT_MM = 53.98;
@@ -489,7 +489,7 @@ let calibrationTransitionThresholdDeg = CALIBRATION_TRANSITION_MIN_DEG;
 let calibrationRayHistory = [];
 let calibrationDwellRaySamples = [];
 
-// Phase 4.29 frozen-frame manual edge-sampling state: line fits/outlier QC select 4 or 5 samples per edge; active raw rays drive the rigid pose.
+// Phase 4.30 frozen-frame manual edge-sampling state: line fits/outlier QC select 4 or 5 samples per edge; active image points drive the projected-line rigid pose.
 const CARD_FREEZE_SIZE = 512;
 const CARD_EDGE_NAMES = ['TOP','RIGHT','BOTTOM','LEFT'];
 const CARD_EDGE_TAPS = 5;
@@ -502,7 +502,7 @@ const CARD_EDGE_OUTLIER_MIN_RESIDUAL_PX = 6.0;
 const CARD_EDGE_OUTLIER_MAX_RMS_RATIO = 0.60;
 let latestRawCameraGeometry = null;
 let frozenCardFrame = null;
-let frozenCardTaps = {}; // retained legacy container; Phase 4.29 does not create or use virtual corners
+let frozenCardTaps = {}; // retained legacy container; Phase 4.30 does not create or use virtual corners
 let frozenCardTapSamples = {TL:[],TR:[],BR:[],BL:[]}; // retained for inherited reset compatibility
 let frozenCardEdgeTapSamples = {TOP:[],RIGHT:[],BOTTOM:[],LEFT:[]};
 let frozenCardEdgeLines = {};
@@ -876,7 +876,7 @@ function logHitABComparison(){
   return comparison;
 }
 
-// Phase 4.29 inherited from Phase 4.19: formal single-shot candidate remains frozen at Point B capture; repeated acquisitions form the consensus.
+// Phase 4.30 inherited from Phase 4.19: formal single-shot candidate remains frozen at Point B capture; repeated acquisitions form the consensus.
 let frozenMeasurement = null;
 let sessionFrozenMeasurements = [];
 let lastAAnchorPoseTime = null;
@@ -1129,7 +1129,7 @@ let qualityHistory = [];
 let lastQualitySampleTime = -Infinity;
 let latestHitDistance = null;
 
-// Phase 4.29 inherited from Phase 4.19: Phase 4.16 Depth 3D method retained.
+// Phase 4.30 inherited from Phase 4.19: Phase 4.16 Depth 3D method retained.
 // Depth never replaces/corrects or rejects the committed Hit-Hit value. It is agreement diagnostics only.
 const DEPTH_GRID = 3;
 const DEPTH_RADIUS = 0.01; // compact local region around projected Hit / screen center
@@ -1161,8 +1161,8 @@ const DETAIL_CONTRAST_LOW = 8.0;
 
 let ending = false;
 let cleanupDone = false;
-const LOG_STORAGE_KEY = 'ar-distance-lab-phase4-29-log';
-const SUMMARY_STORAGE_KEY = 'ar-distance-lab-phase4-29-summary';
+const LOG_STORAGE_KEY = 'ar-distance-lab-phase4-30-log';
+const SUMMARY_STORAGE_KEY = 'ar-distance-lab-phase4-30-summary';
 
 const TRACKING_UNSTABLE_MS = 250;
 const TRACKING_LOST_MS = 1000;
@@ -2331,7 +2331,7 @@ function assessDepthDistanceCrossCheck(){
 
 function applyDepthDistanceCrossCheck(){
   const q=assessDepthDistanceCrossCheck();
-  // Phase 4.29 inherited from Phase 4.19: rename the >=15 mm state for clarity. This is diagnostic only.
+  // Phase 4.30 inherited from Phase 4.19: rename the >=15 mm state for clarity. This is diagnostic only.
   if(q.state==='INVALID') q.state='DIVERGED';
   lastDepthAgreement=q;
   const cls=q.state==='AGREE'||q.state==='PASS'?'ok':q.state==='WARN'?'warn':q.state==='DIVERGED'?'warn':'warn';
@@ -2343,7 +2343,7 @@ function applyDepthDistanceCrossCheck(){
 }
 
 function combineQualityGates(mapIntegrity,depthDiagnostic){
-  // Phase 4.29 inherited from Phase 4.19: only MAP can reject a single-shot measurement.
+  // Phase 4.30 inherited from Phase 4.19: only MAP can reject a single-shot measurement.
   // Depth agreement is deliberately excluded from the commit gate because the
   // previous sweep proved that Hit and Depth can agree while both are wrong.
   let state='PASS';
@@ -4293,7 +4293,7 @@ function updateCalibrationUI(){
   const total=edgeTapTotalCount(), goal=CARD_EDGE_TAPS*CARD_EDGE_NAMES.length;
   const edge=currentEdgeTapName();
   const edgeN=edge?edgeTapCount(edge):CARD_EDGE_TAPS;
-  const done=edgeSamplingComplete() && !!calibrationResult?.rayFit;
+  const done=edgeSamplingComplete() && !!calibrationResult?.imageFit;
   set('calibrationTargetState',`${target.widthMm.toFixed(2)} × ${target.heightMm.toFixed(2)} mm`,'ok');
   set('calibrationSequenceState',frozenCardFrame
     ? (done?`20 / 20 — COMPLETE`:`${edge||'SOLVE'} ${edgeN} / ${CARD_EDGE_TAPS} — total ${total}/${goal}`)
@@ -4303,7 +4303,7 @@ function updateCalibrationUI(){
   set('calibrationDwellState',frozenCardFrame?(done?'20 / 20 COMPLETE':`${total} / ${goal} TAPS`):'WAITING',done?'ok':'');
   if(el.calibrationDwellTrack) el.calibrationDwellTrack.style.display='none';
   if(el.calibrationOverlayText) el.calibrationOverlayText.textContent=frozenCardFrame
-    ? (done?'A4 DIRECT EDGE FIT COMPLETE — review active-ray diagnostics':`A4 EDGE TAPS: ${edge||'SOLVE'} ${edgeN+1}/${CARD_EDGE_TAPS}`)
+    ? (done?'A4 PROJECTED-LINE FIT COMPLETE — review image-space diagnostics':`A4 EDGE TAPS: ${edge||'SOLVE'} ${edgeN+1}/${CARD_EDGE_TAPS}`)
     : 'A4 EDGE TAPS: fit whole rectangle, then FREEZE A4 FRAME';
   if(el.calibrationCaptureBtn){
     el.calibrationCaptureBtn.disabled=!session || ending || !latestRawCameraGeometry;
@@ -4313,42 +4313,41 @@ function updateCalibrationUI(){
   if(el.calibrationResetOverlayBtn) el.calibrationResetOverlayBtn.disabled=!session || ending;
   if(el.cardFreezeResetTapsBtn) el.cardFreezeResetTapsBtn.textContent=edgeSamplingComplete()?'RESTART 20 TAPS':'RESET CURRENT EDGE';
 
-  const fit=calibrationResult?.rayFit;
+  const fit=calibrationResult?.imageFit;
   const lines=calibrationResult?.lines;
   if(!fit?.geometry || !lines){
     for(const id of ['calibrationWidthState','calibrationHeightState','calibrationDiagonalState','calibrationWidthErrorState','calibrationHeightErrorState','calibrationScaleState','calibrationScaleSpreadState','calibrationScaleResidualState','calibrationAngleState','calibrationPlaneState','calibrationDepthState']) set(id,'—','');
-    set('calibrationRoleState','16–20 ACTIVE TAP RAYS → RIGID EDGE SEGMENTS — 4-of-5 outlier QC / no virtual corners / no correction','ok');
+    set('calibrationRoleState','16–20 IMAGE POINTS → PROJECTED RIGID EDGES — 4-of-5 outlier QC / no virtual corners / no correction','ok');
     if(el.calibrationText){
       el.calibrationText.textContent=frozenCardFrame
-        ? `A4 EDGE TAPS — frozen frame #${frozenCardFrame.frameIndex}. ${total}/${goal} taps. ${edge?`Tap ${edge} at five separated positions, avoiding corners.`:'Direct-solving active rays…'}`
-        : 'A4 DIRECT EDGE FIT: start AR, fit the complete 150 × 237 mm rectangle inside MAG source, then press FREEZE A4 FRAME.';
+        ? `A4 EDGE TAPS — frozen frame #${frozenCardFrame.frameIndex}. ${total}/${goal} taps. ${edge?`Tap ${edge} at five separated positions, avoiding corners.`:'Solving projected rigid edges…'}`
+        : 'A4 PROJECTED-LINE FIT: start AR, fit the complete 150 × 237 mm rectangle inside MAG source, then press FREEZE A4 FRAME.';
     }
     return;
   }
   const px=v=>Number.isFinite(v)?v.toFixed(2):'n/a';
-  const mm=x=>Number.isFinite(x)?(x*1000).toFixed(3):'n/a';
   set('calibrationWidthState',`${px(lines.TOP.rms)} / ${px(lines.RIGHT.rms)} px`,Math.max(lines.TOP.rms,lines.RIGHT.rms)<=CARD_EDGE_LINE_RMS_WARN_PX?'ok':'warn');
   set('calibrationHeightState',`${px(lines.BOTTOM.rms)} / ${px(lines.LEFT.rms)} px`,Math.max(lines.BOTTOM.rms,lines.LEFT.rms)<=CARD_EDGE_LINE_RMS_WARN_PX?'ok':'warn');
   set('calibrationDiagonalState',CARD_EDGE_NAMES.map(e=>`${e[0]} ${px(lines[e].span)}`).join(' / ')+' px','');
-  set('calibrationWidthErrorState',`${mm(fit.rayRms)} mm`,fit.rayRms<=0.003?'ok':fit.rayRms<=0.007?'warn':'ng');
-  set('calibrationHeightErrorState',`${mm(fit.rayMax)} mm`,fit.rayMax<=0.008?'ok':fit.rayMax<=0.015?'warn':'ng');
+  set('calibrationWidthErrorState',`${px(fit.pixelRms)} px`,fit.pixelRms<=2.5?'ok':fit.pixelRms<=5?'warn':'ng');
+  set('calibrationHeightErrorState',`${px(fit.pixelMax)} px`,fit.pixelMax<=6?'ok':fit.pixelMax<=12?'warn':'ng');
   set('calibrationScaleState',fit.quality,fit.quality==='GOOD'?'ok':fit.quality==='WARN'?'warn':'ng');
-  set('calibrationScaleSpreadState',CARD_EDGE_NAMES.map(e=>`${e[0]} ${mm(fit.perEdge[e].rms)}`).join(' / ')+' mm','');
+  set('calibrationScaleSpreadState',CARD_EDGE_NAMES.map(e=>`${e[0]} ${px(fit.perEdge[e].rms)}`).join(' / ')+' px','');
   set('calibrationScaleResidualState',CARD_EDGE_NAMES.map(e=>`${e[0]} ${(fit.perEdge[e].coverage*100).toFixed(0)}%`).join(' / '),fit.minCoverage>=0.25?'ok':fit.minCoverage>=0.15?'warn':'ng');
-  set('calibrationAngleState',`${fit.clampCount} / ${fit.metrics.length}`,fit.clampCount<=1?'ok':fit.clampCount<=4?'warn':'ng');
+  set('calibrationAngleState',`${fit.outsideCount} / ${fit.metrics.length}`,fit.outsideCount===0?'ok':fit.outsideCount<=4?'warn':'ng');
   const inputQuality=calibrationResult?.inputQuality||'UNKNOWN';
   set('calibrationPlaneState',`${inputQuality} / excluded ${fit.excludedCount}`,inputQuality==='GOOD'?'ok':inputQuality==='WARN'?'warn':'ng');
   set('calibrationDepthState',`C ${fmtPoint(fit.center)} / N ${fmtPoint(fit.normal)}`,'');
-  set('calibrationRoleState',`DIRECT ${fit.metrics.length}-RAY → RIGID EDGES / 4-of-5 QC / LM ${fit.converged?'CONVERGED':fit.termination}` ,fit.converged?'ok':'warn');
+  set('calibrationRoleState',`IMAGE ${fit.metrics.length}-POINT → PROJECTED EDGES / 4-of-5 QC / LM ${fit.converged?'CONVERGED':fit.termination}` ,fit.converged?'ok':'warn');
   if(el.calibrationText){
-    el.calibrationText.textContent=`A4 DIRECT 20-RAY EDGE FIT — ${fit.quality}\n`+
+    el.calibrationText.textContent=`A4 PROJECTED-LINE POSE FIT — ${fit.quality}\n`+
       `2D input-QC line RMS px: ${CARD_EDGE_NAMES.map(e=>`${e} ${lines[e].rms.toFixed(2)}`).join(' / ')}\n`+
-      `Direct active-Ray→edge RMS ${(fit.rayRms*1000).toFixed(3)} mm / max ${(fit.rayMax*1000).toFixed(3)} mm / observations ${fit.metrics.length} / excluded ${fit.excludedCount}\n`+
-      `Per-edge RMS mm: ${CARD_EDGE_NAMES.map(e=>`${e} ${(fit.perEdge[e].rms*1000).toFixed(2)}`).join(' / ')}\n`+
-      `Edge coverage: ${CARD_EDGE_NAMES.map(e=>`${e} ${(fit.perEdge[e].coverage*100).toFixed(0)}%`).join(' / ')} / endpoint clamps ${fit.clampCount}\n`+
+      `Projected-edge perpendicular RMS ${fit.pixelRms.toFixed(3)} px / max ${fit.pixelMax.toFixed(3)} px / observations ${fit.metrics.length} / excluded ${fit.excludedCount}\n`+
+      `Per-edge RMS px: ${CARD_EDGE_NAMES.map(e=>`${e} ${fit.perEdge[e].rms.toFixed(2)}`).join(' / ')}\n`+
+      `Derived along-edge coverage: ${CARD_EDGE_NAMES.map(e=>`${e} ${(fit.perEdge[e].coverage*100).toFixed(0)}%`).join(' / ')} / outside projected segment ${fit.outsideCount}\n`+
       `Center ${fmtPoint(fit.center)}\nNormal ${fmtPoint(fit.normal)}\n`+
       `Input ${inputQuality} / Seed ${fit.seed} / LM ${fit.iterations} iterations / converged ${fit.converged} / ${fit.termination}\n`+
-      `NO VIRTUAL CORNERS — line fits are input QC only. DIAGNOSTIC ONLY; internal consistency does not establish absolute accuracy.`;
+      `NO VIRTUAL CORNERS — NO INDEPENDENT EDGE-u VARIABLES — image line fits are input QC only. DIAGNOSTIC ONLY; internal consistency does not establish absolute accuracy.`;
   }
 }
 
@@ -4484,6 +4483,7 @@ function overallEdgeInputQuality(lines){
   return 'GOOD';
 }
 
+
 function rigidEdgeEndpoints(pose,edge){
   if(!pose?.corners) return null;
   if(edge==='TOP') return [pose.corners.TL,pose.corners.TR];
@@ -4493,66 +4493,74 @@ function rigidEdgeEndpoints(pose,edge){
   return null;
 }
 
-function closestRaySegmentMetrics(ray,a,b){
-  if(!ray||!a||!b) return null;
-  const D=ray.direction,E=vectorBetween(a,b),w=vectorBetween(a,ray.origin); // O-A
-  const aa=dot3(D,D),bb=dot3(D,E),cc=dot3(E,E),dd=dot3(D,w),ee=dot3(E,w);
-  if(aa<1e-12||cc<1e-12) return null;
-  const candidates=[];
-  const addCandidate=(t,u)=>{
-    if(!Number.isFinite(t)||!Number.isFinite(u)) return;
-    t=Math.max(0,t); u=Math.max(0,Math.min(1,u));
-    const pr=rayPoint(ray,t), ps=add3(a,scale3(E,u));
-    const error=vectorBetween(ps,pr); // pr - ps
-    candidates.push({t,u,rayPoint:pr,segmentPoint:ps,error,distance:norm3(error)});
+function frozenLocalPointToViewPoint(p,frame=frozenCardFrame){
+  if(!p||!frame?.viewTransform) return null;
+  const m=frame.viewTransform;
+  const dx=p.x-m[12],dy=p.y-m[13],dz=p.z-m[14];
+  return {
+    x:m[0]*dx+m[1]*dy+m[2]*dz,
+    y:m[4]*dx+m[5]*dy+m[6]*dz,
+    z:m[8]*dx+m[9]*dy+m[10]*dz
   };
-  const den=aa*cc-bb*bb;
-  if(Math.abs(den)>1e-12){
-    const t=(bb*ee-cc*dd)/den;
-    const u=(aa*ee-bb*dd)/den;
-    if(t>=0&&u>=0&&u<=1) addCandidate(t,u);
-  }
-  for(const u of [0,1]){
-    const ps=add3(a,scale3(E,u));
-    addCandidate(dot3(vectorBetween(ray.origin,ps),D)/aa,u);
-  }
-  const u0=Math.max(0,Math.min(1,-ee/cc));
-  addCandidate(0,u0);
-  if(!candidates.length) return null;
-  candidates.sort((x,y)=>x.distance-y.distance);
-  return candidates[0];
+}
+function viewUvToFrozenSourcePoint(uv,frame=frozenCardFrame){
+  if(!uv||!frame?.aspect) return null;
+  const ny=0.5+(uv.y-0.5)/frame.aspect;
+  return {x:uv.x*CARD_FREEZE_SIZE,y:ny*CARD_FREEZE_SIZE};
+}
+function projectLocalPointToFrozenSource(p,frame=frozenCardFrame){
+  const view=frozenLocalPointToViewPoint(p,frame);
+  if(!view || !Number.isFinite(view.z) || view.z>=-0.02) return null;
+  const uv=projectViewPointToUv(view,frame.projection);
+  const source=viewUvToFrozenSourcePoint(uv,frame);
+  return source&&Number.isFinite(source.x)&&Number.isFinite(source.y)?{...source,uv,view}:null;
+}
+function projectedEdgeMetrics(sourcePoint,pose,edge,frame=frozenCardFrame){
+  const seg=rigidEdgeEndpoints(pose,edge); if(!seg) return null;
+  const a=projectLocalPointToFrozenSource(seg[0],frame),b=projectLocalPointToFrozenSource(seg[1],frame);
+  if(!a||!b) return null;
+  const dx=b.x-a.x,dy=b.y-a.y,len=Math.hypot(dx,dy);
+  if(!Number.isFinite(len)||len<1e-3) return null;
+  const rx=sourcePoint.x-a.x,ry=sourcePoint.y-a.y;
+  const signed=(dx*ry-dy*rx)/len;
+  const u=(rx*dx+ry*dy)/(len*len);
+  return {signed,distance:Math.abs(signed),u,a,b,projectedLengthPx:len};
 }
 
-function rigidEdgeResidualVector(observations,params,target){
+function imageEdgeResidualVector(observations,params,target,frame=frozenCardFrame){
   const pose=rigidPoseCorners(params,target);
   const r=[];
-  const huberDelta=0.004; // 4 mm robust transition; diagnostic fit only.
   for(const obs of observations){
-    const seg=rigidEdgeEndpoints(pose,obs.edge);
-    const m=seg&&closestRaySegmentMetrics(obs.ray,seg[0],seg[1]);
-    if(!m){ r.push(1,1,1,1); continue; }
-    const w=m.distance<=huberDelta?1:Math.sqrt(huberDelta/Math.max(m.distance,1e-12));
-    r.push(m.error.x*w,m.error.y*w,m.error.z*w);
-    r.push(Math.max(0,0.03-m.t)*4);
+    const m=projectedEdgeMetrics(obs.sourcePoint,pose,obs.edge,frame);
+    if(!m){ r.push(250); continue; }
+    // Gross single-tap errors are handled before pose solving by deterministic 4-of-5 QC.
+    // Keep the pose objective true least-squares here; robust reweighting flattened the
+    // image-space objective enough to trap synthetic recovery away from the exact solution.
+    r.push(m.signed);
+  }
+  // Physical corners must remain in front of the frozen XRView camera.
+  for(const c of CALIBRATION_CORNERS){
+    const v=frozenLocalPointToViewPoint(pose.corners[c],frame);
+    r.push(v&&Number.isFinite(v.z)?Math.max(0,v.z+0.03)*1000:250);
   }
   return r;
 }
 
-function optimizeRigidRectangleEdgePose(observations,target,seed){
-  let x=[...seed],lambda=1e-3;
-  let r=rigidEdgeResidualVector(observations,x,target);
+function optimizeRigidRectangleProjectedEdgePose(observations,target,seed,frame=frozenCardFrame){
+  let x=[...seed],lambda=1e-2;
+  let r=imageEdgeResidualVector(observations,x,target,frame);
   let bestX=[...x],bestCost=costOfResiduals(r),iterations=0;
   let converged=false,termination='max-iterations',lastStepNorm=NaN,lastAcceptedImprovement=NaN;
   let acceptedSteps=0,rejectedSteps=0,smallImprovementStreak=0;
-  const eps=[1e-4,1e-4,1e-4,2e-4,2e-4,2e-4],maxIterations=160;
+  const eps=[1e-4,1e-4,1e-4,2e-4,2e-4,2e-4],maxIterations=180;
   for(let iter=0;iter<maxIterations;iter++){
     iterations=iter+1;
-    r=rigidEdgeResidualVector(observations,x,target);
+    r=imageEdgeResidualVector(observations,x,target,frame);
     const cost=costOfResiduals(r);
     const J=Array.from({length:r.length},()=>Array(6).fill(0));
     for(let j=0;j<6;j++){
       const xp=[...x]; xp[j]+=eps[j];
-      const rp=rigidEdgeResidualVector(observations,xp,target);
+      const rp=imageEdgeResidualVector(observations,xp,target,frame);
       for(let i=0;i<r.length;i++) J[i][j]=(rp[i]-r[i])/eps[j];
     }
     const A=Array.from({length:6},()=>Array(6).fill(0)),b=Array(6).fill(0);
@@ -4561,7 +4569,7 @@ function optimizeRigidRectangleEdgePose(observations,target,seed){
       for(let k=0;k<6;k++) A[j][k]+=J[i][j]*J[i][k];
     }
     const gradientNorm=Math.hypot(...b);
-    if(gradientNorm<1e-9){ converged=true; termination='gradient-tolerance'; break; }
+    if(gradientNorm<1e-7){ converged=true; termination='gradient-tolerance'; break; }
     for(let j=0;j<6;j++) A[j][j]+=lambda;
     const delta=solveLinearSystem(A,b);
     if(!delta){ termination='linear-solve-failed'; break; }
@@ -4569,18 +4577,18 @@ function optimizeRigidRectangleEdgePose(observations,target,seed){
     for(let j=0;j<3;j++) cand[j]=x[j]+Math.max(-0.25,Math.min(0.25,cand[j]-x[j]));
     for(let j=3;j<6;j++) cand[j]=x[j]+Math.max(-0.40,Math.min(0.40,cand[j]-x[j]));
     const step=cand.map((v,j)=>v-x[j]); lastStepNorm=Math.hypot(...step);
-    const rr=rigidEdgeResidualVector(observations,cand,target),cc=costOfResiduals(rr);
+    const rr=imageEdgeResidualVector(observations,cand,target,frame),cc=costOfResiduals(rr);
     if(cc<cost){
       const improvement=cost-cc; lastAcceptedImprovement=improvement; acceptedSteps++;
       x=cand; lambda=Math.max(1e-9,lambda*0.35);
       if(cc<bestCost){bestCost=cc;bestX=[...cand];}
-      if(lastStepNorm<1e-6){ converged=true; termination='step-tolerance'; break; }
-      const costTol=Math.max(1e-12,Math.abs(cost)*1e-7);
+      if(lastStepNorm<1e-7){ converged=true; termination='step-tolerance'; break; }
+      const costTol=Math.max(1e-10,Math.abs(cost)*1e-8);
       if(improvement<=costTol) smallImprovementStreak++; else smallImprovementStreak=0;
       if(smallImprovementStreak>=3){ converged=true; termination='cost-tolerance'; break; }
     }else{
-      rejectedSteps++; smallImprovementStreak=0; lambda=Math.min(1e8,lambda*6);
-      if(lambda>=1e8){ termination='lambda-limit'; break; }
+      rejectedSteps++; smallImprovementStreak=0; lambda=Math.min(1e10,lambda*6);
+      if(lambda>=1e10){ termination='lambda-limit'; break; }
     }
   }
   return {params:bestX,cost:bestCost,iterations,converged,termination,lastStepNorm,lastAcceptedImprovement,acceptedSteps,rejectedSteps,finalLambda:lambda};
@@ -4588,15 +4596,27 @@ function optimizeRigidRectangleEdgePose(observations,target,seed){
 
 function averageRayForEdge(observations,edge){
   const a=observations.filter(o=>o.edge===edge); if(!a.length) return null;
-  const origin={x:a.reduce((s,o)=>s+o.ray.origin.x,0)/a.length,y:a.reduce((s,o)=>s+o.ray.origin.y,0)/a.length,z:a.reduce((s,o)=>s+o.ray.origin.z,0)/a.length};
-  const direction=normalize3({x:a.reduce((s,o)=>s+o.ray.direction.x,0),y:a.reduce((s,o)=>s+o.ray.direction.y,0),z:a.reduce((s,o)=>s+o.ray.direction.z,0)});
+  const origin={
+    x:a.reduce((s,o)=>s+o.ray.origin.x,0)/a.length,
+    y:a.reduce((s,o)=>s+o.ray.origin.y,0)/a.length,
+    z:a.reduce((s,o)=>s+o.ray.origin.z,0)/a.length
+  };
+  const direction=normalize3({
+    x:a.reduce((s,o)=>s+o.ray.direction.x,0),
+    y:a.reduce((s,o)=>s+o.ray.direction.y,0),
+    z:a.reduce((s,o)=>s+o.ray.direction.z,0)
+  });
   return direction?{origin,direction}:null;
 }
 
-function directEdgePoseSeed(observations,target,depth){
+function projectedEdgePoseSeed(observations,target,depth){
   const mean={}; for(const e of CARD_EDGE_NAMES){ mean[e]=averageRayForEdge(observations,e); if(!mean[e]) return null; }
   const allDir=normalize3(CARD_EDGE_NAMES.reduce((v,e)=>add3(v,mean[e].direction),{x:0,y:0,z:0})); if(!allDir) return null;
-  const origin={x:observations.reduce((s,o)=>s+o.ray.origin.x,0)/observations.length,y:observations.reduce((s,o)=>s+o.ray.origin.y,0)/observations.length,z:observations.reduce((s,o)=>s+o.ray.origin.z,0)/observations.length};
+  const origin={
+    x:observations.reduce((s,o)=>s+o.ray.origin.x,0)/observations.length,
+    y:observations.reduce((s,o)=>s+o.ray.origin.y,0)/observations.length,
+    z:observations.reduce((s,o)=>s+o.ray.origin.z,0)/observations.length
+  };
   let xAxis=normalize3(add3(mean.RIGHT.direction,scale3(mean.LEFT.direction,-1)));
   let yRaw=add3(mean.TOP.direction,scale3(mean.BOTTOM.direction,-1));
   if(!xAxis) return null;
@@ -4615,7 +4635,7 @@ function directEdgePoseSeed(observations,target,depth){
   return rigidPoseFromApproxCorners(approx,target);
 }
 
-function buildDirectEdgeObservations(){
+function buildProjectedEdgeObservations(){
   const obs=[];
   for(const edge of CARD_EDGE_NAMES){
     const points=frozenCardEdgeTapSamples[edge]||[],line=frozenCardEdgeLines[edge];
@@ -4630,75 +4650,86 @@ function buildDirectEdgeObservations(){
   return obs.length>=16&&obs.length<=20?obs:null;
 }
 
-function fitFrozenEdgesDirect(target){
-  const observations=buildDirectEdgeObservations(); if(!observations) return null;
+function fitFrozenEdgesProjected(target){
+  const observations=buildProjectedEdgeObservations(); if(!observations||!frozenCardFrame) return null;
   const mean={}; for(const e of CARD_EDGE_NAMES) mean[e]=averageRayForEdge(observations,e);
   const angLR=angleBetweenDirectionsDeg(mean.LEFT?.direction,mean.RIGHT?.direction)*Math.PI/180;
   const angTB=angleBetweenDirectionsDeg(mean.TOP?.direction,mean.BOTTOM?.direction)*Math.PI/180;
   const estimates=[];
   if(Number.isFinite(angLR)&&angLR>1e-4) estimates.push(target.widthM/(2*Math.tan(angLR/2)));
   if(Number.isFinite(angTB)&&angTB>1e-4) estimates.push(target.heightM/(2*Math.tan(angTB/2)));
-  const base=estimates.length?median(estimates.filter(v=>Number.isFinite(v)&&v>0.05&&v<5)):0.8;
+  const finiteEst=estimates.filter(v=>Number.isFinite(v)&&v>0.05&&v<5);
+  const base=finiteEst.length?median(finiteEst):0.8;
   const depths=[];
-  for(const d of [base*0.55,base*0.75,base,base*1.30,base*1.70,0.30,0.50,0.80,1.20,1.80,2.60]){
-    const q=Math.max(0.08,Math.min(5,d)); if(Number.isFinite(q)&&!depths.some(x=>Math.abs(x-q)<0.03)) depths.push(q);
+  for(const d of [base*0.50,base*0.70,base*0.85,base,base*1.20,base*1.45,base*1.80,0.25,0.40,0.60,0.90,1.30,1.90,2.70]){
+    const q=Math.max(0.08,Math.min(5,d)); if(Number.isFinite(q)&&!depths.some(x=>Math.abs(x-q)<0.025)) depths.push(q);
   }
   const seeds=[];
   for(const d of depths){
-    const p=directEdgePoseSeed(observations,target,d); if(!p) continue;
-    seeds.push({label:`edge-mean-${d.toFixed(2)}m`,params:p});
-    for(const [j,name,delta] of [[3,'roll',0.22],[4,'pitch',0.22],[5,'yaw',0.22]]){
-      const p1=[...p];p1[j]+=delta;seeds.push({label:`edge-mean-${d.toFixed(2)}m/${name}+`,params:p1});
-      const p2=[...p];p2[j]-=delta;seeds.push({label:`edge-mean-${d.toFixed(2)}m/${name}-`,params:p2});
+    const p=projectedEdgePoseSeed(observations,target,d); if(!p) continue;
+    seeds.push({label:`projected-edge-${d.toFixed(2)}m`,params:p});
+    for(const [j,name,delta] of [[3,'roll',0.20],[4,'pitch',0.20],[5,'yaw',0.20]]){
+      const p1=[...p];p1[j]+=delta;seeds.push({label:`projected-edge-${d.toFixed(2)}m/${name}+`,params:p1});
+      const p2=[...p];p2[j]-=delta;seeds.push({label:`projected-edge-${d.toFixed(2)}m/${name}-`,params:p2});
     }
   }
   let best=null,bestAny=null,convergedSeeds=0;
   for(const sd of seeds){
-    const f=optimizeRigidRectangleEdgePose(observations,target,sd.params),candidate={...f,seed:sd.label};
+    const f=optimizeRigidRectangleProjectedEdgePose(observations,target,sd.params,frozenCardFrame),candidate={...f,seed:sd.label};
     if(!bestAny||candidate.cost<bestAny.cost) bestAny=candidate;
-    if(candidate.converged){ convergedSeeds++; if(!best||candidate.cost<best.cost) best=candidate; }
+    if(candidate.converged){convergedSeeds++; if(!best||candidate.cost<best.cost) best=candidate;}
   }
-  best=best||bestAny;
-  if(!best) return null;
+  best=best||bestAny; if(!best) return null;
   best.seedsTried=seeds.length; best.convergedSeeds=convergedSeeds;
   const pose=rigidPoseCorners(best.params,target),metrics=[];
   for(const o of observations){
-    const seg=rigidEdgeEndpoints(pose,o.edge),m=seg&&closestRaySegmentMetrics(o.ray,seg[0],seg[1]);
-    if(!m) return null; metrics.push({...m,edge:o.edge,index:o.index,sourcePoint:o.sourcePoint,uv:o.ray.uv});
+    const m=projectedEdgeMetrics(o.sourcePoint,pose,o.edge,frozenCardFrame);
+    if(!m) return null;
+    metrics.push({...m,edge:o.edge,index:o.index,sourcePoint:o.sourcePoint});
   }
-  const dists=metrics.map(m=>m.distance),rayRms=Math.sqrt(dists.reduce((a,v)=>a+v*v,0)/dists.length),rayMax=Math.max(...dists);
-  const perEdge={}; let clampCount=0;
+  const dists=metrics.map(m=>m.distance),pixelRms=Math.sqrt(dists.reduce((a,v)=>a+v*v,0)/dists.length),pixelMax=Math.max(...dists);
+  const perEdge={}; let outsideCount=0;
   for(const e of CARD_EDGE_NAMES){
     const a=metrics.filter(m=>m.edge===e),ds=a.map(m=>m.distance),us=a.map(m=>m.u);
-    const clamps=us.filter(u=>u<=1e-4||u>=1-1e-4).length; clampCount+=clamps;
-    perEdge[e]={rms:Math.sqrt(ds.reduce((s,v)=>s+v*v,0)/ds.length),max:Math.max(...ds),uMin:Math.min(...us),uMax:Math.max(...us),coverage:Math.max(...us)-Math.min(...us),clamps};
+    const outside=us.filter(u=>u<0||u>1).length; outsideCount+=outside;
+    perEdge[e]={
+      rms:Math.sqrt(ds.reduce((q,v)=>q+v*v,0)/ds.length),
+      max:Math.max(...ds),
+      uMin:Math.min(...us),uMax:Math.max(...us),
+      coverage:Math.max(...us)-Math.min(...us),
+      outside,
+      projectedLengthPx:median(a.map(m=>m.projectedLengthPx))
+    };
   }
   const minCoverage=Math.min(...CARD_EDGE_NAMES.map(e=>perEdge[e].coverage));
   let quality='POOR';
-  if(rayRms<=0.003&&rayMax<=0.008&&clampCount<=1&&minCoverage>=0.25) quality='GOOD';
-  else if(rayRms<=0.007&&rayMax<=0.015&&clampCount<=4&&minCoverage>=0.15) quality='WARN';
+  if(pixelRms<=2.5&&pixelMax<=6.0&&outsideCount===0&&minCoverage>=0.25) quality='GOOD';
+  else if(pixelRms<=5.0&&pixelMax<=12.0&&outsideCount<=4&&minCoverage>=0.15) quality='WARN';
   if(!best.converged) quality=quality==='GOOD'?'WARN':'POOR';
   const excludedCount=CARD_EDGE_NAMES.reduce((n,e)=>n+(frozenCardEdgeLines[e]?.outlierRemoved?1:0),0);
   const geometry=analyzeCalibrationGeometry(Object.fromEntries(CALIBRATION_CORNERS.map(c=>[c,{p:pose.corners[c]}])),r=>r?.p,target);
-  return {...best,...pose,geometry,observations,metrics,perEdge,rayRms,rayMax,clampCount,minCoverage,quality,baseDepth:base,excludedCount};
+  const projectedCorners={};
+  for(const c of CALIBRATION_CORNERS) projectedCorners[c]=projectLocalPointToFrozenSource(pose.corners[c],frozenCardFrame);
+  return {...best,...pose,geometry,observations,metrics,perEdge,pixelRms,pixelMax,outsideCount,minCoverage,quality,baseDepth:base,excludedCount,projectedCorners};
 }
 
 function finalizeFrozenCardCalibration(){
   const target=calibrationTargetFrozen||calibrationTargetDimensions();
   const inputQuality=overallEdgeInputQuality(frozenCardEdgeLines);
-  const rayFit=fitFrozenEdgesDirect(target);
+  const imageFit=fitFrozenEdgesProjected(target);
   calibrationRunIndex++;
-  if(!rayFit){
-    log(`CARD DIRECT EDGE FIT SUMMARY frame=${frozenCardFrame?.frameIndex??'n/a'}: FAILED — direct active-ray rigid-edge solve unavailable; inputQuality=${inputQuality}; virtualCorners=false; correctionApplied=false; diagnosticOnly=true`);
-    set('calibrationDwellState','DIRECT FIT FAILED','ng'); drawFrozenCardFrame(); updateCalibrationUI(); return;
+  if(!imageFit){
+    log(`CARD PROJECTED EDGE FIT SUMMARY frame=${frozenCardFrame?.frameIndex??'n/a'}: FAILED — projected-line rigid pose solve unavailable; inputQuality=${inputQuality}; virtualCorners=false; correctionApplied=false; diagnosticOnly=true`);
+    set('calibrationDwellState','PROJECTED FIT FAILED','ng'); drawFrozenCardFrame(); updateCalibrationUI(); return;
   }
   calibrationPoints={};
-  calibrationResult={run:calibrationRunIndex,target,rayFit,lines:{...frozenCardEdgeLines},inputQuality};
+  calibrationResult={run:calibrationRunIndex,target,imageFit,lines:{...frozenCardEdgeLines},inputQuality};
   const lineText=CARD_EDGE_NAMES.map(e=>{const l=frozenCardEdgeLines[e];return `${e}[rms=${l.rms.toFixed(3)}px,max=${l.maxResidual.toFixed(3)}px,span=${l.span.toFixed(1)}px,n=${l.usedN||l.n}/${l.rawN||l.n},excluded=${l.outlierRemoved?`#${l.excludedIndex+1}`:'none'}]`;}).join(',');
-  log(`CARD EDGE INPUT QC SUMMARY frame=${frozenCardFrame?.frameIndex??'n/a'}: target=${target.widthMm.toFixed(2)}x${target.heightMm.toFixed(2)}mm; lines=[${lineText}]; inputQuality=${inputQuality}; lineRole=input-QC-only; outlierQC=deterministic-4-of-5; virtualCorners=false; directActiveRayFit=true; roundedCornersUsed=false`);
-  const pe=CARD_EDGE_NAMES.map(e=>{const q=rayFit.perEdge[e];return `${e}[rms=${(q.rms*1000).toFixed(3)}mm,max=${(q.max*1000).toFixed(3)}mm,u=${q.uMin.toFixed(3)}..${q.uMax.toFixed(3)},coverage=${q.coverage.toFixed(3)},clamp=${q.clamps}]`;}).join(',');
-  log(`CARD DIRECT EDGE FIT SUMMARY frame=${frozenCardFrame?.frameIndex??'n/a'}: target=${target.widthMm.toFixed(2)}x${target.heightMm.toFixed(2)}mm; source=frozen512-active-raw-tap-rays; solver=robust ray-to-rigid-edge-segment 6DOF LM multi-start; observations=${rayFit.metrics.length}; excludedOutliers=${rayFit.excludedCount}; rayRMS=${(rayFit.rayRms*1000).toFixed(3)}mm; rayMax=${(rayFit.rayMax*1000).toFixed(3)}mm; quality=${rayFit.quality}; perEdge=[${pe}]; endpointClamps=${rayFit.clampCount}; minEdgeCoverage=${rayFit.minCoverage.toFixed(3)}; center=${fmtPoint(rayFit.center)}; normal=${fmtPoint(rayFit.normal)}; seed=${rayFit.seed}; baseDepthEstimate=${rayFit.baseDepth.toFixed(4)}m; iterations=${rayFit.iterations}; converged=${rayFit.converged}; termination=${rayFit.termination}; lastStep=${Number.isFinite(rayFit.lastStepNorm)?rayFit.lastStepNorm.toExponential(3):'n/a'}; lastAcceptedImprovement=${Number.isFinite(rayFit.lastAcceptedImprovement)?rayFit.lastAcceptedImprovement.toExponential(3):'n/a'}; acceptedSteps=${rayFit.acceptedSteps}; rejectedSteps=${rayFit.rejectedSteps}; seeds=${rayFit.convergedSeeds}/${rayFit.seedsTried}converged; finalLambda=${rayFit.finalLambda.toExponential(3)}; centerRayDelta=${frozenCardFrame.centerRayDeltaDeg.toFixed(6)}deg; sameFrozenFrame=true; inputQuality=${inputQuality}; virtualCorners=false; lineFitAffectsPose=false; HitUsedAsCorner=false; DepthUsedAsCorner=false; rigidDimensionsFixed=true; robustHuberDelta=4mm; outlierQC=deterministic-4-of-5; qualityThresholds=provisional; correctionApplied=false; diagnosticOnly=true`);
-  if(el.cardFreezeTapState) el.cardFreezeTapState.textContent='20/20 taps complete. Direct active-ray edge-segment rigid pose calculated; no virtual corners.';
+  log(`CARD EDGE INPUT QC SUMMARY frame=${frozenCardFrame?.frameIndex??'n/a'}: target=${target.widthMm.toFixed(2)}x${target.heightMm.toFixed(2)}mm; lines=[${lineText}]; inputQuality=${inputQuality}; lineRole=input-QC-only; outlierQC=deterministic-4-of-5; virtualCorners=false; projectedLineFit=true; roundedCornersUsed=false`);
+  const pe=CARD_EDGE_NAMES.map(e=>{const q=imageFit.perEdge[e];return `${e}[rms=${q.rms.toFixed(3)}px,max=${q.max.toFixed(3)}px,u=${q.uMin.toFixed(3)}..${q.uMax.toFixed(3)},coverage=${q.coverage.toFixed(3)},outside=${q.outside},projectedLen=${q.projectedLengthPx.toFixed(1)}px]`;}).join(',');
+  const pc=CALIBRATION_CORNERS.map(c=>{const q=imageFit.projectedCorners[c];return `${c}=(${q?.x?.toFixed(2)??'n/a'},${q?.y?.toFixed(2)??'n/a'})`;}).join(',');
+  log(`CARD PROJECTED EDGE FIT SUMMARY frame=${frozenCardFrame?.frameIndex??'n/a'}: target=${target.widthMm.toFixed(2)}x${target.heightMm.toFixed(2)}mm; source=frozen512-active-image-points; solver=image-point-to-projected-rigid-edge least-squares 6DOF LM multi-start; observations=${imageFit.metrics.length}; excludedOutliers=${imageFit.excludedCount}; pixelRMS=${imageFit.pixelRms.toFixed(3)}px; pixelMax=${imageFit.pixelMax.toFixed(3)}px; quality=${imageFit.quality}; perEdge=[${pe}]; outsideProjectedSegments=${imageFit.outsideCount}; minEdgeCoverage=${imageFit.minCoverage.toFixed(3)}; projectedCorners=[${pc}]; center=${fmtPoint(imageFit.center)}; normal=${fmtPoint(imageFit.normal)}; seed=${imageFit.seed}; baseDepthEstimate=${imageFit.baseDepth.toFixed(4)}m; iterations=${imageFit.iterations}; converged=${imageFit.converged}; termination=${imageFit.termination}; lastStep=${Number.isFinite(imageFit.lastStepNorm)?imageFit.lastStepNorm.toExponential(3):'n/a'}; lastAcceptedImprovement=${Number.isFinite(imageFit.lastAcceptedImprovement)?imageFit.lastAcceptedImprovement.toExponential(3):'n/a'}; acceptedSteps=${imageFit.acceptedSteps}; rejectedSteps=${imageFit.rejectedSteps}; seeds=${imageFit.convergedSeeds}/${imageFit.seedsTried}converged; finalLambda=${imageFit.finalLambda.toExponential(3)}; centerRayDelta=${frozenCardFrame.centerRayDeltaDeg.toFixed(6)}deg; sameFrozenFrame=true; inputQuality=${inputQuality}; virtualCorners=false; independentEdgeU=false; lineFitAffectsPose=false; HitUsedAsCorner=false; DepthUsedAsCorner=false; rigidDimensionsFixed=true; robustLoss=none; outlierQC=deterministic-4-of-5; qualityThresholds=provisional; correctionApplied=false; diagnosticOnly=true`);
+  if(el.cardFreezeTapState) el.cardFreezeTapState.textContent='20/20 taps complete. Projected-line rigid pose calculated directly from active image points; no virtual corners.';
   drawFrozenCardFrame(); updateCalibrationUI(); updateDistanceUI();
 }
 
@@ -4742,7 +4773,7 @@ function freezeCardFrame(){
   if(el.cardFreezeTapState) el.cardFreezeTapState.textContent='TOP sample 1/5: tap five separated points along the straight segment; avoid both corners.';
   drawFrozenCardFrame();
   const age=Math.max(0,performance.now()-g.time),y0=0.5-0.5*g.aspect,y1=0.5+0.5*g.aspect;
-  log(`CARD FREEZE FRAME #${frozenCardFrame.frameIndex}: source=RawCamera-center-square-512; camera=${g.cameraWidth}x${g.cameraHeight}; aspect=${g.aspect.toFixed(6)}; frame=${g.frame}; sourceAge=${age.toFixed(1)}ms; viewUvRange=x[0..1],y[${y0.toFixed(6)}..${y1.toFixed(6)}]; centerRayDelta=${frozenCardFrame.centerRayDeltaDeg.toFixed(6)}deg; mapping=frozen source pixel -> aligned XRView normalized UV -> projection ray; target=${calibrationTargetFrozen.widthMm.toFixed(2)}x${calibrationTargetFrozen.heightMm.toFixed(2)}mm; edgeOrder=TOP,RIGHT,BOTTOM,LEFT; tapsPerEdge=${CARD_EDGE_TAPS}; totalTaps=20; lineRmsHardMax=${CARD_EDGE_LINE_RMS_MAX_PX.toFixed(1)}px; minSpan=${CARD_EDGE_MIN_SPAN_PX.toFixed(1)}px; outlierQC=4-of-5(triggerRms>${CARD_EDGE_OUTLIER_TRIGGER_RMS_PX.toFixed(1)}px,remainRms<=${CARD_EDGE_OUTLIER_REMAIN_RMS_MAX_PX.toFixed(1)}px,excludedResidual>=${CARD_EDGE_OUTLIER_MIN_RESIDUAL_PX.toFixed(1)}px,ratio<=${CARD_EDGE_OUTLIER_MAX_RMS_RATIO.toFixed(2)}); virtualCorners=false; directActiveRayFit=true; measurementLock=true; HitUsedAsCorner=false; DepthUsedAsCorner=false`);
+  log(`CARD FREEZE FRAME #${frozenCardFrame.frameIndex}: source=RawCamera-center-square-512; camera=${g.cameraWidth}x${g.cameraHeight}; aspect=${g.aspect.toFixed(6)}; frame=${g.frame}; sourceAge=${age.toFixed(1)}ms; viewUvRange=x[0..1],y[${y0.toFixed(6)}..${y1.toFixed(6)}]; centerRayDelta=${frozenCardFrame.centerRayDeltaDeg.toFixed(6)}deg; mapping=frozen source pixel -> aligned XRView normalized UV -> projection ray; target=${calibrationTargetFrozen.widthMm.toFixed(2)}x${calibrationTargetFrozen.heightMm.toFixed(2)}mm; edgeOrder=TOP,RIGHT,BOTTOM,LEFT; tapsPerEdge=${CARD_EDGE_TAPS}; totalTaps=20; lineRmsHardMax=${CARD_EDGE_LINE_RMS_MAX_PX.toFixed(1)}px; minSpan=${CARD_EDGE_MIN_SPAN_PX.toFixed(1)}px; outlierQC=4-of-5(triggerRms>${CARD_EDGE_OUTLIER_TRIGGER_RMS_PX.toFixed(1)}px,remainRms<=${CARD_EDGE_OUTLIER_REMAIN_RMS_MAX_PX.toFixed(1)}px,excludedResidual>=${CARD_EDGE_OUTLIER_MIN_RESIDUAL_PX.toFixed(1)}px,ratio<=${CARD_EDGE_OUTLIER_MAX_RMS_RATIO.toFixed(2)}); virtualCorners=false; projectedLineFit=true; measurementLock=true; HitUsedAsCorner=false; DepthUsedAsCorner=false`);
   if(el.xrHint) el.xrHint.textContent='Frozen A4 frame captured. Tap TOP five times across its straight section; avoid corners.';
   updateCalibrationUI(); updateDistanceUI();
 }
@@ -5554,7 +5585,7 @@ function onXRFrame(time,frame){
     }
   }
 
-  // Phase 4.29 calibration uses one frozen Raw Camera frame and 20 manual edge samples.
+  // Phase 4.30 calibration uses one frozen Raw Camera frame and 20 manual edge samples; pose uses image-point-to-projected-edge residuals.
   // No live per-corner auto-dwell runs here; Hit/Depth remain independent diagnostics.
 
   const layer = session.renderState.baseLayer;
