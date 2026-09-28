@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<title>AR DISTANCE LAB - Phase 4.22</title>
+<title>AR DISTANCE LAB - Phase 4.23</title>
 <style>
 :root{
   color-scheme:dark;
@@ -114,7 +114,7 @@ padding:10px;pointer-events:auto}
 <body>
 <main>
 <h1>AR DISTANCE LAB</h1>
-<p class="sub">Phase 4.22 — Known Rectangle Ray Reconstruction</p>
+<p class="sub">Phase 4.23 — Rigid Rectangle Pose Reconstruction</p>
 
 <section class="card">
 <h2>STATUS</h2>
@@ -257,7 +257,7 @@ padding:10px;pointer-events:auto}
 <section class="card">
 <h2>KNOWN PLANAR TARGET / CARD CALIBRATION</h2>
 <p class="note">
-診断専用です。既定値は ID-1 形状 85.60 × 53.98 mm。カードを固定し、TL（左上）へ中央＋を合わせて START CARD AUTO を1回だけ押します。TL → TR → BR → BL の順に、約0.65秒のDwell中に複数フレームのViewer Ray（カメラ原点＋中心視線）を収集し、方向を平均化して手振れを吸収します。4本のRayと既知の長方形寸法だけから各Ray上の深度を最小二乗復元します。Hit Test座標とDepthは初期値・比較診断に限定し、カード四隅の正式入力には使いません。校正中はA/B距離計測をロックします。補正係数はまだ適用しません。
+診断専用です。既定値は ID-1 形状 85.60 × 53.98 mm。カードを固定し、TL（左上）へ中央＋を合わせて START CARD AUTO を1回だけ押します。TL → TR → BR → BL の順に、約0.33秒の短い安定区間だけViewer Ray（カメラ原点＋中心視線）を収集します。途中でRayがMOVINGになった場合は、それまでの候補サンプルを即時破棄します。4本のRayに対し、既知寸法の剛体長方形を位置XYZ＋姿勢3軸の6自由度で直接フィットします。幅・高さ・直角・平面性はモデル側で固定し、各四隅と対応Rayの距離を最小化します。Hit Test座標とDepthは初期値・比較診断に限定し、カード四隅の正式入力には使いません。校正中はA/B距離計測をロックします。補正係数はまだ適用しません。
 </p>
 <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
   <label for="calibrationWidthMm">Width</label>
@@ -270,36 +270,36 @@ padding:10px;pointer-events:auto}
 <div class="sweepGrid">
   <div class="cell">Calibration sequence</div><div class="cell calResult" id="calibrationSequenceState">0 / 4 — next TL</div>
   <div class="cell">Auto capture</div><div class="cell calResult" id="calibrationAutoState">READY — aim TL, then START CARD AUTO</div>
-  <div class="cell">Dwell</div><div class="cell" id="calibrationDwellState">0 / 650 ms</div>
+  <div class="cell">Stable hold</div><div class="cell" id="calibrationDwellState">0 / 325 ms</div>
   <div class="cell">Target</div><div class="cell" id="calibrationTargetState">85.60 × 53.98 mm</div>
-  <div class="cell">Ray-fit top / bottom width</div><div class="cell" id="calibrationWidthState">—</div>
-  <div class="cell">Ray-fit left / right height</div><div class="cell" id="calibrationHeightState">—</div>
-  <div class="cell">Ray-fit diagonals</div><div class="cell" id="calibrationDiagonalState">—</div>
-  <div class="cell">Ray-fit mean width error</div><div class="cell" id="calibrationWidthErrorState">—</div>
-  <div class="cell">Ray-fit mean height error</div><div class="cell" id="calibrationHeightErrorState">—</div>
-  <div class="cell">Ray-fit constraint RMS</div><div class="cell" id="calibrationScaleState">—</div>
-  <div class="cell">Ray-fit max constraint residual</div><div class="cell" id="calibrationScaleSpreadState">—</div>
-  <div class="cell">Solved corner depth range</div><div class="cell" id="calibrationScaleResidualState">—</div>
-  <div class="cell">Ray-fit max corner-angle error</div><div class="cell" id="calibrationAngleState">—</div>
-  <div class="cell">Ray-fit BR plane residual</div><div class="cell" id="calibrationPlaneState">—</div>
+  <div class="cell">Corner → Ray miss TL / TR</div><div class="cell" id="calibrationWidthState">—</div>
+  <div class="cell">Corner → Ray miss BR / BL</div><div class="cell" id="calibrationHeightState">—</div>
+  <div class="cell">Corner ray parameters TL / TR / BR / BL</div><div class="cell" id="calibrationDiagonalState">—</div>
+  <div class="cell">Rigid-pose Ray RMS</div><div class="cell" id="calibrationWidthErrorState">—</div>
+  <div class="cell">Rigid-pose max Ray miss</div><div class="cell" id="calibrationHeightErrorState">—</div>
+  <div class="cell">Pose quality</div><div class="cell" id="calibrationScaleState">—</div>
+  <div class="cell">Optimizer / seed</div><div class="cell" id="calibrationScaleSpreadState">—</div>
+  <div class="cell">Solved ray-parameter range</div><div class="cell" id="calibrationScaleResidualState">—</div>
+  <div class="cell">Rigid rectangle geometry</div><div class="cell" id="calibrationAngleState">—</div>
+  <div class="cell">Pose center / normal</div><div class="cell" id="calibrationPlaneState">—</div>
   <div class="cell">Legacy Hit geometry (diagnostic)</div><div class="cell" id="calibrationDepthState">—</div>
-  <div class="cell">Role</div><div class="cell" id="calibrationRoleState">RAY FIT DIAGNOSTIC — no correction</div>
+  <div class="cell">Role</div><div class="cell" id="calibrationRoleState">RIGID POSE DIAGNOSTIC — no correction</div>
 </div>
 <div class="actions" style="margin-top:10px">
   <button type="button" id="calibrationResetBtn">RESET CARD CAL</button>
 </div>
-<pre id="calibrationText" style="margin-top:10px;max-height:180px">CARD RAY AUTO: aim TL at the center cross, then press START CARD AUTO once.</pre>
+<pre id="calibrationText" style="margin-top:10px;max-height:180px">CARD RIGID AUTO: aim TL at the center cross, then press START CARD AUTO once.</pre>
 </section>
 
 <section class="card">
-<h2>PHASE 4.22 TEST PROCEDURE</h2>
+<h2>PHASE 4.23 TEST PROCEDURE</h2>
 <ol class="procedure">
   <li>85.60 × 53.98 mm のカード形状ターゲットを平らで動かない面に固定します。</li>
   <li>START AR後、中央＋をTLへ合わせ、START CARD AUTOを1回だけ押します。校正中はA/B測距を自動ロックします。</li>
-  <li>TL → TR → BR → BLの表示に従って中央＋を角へ移動します。Dwell中はViewer Rayを複数フレーム収集するため、完全静止ではなく「角を外さない程度」に保持してください。</li>
-  <li>角の切替判定はHit座標の移動量ではなく、前回Rayからの視線角度変化で行います。Hitの環境幾何ジャンプはカード位置判定に使いません。</li>
-  <li>4点取得後、既知長方形の6距離拘束（4辺＋2対角）に最も一致する各Ray上の深度を数値的に復元し、RMS / 最大残差 / 復元幅・高さ / 平面性を表示します。</li>
-  <li>ログの CARD RAY POINT / CARD RAY FIT SUMMARY を共有してください。A/B測距と20 / 50 / 100 cm sweepは今回不要です。</li>
+  <li>TL → TR → BR → BLの表示に従って中央＋を角へ移動します。約0.33秒だけ角へ合わせればよく、MOVINGを検出すると候補サンプルはその場で破棄して取り直します。</li>
+  <li>各角の確定直前に、Ray角度spread ≤ 0.60°、RMS ≤ 0.35°、カメラ原点spread ≤ 4 mm、サンプル数・時間幅を再検査します。不適合なら自動確定しません。</li>
+  <li>4点取得後、85.60 × 53.98 mm・90°・同一平面を固定した剛体長方形を6自由度で各Viewer Rayへ直接フィットします。評価値は四隅からRayまでのRMS / 最大距離です。</li>
+  <li>ログの CARD RIGID POINT / CARD RIGID FIT SUMMARY を共有してください。A/B測距と20 / 50 / 100 cm sweepは今回不要です。</li>
 </ol>
 </section>
 
@@ -313,7 +313,7 @@ padding:10px;pointer-events:auto}
 </section>
 
 <section class="card note">
-Phase 4.22でも通常の正式単発距離値はimmutable Hit-Hitのままです。ただしカード校正を開始するとA/B測距はRESET CARDまたはEND ARまでロックします。カード校正ではHit座標を四隅として使用せず、Dwell中に集約したViewer Rayと既知寸法から長方形を復元します。MAP integrityは座標再配置を検出する単発測定ゲートとして維持します。Depth 3×3 medianから復元したA-B距離との差 |Hit-Hit − DepthMedian| は、&lt;5 mm = AGREE、5〜15 mm = WARN、15 mm以上 = DIVERGEDとして記録しますが、正式距離の補正・拒否には使いません。
+Phase 4.23でも通常の正式単発距離値はimmutable Hit-Hitのままです。ただしカード校正を開始するとA/B測距はRESET CARDまたはEND ARまでロックします。カード校正ではHit座標を四隅として使用せず、短時間の安定Viewer Rayと既知寸法から剛体長方形の6自由度姿勢を復元します。MAP integrityは座標再配置を検出する単発測定ゲートとして維持します。Depth 3×3 medianから復元したA-B距離との差 |Hit-Hit − DepthMedian| は、&lt;5 mm = AGREE、5〜15 mm = WARN、15 mm以上 = DIVERGEDとして記録しますが、正式距離の補正・拒否には使いません。
 従来のHit-Hitコンセンサスは「再現性」の診断として残します。既知寸法に対する正しさ（accuracy）とは分離して扱います。近接幅は暫定 max(5 mm, クラスタ中央値の1%)、必要メンバー数はその時点の有効試行数に対する厳密多数派です。
 HIT ENTITY SNAPSHOT、CENTER ALIGN CHECK、MAP integrity、Hit Test直前0.3秒のSTABLE / MOVING warning-onlyは継続します。
 </section>
@@ -435,16 +435,20 @@ let raf = 0;
 let latestHitMatrix = null;
 let latestHitPoint = null;
 
-// Phase 4.22: known-rectangle reconstruction from robust center Viewer Rays.
+// Phase 4.23: rigid known-rectangle pose reconstruction from robust center Viewer Rays.
 const CALIBRATION_CORNERS = ['TL','TR','BR','BL'];
 const DEFAULT_CALIBRATION_WIDTH_MM = 85.60;
 const DEFAULT_CALIBRATION_HEIGHT_MM = 53.98;
-const CALIBRATION_DWELL_MS = 650;
-const CALIBRATION_MOVING_GRACE_MS = 350;
+const CALIBRATION_DWELL_MS = 325;
+const CALIBRATION_MOVING_GRACE_MS = 0;
 const CALIBRATION_INITIAL_ARM_DELAY_MS = 700;
 const CALIBRATION_TRANSITION_GUARD_MS = 300;
 const CALIBRATION_RAY_STABILITY_WINDOW_MS = 300;
 const CALIBRATION_RAY_STABLE_MAX_DEG = 0.60;
+const CALIBRATION_RAY_FINAL_RMS_MAX_DEG = 0.35;
+const CALIBRATION_RAY_FINAL_ORIGIN_SPREAD_M = 0.004;
+const CALIBRATION_RAY_FINAL_MIN_SAMPLES = 7;
+const CALIBRATION_RAY_FINAL_MIN_SPAN_MS = 240;
 const CALIBRATION_TRANSITION_MIN_DEG = 0.80;
 const CALIBRATION_RAY_HISTORY_MAX_MS = 700;
 let calibrationPoints = {};
@@ -832,7 +836,7 @@ function logHitABComparison(){
   return comparison;
 }
 
-// Phase 4.22 inherited from Phase 4.19: formal single-shot candidate remains frozen at Point B capture; repeated acquisitions form the consensus.
+// Phase 4.23 inherited from Phase 4.19: formal single-shot candidate remains frozen at Point B capture; repeated acquisitions form the consensus.
 let frozenMeasurement = null;
 let sessionFrozenMeasurements = [];
 let lastAAnchorPoseTime = null;
@@ -1085,7 +1089,7 @@ let qualityHistory = [];
 let lastQualitySampleTime = -Infinity;
 let latestHitDistance = null;
 
-// Phase 4.22 inherited from Phase 4.19: Phase 4.16 Depth 3D method retained.
+// Phase 4.23 inherited from Phase 4.19: Phase 4.16 Depth 3D method retained.
 // Depth never replaces/corrects or rejects the committed Hit-Hit value. It is agreement diagnostics only.
 const DEPTH_GRID = 3;
 const DEPTH_RADIUS = 0.01; // compact local region around projected Hit / screen center
@@ -2287,7 +2291,7 @@ function assessDepthDistanceCrossCheck(){
 
 function applyDepthDistanceCrossCheck(){
   const q=assessDepthDistanceCrossCheck();
-  // Phase 4.22 inherited from Phase 4.19: rename the >=15 mm state for clarity. This is diagnostic only.
+  // Phase 4.23 inherited from Phase 4.19: rename the >=15 mm state for clarity. This is diagnostic only.
   if(q.state==='INVALID') q.state='DIVERGED';
   lastDepthAgreement=q;
   const cls=q.state==='AGREE'||q.state==='PASS'?'ok':q.state==='WARN'?'warn':q.state==='DIVERGED'?'warn':'warn';
@@ -2299,7 +2303,7 @@ function applyDepthDistanceCrossCheck(){
 }
 
 function combineQualityGates(mapIntegrity,depthDiagnostic){
-  // Phase 4.22 inherited from Phase 4.19: only MAP can reject a single-shot measurement.
+  // Phase 4.23 inherited from Phase 4.19: only MAP can reject a single-shot measurement.
   // Depth agreement is deliberately excluded from the commit gate because the
   // previous sweep proved that Hit and Depth can agree while both are wrong.
   let state='PASS';
@@ -3858,10 +3862,10 @@ function calibrationRayWindowStats(time){
   const cutoff=time-CALIBRATION_RAY_STABILITY_WINDOW_MS;
   const samples=calibrationRayHistory.filter(s=>s.time>=cutoff);
   const agg=robustRayFromSamples(samples);
-  if(!agg) return {state:'WAITING',n:0,aggregate:null};
+  if(!agg) return {state:'WAITING',n:0,aggregate:null,samples:[]};
   const enough=samples.length>=5;
   const stable=enough && Number.isFinite(agg.angularSpreadDeg) && agg.angularSpreadDeg<=CALIBRATION_RAY_STABLE_MAX_DEG;
-  return {state:stable?'STABLE':'MOVING',n:samples.length,aggregate:agg};
+  return {state:stable?'STABLE':'MOVING',n:samples.length,aggregate:agg,samples};
 }
 
 function projectPointToRayParameter(ray,p){
@@ -3955,161 +3959,250 @@ function solveLinearSystem(A,b){
   return M.map(row=>row[n]);
 }
 
-function cardPointsFromRayDepths(rays,depths){
-  const out={};
-  CALIBRATION_CORNERS.forEach((c,i)=>out[c]=rayPoint(rays[c],depths[i]));
-  return out;
+function rigidCardLocalCorners(target){
+  const hw=target.widthM/2, hh=target.heightM/2;
+  return {
+    TL:{x:-hw,y: hh,z:0}, TR:{x: hw,y: hh,z:0},
+    BR:{x: hw,y:-hh,z:0}, BL:{x:-hw,y:-hh,z:0}
+  };
 }
 
-function cardConstraintResiduals(rays,depths,target){
-  const p=cardPointsFromRayDepths(rays,depths);
+function eulerRotationMatrix(rx,ry,rz){
+  const sx=Math.sin(rx),cx=Math.cos(rx),sy=Math.sin(ry),cy=Math.cos(ry),sz=Math.sin(rz),cz=Math.cos(rz);
   return [
-    distance3(p.TL,p.TR)-target.widthM,
-    distance3(p.BL,p.BR)-target.widthM,
-    distance3(p.TL,p.BL)-target.heightM,
-    distance3(p.TR,p.BR)-target.heightM,
-    distance3(p.TL,p.BR)-target.diagM,
-    distance3(p.TR,p.BL)-target.diagM
+    cz*cy, cz*sy*sx-sz*cx, cz*sy*cx+sz*sx,
+    sz*cy, sz*sy*sx+cz*cx, sz*sy*cx-cz*sx,
+    -sy,   cy*sx,            cy*cx
   ];
 }
 
-function optimizeRayDepths(rays,target,seed){
-  let x=seed.map(v=>Math.max(0.05,Math.min(5,Number.isFinite(v)?v:0.7)));
-  let lambda=1e-3;
-  let bestX=[...x];
-  let r=cardConstraintResiduals(rays,x,target);
-  let bestCost=r.reduce((a,v)=>a+v*v,0);
-  let iterations=0;
-  for(let iter=0;iter<90;iter++){
-    iterations=iter+1;
-    r=cardConstraintResiduals(rays,x,target);
-    const cost=r.reduce((a,v)=>a+v*v,0);
-    const eps=2e-4;
-    const J=Array.from({length:r.length},()=>Array(4).fill(0));
-    for(let j=0;j<4;j++){
-      const xp=[...x]; xp[j]=Math.min(5,xp[j]+eps);
-      const rp=cardConstraintResiduals(rays,xp,target);
-      const dx=xp[j]-x[j] || eps;
-      for(let i=0;i<r.length;i++) J[i][j]=(rp[i]-r[i])/dx;
-    }
-    const A=Array.from({length:4},()=>Array(4).fill(0));
-    const b=Array(4).fill(0);
-    for(let i=0;i<r.length;i++){
-      for(let j=0;j<4;j++){
-        b[j]-=J[i][j]*r[i];
-        for(let k=0;k<4;k++) A[j][k]+=J[i][j]*J[i][k];
-      }
-    }
-    for(let j=0;j<4;j++) A[j][j]+=lambda;
-    const delta=solveLinearSystem(A,b);
-    if(!delta) break;
-    const cand=x.map((v,j)=>Math.max(0.05,Math.min(5,v+delta[j])));
-    const rr=cardConstraintResiduals(rays,cand,target);
-    const cc=rr.reduce((a,v)=>a+v*v,0);
-    if(cc<cost){
-      x=cand;
-      lambda=Math.max(1e-8,lambda*0.35);
-      if(cc<bestCost){ bestCost=cc; bestX=[...cand]; }
-      if(Math.hypot(...delta)<1e-7) break;
-    }else{
-      lambda=Math.min(1e6,lambda*5);
-    }
-  }
-  const residuals=cardConstraintResiduals(rays,bestX,target);
-  return {depths:bestX,residuals,cost:residuals.reduce((a,v)=>a+v*v,0),iterations};
+function rotateLocalPoint(R,p){
+  return {
+    x:R[0]*p.x+R[1]*p.y+R[2]*p.z,
+    y:R[3]*p.x+R[4]*p.y+R[5]*p.z,
+    z:R[6]*p.x+R[7]*p.y+R[8]*p.z
+  };
 }
 
-function fitKnownRectangleFromRays(points,target){
+function rigidPoseCorners(params,target){
+  const [cx,cy,cz,rx,ry,rz]=params;
+  const R=eulerRotationMatrix(rx,ry,rz);
+  const local=rigidCardLocalCorners(target);
+  const corners={};
+  for(const c of CALIBRATION_CORNERS){
+    const q=rotateLocalPoint(R,local[c]);
+    corners[c]={x:cx+q.x,y:cy+q.y,z:cz+q.z};
+  }
+  return {corners,R,center:{x:cx,y:cy,z:cz},normal:{x:R[2],y:R[5],z:R[8]}};
+}
+
+function closestRayMetrics(ray,p){
+  if(!ray||!p) return null;
+  const op=vectorBetween(ray.origin,p);
+  const t=dot3(op,ray.direction);
+  const q=rayPoint(ray,t);
+  const e=vectorBetween(q,p);
+  return {t,closest:q,error:e,distance:norm3(e)};
+}
+
+function rigidPoseResidualVector(rays,params,target){
+  const pose=rigidPoseCorners(params,target);
+  const r=[];
+  for(const c of CALIBRATION_CORNERS){
+    const m=closestRayMetrics(rays[c],pose.corners[c]);
+    if(!m) return Array(16).fill(10);
+    // 3-D point-to-line residual; rank is two because the along-ray component vanishes.
+    r.push(m.error.x,m.error.y,m.error.z);
+    // Keep the physical corner in front of its capture camera.
+    r.push(Math.max(0,0.03-m.t)*4);
+  }
+  return r;
+}
+
+function costOfResiduals(r){ return r.reduce((a,v)=>a+v*v,0); }
+
+function rigidPoseFromApproxCorners(approx,target){
+  const pts=CALIBRATION_CORNERS.map(c=>approx[c]).filter(Boolean);
+  if(pts.length!==4) return null;
+  const center={
+    x:pts.reduce((a,p)=>a+p.x,0)/4,
+    y:pts.reduce((a,p)=>a+p.y,0)/4,
+    z:pts.reduce((a,p)=>a+p.z,0)/4
+  };
+  const xRaw=add3(vectorBetween(approx.TL,approx.TR),vectorBetween(approx.BL,approx.BR));
+  const yRaw=add3(vectorBetween(approx.BL,approx.TL),vectorBetween(approx.BR,approx.TR));
+  const xAxis=normalize3(xRaw);
+  if(!xAxis) return null;
+  const yProj=add3(yRaw,scale3(xAxis,-dot3(yRaw,xAxis)));
+  let yAxis=normalize3(yProj);
+  if(!yAxis) return null;
+  let zAxis=normalize3(cross3(xAxis,yAxis));
+  if(!zAxis) return null;
+  yAxis=normalize3(cross3(zAxis,xAxis));
+  const r00=xAxis.x,r10=xAxis.y,r20=xAxis.z;
+  const r21=yAxis.z,r22=zAxis.z;
+  const pitch=Math.asin(Math.max(-1,Math.min(1,-r20)));
+  const cp=Math.cos(pitch);
+  let roll,yaw;
+  if(Math.abs(cp)>1e-6){
+    roll=Math.atan2(r21,r22);
+    yaw=Math.atan2(r10,r00);
+  }else{
+    roll=0;
+    yaw=Math.atan2(-yAxis.x,yAxis.y);
+  }
+  return [center.x,center.y,center.z,roll,pitch,yaw];
+}
+
+function rigidSeedApproxFromRayParameters(points,rays,mode='hit'){
+  const ts=[];
+  for(const c of CALIBRATION_CORNERS){
+    const rec=points[c];
+    let t=null;
+    if(mode==='depth') t=projectPointToRayParameter(rays[c],rec?.depth?.localPoint);
+    if(mode==='hit') t=projectPointToRayParameter(rays[c],rec?.hit);
+    if(Number.isFinite(t)) ts.push(t);
+  }
+  const fallback=ts.length?median(ts):0.70;
+  const approx={};
+  for(const c of CALIBRATION_CORNERS){
+    const rec=points[c];
+    let t=null;
+    if(mode==='depth') t=projectPointToRayParameter(rays[c],rec?.depth?.localPoint);
+    if(mode==='hit') t=projectPointToRayParameter(rays[c],rec?.hit);
+    if(mode==='uniform' || !Number.isFinite(t)) t=fallback;
+    approx[c]=rayPoint(rays[c],Math.max(0.05,Math.min(5,t)));
+  }
+  return approx;
+}
+
+function optimizeRigidRectanglePose(rays,target,seed){
+  let x=[...seed];
+  let lambda=1e-3;
+  let r=rigidPoseResidualVector(rays,x,target);
+  let bestX=[...x], bestCost=costOfResiduals(r), iterations=0;
+  const eps=[1e-4,1e-4,1e-4,2e-4,2e-4,2e-4];
+  for(let iter=0;iter<100;iter++){
+    iterations=iter+1;
+    r=rigidPoseResidualVector(rays,x,target);
+    const cost=costOfResiduals(r);
+    const J=Array.from({length:r.length},()=>Array(6).fill(0));
+    for(let j=0;j<6;j++){
+      const xp=[...x]; xp[j]+=eps[j];
+      const rp=rigidPoseResidualVector(rays,xp,target);
+      for(let i=0;i<r.length;i++) J[i][j]=(rp[i]-r[i])/eps[j];
+    }
+    const A=Array.from({length:6},()=>Array(6).fill(0));
+    const b=Array(6).fill(0);
+    for(let i=0;i<r.length;i++){
+      for(let j=0;j<6;j++){
+        b[j]-=J[i][j]*r[i];
+        for(let k=0;k<6;k++) A[j][k]+=J[i][j]*J[i][k];
+      }
+    }
+    for(let j=0;j<6;j++) A[j][j]+=lambda;
+    const delta=solveLinearSystem(A,b);
+    if(!delta) break;
+    const cand=x.map((v,j)=>v+delta[j]);
+    // Limit one LM jump to keep numeric differentiation in a useful basin.
+    for(let j=0;j<3;j++) cand[j]=x[j]+Math.max(-0.20,Math.min(0.20,cand[j]-x[j]));
+    for(let j=3;j<6;j++) cand[j]=x[j]+Math.max(-0.35,Math.min(0.35,cand[j]-x[j]));
+    const rr=rigidPoseResidualVector(rays,cand,target);
+    const cc=costOfResiduals(rr);
+    if(cc<cost){
+      x=cand;
+      lambda=Math.max(1e-9,lambda*0.35);
+      if(cc<bestCost){bestCost=cc;bestX=[...cand];}
+      if(Math.hypot(...delta)<1e-7) break;
+    }else{
+      lambda=Math.min(1e8,lambda*6);
+    }
+  }
+  return {params:bestX,cost:bestCost,iterations};
+}
+
+function fitKnownRectangleRigidPose(points,target){
   const rays={};
   for(const c of CALIBRATION_CORNERS){
     const r=points[c]?.ray;
     if(!r?.origin||!r?.direction) return null;
     rays[c]={origin:r.origin,direction:r.direction};
   }
-  const initial=[];
-  for(const c of CALIBRATION_CORNERS){
-    const rec=points[c];
-    let t=projectPointToRayParameter(rays[c],rec.hit);
-    if(!Number.isFinite(t)) t=projectPointToRayParameter(rays[c],rec.depth?.localPoint);
-    initial.push(t);
+  const seedDefs=[];
+  for(const mode of ['hit','depth','uniform']){
+    const approx=rigidSeedApproxFromRayParameters(points,rays,mode);
+    const pose=rigidPoseFromApproxCorners(approx,target);
+    if(pose) seedDefs.push({label:`${mode}-rigid-seed`,params:pose});
   }
-  const valid=initial.filter(Number.isFinite);
-  const base=valid.length?median(valid):0.70;
-  const filled=initial.map(v=>Number.isFinite(v)?v:base);
-  const seeds=[
-    {label:'hit/depth-seed',v:filled},
-    {label:'uniform-0.55x',v:Array(4).fill(Math.max(0.05,base*0.55))},
-    {label:'uniform-0.75x',v:Array(4).fill(Math.max(0.05,base*0.75))},
-    {label:'uniform-1.00x',v:Array(4).fill(base)},
-    {label:'uniform-1.35x',v:Array(4).fill(Math.min(5,base*1.35))},
-    {label:'uniform-1.80x',v:Array(4).fill(Math.min(5,base*1.80))}
-  ];
+  // Add modest orientation perturbations around the best geometric seeds so LM is not tied to one local basin.
+  const expanded=[];
+  for(const sd of seedDefs){
+    expanded.push(sd);
+    for(const dz of [-0.20,0.20]){ const p=[...sd.params]; p[5]+=dz; expanded.push({label:`${sd.label}/yaw${dz>0?'+':'-'}0.20`,params:p}); }
+    for(const dy of [-0.16,0.16]){ const p=[...sd.params]; p[4]+=dy; expanded.push({label:`${sd.label}/pitch${dy>0?'+':'-'}0.16`,params:p}); }
+  }
   let best=null;
-  for(const seed of seeds){
-    const fit=optimizeRayDepths(rays,target,seed.v);
-    if(!best || fit.cost<best.cost) best={...fit,seed:seed.label};
+  for(const sd of expanded){
+    const fit=optimizeRigidRectanglePose(rays,target,sd.params);
+    if(!best || fit.cost<best.cost) best={...fit,seed:sd.label};
   }
   if(!best) return null;
-  const corners=cardPointsFromRayDepths(rays,best.depths);
-  const geometry=analyzeCalibrationGeometry(Object.fromEntries(CALIBRATION_CORNERS.map(c=>[c,{p:corners[c]}])),r=>r?.p,target);
-  const rms=Math.sqrt(best.residuals.reduce((a,v)=>a+v*v,0)/best.residuals.length);
-  const maxResidual=Math.max(...best.residuals.map(Math.abs));
-  const depthMin=Math.min(...best.depths), depthMax=Math.max(...best.depths);
-  const center={
-    x:CALIBRATION_CORNERS.reduce((a,c)=>a+corners[c].x,0)/4,
-    y:CALIBRATION_CORNERS.reduce((a,c)=>a+corners[c].y,0)/4,
-    z:CALIBRATION_CORNERS.reduce((a,c)=>a+corners[c].z,0)/4
-  };
-  const top=vectorBetween(corners.TL,corners.TR);
-  const left=vectorBetween(corners.TL,corners.BL);
-  const normal=normalize3(cross3(top,left));
-  return {...best,corners,geometry,rms,maxResidual,depthMin,depthMax,center,normal};
+  const pose=rigidPoseCorners(best.params,target);
+  const misses={}, rayParams=[];
+  for(const c of CALIBRATION_CORNERS){
+    const m=closestRayMetrics(rays[c],pose.corners[c]);
+    misses[c]=m?.distance??null;
+    rayParams.push(m?.t??null);
+  }
+  if(!rayParams.every(Number.isFinite)) return null;
+  const missVals=CALIBRATION_CORNERS.map(c=>misses[c]);
+  const rayRms=Math.sqrt(missVals.reduce((a,v)=>a+v*v,0)/missVals.length);
+  const rayMax=Math.max(...missVals);
+  const geometry=analyzeCalibrationGeometry(Object.fromEntries(CALIBRATION_CORNERS.map(c=>[c,{p:pose.corners[c]}])),r=>r?.p,target);
+  const depthMin=Math.min(...rayParams), depthMax=Math.max(...rayParams);
+  const quality=(rayRms<=0.002 && rayMax<=0.004)?'GOOD':(rayRms<=0.005 && rayMax<=0.010)?'WARN':'POOR';
+  return {...best,...pose,geometry,misses,rayParams,rayRms,rayMax,depthMin,depthMax,quality};
 }
 
 function finalizeCalibration(){
   const target=calibrationTargetFrozen || calibrationTargetDimensions();
-  const rayFit=fitKnownRectangleFromRays(calibrationPoints,target);
+  const rayFit=fitKnownRectangleRigidPose(calibrationPoints,target);
   const hit=analyzeCalibrationGeometry(calibrationPoints,r=>r?.hit,target);
   const depth=analyzeCalibrationGeometry(calibrationPoints,r=>r?.depth?.localPoint,target);
   calibrationRunIndex++;
   calibrationResult={run:calibrationRunIndex,target,rayFit,hit,depth};
   updateCalibrationUI();
   if(!rayFit?.geometry){
-    log(`CARD RAY FIT SUMMARY #${calibrationRunIndex}: FAILED — missing/invalid ray reconstruction; correctionApplied=false; diagnosticOnly=true`);
+    log(`CARD RIGID FIT SUMMARY #${calibrationRunIndex}: FAILED — missing/invalid rigid-pose reconstruction; correctionApplied=false; diagnosticOnly=true`);
     return;
   }
 
-  const g=rayFit.geometry;
-  const fmtEdge=(v,e)=>`${(v*1000).toFixed(3)} mm (${signedMm(e)})`;
-  const depthsText=CALIBRATION_CORNERS.map((c,i)=>`${c}=${rayFit.depths[i].toFixed(6)} m`).join(',');
+  const missText=CALIBRATION_CORNERS.map(c=>`${c}=${(rayFit.misses[c]*1000).toFixed(3)} mm`).join(',');
+  const tText=CALIBRATION_CORNERS.map((c,i)=>`${c}=${rayFit.rayParams[i].toFixed(6)} m`).join(',');
   const legacyHit=hit?`W=${(hit.widthMean*1000).toFixed(1)} mm,H=${(hit.heightMean*1000).toFixed(1)} mm`:'n/a';
   log(
-    `CARD RAY FIT SUMMARY #${calibrationRunIndex}: target=${target.widthMm.toFixed(2)}x${target.heightMm.toFixed(2)} mm; `+
-    `solver=ray-depth LM multi-start; seed=${rayFit.seed}; iterations=${rayFit.iterations}; `+
-    `constraintRMS=${(rayFit.rms*1000).toFixed(3)} mm; maxConstraintResidual=${(rayFit.maxResidual*1000).toFixed(3)} mm; `+
-    `RayFit[top=${fmtEdge(g.top,g.top-target.widthM)}; bottom=${fmtEdge(g.bottom,g.bottom-target.widthM)}; `+
-    `left=${fmtEdge(g.left,g.left-target.heightM)}; right=${fmtEdge(g.right,g.right-target.heightM)}; `+
-    `diagTLBR=${fmtEdge(g.diag1,g.diag1-target.diagM)}; diagTRBL=${fmtEdge(g.diag2,g.diag2-target.diagM)}]; `+
-    `widthMean=${(g.widthMean*1000).toFixed(3)} mm(error=${signedMm(g.widthError)}); `+
-    `heightMean=${(g.heightMean*1000).toFixed(3)} mm(error=${signedMm(g.heightError)}); `+
-    `maxCornerAngleError=${g.maxAngleError.toFixed(3)} deg; BRplaneResidual=${(g.planeResidual*1000).toFixed(3)} mm; `+
-    `depths=[${depthsText}]; depthRange=${((rayFit.depthMax-rayFit.depthMin)*1000).toFixed(3)} mm; `+
-    `center=${fmtPoint(rayFit.center)}; normal=${rayFit.normal?fmtPoint(rayFit.normal):'n/a'}; legacyHit=${legacyHit}; `+
-    `HitUsedAsCorner=false; DepthUsedAsCorner=false; correctionApplied=false; diagnosticOnly=true`
+    `CARD RIGID FIT SUMMARY #${calibrationRunIndex}: target=${target.widthMm.toFixed(2)}x${target.heightMm.toFixed(2)} mm; `+
+    `solver=rigid-rectangle 6DOF LM multi-start; seed=${rayFit.seed}; iterations=${rayFit.iterations}; `+
+    `rayRMS=${(rayFit.rayRms*1000).toFixed(3)} mm; rayMax=${(rayFit.rayMax*1000).toFixed(3)} mm; quality=${rayFit.quality}; `+
+    `rayMiss=[${missText}]; rayT=[${tText}]; rayTRange=${((rayFit.depthMax-rayFit.depthMin)*1000).toFixed(3)} mm; `+
+    `RigidGeometry[W=${(rayFit.geometry.widthMean*1000).toFixed(3)} mm; H=${(rayFit.geometry.heightMean*1000).toFixed(3)} mm; `+
+    `maxCornerAngleError=${rayFit.geometry.maxAngleError.toFixed(6)} deg; planeResidual=${(rayFit.geometry.planeResidual*1000).toFixed(6)} mm]; `+
+    `center=${fmtPoint(rayFit.center)}; normal=${fmtPoint(rayFit.normal)}; legacyHit=${legacyHit}; `+
+    `HitUsedAsCorner=false; DepthUsedAsCorner=false; rigidDimensionsFixed=true; correctionApplied=false; diagnosticOnly=true`
   );
   calibrationAutoEnabled=false;
   calibrationDwellProgressMs=CALIBRATION_DWELL_MS;
   calibrationUnstableSince=null;
   calibrationDwellRaySamples=[];
-  set('calibrationAutoState','COMPLETE — RAY FIT READY','ok');
+  set('calibrationAutoState',`COMPLETE — RIGID POSE ${rayFit.quality}`,rayFit.quality==='GOOD'?'ok':rayFit.quality==='WARN'?'warn':'ng');
   set('calibrationDwellState',`${CALIBRATION_DWELL_MS} / ${CALIBRATION_DWELL_MS} ms`,'ok');
   if(el.calibrationDwellBar) el.calibrationDwellBar.style.width='100%';
   if(el.calibrationCaptureBtn){
     el.calibrationCaptureBtn.classList.remove('active','pending');
     el.calibrationCaptureBtn.textContent='CARD AUTO COMPLETE';
   }
-  if(el.calibrationOverlayText) el.calibrationOverlayText.textContent=`CARD RAY FIT COMPLETE #${calibrationRunIndex} — review summary / RESET CARD`;
-  if(el.xrHint) el.xrHint.textContent='Card ray reconstruction complete. A/B measurement remains locked until RESET CARD.';
+  if(el.calibrationOverlayText) el.calibrationOverlayText.textContent=`CARD RIGID FIT COMPLETE #${calibrationRunIndex} — ${rayFit.quality} / review summary`;
+  if(el.xrHint) el.xrHint.textContent='Rigid card-pose reconstruction complete. A/B measurement remains locked until RESET CARD.';
 }
 
 function updateCalibrationDwellDisplay(message,state='warn'){
@@ -4144,9 +4237,9 @@ function updateCalibrationUI(){
   }
 
   if(el.calibrationOverlayText && !calibrationCapturePending){
-    if(!next) el.calibrationOverlayText.textContent='CARD RAY AUTO: 4/4 — FIT COMPLETE';
-    else if(calibrationAutoEnabled) el.calibrationOverlayText.textContent=`CARD RAY AUTO: ${n}/4 — preparing ${next}`;
-    else el.calibrationOverlayText.textContent=`CARD RAY AUTO: ${n}/4 — aim ${next} at center ＋, then ${n?'RESUME':'START'} AUTO`;
+    if(!next) el.calibrationOverlayText.textContent='CARD RIGID AUTO: 4/4 — FIT COMPLETE';
+    else if(calibrationAutoEnabled) el.calibrationOverlayText.textContent=`CARD RIGID AUTO: ${n}/4 — preparing ${next}`;
+    else el.calibrationOverlayText.textContent=`CARD RIGID AUTO: ${n}/4 — aim ${next} at center ＋, then ${n?'RESUME':'START'} AUTO`;
   }
   if(el.calibrationCaptureBtn){
     el.calibrationCaptureBtn.disabled=!session || ending || !next || !!calibrationCapturePending || anchorCreationBusy;
@@ -4159,35 +4252,35 @@ function updateCalibrationUI(){
   if(el.calibrationResetOverlayBtn) el.calibrationResetOverlayBtn.disabled=!session || ending;
 
   const fit=calibrationResult?.rayFit;
-  const g=fit?.geometry;
   const hit=calibrationResult?.hit;
-  if(!g){
+  if(!fit?.geometry){
     for(const id of ['calibrationWidthState','calibrationHeightState','calibrationDiagonalState','calibrationWidthErrorState','calibrationHeightErrorState','calibrationScaleState','calibrationScaleSpreadState','calibrationScaleResidualState','calibrationAngleState','calibrationPlaneState','calibrationDepthState']) set(id,'—','');
     if(el.calibrationText){
-      el.calibrationText.textContent=`CARD RAY AUTO: ${n}/4 captured. ${next?`${calibrationAutoEnabled?'Follow the overlay; ray Dwell will average hand shake.':`Aim ${next} and ${n?'RESUME':'START'} CARD AUTO.`}`:'Waiting for ray fit.'}`;
+      el.calibrationText.textContent=`CARD RIGID AUTO: ${n}/4 captured. ${next?`${calibrationAutoEnabled?'Hold the corner briefly; MOVING resets the candidate window.':`Aim ${next} and ${n?'RESUME':'START'} CARD AUTO.`}`:'Waiting for rigid fit.'}`;
     }
     return;
   }
-  set('calibrationWidthState',`${(g.top*1000).toFixed(3)} / ${(g.bottom*1000).toFixed(3)} mm`,'ok');
-  set('calibrationHeightState',`${(g.left*1000).toFixed(3)} / ${(g.right*1000).toFixed(3)} mm`,'ok');
-  set('calibrationDiagonalState',`${(g.diag1*1000).toFixed(3)} / ${(g.diag2*1000).toFixed(3)} mm`,'ok');
-  set('calibrationWidthErrorState',signedMm(g.widthError),Math.abs(g.widthError)<=0.002?'ok':'warn');
-  set('calibrationHeightErrorState',signedMm(g.heightError),Math.abs(g.heightError)<=0.002?'ok':'warn');
-  set('calibrationScaleState',`${(fit.rms*1000).toFixed(3)} mm`,fit.rms<=0.002?'ok':fit.rms<=0.005?'warn':'ng');
-  set('calibrationScaleSpreadState',`${(fit.maxResidual*1000).toFixed(3)} mm`,fit.maxResidual<=0.003?'ok':fit.maxResidual<=0.008?'warn':'ng');
+  const m=fit.misses;
+  set('calibrationWidthState',`${(m.TL*1000).toFixed(3)} / ${(m.TR*1000).toFixed(3)} mm`,Math.max(m.TL,m.TR)<=0.004?'ok':'warn');
+  set('calibrationHeightState',`${(m.BR*1000).toFixed(3)} / ${(m.BL*1000).toFixed(3)} mm`,Math.max(m.BR,m.BL)<=0.004?'ok':'warn');
+  set('calibrationDiagonalState',fit.rayParams.map(v=>v.toFixed(3)).join(' / ')+' m','');
+  set('calibrationWidthErrorState',`${(fit.rayRms*1000).toFixed(3)} mm`,fit.rayRms<=0.002?'ok':fit.rayRms<=0.005?'warn':'ng');
+  set('calibrationHeightErrorState',`${(fit.rayMax*1000).toFixed(3)} mm`,fit.rayMax<=0.004?'ok':fit.rayMax<=0.010?'warn':'ng');
+  set('calibrationScaleState',fit.quality,fit.quality==='GOOD'?'ok':fit.quality==='WARN'?'warn':'ng');
+  set('calibrationScaleSpreadState',`LM ${fit.iterations} it / ${fit.seed}`,'');
   set('calibrationScaleResidualState',`${((fit.depthMax-fit.depthMin)*1000).toFixed(3)} mm (${fit.depthMin.toFixed(3)}..${fit.depthMax.toFixed(3)} m)`,'');
-  set('calibrationAngleState',`${g.maxAngleError.toFixed(3)}°`,g.maxAngleError<=3?'ok':'warn');
-  set('calibrationPlaneState',`${(g.planeResidual*1000).toFixed(3)} mm`,g.planeResidual<=0.003?'ok':'warn');
-  set('calibrationDepthState',hit?`W ${(hit.widthMean*1000).toFixed(1)} / H ${(hit.heightMean*1000).toFixed(1)} mm — not used`:'N/A — no Hit geometry','warn');
-  set('calibrationRoleState','RAY FIT DIAGNOSTIC — Hit/Depth not used as corners','ok');
+  set('calibrationAngleState',`${target.widthMm.toFixed(2)} × ${target.heightMm.toFixed(2)} mm / 90° fixed`,'ok');
+  set('calibrationPlaneState',`C ${fmtPoint(fit.center)} / N ${fmtPoint(fit.normal)}`,'');
+  set('calibrationDepthState',hit?`W ${(hit.widthMean*1000).toFixed(1)} / H ${(hit.heightMean*1000).toFixed(1)} mm — diagnostic only`:'N/A — no Hit geometry','warn');
+  set('calibrationRoleState','RIGID 6DOF POSE DIAGNOSTIC — no correction','ok');
   if(el.calibrationText){
     el.calibrationText.textContent=
-      `CARD RAY FIT #${calibrationResult.run}\n`+
-      `constraint RMS ${(fit.rms*1000).toFixed(3)} mm / max ${(fit.maxResidual*1000).toFixed(3)} mm\n`+
-      `width ${(g.widthMean*1000).toFixed(3)} mm / error ${signedMm(g.widthError)}\n`+
-      `height ${(g.heightMean*1000).toFixed(3)} mm / error ${signedMm(g.heightError)}\n`+
-      `depths ${CALIBRATION_CORNERS.map((c,i)=>`${c} ${fit.depths[i].toFixed(3)}m`).join(' / ')}\n`+
-      `max angle error ${g.maxAngleError.toFixed(3)}° / plane residual ${(g.planeResidual*1000).toFixed(3)} mm\n`+
+      `CARD RIGID FIT #${calibrationResult.run} — ${fit.quality}\n`+
+      `Ray RMS ${(fit.rayRms*1000).toFixed(3)} mm / max ${(fit.rayMax*1000).toFixed(3)} mm\n`+
+      `Ray miss ${CALIBRATION_CORNERS.map(c=>`${c} ${(fit.misses[c]*1000).toFixed(2)}mm`).join(' / ')}\n`+
+      `Ray t ${CALIBRATION_CORNERS.map((c,i)=>`${c} ${fit.rayParams[i].toFixed(3)}m`).join(' / ')}\n`+
+      `Rigid target ${target.widthMm.toFixed(2)} × ${target.heightMm.toFixed(2)} mm / rectangle constraints exact by model\n`+
+      `Center ${fmtPoint(fit.center)} / normal ${fmtPoint(fit.normal)}\n`+
       `Legacy Hit geometry ${hit?`W ${(hit.widthMean*1000).toFixed(1)} / H ${(hit.heightMean*1000).toFixed(1)} mm`:'N/A'}\n`+
       `DIAGNOSTIC ONLY — no correction applied.`;
   }
@@ -4227,7 +4320,7 @@ function toggleCalibrationAuto(){
     calibrationAutoEnabled=false;
     calibrationAutoArmedAt=null;
     resetCalibrationDwell();
-    log(`CARD RAY AUTO PAUSED: next=${corner}; captured=${calibrationCapturedCount()}/4; measurementLock=true`);
+    log(`CARD RIGID AUTO PAUSED: next=${corner}; captured=${calibrationCapturedCount()}/4; measurementLock=true`);
     updateCalibrationUI();
     return;
   }
@@ -4237,7 +4330,7 @@ function toggleCalibrationAuto(){
       resetMeasurement();
     }
     calibrationTargetFrozen=calibrationTargetDimensions();
-    log(`CARD RAY TARGET: nominal=${calibrationTargetFrozen.widthMm.toFixed(2)}x${calibrationTargetFrozen.heightMm.toFixed(2)} mm; order=TL,TR,BR,BL; captureMode=dwell-robust-center-viewer-ray; dwell=${CALIBRATION_DWELL_MS}ms; rayStableMax=${CALIBRATION_RAY_STABLE_MAX_DEG.toFixed(2)}deg; transitionMin=${CALIBRATION_TRANSITION_MIN_DEG.toFixed(2)}deg; HitUsedAsCorner=false; DepthUsedAsCorner=false; measurementLock=true; correctionApplied=false`);
+    log(`CARD RIGID TARGET: nominal=${calibrationTargetFrozen.widthMm.toFixed(2)}x${calibrationTargetFrozen.heightMm.toFixed(2)} mm; order=TL,TR,BR,BL; captureMode=short-stable-rigid-viewer-ray; dwell=${CALIBRATION_DWELL_MS}ms; rayStableMax=${CALIBRATION_RAY_STABLE_MAX_DEG.toFixed(2)}deg; finalRayRMSMax=${CALIBRATION_RAY_FINAL_RMS_MAX_DEG.toFixed(2)}deg; finalOriginSpreadMax=${(CALIBRATION_RAY_FINAL_ORIGIN_SPREAD_M*1000).toFixed(1)}mm; transitionMin=${CALIBRATION_TRANSITION_MIN_DEG.toFixed(2)}deg; HitUsedAsCorner=false; DepthUsedAsCorner=false; measurementLock=true; correctionApplied=false`);
   }
 
   calibrationAutoEnabled=true;
@@ -4251,7 +4344,7 @@ function toggleCalibrationAuto(){
   calibrationTransitionSatisfied=calibrationCapturedCount()===0 || !calibrationLastCapturedRay;
   set('calibrationAutoState',`RUNNING — next ${corner}`,'ok');
   if(el.xrHint) el.xrHint.textContent=`Card ray auto armed. Aim ${corner} at center ＋ and hold it on the corner.`;
-  log(`CARD RAY AUTO ARMED: next=${corner}; captured=${calibrationCapturedCount()}/4; initialDelay=${CALIBRATION_INITIAL_ARM_DELAY_MS}ms; transitionRequired=${calibrationTransitionSatisfied?'no':'yes'}; transitionAngle=${calibrationTransitionThresholdDeg.toFixed(2)} deg; measurementLock=true`);
+  log(`CARD RIGID AUTO ARMED: next=${corner}; captured=${calibrationCapturedCount()}/4; initialDelay=${CALIBRATION_INITIAL_ARM_DELAY_MS}ms; transitionRequired=${calibrationTransitionSatisfied?'no':'yes'}; transitionAngle=${calibrationTransitionThresholdDeg.toFixed(2)} deg; measurementLock=true`);
   updateCalibrationUI();
   updateDistanceUI();
 }
@@ -4266,14 +4359,14 @@ function updateCalibrationAutoDwell(time,viewerPose){
     calibrationDwellLastFrameTime=time;
     calibrationDwellProgressMs=0;
     calibrationDwellRaySamples=[];
-    updateCalibrationDwellDisplay(`CARD RAY AUTO: ${corner} — NO VIEWER RAY`, 'warn');
+    updateCalibrationDwellDisplay(`CARD RIGID AUTO: ${corner} — NO VIEWER RAY`, 'warn');
     return;
   }
 
   if(calibrationAutoArmedAt!==null && time-calibrationAutoArmedAt<CALIBRATION_INITIAL_ARM_DELAY_MS){
     calibrationDwellLastFrameTime=time;
     const remain=Math.max(0,CALIBRATION_INITIAL_ARM_DELAY_MS-(time-calibrationAutoArmedAt));
-    updateCalibrationDwellDisplay(`CARD RAY AUTO: ${corner} — settle after button (${Math.ceil(remain)} ms)`, 'warn');
+    updateCalibrationDwellDisplay(`CARD RIGID AUTO: ${corner} — settle after button (${Math.ceil(remain)} ms)`, 'warn');
     return;
   }
 
@@ -4289,13 +4382,13 @@ function updateCalibrationAutoDwell(time,viewerPose){
       calibrationDwellRaySamples=[];
       calibrationRayHistory=[{time,ray:currentRay}];
       calibrationUnstableSince=null;
-      log(`CARD RAY AUTO TRANSITION READY: next=${corner}; angle=${moved.toFixed(3)} deg; threshold=${threshold.toFixed(3)} deg; HitTransitionUsed=false`);
+      log(`CARD RIGID AUTO TRANSITION READY: next=${corner}; angle=${moved.toFixed(3)} deg; threshold=${threshold.toFixed(3)} deg; HitTransitionUsed=false`);
     }else{
       calibrationDwellLastFrameTime=time;
       calibrationDwellProgressMs=0;
       calibrationDwellRaySamples=[];
       calibrationUnstableSince=null;
-      updateCalibrationDwellDisplay(`CARD RAY AUTO: move to ${corner} — ${(moved??0).toFixed(2)} / ${threshold.toFixed(2)}°`, 'warn');
+      updateCalibrationDwellDisplay(`CARD RIGID AUTO: move to ${corner} — ${(moved??0).toFixed(2)} / ${threshold.toFixed(2)}°`, 'warn');
       set('calibrationAutoState',`MOVE TO ${corner} — ray angle gate`,'warn');
       return;
     }
@@ -4309,43 +4402,64 @@ function updateCalibrationAutoDwell(time,viewerPose){
 
   if(state==='STABLE'){
     calibrationUnstableSince=null;
-    calibrationDwellProgressMs=Math.min(CALIBRATION_DWELL_MS,calibrationDwellProgressMs+dt);
-    calibrationDwellRaySamples.push({time,ray:currentRay});
+    if(calibrationDwellRaySamples.length===0){
+      // Count the already-verified stability window toward the hold time. This keeps the human hold near ~0.3 s
+      // instead of requiring another full dwell after the 300 ms stability classifier has already passed.
+      calibrationDwellRaySamples=(stats.samples||[]).map(s=>({time:s.time,ray:s.ray}));
+    }else{
+      const last=calibrationDwellRaySamples.at(-1);
+      if(!last || last.time!==time) calibrationDwellRaySamples.push({time,ray:currentRay});
+    }
     if(calibrationDwellRaySamples.length>90) calibrationDwellRaySamples.shift();
+    const firstT=calibrationDwellRaySamples[0]?.time??time;
+    calibrationDwellProgressMs=Math.min(CALIBRATION_DWELL_MS,Math.max(0,time-firstT));
     const remain=Math.max(0,CALIBRATION_DWELL_MS-calibrationDwellProgressMs);
     const a=stats.aggregate;
     set('calibrationAutoState',`HOLD ${corner} — RAY STABLE ±${a.angularSpreadDeg.toFixed(2)}°`,'ok');
-    updateCalibrationDwellDisplay(`CARD RAY AUTO: ${corner} HOLD ${(remain/1000).toFixed(2)} s / avg ${calibrationDwellRaySamples.length}f`, 'ok');
+    updateCalibrationDwellDisplay(`CARD RIGID AUTO: ${corner} HOLD ${(remain/1000).toFixed(2)} s / ${calibrationDwellRaySamples.length}f`, 'ok');
   }else{
-    if(calibrationUnstableSince===null) calibrationUnstableSince=time;
-    const unstableFor=time-calibrationUnstableSince;
-    if(unstableFor>CALIBRATION_MOVING_GRACE_MS){
-      if(calibrationDwellProgressMs>0){
-        log(`CARD RAY AUTO DWELL RESET: corner=${corner}; unstableFor=${unstableFor.toFixed(0)} ms; previousProgress=${calibrationDwellProgressMs.toFixed(0)} ms; raySpread=${stats.aggregate?.angularSpreadDeg?.toFixed(3)??'n/a'} deg; state=${state}`);
-      }
-      calibrationDwellProgressMs=0;
-      calibrationDwellRaySamples=[];
-    }
-    const graceRemain=Math.max(0,CALIBRATION_MOVING_GRACE_MS-unstableFor);
+    const prevProgress=calibrationDwellProgressMs;
+    const prevSamples=calibrationDwellRaySamples.length;
     const spread=Number.isFinite(stats.aggregate?.angularSpreadDeg)?`${stats.aggregate.angularSpreadDeg.toFixed(2)}°`:'n/a';
-    set('calibrationAutoState',`${state} — ray hold paused; spread ${spread}`,'warn');
-    updateCalibrationDwellDisplay(`CARD RAY AUTO: ${corner} ${state} — ${graceRemain>0?`pause ${Math.ceil(graceRemain)} ms grace`:'re-acquire RAY STABLE'}`, 'warn');
+    if(prevProgress>0 || prevSamples>0){
+      log(`CARD RIGID CANDIDATE DISCARDED: corner=${corner}; reason=ray became ${state}; previousProgress=${prevProgress.toFixed(0)} ms; previousSamples=${prevSamples}; raySpread=${stats.aggregate?.angularSpreadDeg?.toFixed(3)??'n/a'} deg`);
+    }
+    calibrationDwellProgressMs=0;
+    calibrationDwellRaySamples=[];
+    calibrationUnstableSince=time;
+    set('calibrationAutoState',`${state} — candidate cleared; spread ${spread}`,'warn');
+    updateCalibrationDwellDisplay(`CARD RIGID AUTO: ${corner} ${state} — candidate cleared / re-acquire`, 'warn');
   }
 
   if(calibrationDwellProgressMs>=CALIBRATION_DWELL_MS && state==='STABLE'){
     const robustRay=robustRayFromSamples(calibrationDwellRaySamples);
     if(!robustRay) return;
+    const sampleSpan=calibrationDwellRaySamples.length>1 ? calibrationDwellRaySamples.at(-1).time-calibrationDwellRaySamples[0].time : 0;
+    const finalReasons=[];
+    if(robustRay.n<CALIBRATION_RAY_FINAL_MIN_SAMPLES) finalReasons.push(`samples ${robustRay.n}<${CALIBRATION_RAY_FINAL_MIN_SAMPLES}`);
+    if(sampleSpan<CALIBRATION_RAY_FINAL_MIN_SPAN_MS) finalReasons.push(`span ${sampleSpan.toFixed(0)}<${CALIBRATION_RAY_FINAL_MIN_SPAN_MS}ms`);
+    if(!Number.isFinite(robustRay.angularSpreadDeg)||robustRay.angularSpreadDeg>CALIBRATION_RAY_STABLE_MAX_DEG) finalReasons.push(`spread ${robustRay.angularSpreadDeg?.toFixed(3)??'n/a'}>${CALIBRATION_RAY_STABLE_MAX_DEG.toFixed(2)}deg`);
+    if(!Number.isFinite(robustRay.angularRmsDeg)||robustRay.angularRmsDeg>CALIBRATION_RAY_FINAL_RMS_MAX_DEG) finalReasons.push(`rms ${robustRay.angularRmsDeg?.toFixed(3)??'n/a'}>${CALIBRATION_RAY_FINAL_RMS_MAX_DEG.toFixed(2)}deg`);
+    if(!Number.isFinite(robustRay.originSpread)||robustRay.originSpread>CALIBRATION_RAY_FINAL_ORIGIN_SPREAD_M) finalReasons.push(`origin ${(robustRay.originSpread*1000)?.toFixed?.(3)??'n/a'}>${(CALIBRATION_RAY_FINAL_ORIGIN_SPREAD_M*1000).toFixed(1)}mm`);
+    if(finalReasons.length){
+      log(`CARD RIGID FINAL REJECT: corner=${corner}; ${finalReasons.join('; ')}; candidateDiscarded=true`);
+      calibrationDwellProgressMs=0;
+      calibrationDwellRaySamples=[];
+      calibrationRayHistory=[{time,ray:currentRay}];
+      updateCalibrationDwellDisplay(`CARD RIGID AUTO: ${corner} final check rejected — hold again`, 'warn');
+      return;
+    }
     calibrationCapturePending={
-      corner,requestedAt:time,captureMode:'dwell-robust-ray',dwellHeldMs:calibrationDwellProgressMs,
-      ray:robustRay,rayWindowStats:stats,
+      corner,requestedAt:time,captureMode:'short-stable-rigid-ray',dwellHeldMs:calibrationDwellProgressMs,
+      ray:robustRay,rayWindowStats:stats,sampleSpanMs:sampleSpan,
       transitionAngleDeg:calibrationTransitionAngleDeg,transitionThresholdDeg:calibrationTransitionThresholdDeg
     };
     if(el.calibrationCaptureBtn){
       el.calibrationCaptureBtn.classList.add('pending');
       el.calibrationCaptureBtn.textContent=`AUTO CAPTURE ${corner}...`;
     }
-    if(el.calibrationOverlayText) el.calibrationOverlayText.textContent=`CARD RAY AUTO: CAPTURE ${corner} — robust Viewer Ray`;
-    log(`CARD RAY AUTO CAPTURE requested: corner=${corner}; dwell=${calibrationDwellProgressMs.toFixed(0)} ms; raySamples=${robustRay.n}; angularSpread=${robustRay.angularSpreadDeg.toFixed(3)} deg; angularRMS=${robustRay.angularRmsDeg.toFixed(3)} deg; originSpread=${(robustRay.originSpread*1000).toFixed(3)} mm; HitUsedAsCorner=false`);
+    if(el.calibrationOverlayText) el.calibrationOverlayText.textContent=`CARD RIGID AUTO: CAPTURE ${corner} — validated Viewer Ray`;
+    log(`CARD RIGID AUTO CAPTURE requested: corner=${corner}; dwell=${calibrationDwellProgressMs.toFixed(0)} ms; sampleSpan=${sampleSpan.toFixed(0)} ms; raySamples=${robustRay.n}; angularSpread=${robustRay.angularSpreadDeg.toFixed(3)} deg; angularRMS=${robustRay.angularRmsDeg.toFixed(3)} deg; originSpread=${(robustRay.originSpread*1000).toFixed(3)} mm; finalValidation=PASS; HitUsedAsCorner=false`);
   }
 }
 
@@ -4384,7 +4498,7 @@ function captureCalibrationFromCurrentRay(time,viewerPose){
   if(el.calibrationCaptureBtn) el.calibrationCaptureBtn.classList.remove('pending');
 
   log(
-    `CARD RAY POINT ${corner}: frame=${frameCount}; captureMode=${rec.captureMode}; dwellHeld=${rec.dwellHeldMs.toFixed(0)} ms; `+
+    `CARD RIGID POINT ${corner}: frame=${frameCount}; captureMode=${rec.captureMode}; dwellHeld=${rec.dwellHeldMs.toFixed(0)} ms; sampleSpan=${Number.isFinite(pending.sampleSpanMs)?pending.sampleSpanMs.toFixed(0):'n/a'} ms; `+
     `rayOrigin=${fmtPoint(robustRay.origin)}; rayDir=${fmtPoint(robustRay.direction)}; raySamples=${robustRay.n}; `+
     `angularSpread=${robustRay.angularSpreadDeg.toFixed(3)} deg; angularRMS=${robustRay.angularRmsDeg.toFixed(3)} deg; originSpread=${(robustRay.originSpread*1000).toFixed(3)} mm; `+
     `legacyHit=${hit?fmtPoint(hit):'n/a'}; cameraToHit=${Number.isFinite(latestHitDistance)?latestHitDistance.toFixed(6):'n/a'} m; hitStability=${rec.hitStability}; `+
@@ -4963,7 +5077,7 @@ function onXRFrame(time,frame){
     }
   }
 
-  // Phase 4.22 robust Viewer-Ray auto-calibration evaluates after Raw Camera sampling.
+  // Phase 4.23 rigid Viewer-Ray auto-calibration evaluates after Raw Camera sampling.
   // Hit/Depth remain diagnostic; the reconstructed card corners are constrained to robust rays.
   updateCalibrationAutoDwell(time,pose);
   if(calibrationCapturePending){
