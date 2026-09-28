@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<title>AR DISTANCE LAB - Phase 4.15</title>
+<title>AR DISTANCE LAB - Phase 4.16</title>
 <style>
 :root{
   color-scheme:dark;
@@ -100,7 +100,7 @@ padding:10px;pointer-events:auto}
 <body>
 <main>
 <h1>AR DISTANCE LAB</h1>
-<p class="sub">Phase 4.15 — Hit Entity Type Probe: plane / point / mesh × Depth</p>
+<p class="sub">Phase 4.16 — Depth-derived 3D A/B Comparison</p>
 
 <section class="card">
 <h2>STATUS</h2>
@@ -173,6 +173,16 @@ padding:10px;pointer-events:auto}
   <div class="cell">Hit −Z − Depth@UV</div><div class="cell" id="depthHitDeltaState">—</div>
   <div class="cell">Point A View-Z × Depth</div><div class="cell" id="captureADepthState">—</div>
   <div class="cell">Point B View-Z × Depth</div><div class="cell" id="captureBDepthState">—</div>
+  <div class="cell">Depth 3D geometry</div><div class="cell" id="depth3DGeometryState">WAITING</div>
+  <div class="cell">Point A Depth-center 3D</div><div class="cell" id="depth3DAState">—</div>
+  <div class="cell">Point B Depth-center 3D</div><div class="cell" id="depth3DBState">—</div>
+  <div class="cell">Hit-Hit A↔B</div><div class="cell" id="compareHitABState">—</div>
+  <div class="cell">Depth-center A↔B</div><div class="cell" id="compareDepthCenterABState">—</div>
+  <div class="cell">Depth-median A↔B</div><div class="cell" id="compareDepthMedianABState">—</div>
+  <div class="cell">A Hit ↔ B Depth-center</div><div class="cell" id="compareHitADepthBState">—</div>
+  <div class="cell">A Depth-center ↔ B Hit</div><div class="cell" id="compareDepthAHitBState">—</div>
+  <div class="cell">Depth-center error vs REF</div><div class="cell" id="depthCenterErrorState">—</div>
+  <div class="cell">Depth-median error vs REF</div><div class="cell" id="depthMedianErrorState">—</div>
   <div class="cell">Hit entity probe</div><div class="cell" id="entityProbeState">WAITING</div>
   <div class="cell">Plane source</div><div class="cell" id="entityPlaneSourceState">NOT REQUESTED</div>
   <div class="cell">Plane nearest × Depth</div><div class="cell" id="entityPlaneHitState">—</div>
@@ -219,10 +229,9 @@ padding:10px;pointer-events:auto}
 </section>
 
 <section class="card note">
-Phase 4.15ではPhase 4.14の測定ロジックを維持したまま、中央Viewer rayに対してplane / point / meshのHit Test Sourceを別々に作成し、同一XRフレームで結果を比較します。正式なA/B測定は従来どおりplane sourceだけを使用し、point / meshは診断専用です。
-HIT ENTITY SNAPSHOTを押すと次の有効Viewer PoseフレームでDepthを強制サンプルし、各entity typeの結果数、ray上の先頭3距離、nearest HitのView −Z、中央Depth 3×3、差分を1つのログに保存します。Depth coherenceが低い場合は差分を判定材料にせず、数値のみ診断として扱ってください。
-Depthは3×3局所サンプル＋直近5サンプルの時間方向中央値を継続します。DepthはCommit値の補正・ゲートには使用しません。Hit Test直前0.3秒のSTABLE / MOVINGもwarning-onlyです。
-CENTER ALIGN CHECKとMeasurement-impact IntegrityはPhase 4.14から継続しています。
+Phase 4.16では正式なA/B測定を従来どおりplane Hit Testのimmutable Hit-Hitで維持しつつ、Point A / Bを置いた各XRフレームのDepthから3D点を復元し、同じREFERENCE LENGTHに対してHit-HitとDepth-Depthを直接比較します。Depth値はカメラ平面から実環境までの距離なので、XRViewの投影幾何を使ってView-space 3D点へ戻し、そのキャプチャ時のView transformでlocal reference spaceへ変換します。
+比較値は Hit-Hit / Depth-center↔Depth-center / Depth 3×3 median↔median / A Hit↔B Depth-center / A Depth-center↔B Hit をログへ保存します。Depth-derived値はPhase 4.16では診断専用で、Commit値の補正・ゲートには使用しません。Depth coherenceも併記します。
+HIT ENTITY SNAPSHOT、CENTER ALIGN CHECK、Measurement-impact Integrity、Hit Test直前0.3秒のSTABLE / MOVING warning-onlyは継続します。
 </section>
 
 <section class="card">
@@ -254,6 +263,7 @@ CENTER ALIGN CHECKとMeasurement-impact IntegrityはPhase 4.14から継続して
       <div id="qualityText">AIM QUALITY: ANALYZING</div>
       <div id="hitStabilityText">HIT STABILITY: ANALYZING — warning only</div>
       <div id="depthText">DEPTH × HIT: WAITING — diagnostic only</div>
+      <div id="depthABText">DEPTH 3D A↔B: — diagnostic only</div>
       <div id="entityText">ENTITY PROBE: waiting</div>
       <div id="accuracyText">REF: 50.0 cm / ERROR: —</div>
       <div id="stabilityText">STABILITY: —</div>
@@ -300,9 +310,9 @@ const el = {};
   'absErrorState','relErrorState','resetEventState','referenceCm',
   'rawCameraState','hitDistanceState','depthState','depthConfigState','depthBufferState',
   'depthCenterState','depthMedianState','depthTemporalState','depthValidState','depthCoherenceState','hitViewState','hitUvState','depthAtHitState','depthHitDeltaState',
-  'captureADepthState','captureBDepthState','entityProbeState','entityPlaneSourceState','entityPlaneHitState','entityPointSourceState','entityPointHitState','entityMeshSourceState','entityMeshHitState','entitySnapshotState','aimQualityState','edgeMedianState',
+  'captureADepthState','captureBDepthState','depth3DGeometryState','depth3DAState','depth3DBState','compareHitABState','compareDepthCenterABState','compareDepthMedianABState','compareHitADepthBState','compareDepthAHitBState','depthCenterErrorState','depthMedianErrorState','entityProbeState','entityPlaneSourceState','entityPlaneHitState','entityPointSourceState','entityPointHitState','entityMeshSourceState','entityMeshHitState','entitySnapshotState','aimQualityState','edgeMedianState',
   'contrastMedianState','magnifierState','magnifierCanvas','magnifierWrap','alignmentGrid','alignmentMark','alignmentState','alignmentOffsetState','alignmentUvState','alignBtn','entitySnapshotBtn',
-  'magnifierLabel','qualityText','hitStabilityText','depthText','entityText','alignmentText',
+  'magnifierLabel','qualityText','hitStabilityText','depthText','depthABText','entityText','alignmentText',
   'coordA','coordB','startBtn','resetBtn','endBtn','log','xrCanvas','xrOverlay','xrHud',
   'xrState','xrHint','pointText','anchorText','distanceText','accuracyText','stabilityText','settlingText','preBText','setPointBtn',
   'xrResetBtn','xrEndBtn','topPanel','bottomPanel'
@@ -374,9 +384,14 @@ let cameraASamples = [];
 let cameraBSamples = [];
 let lastMetricsUiTime = 0;
 
-// Phase 4.15: immutable placement points + Anchor settling timeline (carried forward).
+// Phase 4.16: immutable Hit placement + Depth-derived 3D comparison + Anchor diagnostics.
 let capturePointA = null;
 let capturePointB = null;
+// Phase 4.16: Depth-derived 3D points captured in the same XR frames as A/B.
+let captureDepth3DA = null;
+let captureDepth3DB = null;
+let depthABComparison = null;
+let depthGeometryFirstLogged = false;
 let captureResetCountA = null;
 let captureResetCountB = null;
 let captureHitDistance = null;
@@ -398,7 +413,7 @@ const SETTLING_HALF_SHIFT_M = 0.001;
 const TIMELINE_LOG_INTERVAL_MS = 500;
 
 
-// Phase 4.15: monitor Point A from its capture until Point B capture (carried forward).
+// Phase 4.16: monitor Point A from capture until Point B; formal Hit logic remains unchanged.
 let captureSnapshotA = null;
 let captureSnapshotB = null;
 
@@ -419,7 +434,7 @@ let preBIntegrity = 'UNKNOWN';
 let lastDistanceImpact = null;
 
 const PREB_LOG_INTERVAL_MS = 1000;
-// Raw Anchor drift remains diagnostic only in Phase 4.15.
+// Raw Anchor drift remains diagnostic only in Phase 4.16.
 const PREB_RAW_WARN_M = 0.005;
 const PREB_RAW_LARGE_M = 0.010;
 // Formal integrity uses the actual effect on the A-B distance at Point B capture.
@@ -428,7 +443,7 @@ const DISTANCE_IMPACT_INVALID_M = 0.005;
 
 
 
-// Phase 4.15: Hit Test capture stability diagnostic (warning-only).
+// Phase 4.16: Hit Test capture stability diagnostic (warning-only).
 const HIT_HISTORY_RETENTION_MS = 1600;
 const HIT_WINDOW_MS = [300,500,1000];
 // 300 ms is a warning-only short-window diagnostic. It never blocks capture
@@ -697,7 +712,7 @@ function logHitABComparison(){
   return comparison;
 }
 
-// Phase 4.15: formal measurement candidate is frozen at Point B capture.
+// Phase 4.16: formal measurement candidate is frozen at Point B capture.
 let frozenMeasurement = null;
 let sessionFrozenMeasurements = [];
 let lastAAnchorPoseTime = null;
@@ -921,7 +936,7 @@ let qualityHistory = [];
 let lastQualitySampleTime = -Infinity;
 let latestHitDistance = null;
 
-// Phase 4.15: CPU Depth Sensing × XRView-aligned Hit Test cross-check + entity-type probe.
+// Phase 4.16: CPU Depth Sensing × XRView-aligned Hit Test cross-check + entity-type probe.
 // Diagnostic only: it never gates capture and never modifies the committed distance.
 const DEPTH_GRID = 3;
 const DEPTH_RADIUS = 0.01; // compact local region around projected Hit / screen center
@@ -1123,6 +1138,161 @@ function projectViewPointToUv(viewPoint,projection){
   };
 }
 
+
+function depthGeometryForFrame(view,info){
+  if(!view) return null;
+  let projection=null;
+  let transform=null;
+  let projectionSource='XRView';
+  let transformSource='XRView';
+
+  try{
+    const p=info?.projectionMatrix;
+    if(p && p.length===16 && Array.from(p).every(Number.isFinite)){
+      projection=p;
+      projectionSource='XRDepthInformation';
+    }
+  }catch{}
+  if(!projection) projection=view.projectionMatrix;
+
+  try{
+    const m=info?.transform?.matrix;
+    if(m && m.length===16 && Array.from(m).every(Number.isFinite)){
+      transform=m;
+      transformSource='XRDepthInformation';
+    }
+  }catch{}
+  if(!transform) transform=view.transform.matrix;
+
+  return {
+    projection,
+    transform,
+    projectionSource,
+    transformSource,
+    source:(projectionSource==='XRDepthInformation'||transformSource==='XRDepthInformation')
+      ? `depthInfo geometry (projection=${projectionSource}, transform=${transformSource})`
+      : 'XRView geometry fallback (matchDepthView=true)'
+  };
+}
+
+function reconstructViewPointFromDepth(uv,depth,projection){
+  if(!uv || !Number.isFinite(depth) || depth<=0 || !projection) return null;
+  // WebXR Depth values are distance from the camera plane, so View-space z=-depth.
+  // Solve the projection equations for x/y at the requested normalized view UV.
+  const ndcX=uv.x*2-1;
+  const ndcY=1-uv.y*2;
+  const z=-depth;
+  const m=projection;
+
+  const a11=m[0]-ndcX*m[3];
+  const a12=m[4]-ndcX*m[7];
+  const a21=m[1]-ndcY*m[3];
+  const a22=m[5]-ndcY*m[7];
+  const b1=ndcX*(m[11]*z+m[15])-(m[8]*z+m[12]);
+  const b2=ndcY*(m[11]*z+m[15])-(m[9]*z+m[13]);
+  const det=a11*a22-a12*a21;
+  if(!Number.isFinite(det) || Math.abs(det)<1e-10) return null;
+  const x=(b1*a22-a12*b2)/det;
+  const y=(a11*b2-b1*a21)/det;
+  if(![x,y,z].every(Number.isFinite)) return null;
+  return {x,y,z};
+}
+
+function reconstructDepthLocalPoint(view,info,uv,depth){
+  const geom=depthGeometryForFrame(view,info);
+  if(!geom) return null;
+  const viewPoint=reconstructViewPointFromDepth(uv,depth,geom.projection);
+  if(!viewPoint) return null;
+  const localPoint=transformPointByMatrix(geom.transform,viewPoint);
+  if(!localPoint || ![localPoint.x,localPoint.y,localPoint.z].every(Number.isFinite)) return null;
+  return {viewPoint,localPoint,geometrySource:geom.source};
+}
+
+function fmtErrorAgainstReference(distance){
+  if(!Number.isFinite(distance)) return '—';
+  const err=distance-referenceMeters;
+  const pct=(err/referenceMeters)*100;
+  return `${err>=0?'+':''}${(err*1000).toFixed(1)} mm / ${pct>=0?'+':''}${pct.toFixed(2)}%`;
+}
+
+function captureDepth3DPoint(slot,viewerPose,hitViewDiag){
+  const stateId=slot==='A'?'depth3DAState':'depth3DBState';
+  const view=viewerPose?.views?.[0];
+  if(!view || !latestDepthInfo || latestDepthInfoFrame!==frameCount){
+    set(stateId,'N/A — no same-frame Depth','warn');
+    log(`Point ${slot} Depth 3D: unavailable; sameFrameDepth=${latestDepthInfoFrame===frameCount}; diagnosticOnly=true`);
+    return null;
+  }
+
+  const uv=(hitViewDiag?.uv?.inView) ? {x:hitViewDiag.uv.x,y:hitViewDiag.uv.y} : {x:0.5,y:0.5};
+  const stats=depthRegionStats(latestDepthInfo,uv.x,uv.y);
+  if(!stats || (!Number.isFinite(stats.center) && !Number.isFinite(stats.median))){
+    set(stateId,'N/A — invalid Depth','warn');
+    log(`Point ${slot} Depth 3D: invalid Depth at uv=${uv.x.toFixed(6)},${uv.y.toFixed(6)}; diagnosticOnly=true`);
+    return null;
+  }
+
+  const center=Number.isFinite(stats.center) ? reconstructDepthLocalPoint(view,latestDepthInfo,uv,stats.center) : null;
+  const median3=Number.isFinite(stats.median) ? reconstructDepthLocalPoint(view,latestDepthInfo,uv,stats.median) : null;
+  const geometrySource=center?.geometrySource ?? median3?.geometrySource ?? 'n/a';
+  const result={
+    slot,frame:frameCount,time:latestDepthSample?.time??null,uv,
+    centerDepth:stats.center,medianDepth:stats.median,
+    centerLocal:center?.localPoint??null,centerView:center?.viewPoint??null,
+    medianLocal:median3?.localPoint??null,medianView:median3?.viewPoint??null,
+    coherence:stats.coherence,iqr:stats.iqr,mad:stats.mad,valid:stats.valid,total:stats.total,
+    geometrySource
+  };
+
+  set('depth3DGeometryState',geometrySource,geometrySource.includes('fallback')?'warn':'ok');
+  set(stateId,center?.localPoint ? `${fmtPoint(center.localPoint)} / d=${stats.center.toFixed(3)} m / ${stats.coherence}` : `center N/A / median=${fmtMaybeNumber(stats.median,3)} m / ${stats.coherence}`,stats.coherence==='COHERENT'?'ok':stats.coherence==='MIXED'?'warn':'ng');
+
+  if(!depthGeometryFirstLogged){
+    depthGeometryFirstLogged=true;
+    log(`Depth 3D geometry source: ${geometrySource}; matchDepthView=true; reconstruction=projection solve + capture-view transform; diagnosticOnly=true`);
+  }
+  log(
+    `Point ${slot} Depth 3D: frame=${frameCount}; uv=(${uv.x.toFixed(6)},${uv.y.toFixed(6)}); ` +
+    `centerDepth=${fmtMaybeNumber(stats.center,6)} m; median3x3=${fmtMaybeNumber(stats.median,6)} m; ` +
+    `centerView=${center?.viewPoint?fmtPoint(center.viewPoint):'n/a'}; centerLocal=${center?.localPoint?fmtPoint(center.localPoint):'n/a'}; ` +
+    `medianView=${median3?.viewPoint?fmtPoint(median3.viewPoint):'n/a'}; medianLocal=${median3?.localPoint?fmtPoint(median3.localPoint):'n/a'}; ` +
+    `coherence=${stats.coherence}; IQR=${stats.iqr==null?'n/a':(stats.iqr*1000).toFixed(3)+' mm'}; MAD=${stats.mad==null?'n/a':(stats.mad*1000).toFixed(3)+' mm'}; ` +
+    `geometry=${geometrySource}; diagnosticOnly=true`
+  );
+  return result;
+}
+
+function updateDepthABComparison(){
+  const hitDistance=(capturePointA&&capturePointB)?distance3(capturePointA,capturePointB):null;
+  const centerDistance=(captureDepth3DA?.centerLocal&&captureDepth3DB?.centerLocal)?distance3(captureDepth3DA.centerLocal,captureDepth3DB.centerLocal):null;
+  const medianDistance=(captureDepth3DA?.medianLocal&&captureDepth3DB?.medianLocal)?distance3(captureDepth3DA.medianLocal,captureDepth3DB.medianLocal):null;
+  const hitAToDepthB=(capturePointA&&captureDepth3DB?.centerLocal)?distance3(capturePointA,captureDepth3DB.centerLocal):null;
+  const depthAToHitB=(captureDepth3DA?.centerLocal&&capturePointB)?distance3(captureDepth3DA.centerLocal,capturePointB):null;
+  depthABComparison={hitDistance,centerDistance,medianDistance,hitAToDepthB,depthAToHitB,a:captureDepth3DA,b:captureDepth3DB,referenceMeters};
+
+  set('compareHitABState',hitDistance==null?'—':fmtDistance(hitDistance),hitDistance==null?'':'ok');
+  set('compareDepthCenterABState',centerDistance==null?'N/A':fmtDistance(centerDistance),centerDistance==null?'warn':captureDepth3DA?.coherence==='COHERENT'&&captureDepth3DB?.coherence==='COHERENT'?'ok':'warn');
+  set('compareDepthMedianABState',medianDistance==null?'N/A':fmtDistance(medianDistance),medianDistance==null?'warn':captureDepth3DA?.coherence==='COHERENT'&&captureDepth3DB?.coherence==='COHERENT'?'ok':'warn');
+  set('compareHitADepthBState',hitAToDepthB==null?'N/A':fmtDistance(hitAToDepthB),hitAToDepthB==null?'':'warn');
+  set('compareDepthAHitBState',depthAToHitB==null?'N/A':fmtDistance(depthAToHitB),depthAToHitB==null?'':'warn');
+  set('depthCenterErrorState',centerDistance==null?'—':fmtErrorAgainstReference(centerDistance),centerDistance==null?'':Math.abs(centerDistance-referenceMeters)<=0.005?'ok':'warn');
+  set('depthMedianErrorState',medianDistance==null?'—':fmtErrorAgainstReference(medianDistance),medianDistance==null?'':Math.abs(medianDistance-referenceMeters)<=0.005?'ok':'warn');
+  if(el.depthABText){
+    el.depthABText.textContent=`DEPTH 3D A↔B: center=${centerDistance==null?'N/A':fmtDistance(centerDistance)} / median=${medianDistance==null?'N/A':fmtDistance(medianDistance)} — diagnostic only`;
+  }
+
+  log(
+    `DEPTH 3D A-B COMPARISON: reference=${referenceMeters.toFixed(6)} m; ` +
+    `Hit-Hit=${hitDistance==null?'n/a':hitDistance.toFixed(6)} m(error=${hitDistance==null?'n/a':((hitDistance-referenceMeters)*1000).toFixed(3)+' mm'}); ` +
+    `DepthCenter-DepthCenter=${centerDistance==null?'n/a':centerDistance.toFixed(6)} m(error=${centerDistance==null?'n/a':((centerDistance-referenceMeters)*1000).toFixed(3)+' mm'}); ` +
+    `DepthMedian-DepthMedian=${medianDistance==null?'n/a':medianDistance.toFixed(6)} m(error=${medianDistance==null?'n/a':((medianDistance-referenceMeters)*1000).toFixed(3)+' mm'}); ` +
+    `AHit-BDepthCenter=${hitAToDepthB==null?'n/a':hitAToDepthB.toFixed(6)} m; ` +
+    `ADepthCenter-BHit=${depthAToHitB==null?'n/a':depthAToHitB.toFixed(6)} m; ` +
+    `Acoherence=${captureDepth3DA?.coherence??'n/a'}; Bcoherence=${captureDepth3DB?.coherence??'n/a'}; ` +
+    `Ageometry=${captureDepth3DA?.geometrySource??'n/a'}; Bgeometry=${captureDepth3DB?.geometrySource??'n/a'}; diagnosticOnly=true; formalCommit=Hit-Hit`
+  );
+}
+
 function buildHitViewDiagnostic(result,hitPoint,viewerPose){
   const view=viewerPose?.views?.[0];
   if(!view || !hitPoint) return null;
@@ -1180,6 +1350,10 @@ function resetDepthDiagnostics(){
   latestDepthHitCrossCheck = null;
   captureDepthCrossCheckA = null;
   captureDepthCrossCheckB = null;
+  captureDepth3DA = null;
+  captureDepth3DB = null;
+  depthABComparison = null;
+  depthGeometryFirstLogged = false;
 
   set('depthState','WAITING','warn');
   set('depthConfigState','—','');
@@ -1195,7 +1369,18 @@ function resetDepthDiagnostics(){
   set('depthHitDeltaState','—','');
   set('captureADepthState','—','');
   set('captureBDepthState','—','');
+  set('depth3DGeometryState','WAITING','warn');
+  set('depth3DAState','—','');
+  set('depth3DBState','—','');
+  set('compareHitABState','—','');
+  set('compareDepthCenterABState','—','');
+  set('compareDepthMedianABState','—','');
+  set('compareHitADepthBState','—','');
+  set('compareDepthAHitBState','—','');
+  set('depthCenterErrorState','—','');
+  set('depthMedianErrorState','—','');
   if(el.depthText) el.depthText.textContent = 'DEPTH × HIT: WAITING — diagnostic only';
+  if(el.depthABText) el.depthABText.textContent = 'DEPTH 3D A↔B: — diagnostic only';
 }
 
 function classifyDepthCoherence(stats){
@@ -1268,10 +1453,12 @@ function sampleDepthForFrame(frame,pose,time,force=false){
       depthBufferSeen=true;
       const scale=Number.isFinite(info.rawValueToMeters) ? info.rawValueToMeters : null;
       set('depthBufferState',`${info.width}×${info.height}`,'ok');
+      const geom=depthGeometryForFrame(view,info);
       log(
         `Depth buffer first received: size=${info.width}x${info.height}; ` +
         `rawValueToMeters=${scale===null?'n/a':scale}; ` +
-        `usage=${session?.depthUsage ?? 'n/a'}; format=${session?.depthDataFormat ?? 'n/a'}`
+        `usage=${session?.depthUsage ?? 'n/a'}; format=${session?.depthDataFormat ?? 'n/a'}; ` +
+        `geometry=${geom?.source ?? 'n/a'}`
       );
     }
 
@@ -1609,7 +1796,7 @@ function processHitEntityProbe(frame,viewerPose,time,planeResults){
       el.entitySnapshotBtn.classList.remove('pending');
       el.entitySnapshotBtn.textContent='HIT ENTITY SNAPSHOT';
     }
-    const depth=latestDepthSample;
+    const depth=(latestDepthInfoFrame===frameCount) ? latestDepthSample : null;
     log(
       `ENTITY SNAPSHOT #${entitySnapshotCount}: frame=${frameCount}; requestedAt=${entitySnapshotRequestedAt ?? 'n/a'}; ` +
       `depthCenter=${fmtMaybeNumber(depth?.center,6)} m; depthMedian=${fmtMaybeNumber(depth?.median,6)} m; temporalMedian=${fmtMaybeNumber(depth?.temporalMedian,6)} m(n=${depth?.temporalSamples ?? 0}); depthCoherence=${depth?.coherence ?? 'n/a'}; ` +
@@ -1968,6 +2155,9 @@ function formatSignedDistanceMeters(m){
 function resetSettlingMetrics(){
   capturePointA = null;
   capturePointB = null;
+  captureDepth3DA = null;
+  captureDepth3DB = null;
+  depthABComparison = null;
   captureResetCountA = null;
   captureResetCountB = null;
   captureHitDistance = null;
@@ -1983,6 +2173,16 @@ function resetSettlingMetrics(){
   deltaThresholdLogged = {0.002:false,0.005:false,0.010:false};
 
   set('captureDistanceState','—','');
+  set('depth3DAState','—','');
+  set('depth3DBState','—','');
+  set('compareHitABState','—','');
+  set('compareDepthCenterABState','—','');
+  set('compareDepthMedianABState','—','');
+  set('compareHitADepthBState','—','');
+  set('compareDepthAHitBState','—','');
+  set('depthCenterErrorState','—','');
+  set('depthMedianErrorState','—','');
+  if(el.depthABText) el.depthABText.textContent='DEPTH 3D A↔B: — diagnostic only';
   set('initialAnchorDistanceState','—','');
   set('anchorDeltaState','—','');
   set('maxAnchorDeltaState','—','');
@@ -2154,6 +2354,16 @@ function resetMeasurementMetrics(){
   captureDepthCrossCheckB = null;
   set('captureADepthState','—','');
   set('captureBDepthState','—','');
+  set('depth3DAState','—','');
+  set('depth3DBState','—','');
+  set('compareHitABState','—','');
+  set('compareDepthCenterABState','—','');
+  set('compareDepthMedianABState','—','');
+  set('compareHitADepthBState','—','');
+  set('compareDepthAHitBState','—','');
+  set('depthCenterErrorState','—','');
+  set('depthMedianErrorState','—','');
+  if(el.depthABText) el.depthABText.textContent='DEPTH 3D A↔B: — diagnostic only';
   resetCurrentFrozenMeasurement();
   updateRepeatabilityUI();
 
@@ -2305,6 +2515,18 @@ function summarizeMeasurement(reason){
       `view-depth capture cross-check: ` +
       `A[-z=${da?.hitViewForward==null?'n/a':da.hitViewForward.toFixed(6)+' m'},depthUV=${da?.depthAtHitUv==null?'n/a':da.depthAtHitUv.toFixed(6)+' m'},delta=${da?.deltaViewForwardMinusDepth==null?'n/a':(da.deltaViewForwardMinusDepth*1000).toFixed(3)+' mm'},uv=${da?da.hitUvX.toFixed(4)+','+da.hitUvY.toFixed(4):'n/a'},coh=${da?.depthCoherence??'n/a'}] ` +
       `B[-z=${db?.hitViewForward==null?'n/a':db.hitViewForward.toFixed(6)+' m'},depthUV=${db?.depthAtHitUv==null?'n/a':db.depthAtHitUv.toFixed(6)+' m'},delta=${db?.deltaViewForwardMinusDepth==null?'n/a':(db.deltaViewForwardMinusDepth*1000).toFixed(3)+' mm'},uv=${db?db.hitUvX.toFixed(4)+','+db.hitUvY.toFixed(4):'n/a'},coh=${db?.depthCoherence??'n/a'}]`
+    );
+  }
+
+  if(depthABComparison){
+    const d=depthABComparison;
+    log(
+      `depth-derived 3D summary: Hit-Hit=${d.hitDistance==null?'n/a':d.hitDistance.toFixed(6)} m; ` +
+      `DepthCenter=${d.centerDistance==null?'n/a':d.centerDistance.toFixed(6)} m; ` +
+      `DepthMedian=${d.medianDistance==null?'n/a':d.medianDistance.toFixed(6)} m; ` +
+      `AHit-BDepth=${d.hitAToDepthB==null?'n/a':d.hitAToDepthB.toFixed(6)} m; ` +
+      `ADepth-BHit=${d.depthAToHitB==null?'n/a':d.depthAToHitB.toFixed(6)} m; ` +
+      `reference=${referenceMeters.toFixed(6)} m; diagnosticOnly=true`
     );
   }
 
@@ -3217,7 +3439,7 @@ async function startAR(){
 
     viewerSpace = await session.requestReferenceSpace('viewer');
 
-    // Formal Phase 4.15 measurement source remains plane-only, now explicit.
+    // Formal Phase 4.16 measurement source remains plane-only, now explicit.
     hitTestSource = await session.requestHitTestSource({space:viewerSpace,entityTypes:['plane']});
     hitEntitySources.plane = hitTestSource;
     hitEntitySourceStatus.plane = 'READY';
@@ -3363,9 +3585,15 @@ function createAnchorFromHit(result,hitPose,slot,time,viewerPose){
 
   const captureSnapshot =
     captureQualitySnapshot(slot,fallbackPoint,viewerPose,time,hitViewDiag);
+  const depth3D = captureDepth3DPoint(slot,viewerPose,hitViewDiag);
 
-  if(slot==='A') captureSnapshotA=captureSnapshot;
-  else captureSnapshotB=captureSnapshot;
+  if(slot==='A'){
+    captureSnapshotA=captureSnapshot;
+    captureDepth3DA=depth3D;
+  }else{
+    captureSnapshotB=captureSnapshot;
+    captureDepth3DB=depth3D;
+  }
 
   const hitStabilitySnapshot =
     captureHitStabilitySnapshot(slot,time,fallbackPoint);
@@ -3377,6 +3605,8 @@ function createAnchorFromHit(result,hitPose,slot,time,viewerPose){
     capturePointA = {...fallbackPoint};
     captureResetCountA = sessionReferenceSpaceResetCount;
     capturePointB = null;
+    captureDepth3DB = null;
+    depthABComparison = null;
     captureResetCountB = null;
     captureHitDistance = null;
     preBSummaryAtB = null;
@@ -3391,6 +3621,7 @@ function createAnchorFromHit(result,hitPose,slot,time,viewerPose){
     preBSummaryAtB = summarizePreB('POINT B CAPTURE',time);
     preBActive = false;
 
+    updateDepthABComparison();
     freezeMeasurementAtB(fallbackPoint,time);
     logHitABComparison();
 
