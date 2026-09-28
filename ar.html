@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<title>AR DISTANCE LAB - Phase 4.14 Rev.3</title>
+<title>AR DISTANCE LAB - Phase 4.15</title>
 <style>
 :root{
   color-scheme:dark;
@@ -80,6 +80,9 @@ padding:10px;pointer-events:auto}
 .diagRow{display:flex;gap:6px;margin-top:7px;align-items:center;flex-wrap:wrap}
 #alignBtn{padding:8px 10px;min-height:38px}
 #alignBtn.active{border-color:#fde68a;background:#403713;color:#fff}
+#entitySnapshotBtn{padding:8px 10px;min-height:38px}
+#entitySnapshotBtn.pending{border-color:#93c5fd;background:#172554;color:#fff}
+#entityText{font-size:11px;line-height:1.45;margin-top:4px;color:#bfdbfe;white-space:pre-wrap}
 #alignmentText{font-size:11px;line-height:1.45;margin-top:4px;color:#fde68a}
 #alignmentGrid{position:absolute;inset:0;display:none;pointer-events:none;background:
   linear-gradient(90deg,transparent calc(50% - .5px),#fde68a calc(50% - .5px),#fde68a calc(50% + .5px),transparent calc(50% + .5px)),
@@ -97,7 +100,7 @@ padding:10px;pointer-events:auto}
 <body>
 <main>
 <h1>AR DISTANCE LAB</h1>
-<p class="sub">Phase 4.14 Rev.3 — Hit Stability Warning-only + Measurement-impact Integrity</p>
+<p class="sub">Phase 4.15 — Hit Entity Type Probe: plane / point / mesh × Depth</p>
 
 <section class="card">
 <h2>STATUS</h2>
@@ -170,6 +173,14 @@ padding:10px;pointer-events:auto}
   <div class="cell">Hit −Z − Depth@UV</div><div class="cell" id="depthHitDeltaState">—</div>
   <div class="cell">Point A View-Z × Depth</div><div class="cell" id="captureADepthState">—</div>
   <div class="cell">Point B View-Z × Depth</div><div class="cell" id="captureBDepthState">—</div>
+  <div class="cell">Hit entity probe</div><div class="cell" id="entityProbeState">WAITING</div>
+  <div class="cell">Plane source</div><div class="cell" id="entityPlaneSourceState">NOT REQUESTED</div>
+  <div class="cell">Plane nearest × Depth</div><div class="cell" id="entityPlaneHitState">—</div>
+  <div class="cell">Point source</div><div class="cell" id="entityPointSourceState">NOT REQUESTED</div>
+  <div class="cell">Point nearest × Depth</div><div class="cell" id="entityPointHitState">—</div>
+  <div class="cell">Mesh source</div><div class="cell" id="entityMeshSourceState">NOT REQUESTED</div>
+  <div class="cell">Mesh nearest × Depth</div><div class="cell" id="entityMeshHitState">—</div>
+  <div class="cell">Entity snapshots</div><div class="cell" id="entitySnapshotState">0</div>
   <div class="cell">Aim quality</div><div class="cell" id="aimQualityState">ANALYZING</div>
   <div class="cell">Edge median</div><div class="cell" id="edgeMedianState">—</div>
   <div class="cell">Contrast median</div><div class="cell" id="contrastMedianState">—</div>
@@ -208,10 +219,10 @@ padding:10px;pointer-events:auto}
 </section>
 
 <section class="card note">
-Phase 4.14ではImmutable Hit Commitを維持しつつ、PRE-B Anchor移動量そのものではなく、Point B取得時に「current A Anchor→B Hit」と「immutable A Hit→B Hit」の差から、Anchor再配置が距離値へ与える影響量を評価します。暫定閾値は2 mm以上WARN、5 mm以上INVALIDです。生のAnchor drift量は診断表示として残し、単独ではCommitを棄却しません。
-Depthは3×3局所サンプル＋直近5サンプルの時間方向中央値へ縮小し、IQR/MADと併せて診断します。Depthは引き続きCommit値の補正・ゲートには使用しません。
-CENTER ALIGN CHECKをONにし、通常パススルー中央の照準へ高コントラストの小さな目標を合わせてから、拡大鏡内で同じ目標をタップしてください。拡大鏡中心からの表示px・512px source換算・camera-normalized offsetを記録します。これはRaw Camera拡大鏡中心とDOM/XR中心レイの整合を人手で確認する診断で、自動補正は行いません。
-Hit Testの直前0.3秒STABLE / MOVINGは引き続きwarning-onlyです。XRReferenceSpace resetがA-B間に発生した場合はCommitをINVALIDにします。
+Phase 4.15ではPhase 4.14の測定ロジックを維持したまま、中央Viewer rayに対してplane / point / meshのHit Test Sourceを別々に作成し、同一XRフレームで結果を比較します。正式なA/B測定は従来どおりplane sourceだけを使用し、point / meshは診断専用です。
+HIT ENTITY SNAPSHOTを押すと次の有効Viewer PoseフレームでDepthを強制サンプルし、各entity typeの結果数、ray上の先頭3距離、nearest HitのView −Z、中央Depth 3×3、差分を1つのログに保存します。Depth coherenceが低い場合は差分を判定材料にせず、数値のみ診断として扱ってください。
+Depthは3×3局所サンプル＋直近5サンプルの時間方向中央値を継続します。DepthはCommit値の補正・ゲートには使用しません。Hit Test直前0.3秒のSTABLE / MOVINGもwarning-onlyです。
+CENTER ALIGN CHECKとMeasurement-impact IntegrityはPhase 4.14から継続しています。
 </section>
 
 <section class="card">
@@ -243,6 +254,7 @@ Hit Testの直前0.3秒STABLE / MOVINGは引き続きwarning-onlyです。XRRefe
       <div id="qualityText">AIM QUALITY: ANALYZING</div>
       <div id="hitStabilityText">HIT STABILITY: ANALYZING — warning only</div>
       <div id="depthText">DEPTH × HIT: WAITING — diagnostic only</div>
+      <div id="entityText">ENTITY PROBE: waiting</div>
       <div id="accuracyText">REF: 50.0 cm / ERROR: —</div>
       <div id="stabilityText">STABILITY: —</div>
       <div id="settlingText">SETTLING: —</div>
@@ -256,6 +268,7 @@ Hit Testの直前0.3秒STABLE / MOVINGは引き続きwarning-onlyです。XRRefe
         <button type="button" class="magBtn" data-mag="4">MAG 4×</button>
       </div>
       <div class="diagRow">
+        <button type="button" id="entitySnapshotBtn" disabled>HIT ENTITY SNAPSHOT</button>
         <button type="button" id="alignBtn">CENTER ALIGN CHECK</button>
       </div>
       <div class="xrActions">
@@ -287,9 +300,9 @@ const el = {};
   'absErrorState','relErrorState','resetEventState','referenceCm',
   'rawCameraState','hitDistanceState','depthState','depthConfigState','depthBufferState',
   'depthCenterState','depthMedianState','depthTemporalState','depthValidState','depthCoherenceState','hitViewState','hitUvState','depthAtHitState','depthHitDeltaState',
-  'captureADepthState','captureBDepthState','aimQualityState','edgeMedianState',
-  'contrastMedianState','magnifierState','magnifierCanvas','magnifierWrap','alignmentGrid','alignmentMark','alignmentState','alignmentOffsetState','alignmentUvState','alignBtn',
-  'magnifierLabel','qualityText','hitStabilityText','depthText','alignmentText',
+  'captureADepthState','captureBDepthState','entityProbeState','entityPlaneSourceState','entityPlaneHitState','entityPointSourceState','entityPointHitState','entityMeshSourceState','entityMeshHitState','entitySnapshotState','aimQualityState','edgeMedianState',
+  'contrastMedianState','magnifierState','magnifierCanvas','magnifierWrap','alignmentGrid','alignmentMark','alignmentState','alignmentOffsetState','alignmentUvState','alignBtn','entitySnapshotBtn',
+  'magnifierLabel','qualityText','hitStabilityText','depthText','entityText','alignmentText',
   'coordA','coordB','startBtn','resetBtn','endBtn','log','xrCanvas','xrOverlay','xrHud',
   'xrState','xrHint','pointText','anchorText','distanceText','accuracyText','stabilityText','settlingText','preBText','setPointBtn',
   'xrResetBtn','xrEndBtn','topPanel','bottomPanel'
@@ -310,7 +323,14 @@ let lineBuffer = null;
 
 let localSpace = null;
 let viewerSpace = null;
-let hitTestSource = null;
+let hitTestSource = null; // formal measurement source: explicit plane
+let hitEntitySources = {plane:null, point:null, mesh:null};
+let hitEntitySourceStatus = {plane:'NOT REQUESTED', point:'NOT REQUESTED', mesh:'NOT REQUESTED'};
+let hitEntityLatest = {plane:null, point:null, mesh:null};
+let entitySnapshotPending = false;
+let entitySnapshotCount = 0;
+let entitySnapshotRequestedAt = null;
+let entityFirstHitLogged = {plane:false, point:false, mesh:false};
 let raf = 0;
 
 let latestHitMatrix = null;
@@ -354,7 +374,7 @@ let cameraASamples = [];
 let cameraBSamples = [];
 let lastMetricsUiTime = 0;
 
-// Phase 4.14: immutable placement points + Anchor settling timeline.
+// Phase 4.15: immutable placement points + Anchor settling timeline (carried forward).
 let capturePointA = null;
 let capturePointB = null;
 let captureResetCountA = null;
@@ -378,7 +398,7 @@ const SETTLING_HALF_SHIFT_M = 0.001;
 const TIMELINE_LOG_INTERVAL_MS = 500;
 
 
-// Phase 4.14: monitor Point A from its capture until Point B capture.
+// Phase 4.15: monitor Point A from its capture until Point B capture (carried forward).
 let captureSnapshotA = null;
 let captureSnapshotB = null;
 
@@ -399,7 +419,7 @@ let preBIntegrity = 'UNKNOWN';
 let lastDistanceImpact = null;
 
 const PREB_LOG_INTERVAL_MS = 1000;
-// Raw Anchor drift is diagnostic only in Phase 4.14.
+// Raw Anchor drift remains diagnostic only in Phase 4.15.
 const PREB_RAW_WARN_M = 0.005;
 const PREB_RAW_LARGE_M = 0.010;
 // Formal integrity uses the actual effect on the A-B distance at Point B capture.
@@ -408,7 +428,7 @@ const DISTANCE_IMPACT_INVALID_M = 0.005;
 
 
 
-// Phase 4.14: Hit Test capture stability diagnostic.
+// Phase 4.15: Hit Test capture stability diagnostic (warning-only).
 const HIT_HISTORY_RETENTION_MS = 1600;
 const HIT_WINDOW_MS = [300,500,1000];
 // 300 ms is a warning-only short-window diagnostic. It never blocks capture
@@ -677,7 +697,7 @@ function logHitABComparison(){
   return comparison;
 }
 
-// Phase 4.14: formal measurement candidate is frozen at Point B capture.
+// Phase 4.15: formal measurement candidate is frozen at Point B capture.
 let frozenMeasurement = null;
 let sessionFrozenMeasurements = [];
 let lastAAnchorPoseTime = null;
@@ -901,7 +921,7 @@ let qualityHistory = [];
 let lastQualitySampleTime = -Infinity;
 let latestHitDistance = null;
 
-// Phase 4.14: CPU Depth Sensing × XRView-aligned Hit Test cross-check.
+// Phase 4.15: CPU Depth Sensing × XRView-aligned Hit Test cross-check + entity-type probe.
 // Diagnostic only: it never gates capture and never modifies the committed distance.
 const DEPTH_GRID = 3;
 const DEPTH_RADIUS = 0.01; // compact local region around projected Hit / screen center
@@ -933,8 +953,8 @@ const DETAIL_CONTRAST_LOW = 8.0;
 
 let ending = false;
 let cleanupDone = false;
-const LOG_STORAGE_KEY = 'ar-distance-lab-phase4-14-log';
-const SUMMARY_STORAGE_KEY = 'ar-distance-lab-phase4-14-summary';
+const LOG_STORAGE_KEY = 'ar-distance-lab-phase4-15-log';
+const SUMMARY_STORAGE_KEY = 'ar-distance-lab-phase4-15-summary';
 
 const TRACKING_UNSTABLE_MS = 250;
 const TRACKING_LOST_MS = 1000;
@@ -997,6 +1017,9 @@ function persistDiagnostics(){
       latestDepthHitCrossCheck,
       captureDepthCrossCheckA,
       captureDepthCrossCheckB,
+      hitEntitySourceStatus,
+      hitEntityLatest,
+      entitySnapshotCount,
       edgeMedian: qualityMedian('edge'),
       contrastMedian: qualityMedian('contrast'),
       magnifierZoom,
@@ -1429,6 +1452,185 @@ function snapshotDepthCrossCheck(slot,time,hitDistance,hitViewDiag){
   );
 
   return c;
+}
+
+
+function resetHitEntityProbe(){
+  hitEntityLatest={plane:null,point:null,mesh:null};
+  entitySnapshotPending=false;
+  entitySnapshotRequestedAt=null;
+  entitySnapshotCount=0;
+  entityFirstHitLogged={plane:false,point:false,mesh:false};
+  set('entityProbeState','WAITING','warn');
+  set('entityPlaneSourceState',hitEntitySourceStatus.plane || 'NOT REQUESTED','');
+  set('entityPointSourceState',hitEntitySourceStatus.point || 'NOT REQUESTED','');
+  set('entityMeshSourceState',hitEntitySourceStatus.mesh || 'NOT REQUESTED','');
+  set('entityPlaneHitState','—','');
+  set('entityPointHitState','—','');
+  set('entityMeshHitState','—','');
+  set('entitySnapshotState','0','');
+  if(el.entityText) el.entityText.textContent='ENTITY PROBE: waiting';
+  if(el.entitySnapshotBtn){
+    el.entitySnapshotBtn.classList.remove('pending');
+    el.entitySnapshotBtn.textContent='HIT ENTITY SNAPSHOT';
+  }
+}
+
+function entityStateId(type){
+  return type==='plane' ? 'entityPlaneHitState' : type==='point' ? 'entityPointHitState' : 'entityMeshHitState';
+}
+
+function entitySourceStateId(type){
+  return type==='plane' ? 'entityPlaneSourceState' : type==='point' ? 'entityPointSourceState' : 'entityMeshSourceState';
+}
+
+function formatEntityProbeShort(item){
+  if(!item) return '—';
+  if(item.error) return `ERR ${item.error}`;
+  if(!item.count) return 'NO HIT';
+  const delta=Number.isFinite(item.depthDelta) ? `${item.depthDelta>=0?'+':''}${(item.depthDelta*1000).toFixed(0)}mm` : 'Δn/a';
+  return `${item.forward.toFixed(3)}m ${delta} n=${item.count}`;
+}
+
+function collectEntityResult(type,frame,viewerPose,precomputedResults=null){
+  const source=hitEntitySources[type];
+  const status=hitEntitySourceStatus[type];
+  if(!source){
+    return {type,count:0,sourceStatus:status,error:status && status.startsWith('FAILED') ? status : null};
+  }
+
+  let results;
+  try{
+    results=precomputedResults ?? frame.getHitTestResults(source);
+  }catch(err){
+    return {type,count:0,sourceStatus:status,error:`${err.name}: ${err.message}`};
+  }
+
+  const item={type,count:results.length,sourceStatus:status,distances:[],forward:null,localPoint:null,uv:null,depthCenter:null,depthMedian:null,depthCoherence:null,depthIqr:null,depthMad:null,depthDelta:null};
+  if(!results.length) return item;
+
+  // The Hit Test spec sorts each source's results by distance along its ray.
+  for(let i=0;i<Math.min(3,results.length);i++){
+    try{
+      const vp=results[i].getPose(viewerSpace)?.transform?.position;
+      if(vp && Number.isFinite(vp.z)) item.distances.push(-vp.z);
+    }catch{}
+  }
+
+  const result=results[0];
+  try{
+    const localPose=result.getPose(localSpace);
+    if(!localPose) return {...item,error:'nearest result has no local pose'};
+    const p=localPose.transform.position;
+    item.localPoint={x:p.x,y:p.y,z:p.z};
+    const vd=buildHitViewDiagnostic(result,item.localPoint,viewerPose);
+    if(vd){
+      item.forward=vd.forward;
+      item.uv=vd.uv ? {x:vd.uv.x,y:vd.uv.y} : null;
+    }
+
+    let stats=null;
+    if(latestDepthInfo && latestDepthInfoFrame===frameCount){
+      const u=item.uv?.x ?? 0.5;
+      const v=item.uv?.y ?? 0.5;
+      stats=depthRegionStats(latestDepthInfo,u,v);
+    }
+    if(stats){
+      item.depthCenter=stats.center;
+      item.depthMedian=stats.median;
+      item.depthCoherence=stats.coherence;
+      item.depthIqr=stats.iqr;
+      item.depthMad=stats.mad;
+      if(Number.isFinite(item.forward) && Number.isFinite(stats.center)) item.depthDelta=item.forward-stats.center;
+    }
+  }catch(err){
+    item.error=`${err.name}: ${err.message}`;
+  }
+  return item;
+}
+
+function updateEntityProbeUI(){
+  const types=['plane','point','mesh'];
+  for(const type of types){
+    const item=hitEntityLatest[type];
+    const id=entityStateId(type);
+    if(!item){
+      set(id,'—','');
+      continue;
+    }
+    if(item.error){
+      set(id,item.error,'ng');
+      continue;
+    }
+    if(!item.count){
+      set(id,'NO HIT','warn');
+      continue;
+    }
+    const delta=Number.isFinite(item.depthDelta) ? item.depthDelta*1000 : null;
+    const depthPart=Number.isFinite(item.depthCenter) ? ` / depth ${item.depthCenter.toFixed(3)} m / Δ ${delta>=0?'+':''}${delta.toFixed(1)} mm` : ' / depth n/a';
+    const cls=item.depthCoherence==='COHERENT' ? (Math.abs(delta)<=50?'ok':'warn') : item.depthCoherence ? 'warn' : 'ok';
+    set(id,`${item.forward.toFixed(3)} m / n=${item.count}${depthPart} / ${item.depthCoherence ?? 'n/a'}`,cls);
+  }
+  set('entityProbeState','ACTIVE','ok');
+  if(el.entityText){
+    el.entityText.textContent=`ENTITY: plane ${formatEntityProbeShort(hitEntityLatest.plane)} / point ${formatEntityProbeShort(hitEntityLatest.point)} / mesh ${formatEntityProbeShort(hitEntityLatest.mesh)}`;
+  }
+}
+
+function formatEntitySnapshotPart(type,item){
+  const status=hitEntitySourceStatus[type];
+  if(!item) return `${type}[source=${status}; no sample]`;
+  if(item.error) return `${type}[source=${status}; error=${item.error}]`;
+  if(!item.count) return `${type}[source=${status}; count=0]`;
+  const ds=item.distances.length ? item.distances.map(v=>v.toFixed(6)).join(',') : 'n/a';
+  const delta=Number.isFinite(item.depthDelta) ? `${(item.depthDelta*1000).toFixed(3)} mm` : 'n/a';
+  return `${type}[source=${status}; count=${item.count}; rayFirst3=${ds} m; nearestViewZ=${fmtMaybeNumber(item.forward,6)} m; uv=${item.uv?item.uv.x.toFixed(6)+','+item.uv.y.toFixed(6):'n/a'}; depthCenter=${fmtMaybeNumber(item.depthCenter,6)} m; depthMedian=${fmtMaybeNumber(item.depthMedian,6)} m; deltaZMinusDepth=${delta}; coherence=${item.depthCoherence??'n/a'}; IQR=${item.depthIqr==null?'n/a':(item.depthIqr*1000).toFixed(3)+' mm'}; MAD=${item.depthMad==null?'n/a':(item.depthMad*1000).toFixed(3)+' mm'}]`;
+}
+
+function processHitEntityProbe(frame,viewerPose,time,planeResults){
+  hitEntityLatest.plane=collectEntityResult('plane',frame,viewerPose,planeResults);
+  hitEntityLatest.point=collectEntityResult('point',frame,viewerPose);
+  hitEntityLatest.mesh=collectEntityResult('mesh',frame,viewerPose);
+
+  for(const type of ['plane','point','mesh']){
+    const item=hitEntityLatest[type];
+    if(item?.count && !entityFirstHitLogged[type]){
+      entityFirstHitLogged[type]=true;
+      log(`ENTITY FIRST HIT ${type}: count=${item.count}; nearestViewZ=${fmtMaybeNumber(item.forward,6)} m; rayFirst3=${item.distances.map(v=>v.toFixed(6)).join(',') || 'n/a'} m`);
+    }
+  }
+  updateEntityProbeUI();
+
+  if(entitySnapshotPending){
+    entitySnapshotPending=false;
+    entitySnapshotCount++;
+    set('entitySnapshotState',String(entitySnapshotCount),'ok');
+    if(el.entitySnapshotBtn){
+      el.entitySnapshotBtn.classList.remove('pending');
+      el.entitySnapshotBtn.textContent='HIT ENTITY SNAPSHOT';
+    }
+    const depth=latestDepthSample;
+    log(
+      `ENTITY SNAPSHOT #${entitySnapshotCount}: frame=${frameCount}; requestedAt=${entitySnapshotRequestedAt ?? 'n/a'}; ` +
+      `depthCenter=${fmtMaybeNumber(depth?.center,6)} m; depthMedian=${fmtMaybeNumber(depth?.median,6)} m; temporalMedian=${fmtMaybeNumber(depth?.temporalMedian,6)} m(n=${depth?.temporalSamples ?? 0}); depthCoherence=${depth?.coherence ?? 'n/a'}; ` +
+      `${formatEntitySnapshotPart('plane',hitEntityLatest.plane)}; ` +
+      `${formatEntitySnapshotPart('point',hitEntityLatest.point)}; ` +
+      `${formatEntitySnapshotPart('mesh',hitEntityLatest.mesh)}; diagnosticOnly=true; formalMeasurementSource=plane`
+    );
+    entitySnapshotRequestedAt=null;
+  }
+}
+
+function requestEntitySnapshot(){
+  if(!session || ending) return;
+  entitySnapshotPending=true;
+  entitySnapshotRequestedAt=now();
+  if(el.entitySnapshotBtn){
+    el.entitySnapshotBtn.classList.add('pending');
+    el.entitySnapshotBtn.textContent='SNAPSHOT PENDING...';
+  }
+  set('entityProbeState','SNAPSHOT PENDING','warn');
+  log('ENTITY SNAPSHOT requested; waiting for next valid Viewer Pose frame; same-frame Depth forced');
 }
 
 function captureQualitySnapshot(slot,hitPoint,viewerPose,time,hitViewDiag){
@@ -2926,9 +3128,12 @@ async function startAR(){
   sessionReferenceSpaceResetCount = 0;
   sessionFrozenMeasurements = [];
   hitHistory = [];
+  hitEntitySources = {plane:null, point:null, mesh:null};
+  hitEntitySourceStatus = {plane:'NOT REQUESTED', point:'NOT REQUESTED', mesh:'NOT REQUESTED'};
   updateRepeatabilityUI();
   resetMeasurementMetrics();
   resetDepthDiagnostics();
+  resetHitEntityProbe();
 
   try{
     session = await navigator.xr.requestSession('immersive-ar',{
@@ -3011,11 +3216,32 @@ async function startAR(){
     });
 
     viewerSpace = await session.requestReferenceSpace('viewer');
-    hitTestSource = await session.requestHitTestSource({space:viewerSpace});
+
+    // Formal Phase 4.15 measurement source remains plane-only, now explicit.
+    hitTestSource = await session.requestHitTestSource({space:viewerSpace,entityTypes:['plane']});
+    hitEntitySources.plane = hitTestSource;
+    hitEntitySourceStatus.plane = 'READY';
+    set('entityPlaneSourceState','READY — formal plane source','ok');
+    log('Hit entity source plane: READY; entityTypes=[plane]; formalMeasurementSource=true');
+
+    for(const type of ['point','mesh']){
+      try{
+        hitEntitySources[type] = await session.requestHitTestSource({space:viewerSpace,entityTypes:[type]});
+        hitEntitySourceStatus[type] = 'READY';
+        set(entitySourceStateId(type),'READY — diagnostic only','ok');
+        log(`Hit entity source ${type}: READY; entityTypes=[${type}]; diagnosticOnly=true`);
+      }catch(err){
+        hitEntitySources[type] = null;
+        hitEntitySourceStatus[type] = `FAILED ${err.name}`;
+        set(entitySourceStateId(type),`FAILED: ${err.name}: ${err.message}`,'warn');
+        log(`Hit entity source ${type}: FAILED; ${err.name}: ${err.message}; continuing with remaining sources`);
+      }
+    }
 
     el.xrHud.hidden = false;
     el.endBtn.disabled = false;
     el.xrEndBtn.disabled = false;
+    el.entitySnapshotBtn.disabled = false;
 
     el.xrState.textContent = 'TRACKING...';
     el.xrHint.textContent = 'Move slowly and point at a textured floor, desk, or wall.';
@@ -3263,7 +3489,7 @@ function onXRFrame(time,frame){
   // Depth is sampled before Hit Test processing. If a capture is pending, force
   // a sample on this exact XR frame so Point A/B logs use the closest possible
   // Depth information without changing the formal Hit commit.
-  sampleDepthForFrame(frame,pose,time,!!capturePending);
+  sampleDepthForFrame(frame,pose,time,!!capturePending || entitySnapshotPending);
 
   const aTracked = updateAnchorPose(frame,'A',time,pose);
   const bTracked = updateAnchorPose(frame,'B',time,pose);
@@ -3298,6 +3524,11 @@ function onXRFrame(time,frame){
   }
 
   const results = frame.getHitTestResults(hitTestSource);
+  // Probe UI/logging runs at the Depth sampling cadence (~10 Hz), while an
+  // explicit snapshot forces both Depth and entity sampling on the same frame.
+  if(entitySnapshotPending || latestDepthInfoFrame===frameCount || frameCount % DEPTH_SAMPLE_EVERY_FRAMES === 0){
+    processHitEntityProbe(frame,pose,time,results);
+  }
 
   if(results.length){
     if(measurementActive) measureHitSuccessFrames++;
@@ -3514,6 +3745,20 @@ async function stopXRResourcesBeforeEnd(reason){
     log(`hitTestSource.cancel failed: ${err.name}: ${err.message}`);
   }
   hitTestSource = null;
+  hitEntitySources.plane = null;
+
+  for(const type of ['point','mesh']){
+    try{
+      if(hitEntitySources[type]){
+        hitEntitySources[type].cancel();
+        log(`hit entity source ${type} cancelled before session.end()`);
+      }
+    }catch(err){
+      log(`hit entity source ${type} cancel failed: ${err.name}: ${err.message}`);
+    }
+    hitEntitySources[type]=null;
+  }
+  entitySnapshotPending=false;
 
   // Remove anchors while their XRSession is still active.
   try{
@@ -3583,6 +3828,8 @@ function onSessionEnd(){
   localSpace = null;
   viewerSpace = null;
   hitTestSource = null;
+  hitEntitySources = {plane:null, point:null, mesh:null};
+  entitySnapshotPending=false;
   latestHitMatrix = null;
   latestHitPoint = null;
 
@@ -3605,6 +3852,7 @@ function onSessionEnd(){
   el.xrHud.hidden = true;
   el.endBtn.disabled = true;
   el.setPointBtn.disabled = true;
+  el.entitySnapshotBtn.disabled = true;
   el.startBtn.disabled = el.arSupport.textContent !== 'SUPPORTED';
 
   set('sessionState','ENDED','warn');
@@ -3668,6 +3916,7 @@ el.topPanel.addEventListener('beforexrselect',preventOverlayXRSelect);
 el.bottomPanel.addEventListener('beforexrselect',preventOverlayXRSelect);
 el.magnifierWrap.addEventListener('beforexrselect',preventOverlayXRSelect);
 el.alignBtn.addEventListener('click',()=>setAlignmentMode(!alignmentMode));
+el.entitySnapshotBtn.addEventListener('click',requestEntitySnapshot);
 el.magnifierWrap.addEventListener('pointerdown',event=>{
   if(!alignmentMode) return;
   event.preventDefault();
@@ -3704,6 +3953,7 @@ restoreDiagnostics();
 setReferenceCm(el.referenceCm.value);
 resetMeasurementMetrics();
 resetDepthDiagnostics();
+resetHitEntityProbe();
 resetAimQuality();
 set('magnifierState','3×','ok');
 set('alignmentState','OFF','');
