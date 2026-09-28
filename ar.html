@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<title>AR DISTANCE LAB - Phase 4.20</title>
+<title>AR DISTANCE LAB - Phase 4.21</title>
 <style>
 :root{
   color-scheme:dark;
@@ -93,6 +93,9 @@ padding:10px;pointer-events:auto}
 #calibrationOverlayText{font-size:11px;line-height:1.45;margin-top:4px;color:#c4b5fd;white-space:pre-wrap}
 #calibrationCaptureBtn,#calibrationResetOverlayBtn{padding:8px 10px;min-height:38px}
 #calibrationCaptureBtn.pending{border-color:#c4b5fd;background:#2e1065;color:#fff}
+#calibrationCaptureBtn.active{border-color:#86efac;background:#12351f;color:#fff}
+#calibrationDwellTrack{height:6px;margin-top:5px;border:1px solid #3b4653;border-radius:999px;overflow:hidden;background:#05080c}
+#calibrationDwellBar{height:100%;width:0%;background:currentColor;color:#86efac;transition:width .08s linear}
 .calInput{width:118px;background:#080d12;color:#e8f0f6;border:1px solid #263441;border-radius:8px;padding:10px;font:inherit}
 .calResult{font-weight:700}
 #alignmentGrid{position:absolute;inset:0;display:none;pointer-events:none;background:
@@ -111,7 +114,7 @@ padding:10px;pointer-events:auto}
 <body>
 <main>
 <h1>AR DISTANCE LAB</h1>
-<p class="sub">Phase 4.20 — Known Planar Target Calibration Diagnostic</p>
+<p class="sub">Phase 4.21 — Dwell Auto Card Calibration</p>
 
 <section class="card">
 <h2>STATUS</h2>
@@ -254,7 +257,7 @@ padding:10px;pointer-events:auto}
 <section class="card">
 <h2>KNOWN PLANAR TARGET / CARD CALIBRATION</h2>
 <p class="note">
-診断専用です。既定値は ID-1 形状 85.60 × 53.98 mm。平らなターゲットを固定し、AR画面中央の＋を TL（左上）→ TR（右上）→ BR（右下）→ BL（左下）の順に合わせ、オーバーレイの CARD ボタンを押します。各隅は中央Viewer Rayのplane Hitを同一フレームDepth・point/mesh診断と一緒に記録します。補正係数は適用しません。
+診断専用です。既定値は ID-1 形状 85.60 × 53.98 mm。平らなターゲットを固定し、最初に TL（左上）へ中央＋を合わせて START CARD AUTO を1回だけ押します。以後は TL → TR → BR → BL の順に、Hitが安定した状態を約0.65秒保持すると自動取得します。次の角へ十分移動するまではDwellを開始しません。短い手振れは一時停止として扱い、継続した揺れだけカウントをリセットします。各隅は中央Viewer Rayのplane Hitを同一フレームDepth・point/mesh診断と一緒に記録します。補正係数は適用しません。
 </p>
 <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
   <label for="calibrationWidthMm">Width</label>
@@ -266,6 +269,8 @@ padding:10px;pointer-events:auto}
 </div>
 <div class="sweepGrid">
   <div class="cell">Calibration sequence</div><div class="cell calResult" id="calibrationSequenceState">0 / 4 — next TL</div>
+  <div class="cell">Auto capture</div><div class="cell calResult" id="calibrationAutoState">READY — aim TL, then START CARD AUTO</div>
+  <div class="cell">Dwell</div><div class="cell" id="calibrationDwellState">0 / 650 ms</div>
   <div class="cell">Target</div><div class="cell" id="calibrationTargetState">85.60 × 53.98 mm</div>
   <div class="cell">Top / Bottom width</div><div class="cell" id="calibrationWidthState">—</div>
   <div class="cell">Left / Right height</div><div class="cell" id="calibrationHeightState">—</div>
@@ -283,18 +288,18 @@ padding:10px;pointer-events:auto}
 <div class="actions" style="margin-top:10px">
   <button type="button" id="calibrationResetBtn">RESET CARD CAL</button>
 </div>
-<pre id="calibrationText" style="margin-top:10px;max-height:180px">CARD CAL: aim TL at the center cross after START AR.</pre>
+<pre id="calibrationText" style="margin-top:10px;max-height:180px">CARD CAL AUTO: aim TL at the center cross, then press START CARD AUTO once.</pre>
 </section>
 
 <section class="card">
-<h2>PHASE 4.20 TEST PROCEDURE</h2>
+<h2>PHASE 4.21 TEST PROCEDURE</h2>
 <ol class="procedure">
-  <li>まずカード形状ターゲットを平らで動かない面に固定します。反射が強いカードより、角が明瞭なマットなターゲットが扱いやすいです。</li>
-  <li>START AR後、中央＋を TL → TR → BR → BL の各隅へ順に合わせ、各回 CARD ボタンを押します。A/B測距は行わなくても構いません。</li>
+  <li>カード形状ターゲットを平らで動かない面に固定します。反射が強いカードより、角が明瞭なマットなターゲットが扱いやすいです。</li>
+  <li>START AR後、中央＋をTLへ合わせ、START CARD AUTOを1回だけ押します。ボタン操作はここだけです。</li>
+  <li>HOLD表示が進んだら端末をそのまま保持します。短い手振れではカウントを一時停止し、約0.35秒以上MOVINGが続いた場合だけ0へ戻します。</li>
+  <li>CAPTURE後は表示に従ってTR → BR → BLへ移動します。直前の角から期待辺長の約45%（最低15 mm）以上移動するまでは次のDwellを開始しません。</li>
   <li>4点取得すると、幅・高さ・対角線、各辺の尺度比、単一scaleを仮定した残差、角度、4点の平面残差を自動計算します。</li>
-  <li>同時に各点のDepth 3Dと plane / point / mesh の位置差をログへ記録します。Depthも補正には使いません。</li>
-  <li>1回目はターゲットを約0.5〜1 mから取得してください。完了後、必要ならRESET CARD CALで同じ条件をもう1回だけ取得します。</li>
-  <li>ログの CARD CAL POINT と CARD CAL SUMMARY を共有してください。20 / 50 / 100 cm sweepは比較用として残していますが、Phase 4.20の主試験は4隅キャリブレーションです。</li>
+  <li>ログの CARD CAL AUTO / CARD CAL POINT / CARD CAL SUMMARY を共有してください。A/B測距や20 / 50 / 100 cm sweepは今回不要です。</li>
 </ol>
 </section>
 
@@ -308,7 +313,7 @@ padding:10px;pointer-events:auto}
 </section>
 
 <section class="card note">
-Phase 4.20でも正式な単発距離値はimmutable Hit-Hitのままです。MAP integrityは座標再配置を検出する単発測定ゲートとして維持します。Depth 3×3 medianから復元したA-B距離との差 |Hit-Hit − DepthMedian| は、&lt;5 mm = AGREE、5〜15 mm = WARN、15 mm以上 = DIVERGEDとして記録しますが、正式距離の補正・拒否には使いません。
+Phase 4.21でも正式な単発距離値はimmutable Hit-Hitのままです。MAP integrityは座標再配置を検出する単発測定ゲートとして維持します。Depth 3×3 medianから復元したA-B距離との差 |Hit-Hit − DepthMedian| は、&lt;5 mm = AGREE、5〜15 mm = WARN、15 mm以上 = DIVERGEDとして記録しますが、正式距離の補正・拒否には使いません。
 従来のHit-Hitコンセンサスは「再現性」の診断として残します。既知寸法に対する正しさ（accuracy）とは分離して扱います。近接幅は暫定 max(5 mm, クラスタ中央値の1%)、必要メンバー数はその時点の有効試行数に対する厳密多数派です。
 HIT ENTITY SNAPSHOT、CENTER ALIGN CHECK、MAP integrity、Hit Test直前0.3秒のSTABLE / MOVING warning-onlyは継続します。
 </section>
@@ -350,7 +355,8 @@ HIT ENTITY SNAPSHOT、CENTER ALIGN CHECK、MAP integrity、Hit Test直前0.3秒�
       <div id="settlingText">SETTLING: —</div>
       <div id="preBText">PRE-B A DRIFT: —</div>
       <div id="alignmentText">CENTER ALIGN CHECK: OFF</div>
-      <div id="calibrationOverlayText">CARD CAL: 0/4 — aim TL at center ＋</div>
+      <div id="calibrationOverlayText">CARD CAL AUTO: READY — aim TL at center ＋</div>
+      <div id="calibrationDwellTrack"><div id="calibrationDwellBar"></div></div>
       <div id="pointText">A: NOT SET / B: NOT SET</div>
       <div id="anchorText">ANCHOR A: — / ANCHOR B: —</div>
       <div class="magRow">
@@ -361,7 +367,7 @@ HIT ENTITY SNAPSHOT、CENTER ALIGN CHECK、MAP integrity、Hit Test直前0.3秒�
       <div class="diagRow">
         <button type="button" id="entitySnapshotBtn" disabled>HIT ENTITY SNAPSHOT</button>
         <button type="button" id="alignBtn">CENTER ALIGN CHECK</button>
-        <button type="button" id="calibrationCaptureBtn" disabled>CARD TL</button>
+        <button type="button" id="calibrationCaptureBtn" disabled>START CARD AUTO</button>
         <button type="button" id="calibrationResetOverlayBtn" disabled>RESET CARD</button>
       </div>
       <div class="xrActions">
@@ -394,7 +400,7 @@ const el = {};
   'rawCameraState','hitDistanceState','depthState','depthConfigState','depthBufferState',
   'depthCenterState','depthMedianState','depthTemporalState','depthValidState','depthCoherenceState','hitViewState','hitUvState','depthAtHitState','depthHitDeltaState',
   'captureADepthState','captureBDepthState','depth3DGeometryState','depth3DAState','depth3DBState','compareHitABState','compareDepthCenterABState','compareDepthMedianABState','compareHitADepthBState','compareDepthAHitBState','depthCenterErrorState','depthMedianErrorState','entityProbeState','entityPlaneSourceState','entityPlaneHitState','entityPointSourceState','entityPointHitState','entityMeshSourceState','entityMeshHitState','entitySnapshotState','aimQualityState','edgeMedianState',
-  'contrastMedianState','calibrationWidthMm','calibrationHeightMm','calibrationSequenceState','calibrationTargetState','calibrationWidthState','calibrationHeightState','calibrationDiagonalState','calibrationWidthErrorState','calibrationHeightErrorState','calibrationScaleState','calibrationScaleSpreadState','calibrationScaleResidualState','calibrationAngleState','calibrationPlaneState','calibrationDepthState','calibrationRoleState','calibrationResetBtn','calibrationText','calibrationOverlayText','calibrationCaptureBtn','calibrationResetOverlayBtn','sweepProgressState','sweepSelectedCountState','sweepConsensusState','sweepNextState','sweepHitState','sweepConsensusDistanceState','sweepDepthCenterState','sweepDepthMedianState','discardSweepBtn','clearSweepBtn','sweepText','magnifierState','magnifierCanvas','magnifierWrap','alignmentGrid','alignmentMark','alignmentState','alignmentOffsetState','alignmentUvState','alignBtn','entitySnapshotBtn',
+  'contrastMedianState','calibrationWidthMm','calibrationHeightMm','calibrationSequenceState','calibrationAutoState','calibrationDwellState','calibrationTargetState','calibrationWidthState','calibrationHeightState','calibrationDiagonalState','calibrationWidthErrorState','calibrationHeightErrorState','calibrationScaleState','calibrationScaleSpreadState','calibrationScaleResidualState','calibrationAngleState','calibrationPlaneState','calibrationDepthState','calibrationRoleState','calibrationResetBtn','calibrationText','calibrationOverlayText','calibrationDwellTrack','calibrationDwellBar','calibrationCaptureBtn','calibrationResetOverlayBtn','sweepProgressState','sweepSelectedCountState','sweepConsensusState','sweepNextState','sweepHitState','sweepConsensusDistanceState','sweepDepthCenterState','sweepDepthMedianState','discardSweepBtn','clearSweepBtn','sweepText','magnifierState','magnifierCanvas','magnifierWrap','alignmentGrid','alignmentMark','alignmentState','alignmentOffsetState','alignmentUvState','alignBtn','entitySnapshotBtn',
   'magnifierLabel','qualityText','hitStabilityText','depthText','depthABText','entityText','alignmentText',
   'coordA','coordB','startBtn','resetBtn','endBtn','log','xrCanvas','xrOverlay','xrHud',
   'xrState','xrHint','pointText','anchorText','distanceText','accuracyText','stabilityText','settlingText','preBText','setPointBtn',
@@ -429,15 +435,31 @@ let raf = 0;
 let latestHitMatrix = null;
 let latestHitPoint = null;
 
-// Phase 4.20: known planar target / card calibration diagnostic.
+// Phase 4.21: known planar target calibration with one-touch dwell auto capture.
 const CALIBRATION_CORNERS = ['TL','TR','BR','BL'];
 const DEFAULT_CALIBRATION_WIDTH_MM = 85.60;
 const DEFAULT_CALIBRATION_HEIGHT_MM = 53.98;
+const CALIBRATION_DWELL_MS = 650;
+const CALIBRATION_MOVING_GRACE_MS = 350;
+const CALIBRATION_INITIAL_ARM_DELAY_MS = 700;
+const CALIBRATION_TRANSITION_RATIO = 0.45;
+const CALIBRATION_TRANSITION_MIN_M = 0.015;
+const CALIBRATION_TRANSITION_GUARD_MS = 300;
 let calibrationPoints = {};
 let calibrationCapturePending = null;
 let calibrationTargetFrozen = null;
 let calibrationRunIndex = 0;
 let calibrationResult = null;
+let calibrationAutoEnabled = false;
+let calibrationAutoArmedAt = null;
+let calibrationDwellProgressMs = 0;
+let calibrationDwellLastFrameTime = null;
+let calibrationUnstableSince = null;
+let calibrationLastCapturedHit = null;
+let calibrationLastCaptureTime = null;
+let calibrationTransitionSatisfied = true;
+let calibrationTransitionDistance = null;
+let calibrationTransitionThreshold = null;
 
 let anchorA = null;
 let anchorB = null;
@@ -805,7 +827,7 @@ function logHitABComparison(){
   return comparison;
 }
 
-// Phase 4.20 inherited from Phase 4.19: formal single-shot candidate remains frozen at Point B capture; repeated acquisitions form the consensus.
+// Phase 4.21 inherited from Phase 4.19: formal single-shot candidate remains frozen at Point B capture; repeated acquisitions form the consensus.
 let frozenMeasurement = null;
 let sessionFrozenMeasurements = [];
 let lastAAnchorPoseTime = null;
@@ -1058,7 +1080,7 @@ let qualityHistory = [];
 let lastQualitySampleTime = -Infinity;
 let latestHitDistance = null;
 
-// Phase 4.20 inherited from Phase 4.19: Phase 4.16 Depth 3D method retained.
+// Phase 4.21 inherited from Phase 4.19: Phase 4.16 Depth 3D method retained.
 // Depth never replaces/corrects or rejects the committed Hit-Hit value. It is agreement diagnostics only.
 const DEPTH_GRID = 3;
 const DEPTH_RADIUS = 0.01; // compact local region around projected Hit / screen center
@@ -1090,8 +1112,8 @@ const DETAIL_CONTRAST_LOW = 8.0;
 
 let ending = false;
 let cleanupDone = false;
-const LOG_STORAGE_KEY = 'ar-distance-lab-phase4-20-log';
-const SUMMARY_STORAGE_KEY = 'ar-distance-lab-phase4-20-summary';
+const LOG_STORAGE_KEY = 'ar-distance-lab-phase4-21-log';
+const SUMMARY_STORAGE_KEY = 'ar-distance-lab-phase4-21-summary';
 
 const TRACKING_UNSTABLE_MS = 250;
 const TRACKING_LOST_MS = 1000;
@@ -2260,7 +2282,7 @@ function assessDepthDistanceCrossCheck(){
 
 function applyDepthDistanceCrossCheck(){
   const q=assessDepthDistanceCrossCheck();
-  // Phase 4.20 inherited from Phase 4.19: rename the >=15 mm state for clarity. This is diagnostic only.
+  // Phase 4.21 inherited from Phase 4.19: rename the >=15 mm state for clarity. This is diagnostic only.
   if(q.state==='INVALID') q.state='DIVERGED';
   lastDepthAgreement=q;
   const cls=q.state==='AGREE'||q.state==='PASS'?'ok':q.state==='WARN'?'warn':q.state==='DIVERGED'?'warn':'warn';
@@ -2272,7 +2294,7 @@ function applyDepthDistanceCrossCheck(){
 }
 
 function combineQualityGates(mapIntegrity,depthDiagnostic){
-  // Phase 4.20 inherited from Phase 4.19: only MAP can reject a single-shot measurement.
+  // Phase 4.21 inherited from Phase 4.19: only MAP can reject a single-shot measurement.
   // Depth agreement is deliberately excluded from the commit gate because the
   // previous sweep proved that Hit and Depth can agree while both are wrong.
   let state='PASS';
@@ -3854,10 +3876,46 @@ function finalizeCalibration(){
     `uniformScaleMaxResidual=${(hit.maxScaleResidual*1000).toFixed(3)} mm; ` +
     `maxCornerAngleError=${hit.maxAngleError.toFixed(3)} deg; BRplaneResidual=${(hit.planeResidual*1000).toFixed(3)} mm; ` +
     `Depth=${depth?`widthMean=${(depth.widthMean*1000).toFixed(3)} mm;heightMean=${(depth.heightMean*1000).toFixed(3)} mm;scaleMedian=${depth.scaleMedian.toFixed(6)};scaleSpread=${(depth.scaleSpread*100).toFixed(3)} pct-points;planeResidual=${(depth.planeResidual*1000).toFixed(3)} mm`:'n/a'}; ` +
-    `correctionApplied=false; diagnosticOnly=true; captureMode=manual-center-ray-four-corner`
+    `correctionApplied=false; diagnosticOnly=true; captureMode=dwell-auto-center-ray-four-corner`
   );
-  if(el.calibrationOverlayText) el.calibrationOverlayText.textContent=`CARD CAL COMPLETE #${calibrationRunIndex} — review summary / RESET CARD for another run`;
+  calibrationAutoEnabled=false;
+  calibrationDwellProgressMs=CALIBRATION_DWELL_MS;
+  calibrationUnstableSince=null;
+  set('calibrationAutoState','COMPLETE — 4/4 captured','ok');
+  set('calibrationDwellState',`${CALIBRATION_DWELL_MS} / ${CALIBRATION_DWELL_MS} ms`,'ok');
+  if(el.calibrationDwellBar) el.calibrationDwellBar.style.width='100%';
+  if(el.calibrationCaptureBtn){
+    el.calibrationCaptureBtn.classList.remove('active','pending');
+    el.calibrationCaptureBtn.textContent='CARD AUTO COMPLETE';
+  }
+  if(el.calibrationOverlayText) el.calibrationOverlayText.textContent=`CARD CAL AUTO COMPLETE #${calibrationRunIndex} — review summary / RESET CARD`;
   if(el.xrHint) el.xrHint.textContent='Card calibration complete. Review results or RESET CARD for another run.';
+}
+
+function updateCalibrationDwellDisplay(message,state='warn'){
+  const pct=Math.max(0,Math.min(100,(calibrationDwellProgressMs/CALIBRATION_DWELL_MS)*100));
+  set('calibrationDwellState',`${Math.round(calibrationDwellProgressMs)} / ${CALIBRATION_DWELL_MS} ms`,state);
+  if(el.calibrationDwellBar) el.calibrationDwellBar.style.width=`${pct.toFixed(1)}%`;
+  if(message && el.calibrationOverlayText) el.calibrationOverlayText.textContent=message;
+}
+
+function calibrationExpectedTransitionM(){
+  const n=calibrationCapturedCount();
+  if(n<=0) return 0;
+  const target=calibrationTargetFrozen || calibrationTargetDimensions();
+  const prev=CALIBRATION_CORNERS[n-1];
+  const next=CALIBRATION_CORNERS[n];
+  if(!next) return 0;
+  let edgeM=target.widthM;
+  if((prev==='TR'&&next==='BR') || (prev==='BL'&&next==='TL')) edgeM=target.heightM;
+  return Math.max(CALIBRATION_TRANSITION_MIN_M,edgeM*CALIBRATION_TRANSITION_RATIO);
+}
+
+function resetCalibrationDwell(){
+  calibrationDwellProgressMs=0;
+  calibrationDwellLastFrameTime=null;
+  calibrationUnstableSince=null;
+  updateCalibrationDwellDisplay(null,'warn');
 }
 
 function updateCalibrationUI(){
@@ -3866,12 +3924,31 @@ function updateCalibrationUI(){
   const next=calibrationNextCorner();
   set('calibrationTargetState',`${target.widthMm.toFixed(2)} × ${target.heightMm.toFixed(2)} mm`,'ok');
   set('calibrationSequenceState',`${n} / 4${next?` — next ${next}`:' — COMPLETE'}`,next?'warn':'ok');
+
+  if(!next){
+    set('calibrationAutoState','COMPLETE — 4/4 captured','ok');
+  }else if(calibrationAutoEnabled){
+    set('calibrationAutoState',`RUNNING — next ${next}`,'ok');
+  }else{
+    set('calibrationAutoState',`${n?'PAUSED':'READY'} — aim ${next}, then ${n?'RESUME':'START'} CARD AUTO`,'warn');
+  }
+
   if(el.calibrationOverlayText && !calibrationCapturePending){
-    el.calibrationOverlayText.textContent=next?`CARD CAL: ${n}/4 — aim ${next} at center ＋`:`CARD CAL: 4/4 — COMPLETE`;
+    if(!next){
+      el.calibrationOverlayText.textContent='CARD CAL AUTO: 4/4 — COMPLETE';
+    }else if(calibrationAutoEnabled){
+      el.calibrationOverlayText.textContent=`CARD CAL AUTO: ${n}/4 — preparing ${next}`;
+    }else{
+      el.calibrationOverlayText.textContent=`CARD CAL AUTO: ${n}/4 — aim ${next} at center ＋, then ${n?'RESUME':'START'} AUTO`;
+    }
   }
   if(el.calibrationCaptureBtn){
     el.calibrationCaptureBtn.disabled=!session || ending || !next || !!calibrationCapturePending || anchorCreationBusy;
-    if(!calibrationCapturePending) el.calibrationCaptureBtn.textContent=next?`CARD ${next}`:'CARD COMPLETE';
+    el.calibrationCaptureBtn.classList.toggle('active',calibrationAutoEnabled && !!next);
+    el.calibrationCaptureBtn.classList.toggle('pending',!!calibrationCapturePending);
+    if(!calibrationCapturePending){
+      el.calibrationCaptureBtn.textContent=!next?'CARD AUTO COMPLETE':calibrationAutoEnabled?'PAUSE CARD AUTO':(n?'RESUME CARD AUTO':'START CARD AUTO');
+    }
   }
   if(el.calibrationResetOverlayBtn) el.calibrationResetOverlayBtn.disabled=!session || ending;
 
@@ -3879,7 +3956,9 @@ function updateCalibrationUI(){
   const depth=calibrationResult?.depth;
   if(!hit){
     for(const id of ['calibrationWidthState','calibrationHeightState','calibrationDiagonalState','calibrationWidthErrorState','calibrationHeightErrorState','calibrationScaleState','calibrationScaleSpreadState','calibrationScaleResidualState','calibrationAngleState','calibrationPlaneState','calibrationDepthState']) set(id,'—','');
-    if(el.calibrationText) el.calibrationText.textContent=`CARD CAL: ${n}/4 captured. ${next?`Aim ${next} at the center cross and press CARD ${next}.`:'Waiting for analysis.'}`;
+    if(el.calibrationText){
+      el.calibrationText.textContent=`CARD CAL AUTO: ${n}/4 captured. ${next?`${calibrationAutoEnabled?'Follow the overlay and hold steady.':`Aim ${next} and ${n?'RESUME':'START'} CARD AUTO.`}`:'Waiting for analysis.'}`;
+    }
     return;
   }
   set('calibrationWidthState',`${(hit.top*1000).toFixed(3)} / ${(hit.bottom*1000).toFixed(3)} mm`,'ok');
@@ -3906,34 +3985,144 @@ function updateCalibrationUI(){
   }
 }
 
-function resetCalibration(reason='user'){ 
+function resetCalibration(reason='user'){
   calibrationPoints={};
   calibrationCapturePending=null;
   calibrationTargetFrozen=null;
   calibrationResult=null;
-  if(el.calibrationCaptureBtn){ el.calibrationCaptureBtn.classList.remove('pending'); }
+  calibrationAutoEnabled=false;
+  calibrationAutoArmedAt=null;
+  calibrationLastCapturedHit=null;
+  calibrationLastCaptureTime=null;
+  calibrationTransitionSatisfied=true;
+  calibrationTransitionDistance=null;
+  calibrationTransitionThreshold=null;
+  resetCalibrationDwell();
+  if(el.calibrationCaptureBtn){ el.calibrationCaptureBtn.classList.remove('pending','active'); }
   updateCalibrationUI();
-  log(`CARD CAL RESET: reason=${reason}; next=TL; correctionApplied=false`);
+  log(`CARD CAL RESET: reason=${reason}; next=TL; auto=false; correctionApplied=false`);
 }
 
-function requestCalibrationCapture(){
+function toggleCalibrationAuto(){
   if(!session || ending || calibrationCapturePending || anchorCreationBusy) return;
   const corner=calibrationNextCorner();
   if(!corner){
     if(el.xrHint) el.xrHint.textContent='Card calibration already complete. RESET CARD to repeat.';
     return;
   }
+
+  if(calibrationAutoEnabled){
+    calibrationAutoEnabled=false;
+    calibrationAutoArmedAt=null;
+    resetCalibrationDwell();
+    log(`CARD CAL AUTO PAUSED: next=${corner}; captured=${calibrationCapturedCount()}/4`);
+    updateCalibrationUI();
+    return;
+  }
+
   if(!calibrationTargetFrozen){
     calibrationTargetFrozen=calibrationTargetDimensions();
-    log(`CARD CAL TARGET: nominal=${calibrationTargetFrozen.widthMm.toFixed(2)}x${calibrationTargetFrozen.heightMm.toFixed(2)} mm; order=TL,TR,BR,BL; captureMode=manual-center-ray-four-corner; correctionApplied=false`);
+    log(`CARD CAL TARGET: nominal=${calibrationTargetFrozen.widthMm.toFixed(2)}x${calibrationTargetFrozen.heightMm.toFixed(2)} mm; order=TL,TR,BR,BL; captureMode=dwell-auto-center-ray-four-corner; dwell=${CALIBRATION_DWELL_MS}ms; movingGrace=${CALIBRATION_MOVING_GRACE_MS}ms; correctionApplied=false`);
   }
-  calibrationCapturePending={corner,requestedAt:now()};
-  if(el.calibrationCaptureBtn){
-    el.calibrationCaptureBtn.classList.add('pending');
-    el.calibrationCaptureBtn.textContent=`CAPTURING ${corner}...`;
+
+  calibrationAutoEnabled=true;
+  calibrationAutoArmedAt=performance.now();
+  calibrationDwellLastFrameTime=null;
+  calibrationUnstableSince=null;
+  calibrationDwellProgressMs=0;
+  calibrationTransitionThreshold=calibrationExpectedTransitionM();
+  calibrationTransitionSatisfied=calibrationCapturedCount()===0 || !calibrationLastCapturedHit;
+  set('calibrationAutoState',`RUNNING — next ${corner}`,'ok');
+  if(el.xrHint) el.xrHint.textContent=`Card auto armed. Aim ${corner} at center ＋ and hold steady.`;
+  log(`CARD CAL AUTO ARMED: next=${corner}; captured=${calibrationCapturedCount()}/4; initialDelay=${CALIBRATION_INITIAL_ARM_DELAY_MS}ms; transitionRequired=${calibrationTransitionSatisfied?'no':'yes'}; transitionThreshold=${calibrationTransitionThreshold? (calibrationTransitionThreshold*1000).toFixed(1)+' mm':'n/a'}`);
+  updateCalibrationUI();
+}
+
+function updateCalibrationAutoDwell(time){
+  if(!calibrationAutoEnabled || calibrationCapturePending || ending || !session) return;
+  const corner=calibrationNextCorner();
+  if(!corner){
+    calibrationAutoEnabled=false;
+    updateCalibrationUI();
+    return;
   }
-  if(el.calibrationOverlayText) el.calibrationOverlayText.textContent=`CARD CAL: waiting next XR frame for ${corner} — same-frame Depth forced`;
-  log(`CARD CAL CAPTURE requested: corner=${corner}; hitStability=${liveHitStability}; warningOnly=true; sameFrameDepthForced=true`);
+
+  if(!latestHitPoint){
+    calibrationDwellLastFrameTime=time;
+    calibrationUnstableSince=null;
+    calibrationDwellProgressMs=0;
+    updateCalibrationDwellDisplay(`CARD CAL AUTO: ${corner} — NO SURFACE`, 'warn');
+    return;
+  }
+
+  if(calibrationAutoArmedAt!==null && time-calibrationAutoArmedAt<CALIBRATION_INITIAL_ARM_DELAY_MS){
+    calibrationDwellLastFrameTime=time;
+    const remain=Math.max(0,CALIBRATION_INITIAL_ARM_DELAY_MS-(time-calibrationAutoArmedAt));
+    updateCalibrationDwellDisplay(`CARD CAL AUTO: ${corner} — settle after button (${Math.ceil(remain)} ms)`, 'warn');
+    return;
+  }
+
+  if(!calibrationTransitionSatisfied && calibrationLastCapturedHit){
+    const moved=distance3(latestHitPoint,calibrationLastCapturedHit);
+    calibrationTransitionDistance=moved;
+    const threshold=calibrationTransitionThreshold || calibrationExpectedTransitionM();
+    const guardOk=calibrationLastCaptureTime===null || time-calibrationLastCaptureTime>=CALIBRATION_TRANSITION_GUARD_MS;
+    if(guardOk && moved>=threshold){
+      calibrationTransitionSatisfied=true;
+      calibrationDwellLastFrameTime=time;
+      calibrationDwellProgressMs=0;
+      calibrationUnstableSince=null;
+      log(`CARD CAL AUTO TRANSITION READY: next=${corner}; moved=${(moved*1000).toFixed(3)} mm; threshold=${(threshold*1000).toFixed(3)} mm`);
+    }else{
+      calibrationDwellLastFrameTime=time;
+      calibrationDwellProgressMs=0;
+      calibrationUnstableSince=null;
+      updateCalibrationDwellDisplay(`CARD CAL AUTO: move to ${corner} — ${(moved*1000).toFixed(1)} / ${(threshold*1000).toFixed(1)} mm`, 'warn');
+      set('calibrationAutoState',`MOVE TO ${corner} — transition gate`,'warn');
+      return;
+    }
+  }
+
+  const stats=hitWindowStats(time,HIT_STABILITY_WINDOW_MS,latestHitPoint);
+  const state=classifyHitStability(stats);
+  const prev=calibrationDwellLastFrameTime;
+  calibrationDwellLastFrameTime=time;
+  const dt=prev===null?0:Math.max(0,Math.min(50,time-prev));
+
+  if(state==='STABLE'){
+    calibrationUnstableSince=null;
+    calibrationDwellProgressMs=Math.min(CALIBRATION_DWELL_MS,calibrationDwellProgressMs+dt);
+    const remain=Math.max(0,CALIBRATION_DWELL_MS-calibrationDwellProgressMs);
+    set('calibrationAutoState',`HOLD ${corner} — STABLE maxR ${(stats.maxRadius*1000).toFixed(1)} mm`,'ok');
+    updateCalibrationDwellDisplay(`CARD CAL AUTO: ${corner} HOLD ${(remain/1000).toFixed(2)} s`, 'ok');
+  }else{
+    if(calibrationUnstableSince===null) calibrationUnstableSince=time;
+    const unstableFor=time-calibrationUnstableSince;
+    if(unstableFor>CALIBRATION_MOVING_GRACE_MS){
+      if(calibrationDwellProgressMs>0){
+        log(`CARD CAL AUTO DWELL RESET: corner=${corner}; unstableFor=${unstableFor.toFixed(0)} ms; previousProgress=${calibrationDwellProgressMs.toFixed(0)} ms; state=${state}`);
+      }
+      calibrationDwellProgressMs=0;
+    }
+    const graceRemain=Math.max(0,CALIBRATION_MOVING_GRACE_MS-unstableFor);
+    const maxR=stats&&Number.isFinite(stats.maxRadius)?`${(stats.maxRadius*1000).toFixed(1)} mm`:'n/a';
+    set('calibrationAutoState',`${state} — hold paused; maxR ${maxR}`,'warn');
+    updateCalibrationDwellDisplay(`CARD CAL AUTO: ${corner} ${state} — ${graceRemain>0?`pause ${Math.ceil(graceRemain)} ms grace`:'re-acquire STABLE'}`, 'warn');
+  }
+
+  if(calibrationDwellProgressMs>=CALIBRATION_DWELL_MS && state==='STABLE'){
+    calibrationCapturePending={
+      corner,requestedAt:time,captureMode:'dwell-auto',dwellHeldMs:calibrationDwellProgressMs,
+      stableMaxRadius:stats?.maxRadius??null,transitionDistance:calibrationTransitionDistance,
+      transitionThreshold:calibrationTransitionThreshold
+    };
+    if(el.calibrationCaptureBtn){
+      el.calibrationCaptureBtn.classList.add('pending');
+      el.calibrationCaptureBtn.textContent=`AUTO CAPTURE ${corner}...`;
+    }
+    if(el.calibrationOverlayText) el.calibrationOverlayText.textContent=`CARD CAL AUTO: CAPTURE ${corner} — same-frame Depth forced`;
+    log(`CARD CAL AUTO CAPTURE requested: corner=${corner}; dwell=${calibrationDwellProgressMs.toFixed(0)} ms; hitStability=${state}; maxRadius300=${Number.isFinite(stats?.maxRadius)?(stats.maxRadius*1000).toFixed(3)+' mm':'n/a'}; sameFrameDepthForced=true`);
+  }
 }
 
 function captureCalibrationFromCurrentHit(time,viewerPose){
@@ -3947,6 +4136,8 @@ function captureCalibrationFromCurrentHit(time,viewerPose){
   const entities=calibrationEntitySnapshot(hit);
   const rec={
     corner,frame:frameCount,time,requestedAt:pending.requestedAt,
+    captureMode:pending.captureMode??'manual',dwellHeldMs:pending.dwellHeldMs??null,
+    transitionDistance:pending.transitionDistance??null,transitionThreshold:pending.transitionThreshold??null,
     hit,hitDistance:latestHitDistance,
     hitStability:classifyHitStability(st),hitMaxRadius:st?.maxRadius??null,
     edge:qualityMedian('edge'),contrast:qualityMedian('contrast'),
@@ -3955,10 +4146,18 @@ function captureCalibrationFromCurrentHit(time,viewerPose){
   };
   calibrationPoints[corner]=rec;
   calibrationCapturePending=null;
+  calibrationLastCapturedHit=clonePoint(hit);
+  calibrationLastCaptureTime=time;
+  calibrationTransitionDistance=null;
+  calibrationTransitionThreshold=calibrationExpectedTransitionM();
+  calibrationTransitionSatisfied=false;
+  calibrationAutoArmedAt=null;
+  resetCalibrationDwell();
   if(el.calibrationCaptureBtn) el.calibrationCaptureBtn.classList.remove('pending');
 
   log(
-    `CARD CAL POINT ${corner}: frame=${frameCount}; hit=${fmtPoint(hit)}; cameraToHit=${Number.isFinite(latestHitDistance)?latestHitDistance.toFixed(6):'n/a'} m; `+
+    `CARD CAL POINT ${corner}: frame=${frameCount}; captureMode=${rec.captureMode}; dwellHeld=${Number.isFinite(rec.dwellHeldMs)?rec.dwellHeldMs.toFixed(0)+' ms':'n/a'}; `+
+    `hit=${fmtPoint(hit)}; cameraToHit=${Number.isFinite(latestHitDistance)?latestHitDistance.toFixed(6):'n/a'} m; `+
     `hitStability=${rec.hitStability}; maxRadius300=${Number.isFinite(rec.hitMaxRadius)?(rec.hitMaxRadius*1000).toFixed(3)+' mm':'n/a'}; `+
     `edge=${fmtMaybeNumber(rec.edge)}; contrast=${fmtMaybeNumber(rec.contrast)}; `+
     `viewForward=${fmtMaybeNumber(rec.hitViewForward,6)} m; uv=${rec.uv?rec.uv.x.toFixed(6)+','+rec.uv.y.toFixed(6):'n/a'}; `+
@@ -3966,8 +4165,15 @@ function captureCalibrationFromCurrentHit(time,viewerPose){
     `${formatCalibrationEntity('plane',entities.plane)}; ${formatCalibrationEntity('point',entities.point)}; ${formatCalibrationEntity('mesh',entities.mesh)}; diagnosticOnly=true`
   );
 
-  if(calibrationCapturedCount()===4) finalizeCalibration();
-  else updateCalibrationUI();
+  if(calibrationCapturedCount()===4){
+    calibrationTransitionSatisfied=true;
+    finalizeCalibration();
+  }else{
+    const next=calibrationNextCorner();
+    set('calibrationAutoState',`MOVE TO ${next} — transition gate`,'warn');
+    if(el.xrHint) el.xrHint.textContent=`Captured ${corner}. Move center ＋ to ${next}; auto capture remains armed.`;
+    updateCalibrationUI();
+  }
 }
 
 function requestCapture(source){
@@ -4125,6 +4331,14 @@ async function startAR(){
     el.endBtn.disabled = false;
     el.xrEndBtn.disabled = false;
     el.entitySnapshotBtn.disabled = false;
+    calibrationAutoEnabled = false;
+    calibrationAutoArmedAt = null;
+    calibrationLastCapturedHit = null;
+    calibrationLastCaptureTime = null;
+    calibrationTransitionSatisfied = true;
+    calibrationTransitionDistance = null;
+    calibrationTransitionThreshold = null;
+    resetCalibrationDwell();
     el.calibrationCaptureBtn.disabled = false;
     el.calibrationResetOverlayBtn.disabled = false;
     updateCalibrationUI();
@@ -4518,8 +4732,9 @@ function onXRFrame(time,frame){
     }
   }
 
-  // Card calibration captures after the current Raw Camera sample so the
-  // edge/contrast diagnostics correspond to this XR frame as closely as possible.
+  // Phase 4.21 dwell auto-calibration evaluates after the current Raw Camera
+  // sample, then captures in this same XR frame when the hold requirement passes.
+  updateCalibrationAutoDwell(time);
   if(calibrationCapturePending && latestHitPoint){
     captureCalibrationFromCurrentHit(time,pose);
   }
@@ -4593,6 +4808,16 @@ function resetMeasurement(){
   matrixB = null;
   capturePending = null;
   calibrationCapturePending = null;
+  calibrationAutoEnabled = false;
+  calibrationAutoArmedAt = null;
+  calibrationDwellProgressMs = 0;
+  calibrationDwellLastFrameTime = null;
+  calibrationUnstableSince = null;
+  calibrationLastCapturedHit = null;
+  calibrationLastCaptureTime = null;
+  calibrationTransitionSatisfied = true;
+  calibrationTransitionDistance = null;
+  calibrationTransitionThreshold = null;
   anchorCreationBusy = false;
 
   if(gl && lineBuffer){
@@ -4685,6 +4910,16 @@ async function stopXRResourcesBeforeEnd(reason){
   anchorB = null;
   capturePending = null;
   calibrationCapturePending = null;
+  calibrationAutoEnabled = false;
+  calibrationAutoArmedAt = null;
+  calibrationDwellProgressMs = 0;
+  calibrationDwellLastFrameTime = null;
+  calibrationUnstableSince = null;
+  calibrationLastCapturedHit = null;
+  calibrationLastCaptureTime = null;
+  calibrationTransitionSatisfied = true;
+  calibrationTransitionDistance = null;
+  calibrationTransitionThreshold = null;
   anchorCreationBusy = false;
 
   // Hide DOM overlay controls before shutdown to avoid an additional UI action
@@ -4739,6 +4974,16 @@ function onSessionEnd(){
 
   capturePending = null;
   calibrationCapturePending = null;
+  calibrationAutoEnabled = false;
+  calibrationAutoArmedAt = null;
+  calibrationDwellProgressMs = 0;
+  calibrationDwellLastFrameTime = null;
+  calibrationUnstableSince = null;
+  calibrationLastCapturedHit = null;
+  calibrationLastCaptureTime = null;
+  calibrationTransitionSatisfied = true;
+  calibrationTransitionDistance = null;
+  calibrationTransitionThreshold = null;
   anchorCreationBusy = false;
 
   viewerPoseSeen = false;
@@ -4827,7 +5072,7 @@ el.bottomPanel.addEventListener('beforexrselect',preventOverlayXRSelect);
 el.magnifierWrap.addEventListener('beforexrselect',preventOverlayXRSelect);
 el.alignBtn.addEventListener('click',()=>setAlignmentMode(!alignmentMode));
 el.entitySnapshotBtn.addEventListener('click',requestEntitySnapshot);
-el.calibrationCaptureBtn.addEventListener('click',requestCalibrationCapture);
+el.calibrationCaptureBtn.addEventListener('click',toggleCalibrationAuto);
 el.calibrationResetOverlayBtn.addEventListener('click',()=>resetCalibration('overlay'));
 el.calibrationResetBtn.addEventListener('click',()=>resetCalibration('page-control'));
 el.calibrationWidthMm.addEventListener('change',()=>{ if(!calibrationCapturedCount()) updateCalibrationUI(); });
