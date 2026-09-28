@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<title>AR DISTANCE LAB - Phase 4.16</title>
+<title>AR DISTANCE LAB - Phase 4.17</title>
 <style>
 :root{
   color-scheme:dark;
@@ -25,6 +25,12 @@ h2{font-size:14px;letter-spacing:.08em;color:var(--accent);margin:0 0 10px}
 .cell{padding:8px 7px;border-bottom:1px solid #1a2630;overflow-wrap:anywhere}
 .ok{color:var(--ok)}.warn{color:var(--warn)}.ng{color:var(--ng)}
 .actions{display:flex;flex-wrap:wrap;gap:9px}
+.refPreset.active{border-color:var(--accent);background:#17374b}
+.sweepGrid{display:grid;grid-template-columns:minmax(150px,.9fr) minmax(160px,1.1fr);gap:0;margin-top:10px}
+.sweepValue{font-weight:700}
+.procedure{margin:0;padding-left:1.35em;color:#cbd7e1;font-size:12px;line-height:1.7}
+#depthABText{font-size:14px;font-weight:700;color:#a7f3d0;margin-top:4px}
+#sweepText{font-size:12px;font-weight:700;color:#bfdbfe;margin-top:4px}
 button{appearance:none;border:1px solid #36566c;background:#132534;color:var(--text);
 border-radius:9px;padding:12px 14px;font:inherit;font-weight:700;min-height:44px}
 button:disabled{opacity:.4}
@@ -100,7 +106,7 @@ padding:10px;pointer-events:auto}
 <body>
 <main>
 <h1>AR DISTANCE LAB</h1>
-<p class="sub">Phase 4.16 — Depth-derived 3D A/B Comparison</p>
+<p class="sub">Phase 4.17 — Controlled Depth Distance Sweep (20 / 50 / 100 cm)</p>
 
 <section class="card">
 <h2>STATUS</h2>
@@ -204,8 +210,8 @@ padding:10px;pointer-events:auto}
 </section>
 
 <section class="card">
-<h2>REFERENCE LENGTH</h2>
-<p class="note">実物をメジャー等で測った既知のA-B長を設定してください。AR測定中央値との差を計算します。</p>
+<h2>REFERENCE LENGTH / SWEEP TARGET</h2>
+<p class="note">Phase 4.17の比較実験では 20 / 50 / 100 cm を各3回測定します。Customも従来どおり使用できますが、SWEEP集計は20 / 50 / 100 cmだけを対象にします。</p>
 <div class="actions">
   <button type="button" class="refPreset" data-cm="20">20 cm</button>
   <button type="button" class="refPreset" data-cm="50">50 cm</button>
@@ -213,10 +219,33 @@ padding:10px;pointer-events:auto}
 </div>
 <div style="display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap">
   <label for="referenceCm">Custom</label>
-  <input id="referenceCm" type="number" min="1" max="1000" step="0.1" value="50"
+  <input id="referenceCm" type="number" min="1" max="1000" step="0.1" value="20"
     style="width:120px;background:#080d12;color:#e8f0f6;border:1px solid #263441;border-radius:8px;padding:10px;font:inherit">
   <span>cm</span>
 </div>
+<div class="sweepGrid">
+  <div class="cell">Sweep progress</div><div class="cell sweepValue" id="sweepProgressState">20 cm 0/3 | 50 cm 0/3 | 100 cm 0/3</div>
+  <div class="cell">Selected target samples</div><div class="cell sweepValue" id="sweepSelectedCountState">0 / 3</div>
+  <div class="cell">Hit-Hit mean / error</div><div class="cell" id="sweepHitState">—</div>
+  <div class="cell">Depth-center mean / error</div><div class="cell" id="sweepDepthCenterState">—</div>
+  <div class="cell">Depth-median mean / error</div><div class="cell" id="sweepDepthMedianState">—</div>
+</div>
+<div class="actions" style="margin-top:10px">
+  <button type="button" id="discardSweepBtn" disabled>DISCARD LAST SWEEP SAMPLE</button>
+  <button type="button" id="clearSweepBtn">CLEAR SWEEP STATS</button>
+</div>
+</section>
+
+<section class="card">
+<h2>PHASE 4.17 TEST PROCEDURE</h2>
+<ol class="procedure">
+  <li>同一平面上に、実測で A-B = 20 cm / 50 cm / 100 cm の基準点を用意します。</li>
+  <li>START AR後、まず20 cmを選び、同じ20 cm基準を3回測定します。各回は SET POINT A → SET POINT B → 結果確認 → RESET の順です。</li>
+  <li>次に50 cmを選んで3回、最後に100 cmを選んで3回、同じ手順を繰り返します。</li>
+  <li>できるだけ同じ平面・照明・端末姿勢傾向を維持してください。Hit stabilityはwarning-onlyなので、MOVING時の値も記録されます。</li>
+  <li>明らかな操作ミスをCommitしてしまった場合は DISCARD LAST SWEEP SAMPLE で比較集計だけから除外できます。原ログは残ります。</li>
+  <li>9回終了後にEND ARを押し、LOGを共有してください。Hit-Hit / Depth-center / Depth-median の距離依存性を比較します。</li>
+</ol>
 </section>
 
 <section class="card">
@@ -229,8 +258,8 @@ padding:10px;pointer-events:auto}
 </section>
 
 <section class="card note">
-Phase 4.16では正式なA/B測定を従来どおりplane Hit Testのimmutable Hit-Hitで維持しつつ、Point A / Bを置いた各XRフレームのDepthから3D点を復元し、同じREFERENCE LENGTHに対してHit-HitとDepth-Depthを直接比較します。Depth値はカメラ平面から実環境までの距離なので、XRViewの投影幾何を使ってView-space 3D点へ戻し、そのキャプチャ時のView transformでlocal reference spaceへ変換します。
-比較値は Hit-Hit / Depth-center↔Depth-center / Depth 3×3 median↔median / A Hit↔B Depth-center / A Depth-center↔B Hit をログへ保存します。Depth-derived値はPhase 4.16では診断専用で、Commit値の補正・ゲートには使用しません。Depth coherenceも併記します。
+Phase 4.17ではPhase 4.16のDepth 3D復元方法と正式なHit-Hit測定を変更せず、20 / 50 / 100 cmの距離別比較を追加します。各Commit時に Hit-Hit / Depth-center↔Depth-center / Depth 3×3 median↔median をREFERENCE LENGTH別に記録し、各距離の平均値と誤差を表示します。
+Depth-derived値はPhase 4.17でも診断専用で、Commit値の補正・ゲートには使用しません。SWEEP集計は測定アルゴリズムとは独立した実験用統計です。Depth coherenceも各サンプルのログへ保存します。
 HIT ENTITY SNAPSHOT、CENTER ALIGN CHECK、Measurement-impact Integrity、Hit Test直前0.3秒のSTABLE / MOVING warning-onlyは継続します。
 </section>
 
@@ -264,6 +293,7 @@ HIT ENTITY SNAPSHOT、CENTER ALIGN CHECK、Measurement-impact Integrity、Hit Te
       <div id="hitStabilityText">HIT STABILITY: ANALYZING — warning only</div>
       <div id="depthText">DEPTH × HIT: WAITING — diagnostic only</div>
       <div id="depthABText">DEPTH 3D A↔B: — diagnostic only</div>
+      <div id="sweepText">SWEEP: 20 cm 0/3 | 50 cm 0/3 | 100 cm 0/3</div>
       <div id="entityText">ENTITY PROBE: waiting</div>
       <div id="accuracyText">REF: 50.0 cm / ERROR: —</div>
       <div id="stabilityText">STABILITY: —</div>
@@ -311,7 +341,7 @@ const el = {};
   'rawCameraState','hitDistanceState','depthState','depthConfigState','depthBufferState',
   'depthCenterState','depthMedianState','depthTemporalState','depthValidState','depthCoherenceState','hitViewState','hitUvState','depthAtHitState','depthHitDeltaState',
   'captureADepthState','captureBDepthState','depth3DGeometryState','depth3DAState','depth3DBState','compareHitABState','compareDepthCenterABState','compareDepthMedianABState','compareHitADepthBState','compareDepthAHitBState','depthCenterErrorState','depthMedianErrorState','entityProbeState','entityPlaneSourceState','entityPlaneHitState','entityPointSourceState','entityPointHitState','entityMeshSourceState','entityMeshHitState','entitySnapshotState','aimQualityState','edgeMedianState',
-  'contrastMedianState','magnifierState','magnifierCanvas','magnifierWrap','alignmentGrid','alignmentMark','alignmentState','alignmentOffsetState','alignmentUvState','alignBtn','entitySnapshotBtn',
+  'contrastMedianState','sweepProgressState','sweepSelectedCountState','sweepHitState','sweepDepthCenterState','sweepDepthMedianState','discardSweepBtn','clearSweepBtn','sweepText','magnifierState','magnifierCanvas','magnifierWrap','alignmentGrid','alignmentMark','alignmentState','alignmentOffsetState','alignmentUvState','alignBtn','entitySnapshotBtn',
   'magnifierLabel','qualityText','hitStabilityText','depthText','depthABText','entityText','alignmentText',
   'coordA','coordB','startBtn','resetBtn','endBtn','log','xrCanvas','xrOverlay','xrHud',
   'xrState','xrHint','pointText','anchorText','distanceText','accuracyText','stabilityText','settlingText','preBText','setPointBtn',
@@ -712,7 +742,7 @@ function logHitABComparison(){
   return comparison;
 }
 
-// Phase 4.16: formal measurement candidate is frozen at Point B capture.
+// Phase 4.17: formal measurement candidate remains frozen at Point B capture.
 let frozenMeasurement = null;
 let sessionFrozenMeasurements = [];
 let lastAAnchorPoseTime = null;
@@ -733,9 +763,11 @@ function resetCurrentFrozenMeasurement(){
 }
 
 function updateRepeatabilityUI(){
-  const values = sessionFrozenMeasurements
-    .map(v=>v.distance)
-    .filter(Number.isFinite);
+  // Phase 4.17 may change the reference between 20 / 50 / 100 cm.
+  // Repeatability must therefore be calculated only within the currently selected reference.
+  const rows = sessionFrozenMeasurements
+    .filter(v=>Math.abs((v.referenceMeters??NaN)-referenceMeters)<0.0005);
+  const values = rows.map(v=>v.distance).filter(Number.isFinite);
 
   set('repeatCountState',String(values.length),values.length?'ok':'');
 
@@ -877,11 +909,14 @@ function freezeMeasurementAtB(hitPoint,time){
     distanceImpact:integrity.impact
   });
 
+  recordDepthSweepSample(integrity.state);
+
   set('distanceState',fmtDistance(distance),'ok');
   set('freezeStatusState',`${integrity.state==='WARN'||integrity.state==='UNKNOWN'?'COMMITTED WITH WARNING':'COMMITTED'} HIT A↔B @ frame ${frameCount}`,integrity.state==='WARN'||integrity.state==='UNKNOWN'?'warn':'ok');
   updateRepeatabilityUI();
 
-  const values=sessionFrozenMeasurements.map(v=>v.distance);
+  const sameRefRows=sessionFrozenMeasurements.filter(v=>Math.abs((v.referenceMeters??NaN)-referenceMeters)<0.0005);
+  const values=sameRefRows.map(v=>v.distance).filter(Number.isFinite);
   const mean=values.reduce((a,b)=>a+b,0)/values.length;
   const range=Math.max(...values)-Math.min(...values);
 
@@ -893,7 +928,7 @@ function freezeMeasurementAtB(hitPoint,time){
     `frame=${frameCount}; sessionReset=${sessionReferenceSpaceResetCount}; source=immutable-hit; integrity=${integrity.state}`
   );
   log(
-    `COMMITTED REPEATABILITY: n=${values.length}; mean=${mean.toFixed(6)} m; ` +
+    `COMMITTED REPEATABILITY (same reference ${(referenceMeters*100).toFixed(1)} cm): n=${values.length}; mean=${mean.toFixed(6)} m; ` +
     `min=${Math.min(...values).toFixed(6)} m; max=${Math.max(...values).toFixed(6)} m; ` +
     `range=${(range*1000).toFixed(3)} mm`
   );
@@ -902,7 +937,10 @@ function freezeMeasurementAtB(hitPoint,time){
 }
 
 // Absolute accuracy validation.
-let referenceMeters = 0.50;
+let referenceMeters = 0.20;
+const SWEEP_TARGETS_M = [0.20,0.50,1.00];
+const SWEEP_GOAL_PER_TARGET = 3;
+let depthSweepSamples = [];
 let referenceSpaceResetCount = 0;
 let sessionReferenceSpaceResetCount = 0;
 
@@ -936,7 +974,7 @@ let qualityHistory = [];
 let lastQualitySampleTime = -Infinity;
 let latestHitDistance = null;
 
-// Phase 4.16: CPU Depth Sensing × XRView-aligned Hit Test cross-check + entity-type probe.
+// Phase 4.17: Phase 4.16 Depth 3D method retained; distance-sweep statistics added separately.
 // Diagnostic only: it never gates capture and never modifies the committed distance.
 const DEPTH_GRID = 3;
 const DEPTH_RADIUS = 0.01; // compact local region around projected Hit / screen center
@@ -968,8 +1006,8 @@ const DETAIL_CONTRAST_LOW = 8.0;
 
 let ending = false;
 let cleanupDone = false;
-const LOG_STORAGE_KEY = 'ar-distance-lab-phase4-15-log';
-const SUMMARY_STORAGE_KEY = 'ar-distance-lab-phase4-15-summary';
+const LOG_STORAGE_KEY = 'ar-distance-lab-phase4-17-log';
+const SUMMARY_STORAGE_KEY = 'ar-distance-lab-phase4-17-summary';
 
 const TRACKING_UNSTABLE_MS = 250;
 const TRACKING_LOST_MS = 1000;
@@ -1002,6 +1040,7 @@ function persistDiagnostics(){
       samples: distanceSamples.length,
       frozenMeasurement,
       sessionFrozenMeasurements,
+      depthSweepSamples,
       hitStabilitySnapshotA,
       hitStabilitySnapshotB,
       hitABComparison,
@@ -1062,6 +1101,17 @@ function restoreDiagnostics(){
       ];
       el.log.textContent = logLines.join('\n');
       el.log.scrollTop = el.log.scrollHeight;
+    }
+    const oldSummary = sessionStorage.getItem(SUMMARY_STORAGE_KEY);
+    if(oldSummary){
+      const parsed=JSON.parse(oldSummary);
+      if(Array.isArray(parsed?.depthSweepSamples)){
+        depthSweepSamples=parsed.depthSweepSamples.filter(x=>x && Number.isFinite(x.referenceMeters));
+        depthSweepSamples.forEach((x,i)=>x.index=i+1);
+        if(depthSweepSamples.length){
+          log(`${now()}  SWEEP RESTORED: ${depthSweepSamples.length} experimental sample(s) from this tab session`);
+        }
+      }
     }
   }catch{}
 }
@@ -1278,7 +1328,7 @@ function updateDepthABComparison(){
   set('depthCenterErrorState',centerDistance==null?'—':fmtErrorAgainstReference(centerDistance),centerDistance==null?'':Math.abs(centerDistance-referenceMeters)<=0.005?'ok':'warn');
   set('depthMedianErrorState',medianDistance==null?'—':fmtErrorAgainstReference(medianDistance),medianDistance==null?'':Math.abs(medianDistance-referenceMeters)<=0.005?'ok':'warn');
   if(el.depthABText){
-    el.depthABText.textContent=`DEPTH 3D A↔B: center=${centerDistance==null?'N/A':fmtDistance(centerDistance)} / median=${medianDistance==null?'N/A':fmtDistance(medianDistance)} — diagnostic only`;
+    el.depthABText.textContent=`DEPTH 3D: center=${centerDistance==null?'N/A':fmtDistance(centerDistance)+' (Δ '+formatSignedDistanceMeters(centerDistance-referenceMeters)+')'} / median=${medianDistance==null?'N/A':fmtDistance(medianDistance)+' (Δ '+formatSignedDistanceMeters(medianDistance-referenceMeters)+')'}`;
   }
 
   log(
@@ -2317,6 +2367,77 @@ function updateSettlingState(time,d){
   }
 }
 
+function sweepTargetForReference(ref=referenceMeters){
+  for(const t of SWEEP_TARGETS_M){
+    if(Math.abs(ref-t)<0.0005) return t;
+  }
+  return null;
+}
+function meanFinite(values){
+  const a=values.filter(Number.isFinite);
+  return a.length ? a.reduce((x,y)=>x+y,0)/a.length : null;
+}
+function formatSweepMetric(values,ref){
+  const a=values.filter(Number.isFinite);
+  if(!a.length) return 'N/A';
+  const m=meanFinite(a), err=m-ref, pctErr=(err/ref)*100;
+  const range=a.length>1 ? Math.max(...a)-Math.min(...a) : 0;
+  return `${fmtDistance(m)} / Δ ${formatSignedDistanceMeters(err)} (${pctErr>=0?'+':''}${pctErr.toFixed(2)}%) / range ${(range*1000).toFixed(2)} mm`;
+}
+function sweepProgressText(){
+  return SWEEP_TARGETS_M.map(t=>{
+    const n=depthSweepSamples.filter(x=>Math.abs(x.referenceMeters-t)<0.0005).length;
+    return `${Math.round(t*100)} cm ${n}/${SWEEP_GOAL_PER_TARGET}`;
+  }).join(' | ');
+}
+function updateDepthSweepUI(){
+  const progress=sweepProgressText();
+  set('sweepProgressState',progress,depthSweepSamples.length?'ok':'');
+  if(el.sweepText) el.sweepText.textContent=`SWEEP: ${progress}`;
+  if(el.discardSweepBtn) el.discardSweepBtn.disabled=!depthSweepSamples.length;
+  document.querySelectorAll('.refPreset').forEach(btn=>{
+    const cm=Number(btn.dataset.cm);
+    btn.classList.toggle('active',Math.abs(referenceMeters-cm/100)<0.0005);
+  });
+  const target=sweepTargetForReference();
+  if(target===null){
+    set('sweepSelectedCountState','CUSTOM — not grouped','warn');
+    set('sweepHitState','—',''); set('sweepDepthCenterState','—',''); set('sweepDepthMedianState','—','');
+    return;
+  }
+  const rows=depthSweepSamples.filter(x=>Math.abs(x.referenceMeters-target)<0.0005);
+  set('sweepSelectedCountState',`${rows.length} / ${SWEEP_GOAL_PER_TARGET}`,rows.length>=SWEEP_GOAL_PER_TARGET?'ok':rows.length?'warn':'');
+  set('sweepHitState',formatSweepMetric(rows.map(x=>x.hitDistance),target),rows.length?'warn':'');
+  set('sweepDepthCenterState',formatSweepMetric(rows.map(x=>x.centerDistance),target),rows.length?'ok':'');
+  set('sweepDepthMedianState',formatSweepMetric(rows.map(x=>x.medianDistance),target),rows.length?'ok':'');
+}
+function logSweepSummary(target){
+  const rows=depthSweepSamples.filter(x=>Math.abs(x.referenceMeters-target)<0.0005);
+  if(!rows.length) return;
+  const hit=meanFinite(rows.map(x=>x.hitDistance)), center=meanFinite(rows.map(x=>x.centerDistance)), med=meanFinite(rows.map(x=>x.medianDistance));
+  const metric=v=>v==null?'n/a':`${v.toFixed(6)} m(error=${((v-target)*1000).toFixed(3)} mm,${(((v-target)/target)*100).toFixed(3)}%)`;
+  log(`SWEEP SUMMARY ${Math.round(target*100)} cm: n=${rows.length}; HitMean=${metric(hit)}; DepthCenterMean=${metric(center)}; DepthMedianMean=${metric(med)}; targetGoal=${SWEEP_GOAL_PER_TARGET}`);
+}
+function recordDepthSweepSample(integrityState){
+  const target=sweepTargetForReference();
+  if(target===null || !depthABComparison) return;
+  const row={index:depthSweepSamples.length+1,time:now(),referenceMeters:target,hitDistance:depthABComparison.hitDistance,centerDistance:depthABComparison.centerDistance,medianDistance:depthABComparison.medianDistance,aCoherence:depthABComparison.a?.coherence??null,bCoherence:depthABComparison.b?.coherence??null,integrity:integrityState??'UNKNOWN'};
+  depthSweepSamples.push(row);
+  const err=v=>Number.isFinite(v)?`${((v-target)*1000).toFixed(3)} mm (${(((v-target)/target)*100).toFixed(3)}%)`:'n/a';
+  log(`SWEEP SAMPLE #${row.index}: target=${(target*100).toFixed(1)} cm; targetRun=${depthSweepSamples.filter(x=>Math.abs(x.referenceMeters-target)<0.0005).length}/${SWEEP_GOAL_PER_TARGET}; Hit=${Number.isFinite(row.hitDistance)?row.hitDistance.toFixed(6):'n/a'} m error=${err(row.hitDistance)}; DepthCenter=${Number.isFinite(row.centerDistance)?row.centerDistance.toFixed(6):'n/a'} m error=${err(row.centerDistance)}; DepthMedian=${Number.isFinite(row.medianDistance)?row.medianDistance.toFixed(6):'n/a'} m error=${err(row.medianDistance)}; Acoherence=${row.aCoherence??'n/a'}; Bcoherence=${row.bCoherence??'n/a'}; integrity=${row.integrity}; experimentalStatsOnly=true`);
+  updateDepthSweepUI(); logSweepSummary(target); persistDiagnostics();
+}
+function discardLastSweepSample(){
+  if(!depthSweepSamples.length) return;
+  const row=depthSweepSamples.pop();
+  log(`SWEEP DISCARD: removed sample #${row.index}; target=${(row.referenceMeters*100).toFixed(1)} cm; reason=user operation exclusion; original diagnostic log retained`);
+  depthSweepSamples.forEach((x,i)=>x.index=i+1); updateDepthSweepUI(); logSweepSummary(row.referenceMeters); persistDiagnostics();
+}
+function clearDepthSweepStats(){
+  const n=depthSweepSamples.length; depthSweepSamples=[];
+  log(`SWEEP CLEAR: removed ${n} experimental sample(s); raw log retained`); updateDepthSweepUI(); persistDiagnostics();
+}
+
 function setReferenceCm(cm){
   const v = Number(cm);
   if(!Number.isFinite(v) || v <= 0) return;
@@ -2325,6 +2446,8 @@ function setReferenceCm(cm){
   set('referenceState',`${v.toFixed(1)} cm`,'ok');
   if(el.accuracyText) el.accuracyText.textContent = `REF: ${v.toFixed(1)} cm / ERROR: —`;
   updateMetricsUI();
+  updateRepeatabilityUI();
+  updateDepthSweepUI();
 }
 
 function resetMeasurementMetrics(){
@@ -3349,6 +3472,9 @@ async function startAR(){
   cleanupDone = false;
   sessionReferenceSpaceResetCount = 0;
   sessionFrozenMeasurements = [];
+  // Keep Phase 4.17 sweep samples across AR session restarts.
+  // CLEAR SWEEP STATS is the explicit way to start a new controlled dataset.
+  updateDepthSweepUI();
   hitHistory = [];
   hitEntitySources = {plane:null, point:null, mesh:null};
   hitEntitySourceStatus = {plane:'NOT REQUESTED', point:'NOT REQUESTED', mesh:'NOT REQUESTED'};
@@ -4134,12 +4260,15 @@ document.querySelectorAll('.refPreset').forEach(btn=>{
 });
 
 el.referenceCm.addEventListener('change',()=>setReferenceCm(el.referenceCm.value));
+el.discardSweepBtn.addEventListener('click',discardLastSweepSample);
+el.clearSweepBtn.addEventListener('click',clearDepthSweepStats);
 el.referenceCm.addEventListener('input',()=>{
   const v = Number(el.referenceCm.value);
   if(Number.isFinite(v) && v > 0){
     referenceMeters = v/100;
     set('referenceState',`${v.toFixed(1)} cm`,'ok');
     if(el.accuracyText) el.accuracyText.textContent = `REF: ${v.toFixed(1)} cm / ERROR: —`;
+    updateDepthSweepUI();
   }
 });
 
@@ -4182,6 +4311,7 @@ window.addEventListener('pagehide',()=>{
 
 restoreDiagnostics();
 setReferenceCm(el.referenceCm.value);
+updateDepthSweepUI();
 resetMeasurementMetrics();
 resetDepthDiagnostics();
 resetHitEntityProbe();
