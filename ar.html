@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<title>AR DISTANCE LAB - Phase 4.18</title>
+<title>AR DISTANCE LAB - Phase 4.19</title>
 <style>
 :root{
   color-scheme:dark;
@@ -106,7 +106,7 @@ padding:10px;pointer-events:auto}
 <body>
 <main>
 <h1>AR DISTANCE LAB</h1>
-<p class="sub">Phase 4.18 — Depth Cross-Check Quality Gate + Auto Sweep</p>
+<p class="sub">Phase 4.19 — Repeat-Measurement Consensus + Depth Agreement Diagnostic</p>
 
 <section class="card">
 <h2>STATUS</h2>
@@ -123,9 +123,9 @@ padding:10px;pointer-events:auto}
   <div class="cell">Commit status</div><div class="cell" id="freezeStatusState">NOT SET</div>
   <div class="cell">Live Anchor A-B</div><div class="cell" id="liveDistanceState">—</div>
   <div class="cell">Live Anchor − Commit</div><div class="cell" id="liveMinusFrozenState">—</div>
-  <div class="cell">Valid committed runs</div><div class="cell" id="repeatCountState">0</div>
-  <div class="cell">Valid committed mean</div><div class="cell" id="repeatMeanState">—</div>
-  <div class="cell">Valid committed range</div><div class="cell" id="repeatRangeState">—</div>
+  <div class="cell">Raw committed runs</div><div class="cell" id="repeatCountState">0</div>
+  <div class="cell">Raw committed median</div><div class="cell" id="repeatMeanState">—</div>
+  <div class="cell">Raw committed range</div><div class="cell" id="repeatRangeState">—</div>
   <div class="cell">Capture Hit distance</div><div class="cell" id="captureDistanceState">—</div>
   <div class="cell">A Hit 0.3 s stability</div><div class="cell" id="hitSpreadAState">—</div>
   <div class="cell">B Hit 0.3 s stability</div><div class="cell" id="hitSpreadBState">—</div>
@@ -142,8 +142,12 @@ padding:10px;pointer-events:auto}
   <div class="cell">A relocation → distance impact</div><div class="cell" id="distanceImpactState">—</div>
   <div class="cell">MAP integrity</div><div class="cell" id="measurementIntegrityState">UNKNOWN</div>
   <div class="cell">Hit − Depth-median Δ</div><div class="cell" id="depthCrossCheckDeltaState">—</div>
-  <div class="cell">Depth cross-check QC</div><div class="cell" id="depthCrossCheckState">UNKNOWN</div>
-  <div class="cell">Final quality gate</div><div class="cell" id="finalQualityState">UNKNOWN</div>
+  <div class="cell">Depth agreement (diagnostic)</div><div class="cell" id="depthCrossCheckState">UNKNOWN</div>
+  <div class="cell">MAP measurement gate</div><div class="cell" id="finalQualityState">UNKNOWN</div>
+  <div class="cell">Repeat consensus</div><div class="cell" id="consensusState">COLLECTING</div>
+  <div class="cell">Consensus distance</div><div class="cell" id="consensusDistanceState">—</div>
+  <div class="cell">Consensus cluster</div><div class="cell" id="consensusClusterState">—</div>
+  <div class="cell">Consensus tolerance</div><div class="cell" id="consensusToleranceState">—</div>
   <div class="cell">Point A capture</div><div class="cell" id="captureAQualityState">—</div>
   <div class="cell">Point B capture</div><div class="cell" id="captureBQualityState">—</div>
   <div class="cell">Initial Anchor distance</div><div class="cell" id="initialAnchorDistanceState">—</div>
@@ -214,7 +218,7 @@ padding:10px;pointer-events:auto}
 
 <section class="card">
 <h2>REFERENCE LENGTH / SWEEP TARGET</h2>
-<p class="note">Phase 4.18では 20 / 50 / 100 cm を各3回測定し、3回の有効Commitごとに次の距離へ自動切替します。Depth-median 3Dは正式値の補正には使わず、Hit-Hitとの独立クロスチェック品質ゲートとして使用します。</p>
+<p class="note">Phase 4.19では 20 / 50 / 100 cm を最低3回測定し、MAPで有効なHit-Hit値から多数派クラスタを探索します。3回で合意しなければ同じ距離を4回目以降も継続し、コンセンサス成立後のRESETで次の距離へ自動切替します。Depth-median 3Dは正式値の補正・拒否には使わず、一致度の診断情報として残します。</p>
 <div class="actions">
   <button type="button" class="refPreset" data-cm="20">20 cm</button>
   <button type="button" class="refPreset" data-cm="50">50 cm</button>
@@ -227,12 +231,14 @@ padding:10px;pointer-events:auto}
   <span>cm</span>
 </div>
 <div class="sweepGrid">
-  <div class="cell">Sweep progress</div><div class="cell sweepValue" id="sweepProgressState">20 cm 0/3 | 50 cm 0/3 | 100 cm 0/3</div>
-  <div class="cell">Selected target samples</div><div class="cell sweepValue" id="sweepSelectedCountState">0 / 3</div>
+  <div class="cell">Sweep progress</div><div class="cell sweepValue" id="sweepProgressState">20 cm n=0 WAIT | 50 cm n=0 WAIT | 100 cm n=0 WAIT</div>
+  <div class="cell">Selected target attempts</div><div class="cell sweepValue" id="sweepSelectedCountState">0 / min 3</div>
+  <div class="cell">Consensus</div><div class="cell sweepValue" id="sweepConsensusState">COLLECTING</div>
   <div class="cell">Next target</div><div class="cell sweepValue" id="sweepNextState">20 cm</div>
-  <div class="cell">Hit-Hit mean / error</div><div class="cell" id="sweepHitState">—</div>
-  <div class="cell">Depth-center mean / error</div><div class="cell" id="sweepDepthCenterState">—</div>
-  <div class="cell">Depth-median mean / error</div><div class="cell" id="sweepDepthMedianState">—</div>
+  <div class="cell">Hit-Hit all median / error</div><div class="cell" id="sweepHitState">—</div>
+  <div class="cell">Consensus cluster median</div><div class="cell" id="sweepConsensusDistanceState">—</div>
+  <div class="cell">Depth-center all median / error</div><div class="cell" id="sweepDepthCenterState">—</div>
+  <div class="cell">Depth-median all median / error</div><div class="cell" id="sweepDepthMedianState">—</div>
 </div>
 <div class="actions" style="margin-top:10px">
   <button type="button" id="discardSweepBtn" disabled>DISCARD LAST SWEEP SAMPLE</button>
@@ -241,14 +247,14 @@ padding:10px;pointer-events:auto}
 </section>
 
 <section class="card">
-<h2>PHASE 4.18 TEST PROCEDURE</h2>
+<h2>PHASE 4.19 TEST PROCEDURE</h2>
 <ol class="procedure">
   <li>同一平面上に、実測で A-B = 20 cm / 50 cm / 100 cm の基準点を用意します。</li>
-  <li>START AR後は20 cmから開始します。SET POINT A → SET POINT B → 結果確認 → RESETを3回行ってください。</li>
-  <li>20 cmの有効サンプルが3回そろうと、RESET時にREFERENCE LENGTHが自動で50 cmへ切り替わります。同様に50 cmを3回、その後100 cmを3回測定します。</li>
-  <li>Depth cross-check QCがINVALIDの場合、その候補は正式CommitとSWEEP集計から除外されます。同じ距離をもう一度測定してください。WARN/UNKNOWNはログに残り、UNKNOWN時は既存MAP判定へフォールバックします。</li>
-  <li>できるだけ同じ平面・照明・端末姿勢傾向を維持してください。Hit stabilityはwarning-onlyのままなので、MOVING時の値も記録されます。</li>
-  <li>SWEEP表示が20 cm 3/3 | 50 cm 3/3 | 100 cm 3/3になったらEND ARを押し、LOGを共有してください。</li>
+  <li>START AR後は20 cmから開始します。SET POINT A → SET POINT B → 結果確認 → RESETを繰り返してください。</li>
+  <li>各距離は最低3回測定します。MAP有効値の中に厳密多数派の近接クラスタが成立するとCONSENSUS PASSになり、RESET時に次の距離へ自動切替します。</li>
+  <li>3回でCONSENSUSが成立しなければREFERENCEは変わりません。そのまま4回目以降を追加し、合意が成立するまで測定を続けます。</li>
+  <li>近接判定幅は暫定的に max(5 mm, クラスタ中央値の1%)。Depth agreementは診断専用で、DIVERGED / UNKNOWNでもMAPが有効なら生の繰り返しサンプルとして保持します。</li>
+  <li>Hit stabilityはwarning-onlyのままです。SWEEP表示が20 / 50 / 100 cmすべてCONSENSUSになったらEND ARを押し、LOGを共有してください。</li>
 </ol>
 </section>
 
@@ -262,8 +268,8 @@ padding:10px;pointer-events:auto}
 </section>
 
 <section class="card note">
-Phase 4.18では正式距離値をimmutable Hit-Hitのまま維持し、Depth 3×3 medianから復元したA-B 3D距離との差 |Hit-Hit − DepthMedian| を独立品質ゲートにします。暫定閾値は &lt;5 mm = PASS、5〜15 mm = WARN、15 mm以上 = INVALIDです。A/BのDepth coherenceが両方COHERENTでない場合はUNKNOWNとし、既存MAP integrityへフォールバックします。
-Depth-derived値で正式距離を補正することはありません。20 / 50 / 100 cmの各3有効サンプルは自動進行し、完了済みターゲットへ4件目以降を誤ってSWEEP集計しません。
+Phase 4.19の正式な単発距離値はimmutable Hit-Hitのままです。MAP integrityは座標再配置を検出する単発測定ゲートとして維持します。Depth 3×3 medianから復元したA-B距離との差 |Hit-Hit − DepthMedian| は、&lt;5 mm = AGREE、5〜15 mm = WARN、15 mm以上 = DIVERGEDとして記録しますが、正式距離の補正・拒否には使いません。
+最終的な距離判断は、同一対象を3回以上独立再取得したHit-Hit値のコンセンサスで行います。近接幅は暫定 max(5 mm, クラスタ中央値の1%)、必要メンバー数はその時点の有効試行数に対する厳密多数派です。
 HIT ENTITY SNAPSHOT、CENTER ALIGN CHECK、MAP integrity、Hit Test直前0.3秒のSTABLE / MOVING warning-onlyは継続します。
 </section>
 
@@ -296,7 +302,7 @@ HIT ENTITY SNAPSHOT、CENTER ALIGN CHECK、MAP integrity、Hit Test直前0.3秒�
       <div id="qualityText">AIM QUALITY: ANALYZING</div>
       <div id="hitStabilityText">HIT STABILITY: ANALYZING — warning only</div>
       <div id="depthText">DEPTH × HIT: WAITING — diagnostic only</div>
-      <div id="depthABText">DEPTH 3D A↔B: — cross-check gate</div>
+      <div id="depthABText">DEPTH 3D A↔B: — agreement diagnostic</div>
       <div id="sweepText">SWEEP: 20 cm 0/3 | 50 cm 0/3 | 100 cm 0/3</div>
       <div id="entityText">ENTITY PROBE: waiting</div>
       <div id="accuracyText">REF: 50.0 cm / ERROR: —</div>
@@ -336,7 +342,7 @@ const el = {};
   'repeatCountState','repeatMeanState','repeatRangeState','captureDistanceState',
   'hitSpreadAState','hitSpreadBState','hitInstantABState','hitMedian300ABState',
   'hitMedian500ABState','hitMedian1000ABState','hitMedianDeltaState',
-  'preBElapsedState','preBOffsetState','preBDriftState','preBMaxState','preBIntegrityState','distanceImpactState','measurementIntegrityState','depthCrossCheckDeltaState','depthCrossCheckState','finalQualityState',
+  'preBElapsedState','preBOffsetState','preBDriftState','preBMaxState','preBIntegrityState','distanceImpactState','measurementIntegrityState','depthCrossCheckDeltaState','depthCrossCheckState','finalQualityState','consensusState','consensusDistanceState','consensusClusterState','consensusToleranceState',
   'captureAQualityState','captureBQualityState','initialAnchorDistanceState',
   'anchorDeltaState','maxAnchorDeltaState','rollingRangeState','settlingState','stableAtState',
   'stabilitySamples','stabilityMedian','stabilityMinMax','stabilityRange','cameraAState','cameraBState','viewerRateState',
@@ -345,7 +351,7 @@ const el = {};
   'rawCameraState','hitDistanceState','depthState','depthConfigState','depthBufferState',
   'depthCenterState','depthMedianState','depthTemporalState','depthValidState','depthCoherenceState','hitViewState','hitUvState','depthAtHitState','depthHitDeltaState',
   'captureADepthState','captureBDepthState','depth3DGeometryState','depth3DAState','depth3DBState','compareHitABState','compareDepthCenterABState','compareDepthMedianABState','compareHitADepthBState','compareDepthAHitBState','depthCenterErrorState','depthMedianErrorState','entityProbeState','entityPlaneSourceState','entityPlaneHitState','entityPointSourceState','entityPointHitState','entityMeshSourceState','entityMeshHitState','entitySnapshotState','aimQualityState','edgeMedianState',
-  'contrastMedianState','sweepProgressState','sweepSelectedCountState','sweepNextState','sweepHitState','sweepDepthCenterState','sweepDepthMedianState','discardSweepBtn','clearSweepBtn','sweepText','magnifierState','magnifierCanvas','magnifierWrap','alignmentGrid','alignmentMark','alignmentState','alignmentOffsetState','alignmentUvState','alignBtn','entitySnapshotBtn',
+  'contrastMedianState','sweepProgressState','sweepSelectedCountState','sweepConsensusState','sweepNextState','sweepHitState','sweepConsensusDistanceState','sweepDepthCenterState','sweepDepthMedianState','discardSweepBtn','clearSweepBtn','sweepText','magnifierState','magnifierCanvas','magnifierWrap','alignmentGrid','alignmentMark','alignmentState','alignmentOffsetState','alignmentUvState','alignBtn','entitySnapshotBtn',
   'magnifierLabel','qualityText','hitStabilityText','depthText','depthABText','entityText','alignmentText',
   'coordA','coordB','startBtn','resetBtn','endBtn','log','xrCanvas','xrOverlay','xrHud',
   'xrState','xrHint','pointText','anchorText','distanceText','accuracyText','stabilityText','settlingText','preBText','setPointBtn',
@@ -746,7 +752,7 @@ function logHitABComparison(){
   return comparison;
 }
 
-// Phase 4.18: formal measurement candidate remains frozen at Point B capture.
+// Phase 4.19: formal single-shot candidate remains frozen at Point B capture; repeated acquisitions form the consensus.
 let frozenMeasurement = null;
 let sessionFrozenMeasurements = [];
 let lastAAnchorPoseTime = null;
@@ -767,11 +773,11 @@ function resetCurrentFrozenMeasurement(){
   set('depthCrossCheckState','UNKNOWN','');
   set('finalQualityState','UNKNOWN','');
   lastDistanceImpact=null;
-  lastDepthCrossCheck=null;
+  lastDepthAgreement=null;
 }
 
 function updateRepeatabilityUI(){
-  // Phase 4.18 may change the reference between 20 / 50 / 100 cm.
+  // Phase 4.19 may change the reference between 20 / 50 / 100 cm after consensus.
   // Repeatability must therefore be calculated only within the currently selected reference.
   const rows = sessionFrozenMeasurements
     .filter(v=>Math.abs((v.referenceMeters??NaN)-referenceMeters)<0.0005);
@@ -785,12 +791,12 @@ function updateRepeatabilityUI(){
     return;
   }
 
-  const mean = values.reduce((a,b)=>a+b,0)/values.length;
+  const center = median(values);
   const min = Math.min(...values);
   const max = Math.max(...values);
   const range = max-min;
 
-  set('repeatMeanState',fmtDistance(mean),'ok');
+  set('repeatMeanState',fmtDistance(center),'ok');
   set(
     'repeatRangeState',
     `${(range*1000).toFixed(2)} mm`,
@@ -871,12 +877,12 @@ function freezeMeasurementAtB(hitPoint,time){
       sessionResetCount:sessionReferenceSpaceResetCount,
       aCaptureSnapshot:captureSnapshotA,bCaptureSnapshot:captureSnapshotB,
       aHitStability:hitStabilitySnapshotA,bHitStability:hitStabilitySnapshotB,
-      preB:preBSummaryAtB,integrity:finalQuality.state,mapIntegrity:mapIntegrity.state,depthCrossCheck:depthQC.state,
-      distanceImpact:mapIntegrity.impact,signedDistanceImpact:mapIntegrity.signedImpact,depthCrossCheckDelta:depthQC.absDelta
+      preB:preBSummaryAtB,integrity:finalQuality.state,mapIntegrity:mapIntegrity.state,depthAgreement:depthQC.state,
+      distanceImpact:mapIntegrity.impact,signedDistanceImpact:mapIntegrity.signedImpact,depthAgreementDelta:depthQC.absDelta
     };
     set('distanceState',`INVALID (${fmtDistance(distance)})`,'ng');
     set('freezeStatusState',`REJECTED — ${finalQuality.reason}`,'ng');
-    log(`COMMITTED CANDIDATE REJECTED: distance=${distance.toFixed(6)} m (${fmtDistance(distance)}); error=${absError.toFixed(6)} m (${relError.toFixed(3)}%); reason=${finalQuality.reason}; MAP=${mapIntegrity.state}; distanceImpact=${mapIntegrity.impact===null?'n/a':(mapIntegrity.impact*1000).toFixed(3)+' mm'}; DepthCrossCheck=${depthQC.state}; depthAbsDelta=${depthQC.absDelta===null?'n/a':(depthQC.absDelta*1000).toFixed(3)+' mm'}; frame=${frameCount}; source=immutable-hit; excludedFromRepeatability=true; excludedFromSweep=true`);
+    log(`COMMITTED CANDIDATE REJECTED: distance=${distance.toFixed(6)} m (${fmtDistance(distance)}); error=${absError.toFixed(6)} m (${relError.toFixed(3)}%); reason=${finalQuality.reason}; MAP=${mapIntegrity.state}; distanceImpact=${mapIntegrity.impact===null?'n/a':(mapIntegrity.impact*1000).toFixed(3)+' mm'}; DepthAgreement=${depthQC.state}; depthAbsDelta=${depthQC.absDelta===null?'n/a':(depthQC.absDelta*1000).toFixed(3)+' mm'}; frame=${frameCount}; source=immutable-hit; excludedFromRepeatability=true; excludedFromSweep=true`);
     return false;
   }
 
@@ -900,9 +906,9 @@ function freezeMeasurementAtB(hitPoint,time){
     preB:preBSummaryAtB,
     integrity:finalQuality.state,
     mapIntegrity:mapIntegrity.state,
-    depthCrossCheck:depthQC.state,
-    depthCrossCheckDelta:depthQC.absDelta,
-    depthCrossCheckSignedDelta:depthQC.signedDelta,
+    depthAgreement:depthQC.state,
+    depthAgreementDelta:depthQC.absDelta,
+    depthAgreementSignedDelta:depthQC.signedDelta,
     qualityFallback:finalQuality.fallback,
     distanceImpact:mapIntegrity.impact,
     signedDistanceImpact:mapIntegrity.signedImpact
@@ -918,21 +924,22 @@ function freezeMeasurementAtB(hitPoint,time){
     sessionResetCount:sessionReferenceSpaceResetCount,
     integrity:finalQuality.state,
     mapIntegrity:mapIntegrity.state,
-    depthCrossCheck:depthQC.state,
-    depthCrossCheckDelta:depthQC.absDelta,
+    depthAgreement:depthQC.state,
+    depthAgreementDelta:depthQC.absDelta,
     distanceImpact:mapIntegrity.impact
   });
 
   const sweepRecord=recordDepthSweepSample(finalQuality.state,depthQC);
 
   set('distanceState',fmtDistance(distance),'ok');
-  const commitWarn=finalQuality.state==='WARN' || depthQC.state==='UNKNOWN';
+  const commitWarn=finalQuality.state==='WARN';
   set('freezeStatusState',`${commitWarn?'COMMITTED WITH WARNING':'COMMITTED'} HIT A↔B @ frame ${frameCount}`,commitWarn?'warn':'ok');
   updateRepeatabilityUI();
 
   const sameRefRows=sessionFrozenMeasurements.filter(v=>Math.abs((v.referenceMeters??NaN)-referenceMeters)<0.0005);
   const values=sameRefRows.map(v=>v.distance).filter(Number.isFinite);
   const mean=values.reduce((a,b)=>a+b,0)/values.length;
+  const rawMedian=median(values);
   const range=Math.max(...values)-Math.min(...values);
 
   log(
@@ -940,10 +947,10 @@ function freezeMeasurementAtB(hitPoint,time){
     `distance=${distance.toFixed(6)} m (${fmtDistance(distance)}); ` +
     `AHit=${fmtPoint(aHit)}; BHit=${fmtPoint(bHit)}; ` +
     `error=${absError.toFixed(6)} m (${relError.toFixed(3)}%); ` +
-    `frame=${frameCount}; sessionReset=${sessionReferenceSpaceResetCount}; source=immutable-hit; finalQuality=${finalQuality.state}; MAP=${mapIntegrity.state}; DepthCrossCheck=${depthQC.state}`
+    `frame=${frameCount}; sessionReset=${sessionReferenceSpaceResetCount}; source=immutable-hit; finalQuality=${finalQuality.state}; MAP=${mapIntegrity.state}; DepthAgreement=${depthQC.state}`
   );
   log(
-    `COMMITTED REPEATABILITY (same reference ${(referenceMeters*100).toFixed(1)} cm): n=${values.length}; mean=${mean.toFixed(6)} m; ` +
+    `RAW COMMITTED REPEATABILITY (same reference ${(referenceMeters*100).toFixed(1)} cm): n=${values.length}; median=${rawMedian.toFixed(6)} m; mean=${mean.toFixed(6)} m; ` +
     `min=${Math.min(...values).toFixed(6)} m; max=${Math.max(...values).toFixed(6)} m; ` +
     `range=${(range*1000).toFixed(3)} mm`
   );
@@ -955,11 +962,14 @@ function freezeMeasurementAtB(hitPoint,time){
 // Absolute accuracy validation.
 let referenceMeters = 0.20;
 const SWEEP_TARGETS_M = [0.20,0.50,1.00];
-const SWEEP_GOAL_PER_TARGET = 3;
+const SWEEP_GOAL_PER_TARGET = 3; // minimum attempts before consensus can pass
+const CONSENSUS_MIN_ATTEMPTS = 3;
+const CONSENSUS_ABS_TOL_M = 0.005;
+const CONSENSUS_REL_TOL = 0.01;
 let depthSweepSamples = [];
 let pendingSweepTarget = null;
 let sweepCompleteLogged = false;
-let lastDepthCrossCheck = null;
+let lastDepthAgreement = null;
 const DEPTH_XCHECK_WARN_M = 0.005;
 const DEPTH_XCHECK_INVALID_M = 0.015;
 let referenceSpaceResetCount = 0;
@@ -995,8 +1005,8 @@ let qualityHistory = [];
 let lastQualitySampleTime = -Infinity;
 let latestHitDistance = null;
 
-// Phase 4.18: Phase 4.16 Depth 3D method retained.
-// Depth never replaces/corrects the committed Hit-Hit value, but coherent Depth-median A-B distance is an independent quality-gate input.
+// Phase 4.19: Phase 4.16 Depth 3D method retained.
+// Depth never replaces/corrects or rejects the committed Hit-Hit value. It is agreement diagnostics only.
 const DEPTH_GRID = 3;
 const DEPTH_RADIUS = 0.01; // compact local region around projected Hit / screen center
 const DEPTH_TEMPORAL_SAMPLES = 5;
@@ -1010,8 +1020,8 @@ let latestDepthInfo = null;   // transient XRCPUDepthInformation; only used in t
 let latestDepthInfoFrame = -1;
 let latestHitViewDiagnostic = null;
 let latestDepthHitCrossCheck = null;
-let captureDepthCrossCheckA = null;
-let captureDepthCrossCheckB = null;
+let captureDepthAgreementA = null;
+let captureDepthAgreementB = null;
 
 let aimQuality = 'ANALYZING';
 let magnifierZoom = 3;
@@ -1027,8 +1037,8 @@ const DETAIL_CONTRAST_LOW = 8.0;
 
 let ending = false;
 let cleanupDone = false;
-const LOG_STORAGE_KEY = 'ar-distance-lab-phase4-18-log';
-const SUMMARY_STORAGE_KEY = 'ar-distance-lab-phase4-18-summary';
+const LOG_STORAGE_KEY = 'ar-distance-lab-phase4-19-log';
+const SUMMARY_STORAGE_KEY = 'ar-distance-lab-phase4-19-summary';
 
 const TRACKING_UNSTABLE_MS = 250;
 const TRACKING_LOST_MS = 1000;
@@ -1062,6 +1072,7 @@ function persistDiagnostics(){
       frozenMeasurement,
       sessionFrozenMeasurements,
       depthSweepSamples,
+      currentConsensus:sweepTargetForReference()?targetConsensus(sweepTargetForReference()):null,
       hitStabilitySnapshotA,
       hitStabilitySnapshotB,
       hitABComparison,
@@ -1090,8 +1101,8 @@ function persistDiagnostics(){
       latestDepthSample,
       latestHitViewDiagnostic,
       latestDepthHitCrossCheck,
-      captureDepthCrossCheckA,
-      captureDepthCrossCheckB,
+      captureDepthAgreementA,
+      captureDepthAgreementB,
       hitEntitySourceStatus,
       hitEntityLatest,
       entitySnapshotCount,
@@ -1130,7 +1141,7 @@ function restoreDiagnostics(){
         depthSweepSamples=parsed.depthSweepSamples.filter(x=>x && Number.isFinite(x.referenceMeters));
         depthSweepSamples.forEach((x,i)=>x.index=i+1);
         if(depthSweepSamples.length){
-          log(`${now()}  SWEEP RESTORED: ${depthSweepSamples.length} experimental sample(s) from this tab session`);
+          log(`${now()}  CONSENSUS SAMPLES RESTORED: ${depthSweepSamples.length} experimental sample(s) from this tab session`);
         }
       }
     }
@@ -1360,7 +1371,7 @@ function updateDepthABComparison(){
     `AHit-BDepthCenter=${hitAToDepthB==null?'n/a':hitAToDepthB.toFixed(6)} m; ` +
     `ADepthCenter-BHit=${depthAToHitB==null?'n/a':depthAToHitB.toFixed(6)} m; ` +
     `Acoherence=${captureDepth3DA?.coherence??'n/a'}; Bcoherence=${captureDepth3DB?.coherence??'n/a'}; ` +
-    `Ageometry=${captureDepth3DA?.geometrySource??'n/a'}; Bgeometry=${captureDepth3DB?.geometrySource??'n/a'}; formalCorrection=false; crossCheckGateInput=true; formalCommit=Hit-Hit`
+    `Ageometry=${captureDepth3DA?.geometrySource??'n/a'}; Bgeometry=${captureDepth3DB?.geometrySource??'n/a'}; formalCorrection=false; agreementDiagnosticOnly=true; formalCommit=Hit-Hit`
   );
 }
 
@@ -1419,8 +1430,8 @@ function resetDepthDiagnostics(){
   latestDepthInfoFrame = -1;
   latestHitViewDiagnostic = null;
   latestDepthHitCrossCheck = null;
-  captureDepthCrossCheckA = null;
-  captureDepthCrossCheckB = null;
+  captureDepthAgreementA = null;
+  captureDepthAgreementB = null;
   captureDepth3DA = null;
   captureDepth3DB = null;
   depthABComparison = null;
@@ -1450,12 +1461,12 @@ function resetDepthDiagnostics(){
   set('compareDepthAHitBState','—','');
   set('depthCenterErrorState','—','');
   set('depthMedianErrorState','—','');
-  lastDepthCrossCheck = null;
+  lastDepthAgreement = null;
   set('depthCrossCheckDeltaState','—','');
   set('depthCrossCheckState','UNKNOWN','');
   set('finalQualityState','UNKNOWN','');
   if(el.depthText) el.depthText.textContent = 'DEPTH × HIT: WAITING — diagnostic only';
-  if(el.depthABText) el.depthABText.textContent = 'DEPTH 3D A↔B: — cross-check gate';
+  if(el.depthABText) el.depthABText.textContent = 'DEPTH 3D A↔B: — agreement diagnostic';
 }
 
 function classifyDepthCoherence(stats){
@@ -1679,7 +1690,7 @@ function updateDepthHitCrossCheck(time){
   }
 }
 
-function snapshotDepthCrossCheck(slot,time,hitDistance,hitViewDiag){
+function snapshotDepthAgreement(slot,time,hitDistance,hitViewDiag){
   const c=buildDepthHitCrossCheck(time,hitDistance,hitViewDiag);
   const stateId=slot==='A' ? 'captureADepthState' : 'captureBDepthState';
 
@@ -1907,9 +1918,9 @@ function captureQualitySnapshot(slot,hitPoint,viewerPose,time,hitViewDiag){
       ? distance3(cameraPoint,hitPoint)
       : (Number.isFinite(latestHitDistance) ? latestHitDistance : null);
 
-  const depthCrossCheck = snapshotDepthCrossCheck(slot,time,hitDistance,hitViewDiag);
-  if(slot==='A') captureDepthCrossCheckA=depthCrossCheck;
-  else captureDepthCrossCheckB=depthCrossCheck;
+  const depthCrossCheck = snapshotDepthAgreement(slot,time,hitDistance,hitViewDiag);
+  if(slot==='A') captureDepthAgreementA=depthCrossCheck;
+  else captureDepthAgreementB=depthCrossCheck;
 
   const snap = {
     slot,
@@ -2186,7 +2197,7 @@ function assessDepthDistanceCrossCheck(){
     return {state:'UNKNOWN',reason:`Depth coherence insufficient (A=${aCoherence}, B=${bCoherence})`,signedDelta,absDelta,usable:false,aCoherence,bCoherence};
   }
   if(absDelta>=DEPTH_XCHECK_INVALID_M){
-    return {state:'INVALID',reason:`|Hit-Hit − DepthMedian| >= ${(DEPTH_XCHECK_INVALID_M*1000).toFixed(0)} mm`,signedDelta,absDelta,usable:true,aCoherence,bCoherence};
+    return {state:'INVALID',reason:`Depth disagreement >= ${(DEPTH_XCHECK_INVALID_M*1000).toFixed(0)} mm`,signedDelta,absDelta,usable:true,aCoherence,bCoherence};
   }
   if(absDelta>=DEPTH_XCHECK_WARN_M){
     return {state:'WARN',reason:`|Hit-Hit − DepthMedian| >= ${(DEPTH_XCHECK_WARN_M*1000).toFixed(0)} mm`,signedDelta,absDelta,usable:true,aCoherence,bCoherence};
@@ -2196,34 +2207,34 @@ function assessDepthDistanceCrossCheck(){
 
 function applyDepthDistanceCrossCheck(){
   const q=assessDepthDistanceCrossCheck();
-  lastDepthCrossCheck=q;
-  set('depthCrossCheckDeltaState',q.absDelta===null?'—':`${q.signedDelta>=0?'+':''}${(q.signedDelta*1000).toFixed(3)} mm (|Δ| ${(q.absDelta*1000).toFixed(3)} mm)`,q.state==='PASS'?'ok':q.state==='WARN'?'warn':q.state==='INVALID'?'ng':'warn');
-  set('depthCrossCheckState',`${q.state}${q.absDelta===null?'':` / |Δ| ${(q.absDelta*1000).toFixed(2)} mm`}`,q.state==='PASS'?'ok':q.state==='WARN'?'warn':q.state==='INVALID'?'ng':'warn');
-  log(`DEPTH CROSS-CHECK QC: state=${q.state}; reason=${q.reason}; Hit-Hit=${depthABComparison?.hitDistance==null?'n/a':depthABComparison.hitDistance.toFixed(6)} m; DepthMedian=${depthABComparison?.medianDistance==null?'n/a':depthABComparison.medianDistance.toFixed(6)} m; signedHitMinusDepth=${q.signedDelta===null?'n/a':(q.signedDelta*1000).toFixed(3)+' mm'}; absDelta=${q.absDelta===null?'n/a':(q.absDelta*1000).toFixed(3)+' mm'}; Acoherence=${q.aCoherence??depthABComparison?.a?.coherence??'n/a'}; Bcoherence=${q.bCoherence??depthABComparison?.b?.coherence??'n/a'}; thresholds=warn5mm/invalid15mm; provisional=true; committedValueSource=immutable-hit`);
-  return q;
+  // Phase 4.19: rename the >=15 mm state for clarity. This is diagnostic only.
+  if(q.state==='INVALID') q.state='DIVERGED';
+  lastDepthAgreement=q;
+  const cls=q.state==='AGREE'||q.state==='PASS'?'ok':q.state==='WARN'?'warn':q.state==='DIVERGED'?'warn':'warn';
+  const label=q.state==='PASS'?'AGREE':q.state;
+  set('depthCrossCheckDeltaState',q.absDelta===null?'—':`${q.signedDelta>=0?'+':''}${(q.signedDelta*1000).toFixed(3)} mm (|Δ| ${(q.absDelta*1000).toFixed(3)} mm)`,cls);
+  set('depthCrossCheckState',`${label}${q.absDelta===null?'':` / |Δ| ${(q.absDelta*1000).toFixed(2)} mm`} / diagnostic only`,cls);
+  log(`DEPTH AGREEMENT DIAGNOSTIC: state=${label}; reason=${q.reason}; Hit-Hit=${depthABComparison?.hitDistance==null?'n/a':depthABComparison.hitDistance.toFixed(6)} m; DepthMedian=${depthABComparison?.medianDistance==null?'n/a':depthABComparison.medianDistance.toFixed(6)} m; signedHitMinusDepth=${q.signedDelta===null?'n/a':(q.signedDelta*1000).toFixed(3)+' mm'}; absDelta=${q.absDelta===null?'n/a':(q.absDelta*1000).toFixed(3)+' mm'}; Acoherence=${q.aCoherence??depthABComparison?.a?.coherence??'n/a'}; Bcoherence=${q.bCoherence??depthABComparison?.b?.coherence??'n/a'}; thresholds=agree<5mm/warn5-15mm/diverged>=15mm; provisional=true; diagnosticOnly=true; committedValueSource=immutable-hit`);
+  return {...q,state:label};
 }
 
-function combineQualityGates(mapIntegrity,depthQC){
+function combineQualityGates(mapIntegrity,depthDiagnostic){
+  // Phase 4.19: only MAP can reject a single-shot measurement.
+  // Depth agreement is deliberately excluded from the commit gate because the
+  // previous sweep proved that Hit and Depth can agree while both are wrong.
   let state='PASS';
-  let reason='MAP PASS + Depth cross-check PASS';
-  let fallback=false;
+  let reason='MAP PASS';
   if(mapIntegrity?.state==='INVALID'){
     state='INVALID'; reason=`MAP integrity: ${mapIntegrity.reason}`;
-  }else if(depthQC?.state==='INVALID'){
-    state='INVALID'; reason=`Depth cross-check: ${depthQC.reason}`;
-  }else if(mapIntegrity?.state==='WARN' || depthQC?.state==='WARN'){
-    state='WARN';
-    reason=[mapIntegrity?.state==='WARN'?`MAP: ${mapIntegrity.reason}`:null,depthQC?.state==='WARN'?`Depth: ${depthQC.reason}`:null].filter(Boolean).join(' / ');
-  }else if(depthQC?.state==='UNKNOWN'){
-    fallback=true;
-    state=mapIntegrity?.state==='WARN'?'WARN':mapIntegrity?.state==='INVALID'?'INVALID':'PASS';
-    reason=`Depth UNKNOWN → MAP fallback (${mapIntegrity?.state??'UNKNOWN'})`;
+  }else if(mapIntegrity?.state==='WARN'){
+    state='WARN'; reason=`MAP: ${mapIntegrity.reason}`;
   }else if(mapIntegrity?.state==='UNKNOWN'){
     state='WARN'; reason='MAP integrity UNKNOWN';
   }
-  set('finalQualityState',`${state}${fallback?' / DEPTH UNKNOWN fallback':''}`,state==='PASS'?'ok':state==='WARN'?'warn':'ng');
-  log(`FINAL QUALITY GATE: state=${state}; reason=${reason}; MAP=${mapIntegrity?.state??'UNKNOWN'}; DepthCrossCheck=${depthQC?.state??'UNKNOWN'}; fallback=${fallback}; formalSource=immutable-hit`);
-  return {state,reason,fallback};
+  const depthState=depthDiagnostic?.state??'UNKNOWN';
+  set('finalQualityState',`${state} / Depth ${depthState} diagnostic`,state==='PASS'?'ok':state==='WARN'?'warn':'ng');
+  log(`MAP MEASUREMENT GATE: state=${state}; reason=${reason}; MAP=${mapIntegrity?.state??'UNKNOWN'}; DepthAgreement=${depthState}; depthAffectsGate=false; formalSource=immutable-hit`);
+  return {state,reason,fallback:false,depthDiagnostic:depthState};
 }
 
 function summarizePreB(reason,time){
@@ -2310,11 +2321,11 @@ function resetSettlingMetrics(){
   set('compareDepthAHitBState','—','');
   set('depthCenterErrorState','—','');
   set('depthMedianErrorState','—','');
-  lastDepthCrossCheck = null;
+  lastDepthAgreement = null;
   set('depthCrossCheckDeltaState','—','');
   set('depthCrossCheckState','UNKNOWN','');
   set('finalQualityState','UNKNOWN','');
-  if(el.depthABText) el.depthABText.textContent='DEPTH 3D A↔B: — cross-check gate';
+  if(el.depthABText) el.depthABText.textContent='DEPTH 3D A↔B: — agreement diagnostic';
   set('initialAnchorDistanceState','—','');
   set('anchorDeltaState','—','');
   set('maxAnchorDeltaState','—','');
@@ -2459,23 +2470,81 @@ function meanFinite(values){
   const a=values.filter(Number.isFinite);
   return a.length ? a.reduce((x,y)=>x+y,0)/a.length : null;
 }
+function medianFinite(values){
+  const a=values.filter(Number.isFinite).sort((x,y)=>x-y);
+  return a.length ? median(a) : null;
+}
+function consensusTolerance(distance){
+  return Math.max(CONSENSUS_ABS_TOL_M,Math.abs(distance||0)*CONSENSUS_REL_TOL);
+}
+function assessRepeatConsensus(rows){
+  const samples=rows
+    .filter(r=>Number.isFinite(r.hitDistance))
+    .map(r=>({row:r,value:r.hitDistance}))
+    .sort((a,b)=>a.value-b.value);
+  const n=samples.length;
+  const required=n>=CONSENSUS_MIN_ATTEMPTS ? Math.floor(n/2)+1 : CONSENSUS_MIN_ATTEMPTS;
+  let best=null;
+  for(let i=0;i<n;i++){
+    for(let j=i;j<n;j++){
+      const group=samples.slice(i,j+1);
+      const vals=group.map(x=>x.value);
+      const med=median(vals);
+      const tol=consensusTolerance(med);
+      const span=vals[vals.length-1]-vals[0];
+      if(span>tol) continue;
+      const candidate={members:group,count:group.length,median:med,tolerance:tol,span,min:vals[0],max:vals[vals.length-1]};
+      if(!best || candidate.count>best.count ||
+         (candidate.count===best.count && candidate.span<best.span) ||
+         (candidate.count===best.count && Math.abs(candidate.span-best.span)<1e-12 && candidate.tolerance<best.tolerance)) best=candidate;
+    }
+  }
+  const pass=n>=CONSENSUS_MIN_ATTEMPTS && best && best.count>=required;
+  const state=n<CONSENSUS_MIN_ATTEMPTS?'COLLECTING':pass?'PASS':'NO CONSENSUS';
+  return {
+    state,n,required,
+    memberCount:best?.count??0,
+    distance:pass?best.median:null,
+    candidateDistance:best?.median??null,
+    tolerance:best?.tolerance??consensusTolerance(medianFinite(samples.map(x=>x.value))||0),
+    span:best?.span??null,
+    memberIndexes:best?best.members.map(x=>x.row.index):[],
+    memberValues:best?best.members.map(x=>x.value):[]
+  };
+}
+function targetRows(target){
+  return depthSweepSamples.filter(x=>Math.abs(x.referenceMeters-target)<0.0005);
+}
+function targetConsensus(target){
+  return assessRepeatConsensus(targetRows(target));
+}
 function formatSweepMetric(values,ref){
   const a=values.filter(Number.isFinite);
   if(!a.length) return 'N/A';
-  const m=meanFinite(a), err=m-ref, pctErr=(err/ref)*100;
+  const med=medianFinite(a), err=med-ref, pctErr=(err/ref)*100;
   const range=a.length>1 ? Math.max(...a)-Math.min(...a) : 0;
-  return `${fmtDistance(m)} / Δ ${formatSignedDistanceMeters(err)} (${pctErr>=0?'+':''}${pctErr.toFixed(2)}%) / range ${(range*1000).toFixed(2)} mm`;
+  return `${fmtDistance(med)} / Δ ${formatSignedDistanceMeters(err)} (${pctErr>=0?'+':''}${pctErr.toFixed(2)}%) / all-range ${(range*1000).toFixed(2)} mm`;
+}
+function consensusProgressToken(t){
+  const q=targetConsensus(t);
+  return `${Math.round(t*100)} cm n=${q.n} ${q.state==='PASS'?'CONSENSUS':q.state==='COLLECTING'?'WAIT':'NO-CONS'}`;
 }
 function sweepProgressText(){
-  return SWEEP_TARGETS_M.map(t=>{
-    const n=depthSweepSamples.filter(x=>Math.abs(x.referenceMeters-t)<0.0005).length;
-    return `${Math.round(t*100)} cm ${n}/${SWEEP_GOAL_PER_TARGET}`;
-  }).join(' | ');
+  return SWEEP_TARGETS_M.map(consensusProgressToken).join(' | ');
+}
+function showConsensus(target){
+  const q=targetConsensus(target);
+  const stateCls=q.state==='PASS'?'ok':q.state==='NO CONSENSUS'?'warn':'';
+  set('consensusState',`${q.state} / ${q.memberCount}/${q.n||0} cluster / need ${q.required}`,stateCls);
+  set('consensusDistanceState',q.distance===null?'—':fmtDistance(q.distance),q.state==='PASS'?'ok':'');
+  set('consensusClusterState',q.memberCount?`samples [${q.memberIndexes.join(', ')}] / span ${q.span===null?'n/a':(q.span*1000).toFixed(2)+' mm'}`:'—',q.state==='PASS'?'ok':q.memberCount?'warn':'');
+  set('consensusToleranceState',`${(q.tolerance*1000).toFixed(2)} mm = max(5 mm, 1%)`,'');
+  return q;
 }
 function updateDepthSweepUI(){
   const progress=sweepProgressText();
   set('sweepProgressState',progress,depthSweepSamples.length?'ok':'');
-  if(el.sweepText) el.sweepText.textContent=`SWEEP: ${progress}`;
+  if(el.sweepText) el.sweepText.textContent=`CONSENSUS SWEEP: ${progress}`;
   if(el.discardSweepBtn) el.discardSweepBtn.disabled=!depthSweepSamples.length;
   document.querySelectorAll('.refPreset').forEach(btn=>{
     const cm=Number(btn.dataset.cm);
@@ -2485,62 +2554,82 @@ function updateDepthSweepUI(){
   if(target===null){
     set('sweepNextState','CUSTOM','warn');
     set('sweepSelectedCountState','CUSTOM — not grouped','warn');
-    set('sweepHitState','—',''); set('sweepDepthCenterState','—',''); set('sweepDepthMedianState','—','');
+    set('sweepConsensusState','CUSTOM','warn');
+    set('sweepHitState','—',''); set('sweepConsensusDistanceState','—',''); set('sweepDepthCenterState','—',''); set('sweepDepthMedianState','—','');
+    set('consensusState','CUSTOM','warn'); set('consensusDistanceState','—',''); set('consensusClusterState','—',''); set('consensusToleranceState','—','');
     return;
   }
-  const rows=depthSweepSamples.filter(x=>Math.abs(x.referenceMeters-target)<0.0005);
+  const rows=targetRows(target);
+  const q=showConsensus(target);
   const targetIndex=SWEEP_TARGETS_M.findIndex(t=>Math.abs(t-target)<0.0005);
   const nextTarget=targetIndex>=0 && targetIndex<SWEEP_TARGETS_M.length-1 ? SWEEP_TARGETS_M[targetIndex+1] : null;
   if(pendingSweepTarget!==null){
     set('sweepNextState',`${Math.round(pendingSweepTarget*100)} cm after RESET`,'warn');
-  }else if(rows.length>=SWEEP_GOAL_PER_TARGET && nextTarget===null){
+  }else if(q.state==='PASS' && nextTarget===null){
     set('sweepNextState','SWEEP COMPLETE','ok');
+  }else if(q.state==='NO CONSENSUS'){
+    set('sweepNextState',`${Math.round(target*100)} cm — RETRY`,'warn');
   }else{
     set('sweepNextState',`${Math.round(target*100)} cm`,'');
   }
-  set('sweepSelectedCountState',`${Math.min(rows.length,SWEEP_GOAL_PER_TARGET)} / ${SWEEP_GOAL_PER_TARGET}`,rows.length>=SWEEP_GOAL_PER_TARGET?'ok':rows.length?'warn':'');
+  set('sweepSelectedCountState',`${rows.length} / min ${CONSENSUS_MIN_ATTEMPTS}`,rows.length>=CONSENSUS_MIN_ATTEMPTS?'ok':rows.length?'warn':'');
+  set('sweepConsensusState',`${q.state} / cluster ${q.memberCount}/${q.n} / need ${q.required}`,q.state==='PASS'?'ok':q.state==='NO CONSENSUS'?'warn':'');
   set('sweepHitState',formatSweepMetric(rows.map(x=>x.hitDistance),target),rows.length?'warn':'');
-  set('sweepDepthCenterState',formatSweepMetric(rows.map(x=>x.centerDistance),target),rows.length?'ok':'');
-  set('sweepDepthMedianState',formatSweepMetric(rows.map(x=>x.medianDistance),target),rows.length?'ok':'');
+  if(q.distance!==null){
+    const err=q.distance-target, pct=(err/target)*100;
+    set('sweepConsensusDistanceState',`${fmtDistance(q.distance)} / Δ ${formatSignedDistanceMeters(err)} (${pct>=0?'+':''}${pct.toFixed(2)}%) / cluster span ${(q.span*1000).toFixed(2)} mm`,'ok');
+  }else{
+    set('sweepConsensusDistanceState',q.candidateDistance===null?'—':`candidate ${fmtDistance(q.candidateDistance)} / cluster ${q.memberCount}/${q.n}`,'warn');
+  }
+  set('sweepDepthCenterState',formatSweepMetric(rows.map(x=>x.centerDistance),target),rows.length?'warn':'');
+  set('sweepDepthMedianState',formatSweepMetric(rows.map(x=>x.medianDistance),target),rows.length?'warn':'');
 }
 function logSweepSummary(target){
-  const rows=depthSweepSamples.filter(x=>Math.abs(x.referenceMeters-target)<0.0005);
+  const rows=targetRows(target);
   if(!rows.length) return;
-  const hit=meanFinite(rows.map(x=>x.hitDistance)), center=meanFinite(rows.map(x=>x.centerDistance)), med=meanFinite(rows.map(x=>x.medianDistance));
+  const hitMean=meanFinite(rows.map(x=>x.hitDistance)), hitMed=medianFinite(rows.map(x=>x.hitDistance));
+  const centerMed=medianFinite(rows.map(x=>x.centerDistance)), depthMed=medianFinite(rows.map(x=>x.medianDistance));
+  const q=targetConsensus(target);
   const metric=v=>v==null?'n/a':`${v.toFixed(6)} m(error=${((v-target)*1000).toFixed(3)} mm,${(((v-target)/target)*100).toFixed(3)}%)`;
-  log(`SWEEP SUMMARY ${Math.round(target*100)} cm: n=${rows.length}; HitMean=${metric(hit)}; DepthCenterMean=${metric(center)}; DepthMedianMean=${metric(med)}; targetGoal=${SWEEP_GOAL_PER_TARGET}`);
+  log(`SWEEP SUMMARY ${Math.round(target*100)} cm: n=${rows.length}; HitMean=${metric(hitMean)}; HitMedian=${metric(hitMed)}; DepthCenterMedian=${metric(centerMed)}; DepthMedianMedian=${metric(depthMed)}; Consensus=${q.state}; cluster=${q.memberCount}/${q.n}; required=${q.required}; consensusDistance=${q.distance===null?'n/a':q.distance.toFixed(6)+' m'}; clusterSpan=${q.span===null?'n/a':(q.span*1000).toFixed(3)+' mm'}; tolerance=${(q.tolerance*1000).toFixed(3)} mm; consensusUsesReference=false; provisional=true`);
 }
 function recordDepthSweepSample(integrityState,depthQC){
   const target=sweepTargetForReference();
   if(target===null || !depthABComparison) return null;
-  const existing=depthSweepSamples.filter(x=>Math.abs(x.referenceMeters-target)<0.0005).length;
-  if(existing>=SWEEP_GOAL_PER_TARGET){
-    log(`SWEEP TARGET COMPLETE: ${Math.round(target*100)} cm already has ${existing}/${SWEEP_GOAL_PER_TARGET} accepted samples; current measurement not added to sweep statistics`);
-    updateDepthSweepUI();
-    return {recorded:false,target,count:existing};
-  }
-  const row={index:depthSweepSamples.length+1,time:now(),referenceMeters:target,hitDistance:depthABComparison.hitDistance,centerDistance:depthABComparison.centerDistance,medianDistance:depthABComparison.medianDistance,aCoherence:depthABComparison.a?.coherence??null,bCoherence:depthABComparison.b?.coherence??null,integrity:integrityState??'UNKNOWN',depthCrossCheck:depthQC?.state??'UNKNOWN',depthCrossCheckDelta:depthQC?.absDelta??null};
+  const row={
+    index:depthSweepSamples.length+1,time:now(),referenceMeters:target,
+    hitDistance:depthABComparison.hitDistance,centerDistance:depthABComparison.centerDistance,medianDistance:depthABComparison.medianDistance,
+    aCoherence:depthABComparison.a?.coherence??null,bCoherence:depthABComparison.b?.coherence??null,
+    integrity:integrityState??'UNKNOWN',depthAgreement:depthQC?.state??'UNKNOWN',depthAgreementDelta:depthQC?.absDelta??null,
+    aHitStability:classifyHitStability(hitStabilitySnapshotA?.windows?.[HIT_STABILITY_WINDOW_MS]),
+    bHitStability:classifyHitStability(hitStabilitySnapshotB?.windows?.[HIT_STABILITY_WINDOW_MS])
+  };
   depthSweepSamples.push(row);
-  const count=depthSweepSamples.filter(x=>Math.abs(x.referenceMeters-target)<0.0005).length;
+  const q=targetConsensus(target);
   const err=v=>Number.isFinite(v)?`${((v-target)*1000).toFixed(3)} mm (${(((v-target)/target)*100).toFixed(3)}%)`:'n/a';
-  log(`SWEEP SAMPLE #${row.index}: target=${(target*100).toFixed(1)} cm; targetRun=${count}/${SWEEP_GOAL_PER_TARGET}; Hit=${Number.isFinite(row.hitDistance)?row.hitDistance.toFixed(6):'n/a'} m error=${err(row.hitDistance)}; DepthCenter=${Number.isFinite(row.centerDistance)?row.centerDistance.toFixed(6):'n/a'} m error=${err(row.centerDistance)}; DepthMedian=${Number.isFinite(row.medianDistance)?row.medianDistance.toFixed(6):'n/a'} m error=${err(row.medianDistance)}; Acoherence=${row.aCoherence??'n/a'}; Bcoherence=${row.bCoherence??'n/a'}; DepthCrossCheck=${row.depthCrossCheck}; depthAbsDelta=${row.depthCrossCheckDelta===null?'n/a':(row.depthCrossCheckDelta*1000).toFixed(3)+' mm'}; finalQuality=${row.integrity}; experimentalStatsOnly=true`);
+  log(`CONSENSUS SAMPLE #${row.index}: target=${(target*100).toFixed(1)} cm; targetAttempt=${q.n}; Hit=${Number.isFinite(row.hitDistance)?row.hitDistance.toFixed(6):'n/a'} m error=${err(row.hitDistance)}; MAP=${row.integrity}; DepthAgreement=${row.depthAgreement}; depthAbsDelta=${row.depthAgreementDelta===null?'n/a':(row.depthAgreementDelta*1000).toFixed(3)+' mm'}; HitStabilityA=${row.aHitStability??'n/a'}; HitStabilityB=${row.bHitStability??'n/a'}; consensus=${q.state}; cluster=${q.memberCount}/${q.n}; required=${q.required}; consensusDistance=${q.distance===null?'n/a':q.distance.toFixed(6)+' m'}; clusterSpan=${q.span===null?'n/a':(q.span*1000).toFixed(3)+' mm'}; tolerance=${(q.tolerance*1000).toFixed(3)} mm; consensusUsesReference=false`);
+  if(q.n>=CONSENSUS_MIN_ATTEMPTS && q.state!=='PASS'){
+    log(`CONSENSUS RETRY REQUIRED: target=${(target*100).toFixed(1)} cm; attempts=${q.n}; bestCluster=${q.memberCount}/${q.n}; strictMajorityNeed=${q.required}; keep same reference and acquire another independent A-B measurement`);
+  }
   updateDepthSweepUI(); logSweepSummary(target); persistDiagnostics();
-  return {recorded:true,target,count};
+  return {recorded:true,target,count:q.n,consensus:q};
 }
 function planSweepAdvance(record){
-  if(!record?.recorded || record.count<SWEEP_GOAL_PER_TARGET) return;
+  if(!record?.recorded || record.consensus?.state!=='PASS') return;
+  const q=record.consensus;
   const i=SWEEP_TARGETS_M.findIndex(t=>Math.abs(t-record.target)<0.0005);
   if(i<0) return;
   if(i<SWEEP_TARGETS_M.length-1){
     pendingSweepTarget=SWEEP_TARGETS_M[i+1];
     set('sweepNextState',`${Math.round(pendingSweepTarget*100)} cm after RESET`,'warn');
-    log(`SWEEP AUTO-ADVANCE ARMED: ${Math.round(record.target*100)} cm ${record.count}/${SWEEP_GOAL_PER_TARGET} complete; next=${Math.round(pendingSweepTarget*100)} cm; applies on RESET`);
+    log(`CONSENSUS AUTO-ADVANCE ARMED: ${Math.round(record.target*100)} cm PASS after ${q.n} attempts; cluster=${q.memberCount}/${q.n}; consensusDistance=${q.distance.toFixed(6)} m; clusterSpan=${(q.span*1000).toFixed(3)} mm; next=${Math.round(pendingSweepTarget*100)} cm; applies on RESET`);
   }else{
     pendingSweepTarget=null;
     set('sweepNextState','SWEEP COMPLETE','ok');
     if(!sweepCompleteLogged){
       sweepCompleteLogged=true;
-      log(`SWEEP COMPLETE: 20 cm ${SWEEP_GOAL_PER_TARGET}/${SWEEP_GOAL_PER_TARGET} | 50 cm ${SWEEP_GOAL_PER_TARGET}/${SWEEP_GOAL_PER_TARGET} | 100 cm ${SWEEP_GOAL_PER_TARGET}/${SWEEP_GOAL_PER_TARGET}`);
+      const detail=SWEEP_TARGETS_M.map(t=>{const x=targetConsensus(t);return `${Math.round(t*100)} cm n=${x.n} cluster=${x.memberCount}/${x.n}`;}).join(' | ');
+      log(`CONSENSUS SWEEP COMPLETE: ${detail}`);
     }
   }
 }
@@ -2549,23 +2638,27 @@ function applyPendingSweepTarget(){
   const next=pendingSweepTarget;
   pendingSweepTarget=null;
   setReferenceCm(next*100);
-  log(`SWEEP AUTO TARGET APPLIED: reference=${(next*100).toFixed(1)} cm after RESET`);
+  log(`CONSENSUS AUTO TARGET APPLIED: reference=${(next*100).toFixed(1)} cm after RESET`);
 }
 function discardLastSweepSample(){
   if(!depthSweepSamples.length) return;
   const row=depthSweepSamples.pop();
-  log(`SWEEP DISCARD: removed sample #${row.index}; target=${(row.referenceMeters*100).toFixed(1)} cm; reason=user operation exclusion; original diagnostic log retained`);
-  depthSweepSamples.forEach((x,i)=>x.index=i+1); pendingSweepTarget=null; sweepCompleteLogged=false; updateDepthSweepUI(); logSweepSummary(row.referenceMeters); persistDiagnostics();
+  log(`CONSENSUS DISCARD: removed sample #${row.index}; target=${(row.referenceMeters*100).toFixed(1)} cm; reason=user operation exclusion; original diagnostic log retained`);
+  depthSweepSamples.forEach((x,i)=>x.index=i+1); pendingSweepTarget=null; sweepCompleteLogged=false; updateDepthSweepUI(); logSweepSummary(row.referenceMeters);
+  if(Math.abs(referenceMeters-row.referenceMeters)<0.0005){
+    const q=targetConsensus(row.referenceMeters);
+    if(q.state==='PASS') planSweepAdvance({recorded:true,target:row.referenceMeters,count:q.n,consensus:q});
+  }
+  persistDiagnostics();
 }
 function clearDepthSweepStats(){
   const n=depthSweepSamples.length; depthSweepSamples=[]; pendingSweepTarget=null; sweepCompleteLogged=false; setReferenceCm(20);
-  log(`SWEEP CLEAR: removed ${n} experimental sample(s); raw log retained; target reset to 20 cm`); updateDepthSweepUI(); persistDiagnostics();
+  log(`CONSENSUS CLEAR: removed ${n} repeat sample(s); raw log retained; target reset to 20 cm`); updateDepthSweepUI(); persistDiagnostics();
 }
 
 function nextSweepTargetFromStats(){
   for(const t of SWEEP_TARGETS_M){
-    const n=depthSweepSamples.filter(x=>Math.abs(x.referenceMeters-t)<0.0005).length;
-    if(n<SWEEP_GOAL_PER_TARGET) return t;
+    if(targetConsensus(t).state!=='PASS') return t;
   }
   return SWEEP_TARGETS_M[SWEEP_TARGETS_M.length-1];
 }
@@ -2606,8 +2699,8 @@ function resetMeasurementMetrics(){
   resetSettlingMetrics();
   resetPreBMonitor();
   resetHitStabilityDiagnostics();
-  captureDepthCrossCheckA = null;
-  captureDepthCrossCheckB = null;
+  captureDepthAgreementA = null;
+  captureDepthAgreementB = null;
   set('captureADepthState','—','');
   set('captureBDepthState','—','');
   set('depth3DAState','—','');
@@ -2619,11 +2712,11 @@ function resetMeasurementMetrics(){
   set('compareDepthAHitBState','—','');
   set('depthCenterErrorState','—','');
   set('depthMedianErrorState','—','');
-  lastDepthCrossCheck = null;
+  lastDepthAgreement = null;
   set('depthCrossCheckDeltaState','—','');
   set('depthCrossCheckState','UNKNOWN','');
   set('finalQualityState','UNKNOWN','');
-  if(el.depthABText) el.depthABText.textContent='DEPTH 3D A↔B: — cross-check gate';
+  if(el.depthABText) el.depthABText.textContent='DEPTH 3D A↔B: — agreement diagnostic';
   resetCurrentFrozenMeasurement();
   updateRepeatabilityUI();
 
@@ -2768,9 +2861,9 @@ function summarizeMeasurement(reason){
     );
   }
 
-  if(captureDepthCrossCheckA || captureDepthCrossCheckB){
-    const da=captureDepthCrossCheckA;
-    const db=captureDepthCrossCheckB;
+  if(captureDepthAgreementA || captureDepthAgreementB){
+    const da=captureDepthAgreementA;
+    const db=captureDepthAgreementB;
     log(
       `view-depth capture cross-check: ` +
       `A[-z=${da?.hitViewForward==null?'n/a':da.hitViewForward.toFixed(6)+' m'},depthUV=${da?.depthAtHitUv==null?'n/a':da.depthAtHitUv.toFixed(6)+' m'},delta=${da?.deltaViewForwardMinusDepth==null?'n/a':(da.deltaViewForwardMinusDepth*1000).toFixed(3)+' mm'},uv=${da?da.hitUvX.toFixed(4)+','+da.hitUvY.toFixed(4):'n/a'},coh=${da?.depthCoherence??'n/a'}] ` +
@@ -2786,12 +2879,12 @@ function summarizeMeasurement(reason){
       `DepthMedian=${d.medianDistance==null?'n/a':d.medianDistance.toFixed(6)} m; ` +
       `AHit-BDepth=${d.hitAToDepthB==null?'n/a':d.hitAToDepthB.toFixed(6)} m; ` +
       `ADepth-BHit=${d.depthAToHitB==null?'n/a':d.depthAToHitB.toFixed(6)} m; ` +
-      `reference=${referenceMeters.toFixed(6)} m; formalCorrection=false; crossCheckGateInput=true`
+      `reference=${referenceMeters.toFixed(6)} m; formalCorrection=false; agreementDiagnosticOnly=true`
     );
   }
 
-  if(lastDepthCrossCheck){
-    log(`depth cross-check summary: state=${lastDepthCrossCheck.state}; signedHitMinusDepth=${lastDepthCrossCheck.signedDelta===null?'n/a':(lastDepthCrossCheck.signedDelta*1000).toFixed(3)+' mm'}; absDelta=${lastDepthCrossCheck.absDelta===null?'n/a':(lastDepthCrossCheck.absDelta*1000).toFixed(3)+' mm'}; thresholds=warn5mm/invalid15mm; provisional=true`);
+  if(lastDepthAgreement){
+    log(`depth agreement summary: state=${lastDepthAgreement.state}; signedHitMinusDepth=${lastDepthAgreement.signedDelta===null?'n/a':(lastDepthAgreement.signedDelta*1000).toFixed(3)+' mm'}; absDelta=${lastDepthAgreement.absDelta===null?'n/a':(lastDepthAgreement.absDelta*1000).toFixed(3)+' mm'}; thresholds=agree<5mm/warn5-15mm/diverged>=15mm; provisional=true; diagnosticOnly=true`);
   }
 
   log(
@@ -3613,7 +3706,7 @@ async function startAR(){
   cleanupDone = false;
   sessionReferenceSpaceResetCount = 0;
   sessionFrozenMeasurements = [];
-  // Keep Phase 4.18 sweep samples across AR session restarts.
+  // Keep Phase 4.19 repeat-consensus samples across AR session restarts.
   // CLEAR SWEEP STATS is the explicit way to start a new controlled dataset.
   updateDepthSweepUI();
   hitHistory = [];
@@ -4458,6 +4551,7 @@ resetMeasurementMetrics();
 resetDepthDiagnostics();
 resetHitEntityProbe();
 resetAimQuality();
+updateDepthSweepUI();
 set('magnifierState','3×','ok');
 set('alignmentState','OFF','');
 set('alignmentOffsetState','—','');
