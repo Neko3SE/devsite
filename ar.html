@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<title>AR DISTANCE LAB - Phase 4.30 Rev.9</title>
+<title>AR DISTANCE LAB - Phase 4.30 Rev.10</title>
 <style>
 :root{
   color-scheme:dark;
@@ -125,7 +125,7 @@ padding:10px;pointer-events:auto}
 <body>
 <main>
 <h1>AR DISTANCE LAB</h1>
-<p class="sub">Phase 4.30 Rev.9 — A4 Projected-Line Pose Fit + Black-Line Snap + LOCAL / VIEWER-ONLY FREEZE + Solver Consensus Gate + Independent 100 mm Validation</p>
+<p class="sub">Phase 4.30 Rev.10 — A4 Projected-Line Pose Fit + Black-Line Snap + LOCAL / VIEWER-ONLY FREEZE + Solver Consensus Gate + Auto-Snapped 100 mm Validation</p>
 
 <section class="card">
 <h2>STATUS</h2>
@@ -268,7 +268,7 @@ padding:10px;pointer-events:auto}
 <section class="card">
 <h2>A4 PLANAR TARGET / EDGE CALIBRATION</h2>
 <p class="note">
-診断専用です。Phase 4.30 Rev.9ではA4用紙上に作った150.00 × 237.00 mmの長方形を使用します。Raw Cameraの同一フレームを固定し、TOP → RIGHT → BOTTOM → LEFT の各直線部分を5点ずつ大まかにタップします。5点は測定点そのものではなく黒線探索の初期位置として扱い、Frozen画像の輝度から各タップ近傍の暗い細線中心へ法線方向に自動スナップしてから2D直線QCと4-of-5外れ値判定を行います。姿勢推定では仮想四隅を作らず、辺上位置uも自由変数にせず、既知150 × 237 mm剛体長方形をFrozen画像へ投影した4本の線と、残った16〜20個のスナップ済み画像点との垂直ピクセル距離を直接最小化して6DOF姿勢を解きます。Hit Test / Depthは姿勢推定に使用せず、補正係数も適用しません。全辺の画像スナップGOOD・使用点RMS 2.5px以下・span 50px以上・外れ値除去時の有効span保持率65%以上を必須とし、姿勢解の各辺coverage 50%以上かつ最終fit quality=GOODの場合だけ同一Frozen比較の正式基準へ保存します。Tracking ACTIVE時は従来どおりLOCAL参照空間のRaw Camera幾何でFREEZEします。LOCAL trackingがLOST/UNSTABLEでもviewer参照空間のRaw CameraとXRView幾何が新鮮なら、そのフレームをVIEWER-ONLYとして単発FREEZEできます。VIEWER-ONLY結果はFrozen時点のviewer参照空間でのみ解釈し、world/local座標のフレーム間比較には使用しません。LOCALもVIEWERも新鮮でない場合だけFREEZE要求を予約し、どちらかの新しい有効フレームが到着した最初のタイミングで自動FREEZEします。予約中に同じボタンを押すとキャンセルできます。 Rev.9ではさらに、LMマルチスタートのsupported seed比率と選択解周辺のpose cluster比率をhard gate化し、seed consensusを通過した解でも同一Frozen画像で2回連続の姿勢一致を確認してからCONFIRMEDとします。CONFIRMED後は、姿勢推定に使用していないA4平面上の2つの独立マーク（既知距離100.00 mm）をタップし、各画像rayと確定平面の交点間距離から実寸誤差を診断できます。
+診断専用です。Phase 4.30 Rev.10ではA4用紙上に作った150.00 × 237.00 mmの長方形を使用します。Raw Cameraの同一フレームを固定し、TOP → RIGHT → BOTTOM → LEFT の各直線部分を5点ずつ大まかにタップします。5点は測定点そのものではなく黒線探索の初期位置として扱い、Frozen画像の輝度から各タップ近傍の暗い細線中心へ法線方向に自動スナップしてから2D直線QCと4-of-5外れ値判定を行います。姿勢推定では仮想四隅を作らず、辺上位置uも自由変数にせず、既知150 × 237 mm剛体長方形をFrozen画像へ投影した4本の線と、残った16〜20個のスナップ済み画像点との垂直ピクセル距離を直接最小化して6DOF姿勢を解きます。Hit Test / Depthは姿勢推定に使用せず、補正係数も適用しません。全辺の画像スナップGOOD・使用点RMS 2.5px以下・span 50px以上・外れ値除去時の有効span保持率65%以上を必須とし、姿勢解の各辺coverage 50%以上かつ最終fit quality=GOODの場合だけ同一Frozen比較の正式基準へ保存します。Tracking ACTIVE時は従来どおりLOCAL参照空間のRaw Camera幾何でFREEZEします。LOCAL trackingがLOST/UNSTABLEでもviewer参照空間のRaw CameraとXRView幾何が新鮮なら、そのフレームをVIEWER-ONLYとして単発FREEZEできます。VIEWER-ONLY結果はFrozen時点のviewer参照空間でのみ解釈し、world/local座標のフレーム間比較には使用しません。LOCALもVIEWERも新鮮でない場合だけFREEZE要求を予約し、どちらかの新しい有効フレームが到着した最初のタイミングで自動FREEZEします。予約中に同じボタンを押すとキャンセルできます。 Rev.10ではさらに、LMマルチスタートのsupported seed比率と選択解周辺のpose cluster比率をhard gate化し、seed consensusを通過した解でも同一Frozen画像で2回連続の姿勢一致を確認してからCONFIRMEDとします。CONFIRMED後は、姿勢推定に使用していないA4平面上の2つの独立した十字マーク（既知距離100.00 mm）付近をタップします。タップはseedとしてのみ扱い、Frozen画像から投影A4軸に沿う暗い十字の交点へ自動スナップした中心の画像rayと確定平面の交点間距離から実寸誤差を診断できます。
 </p>
 <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
   <label for="calibrationWidthMm">Width</label>
@@ -327,7 +327,7 @@ padding:10px;pointer-events:auto}
 </section>
 
 <section class="card note">
-Phase 4.30 Rev.9でも通常の正式単発距離値はimmutable Hit-Hitのままです。A4校正を開始するとA/B測距はRESET A4 CALまたはEND ARまでロックします。A4校正は1枚のRaw Camera静止画像を使い、各辺5点を黒線探索の初期位置としてFrozen画像の暗線中心へ自動スナップし、4-of-5外れ値QCした後、既知150 × 237 mm剛体長方形をFrozen画像へ投影した4辺と残った16〜20画像点の垂直距離を直接フィットします。仮想四隅も独立した辺上uも姿勢変数として使いません。LMの収束診断を明示し、全4辺の使用点RMS 2.5px以下、span 50px以上、外れ値除去後のspan保持率65%以上を入力のhard GOOD gateとして要求します。WARN入力はその辺だけ再タップし、全辺GOODになるまで姿勢推定へ進みません。さらに投影後の全辺coverage 50%以上を要求し、coverage不足時は最も弱い辺だけ再タップします。同じFrozen画像をRESTART 20 TAPSで繰り返すと、全辺画像スナップGOOD＋入力GOOD＋coverage PASS＋最終fit GOODに加え、supported seed比率50%以上・選択解周辺cluster比率60%以上を要求します。最初の通過解はPROVISIONALとし、次の同一Frozen解がcenter 3 mm以内・normal 3°以内・projected-corner RMS 1.5 px以内かつmax 3 px以内に一致した時だけCONFIRMEDとします。LOCAL LOST時にVIEWER-ONLYでFREEZEした結果はそのFrozen時点のviewer参照空間だけで有効であり、別Frozenとのworld/local位置比較には使用しません。Hit Test / Depthは姿勢推定に使用せず、結果は診断専用で補正係数や絶対精度判定には使用しません。MAP integrity、Depth agreement、Hit entity probeなど従来の距離診断はそのまま維持します。
+Phase 4.30 Rev.10でも通常の正式単発距離値はimmutable Hit-Hitのままです。A4校正を開始するとA/B測距はRESET A4 CALまたはEND ARまでロックします。A4校正は1枚のRaw Camera静止画像を使い、各辺5点を黒線探索の初期位置としてFrozen画像の暗線中心へ自動スナップし、4-of-5外れ値QCした後、既知150 × 237 mm剛体長方形をFrozen画像へ投影した4辺と残った16〜20画像点の垂直距離を直接フィットします。仮想四隅も独立した辺上uも姿勢変数として使いません。LMの収束診断を明示し、全4辺の使用点RMS 2.5px以下、span 50px以上、外れ値除去後のspan保持率65%以上を入力のhard GOOD gateとして要求します。WARN入力はその辺だけ再タップし、全辺GOODになるまで姿勢推定へ進みません。さらに投影後の全辺coverage 50%以上を要求し、coverage不足時は最も弱い辺だけ再タップします。同じFrozen画像をRESTART 20 TAPSで繰り返すと、全辺画像スナップGOOD＋入力GOOD＋coverage PASS＋最終fit GOODに加え、supported seed比率50%以上・選択解周辺cluster比率60%以上を要求します。最初の通過解はPROVISIONALとし、次の同一Frozen解がcenter 3 mm以内・normal 3°以内・projected-corner RMS 1.5 px以内かつmax 3 px以内に一致した時だけCONFIRMEDとします。LOCAL LOST時にVIEWER-ONLYでFREEZEした結果はそのFrozen時点のviewer参照空間だけで有効であり、別Frozenとのworld/local位置比較には使用しません。Hit Test / Depthは姿勢推定に使用せず、結果は診断専用で補正係数や絶対精度判定には使用しません。MAP integrity、Depth agreement、Hit entity probeなど従来の距離診断はそのまま維持します。
 </section>
 
 <section class="card">
@@ -360,7 +360,7 @@ Phase 4.30 Rev.9でも通常の正式単発距離値はimmutable Hit-Hitのま�
       <div class="freezeActions">
         <button type="button" id="cardValidationBtn" disabled>VALIDATE 100 mm</button>
       </div>
-      <div id="cardValidationState">After CONSENSUS CONFIRMED: press VALIDATE 100 mm, then tap validation mark A and B.</div>
+      <div id="cardValidationState">After CONSENSUS CONFIRMED: press VALIDATE 100 mm, then tap near validation cross A and B; Frozen image snap finds each center.</div>
     </div>
 
     <div id="topPanel">
@@ -461,7 +461,7 @@ let raf = 0;
 let latestHitMatrix = null;
 let latestHitPoint = null;
 
-// Phase 4.30 Rev.9: one frozen Raw Camera frame + five manual seed taps per edge + frozen-image dark-line snapping + deterministic 4-of-5 outlier QC + active-span retention + >=50% projected-edge coverage gate + final-fit GOOD gate + same-frozen repeat diagnostics.
+// Phase 4.30 Rev.10: one frozen Raw Camera frame + five manual seed taps per edge + frozen-image dark-line snapping + deterministic 4-of-5 outlier QC + active-span retention + >=50% projected-edge coverage gate + final-fit GOOD gate + same-frozen repeat diagnostics.
 const CALIBRATION_CORNERS = ['TL','TR','BR','BL'];
 const DEFAULT_CALIBRATION_WIDTH_MM = 85.60;
 const DEFAULT_CALIBRATION_HEIGHT_MM = 53.98;
@@ -496,7 +496,7 @@ let calibrationTransitionThresholdDeg = CALIBRATION_TRANSITION_MIN_DEG;
 let calibrationRayHistory = [];
 let calibrationDwellRaySamples = [];
 
-// Phase 4.30 Rev.9 frozen-frame state: manual taps are only seeds; each edge is snapped to a dark line in the frozen image before GOOD QC. Every accepted edge must be GOOD (used RMS <=2.5px, span >=50px, retained span >=65% after outlier removal); projected pose requires >=50% coverage on every edge and final fit quality GOOD.
+// Phase 4.30 Rev.10 frozen-frame state: manual taps are only seeds; each edge is snapped to a dark line in the frozen image before GOOD QC. Every accepted edge must be GOOD (used RMS <=2.5px, span >=50px, retained span >=65% after outlier removal); projected pose requires >=50% coverage on every edge and final fit quality GOOD.
 const CARD_FREEZE_SIZE = 512;
 const CARD_EDGE_NAMES = ['TOP','RIGHT','BOTTOM','LEFT'];
 const CARD_EDGE_TAPS = 5;
@@ -515,19 +515,27 @@ const CARD_EDGE_SNAP_STEP_PX = 0.5;
 const CARD_EDGE_SNAP_MIN_CONTRAST = 8.0;
 const CARD_EDGE_SNAP_MAX_ANGLE_CORRECTION_DEG = 15.0;
 const CARD_EDGE_SNAP_BOUNDARY_MARGIN_PX = 0.75;
-// Rev.9 provisional solver-consensus gates. These reject low-support / multi-solution 6DOF fits
+// Rev.10 provisional solver-consensus gates. These reject low-support / multi-solution 6DOF fits
 // without changing the image snap, rigid rectangle model, or LM objective.
 const CARD_SOLVER_MIN_SUPPORTED_SEED_RATIO = 0.50;
 const CARD_SOLVER_CLUSTER_CENTER_MM = 10.0;
 const CARD_SOLVER_CLUSTER_NORMAL_DEG = 5.0;
 const CARD_SOLVER_CLUSTER_CORNER_RMS_PX = 2.0;
 const CARD_SOLVER_MIN_CLUSTER_RATIO = 0.60;
-// Rev.9 same-frozen confirmation: two consecutive solver-consensus-passing fits must agree.
+// Rev.10 same-frozen confirmation: two consecutive solver-consensus-passing fits must agree.
 const CARD_REPEAT_CENTER_MAX_MM = 3.0;
 const CARD_REPEAT_NORMAL_MAX_DEG = 3.0;
 const CARD_REPEAT_CORNER_RMS_MAX_PX = 1.5;
 const CARD_REPEAT_CORNER_MAX_PX = 3.0;
 const CARD_VALIDATION_REFERENCE_MM = 100.0;
+// Rev.10 independent validation marks: the user tap is only a seed. The frozen image
+// is searched for the intersection of a dark cross aligned with the projected A4 axes.
+const CARD_VALIDATION_SNAP_SEARCH_RADIUS_PX = 20.0;
+const CARD_VALIDATION_SNAP_COARSE_STEP_PX = 1.0;
+const CARD_VALIDATION_SNAP_FINE_RADIUS_PX = 2.0;
+const CARD_VALIDATION_SNAP_FINE_STEP_PX = 0.25;
+const CARD_VALIDATION_SNAP_MIN_AXIS_CONTRAST = 6.0;
+const CARD_VALIDATION_SNAP_BOUNDARY_MARGIN_PX = 0.75;
 const RAW_CAMERA_STALE_MS = 500;
 let latestRawCameraGeometry = null; // LOCAL reference-space geometry
 let rawCameraGeneration = 0;
@@ -541,7 +549,7 @@ let lastFrozenViewerRawGeneration = 0;
 let rawCameraDisplayMode = 'NONE'; // LOCAL or VIEWER_FALLBACK; current magnifier pixels must match the selected freeze geometry role
 let rawCameraDisplayReceivedAt = -Infinity;
 let rawCameraFallbackFrames = 0;
-let cardFreezeRequestPending = false; // Rev.9: queue only when neither fresh LOCAL nor fresh VIEWER geometry is available
+let cardFreezeRequestPending = false; // Rev.10: queue only when neither fresh LOCAL nor fresh VIEWER geometry is available
 let cardFreezeRequestArmedAt = null;
 let cardFreezeRequestReason = null;
 let frozenCardFrame = null;
@@ -551,9 +559,9 @@ let frozenCardEdgeTapSamples = {TOP:[],RIGHT:[],BOTTOM:[],LEFT:[]};
 let frozenCardEdgeLines = {};
 let frozenCardRefinement = null;
 let frozenCardTapSets = []; // retained for inherited reset compatibility
-let frozenCardAcceptedFits = []; // Rev.9: solver-consensus-passing provisional fits; an unstable repeat replaces the baseline
-let frozenCardConfirmedFit = null; // Rev.9: set only after two consecutive same-frozen fits satisfy repeat-consensus gates
-let frozenCardValidation = {active:false,points:[],result:null}; // Rev.9 independent known-distance check on the same frozen plane
+let frozenCardAcceptedFits = []; // Rev.10: solver-consensus-passing provisional fits; an unstable repeat replaces the baseline
+let frozenCardConfirmedFit = null; // Rev.10: set only after two consecutive same-frozen fits satisfy repeat-consensus gates
+let frozenCardValidation = {active:false,seeds:[],points:[],snaps:[],result:null}; // Rev.10 independent known-distance check with frozen-image cross-center snap
 let frozenCardFrameIndex = 0;
 
 let anchorA = null;
@@ -922,7 +930,7 @@ function logHitABComparison(){
   return comparison;
 }
 
-// Phase 4.30 Rev.9 inherited from Phase 4.19: formal single-shot candidate remains frozen at Point B capture; repeated acquisitions form the consensus.
+// Phase 4.30 Rev.10 inherited from Phase 4.19: formal single-shot candidate remains frozen at Point B capture; repeated acquisitions form the consensus.
 let frozenMeasurement = null;
 let sessionFrozenMeasurements = [];
 let lastAAnchorPoseTime = null;
@@ -1129,7 +1137,7 @@ function freezeMeasurementAtB(hitPoint,time){
   return true;
 }
 
-// Absolute accuracy validation.
+// Absolute accuracy validation (Rev.10: independent cross-mark centers are auto-snapped in the frozen image).
 let referenceMeters = 0.20;
 const SWEEP_TARGETS_M = [0.20,0.50,1.00];
 const SWEEP_GOAL_PER_TARGET = 3; // minimum attempts before consensus can pass
@@ -1175,7 +1183,7 @@ let qualityHistory = [];
 let lastQualitySampleTime = -Infinity;
 let latestHitDistance = null;
 
-// Phase 4.30 Rev.9 inherited from Phase 4.19: Phase 4.16 Depth 3D method retained.
+// Phase 4.30 Rev.10 inherited from Phase 4.19: Phase 4.16 Depth 3D method retained.
 // Depth never replaces/corrects or rejects the committed Hit-Hit value. It is agreement diagnostics only.
 const DEPTH_GRID = 3;
 const DEPTH_RADIUS = 0.01; // compact local region around projected Hit / screen center
@@ -1207,8 +1215,8 @@ const DETAIL_CONTRAST_LOW = 8.0;
 
 let ending = false;
 let cleanupDone = false;
-const LOG_STORAGE_KEY = 'ar-distance-lab-phase4-30-rev9-log';
-const SUMMARY_STORAGE_KEY = 'ar-distance-lab-phase4-30-rev9-summary';
+const LOG_STORAGE_KEY = 'ar-distance-lab-phase4-30-rev10-log';
+const SUMMARY_STORAGE_KEY = 'ar-distance-lab-phase4-30-rev10-summary';
 
 const TRACKING_UNSTABLE_MS = 250;
 const TRACKING_LOST_MS = 1000;
@@ -2377,7 +2385,7 @@ function assessDepthDistanceCrossCheck(){
 
 function applyDepthDistanceCrossCheck(){
   const q=assessDepthDistanceCrossCheck();
-  // Phase 4.30 Rev.9 inherited from Phase 4.19: rename the >=15 mm state for clarity. This is diagnostic only.
+  // Phase 4.30 Rev.10 inherited from Phase 4.19: rename the >=15 mm state for clarity. This is diagnostic only.
   if(q.state==='INVALID') q.state='DIVERGED';
   lastDepthAgreement=q;
   const cls=q.state==='AGREE'||q.state==='PASS'?'ok':q.state==='WARN'?'warn':q.state==='DIVERGED'?'warn':'warn';
@@ -2389,7 +2397,7 @@ function applyDepthDistanceCrossCheck(){
 }
 
 function combineQualityGates(mapIntegrity,depthDiagnostic){
-  // Phase 4.30 Rev.9 inherited from Phase 4.19: only MAP can reject a single-shot measurement.
+  // Phase 4.30 Rev.10 inherited from Phase 4.19: only MAP can reject a single-shot measurement.
   // Depth agreement is deliberately excluded from the commit gate because the
   // previous sweep proved that Hit and Depth can agree while both are wrong.
   let state='PASS';
@@ -4469,9 +4477,9 @@ function cardFreezeTapCount(){ return edgeTapTotalCount(); }
 function edgeSamplingComplete(){ return CARD_EDGE_NAMES.every(e=>!!frozenCardEdgeLines[e]); }
 
 function resetFrozenCardValidation(reason='reset',quiet=false){
-  frozenCardValidation={active:false,points:[],result:null};
+  frozenCardValidation={active:false,seeds:[],points:[],snaps:[],result:null};
   if(el.cardValidationBtn){ el.cardValidationBtn.classList.remove('active'); el.cardValidationBtn.textContent=`VALIDATE ${CARD_VALIDATION_REFERENCE_MM.toFixed(0)} mm`; }
-  if(el.cardValidationState) el.cardValidationState.textContent='After CONSENSUS CONFIRMED: press VALIDATE 100 mm, then tap validation mark A and B.';
+  if(el.cardValidationState) el.cardValidationState.textContent='After CONSENSUS CONFIRMED: press VALIDATE 100 mm, then tap near validation cross A and B; Frozen image snap finds each center.';
   if(!quiet) log(`CARD VALIDATION RESET: reason=${reason}; reference=${CARD_VALIDATION_REFERENCE_MM.toFixed(2)}mm`);
 }
 
@@ -4484,6 +4492,78 @@ function rayPlaneIntersection(ray,center,normal){
   return {x:ray.origin.x+ray.direction.x*t,y:ray.origin.y+ray.direction.y*t,z:ray.origin.z+ray.direction.z*t,t};
 }
 
+function validationProjectedAxes(){
+  const pc=calibrationResult?.imageFit?.projectedCorners;
+  if(!pc?.TL||!pc?.TR||!pc?.BR||!pc?.BL) return null;
+  const unit=(a,b)=>{ const dx=b.x-a.x,dy=b.y-a.y,n=Math.hypot(dx,dy); return n>1e-9?{x:dx/n,y:dy/n}:null; };
+  const averageAligned=(a,b)=>{
+    if(!a||!b) return null;
+    let bx=b.x,by=b.y;
+    if(a.x*bx+a.y*by<0){ bx=-bx; by=-by; }
+    const x=a.x+bx,y=a.y+by,n=Math.hypot(x,y);
+    return n>1e-9?{x:x/n,y:y/n}:a;
+  };
+  const xAxis=averageAligned(unit(pc.TL,pc.TR),unit(pc.BL,pc.BR));
+  const yAxis=averageAligned(unit(pc.TL,pc.BL),unit(pc.TR,pc.BR));
+  return xAxis&&yAxis?{xAxis,yAxis}:null;
+}
+
+function validationDarkLineContrastAt(center,dir){
+  if(!center||!dir) return null;
+  const nx=-dir.y,ny=dir.x;
+  const centerOffsets=[-0.5,0,0.5];
+  const sideA=[-5,-4,-3],sideB=[3,4,5];
+  const tangent=[-4,-3,-2,-1,0,1,2,3,4];
+  const c=frozenMeanLumaAt(center,dir.x,dir.y,nx,ny,tangent,centerOffsets);
+  const a=frozenMeanLumaAt(center,dir.x,dir.y,nx,ny,tangent,sideA);
+  const b=frozenMeanLumaAt(center,dir.x,dir.y,nx,ny,tangent,sideB);
+  if(!Number.isFinite(c)||!Number.isFinite(a)||!Number.isFinite(b)) return null;
+  const side=(a+b)/2;
+  return {contrast:side-c,centerLuma:c,sideLuma:side};
+}
+
+function validationCrossResponseAt(center,axes,seed){
+  const hx=validationDarkLineContrastAt(center,axes.xAxis);
+  const hy=validationDarkLineContrastAt(center,axes.yAxis);
+  if(!hx||!hy) return null;
+  const minContrast=Math.min(hx.contrast,hy.contrast);
+  const meanContrast=(hx.contrast+hy.contrast)/2;
+  const displacement=Math.hypot(center.x-seed.x,center.y-seed.y);
+  // Requiring both directional contrasts prevents a single border/edge line from
+  // masquerading as a validation cross. Distance only resolves near-equal peaks.
+  const score=2.0*minContrast+0.5*meanContrast-0.02*displacement;
+  return {x:center.x,y:center.y,score,xContrast:hx.contrast,yContrast:hy.contrast,minContrast,meanContrast,displacement,centerLuma:(hx.centerLuma+hy.centerLuma)/2};
+}
+
+function searchValidationCross(seed,axes,center,radius,step){
+  let best=null;
+  for(let dy=-radius;dy<=radius+1e-9;dy+=step){
+    for(let dx=-radius;dx<=radius+1e-9;dx+=step){
+      const p={x:center.x+dx,y:center.y+dy};
+      if(p.x<6||p.y<6||p.x>CARD_FREEZE_SIZE-7||p.y>CARD_FREEZE_SIZE-7) continue;
+      const r=validationCrossResponseAt(p,axes,seed);
+      if(r && (!best || r.score>best.score)) best=r;
+    }
+  }
+  return best;
+}
+
+function snapValidationMarkToFrozenImage(seed){
+  const axes=validationProjectedAxes();
+  if(!axes) return {quality:'INVALID',reason:'projected-card-axes-unavailable'};
+  const coarse=searchValidationCross(seed,axes,seed,CARD_VALIDATION_SNAP_SEARCH_RADIUS_PX,CARD_VALIDATION_SNAP_COARSE_STEP_PX);
+  if(!coarse) return {quality:'INVALID',reason:'cross-search-unavailable'};
+  const boundaryHit=Math.abs(coarse.x-seed.x)>=CARD_VALIDATION_SNAP_SEARCH_RADIUS_PX-CARD_VALIDATION_SNAP_BOUNDARY_MARGIN_PX ||
+    Math.abs(coarse.y-seed.y)>=CARD_VALIDATION_SNAP_SEARCH_RADIUS_PX-CARD_VALIDATION_SNAP_BOUNDARY_MARGIN_PX;
+  const fine=searchValidationCross(seed,axes,{x:coarse.x,y:coarse.y},CARD_VALIDATION_SNAP_FINE_RADIUS_PX,CARD_VALIDATION_SNAP_FINE_STEP_PX) || coarse;
+  const displacement=Math.hypot(fine.x-seed.x,fine.y-seed.y);
+  let quality='GOOD',reason='cross-center-snap';
+  if(boundaryHit){ quality='INVALID'; reason='search-hit-boundary'; }
+  else if(fine.minContrast<CARD_VALIDATION_SNAP_MIN_AXIS_CONTRAST){ quality='INVALID'; reason='weak-cross-contrast'; }
+  else if(displacement>CARD_VALIDATION_SNAP_SEARCH_RADIUS_PX+CARD_VALIDATION_SNAP_FINE_RADIUS_PX){ quality='INVALID'; reason='snap-too-far'; }
+  return {...fine,quality,reason,axes,boundaryHit,seed:{x:seed.x,y:seed.y}};
+}
+
 function finishFrozenCardValidation(){
   if(frozenCardValidation.points.length!==2 || calibrationResult?.repeatConsensusState!=='CONFIRMED' || !calibrationResult?.imageFit) return false;
   const fit=calibrationResult.imageFit;
@@ -4491,14 +4571,14 @@ function finishFrozenCardValidation(){
   if(hits.some(x=>!x)){
     log(`CARD VALIDATION RESULT frame=${frozenCardFrame?.frameIndex??'n/a'}: FAILED — ray/confirmed-plane intersection unavailable; reference=${CARD_VALIDATION_REFERENCE_MM.toFixed(2)}mm; geometryRole=${frozenCardFrame?.geometryRole??'n/a'}; diagnosticOnly=true`);
     if(el.cardValidationState) el.cardValidationState.textContent='Validation failed: ray/plane intersection unavailable. Press VALIDATE 100 mm and retap A/B.';
-    frozenCardValidation={active:false,points:[],result:null}; drawFrozenCardFrame(); updateCalibrationUI(); return false;
+    frozenCardValidation={active:false,seeds:[],points:[],snaps:[],result:null}; drawFrozenCardFrame(); updateCalibrationUI(); return false;
   }
   const measuredMm=distance3(hits[0],hits[1])*1000;
   const errorMm=measuredMm-CARD_VALIDATION_REFERENCE_MM;
   const errorPct=errorMm/CARD_VALIDATION_REFERENCE_MM*100;
   frozenCardValidation.result={measuredMm,errorMm,errorPct,hits};
   frozenCardValidation.active=false;
-  log(`CARD VALIDATION RESULT frame=${frozenCardFrame.frameIndex}: reference=${CARD_VALIDATION_REFERENCE_MM.toFixed(2)}mm; measured=${measuredMm.toFixed(3)}mm; error=${errorMm>=0?'+':''}${errorMm.toFixed(3)}mm; errorPct=${errorPct>=0?'+':''}${errorPct.toFixed(3)}%; source=two-manual-validation-marks->confirmed-pose-plane-intersection; poseState=CONFIRMED; geometryRole=${frozenCardFrame.geometryRole}; worldComparable=${frozenCardFrame.worldComparable!==false}; circularValidation=false; targetDimensionsNotReMeasured=true; diagnosticOnly=true`);
+  log(`CARD VALIDATION RESULT frame=${frozenCardFrame.frameIndex}: reference=${CARD_VALIDATION_REFERENCE_MM.toFixed(2)}mm; measured=${measuredMm.toFixed(3)}mm; error=${errorMm>=0?'+':''}${errorMm.toFixed(3)}mm; errorPct=${errorPct>=0?'+':''}${errorPct.toFixed(3)}%; source=two-auto-snapped-validation-cross-centers->confirmed-pose-plane-intersection; manualSeedsOnly=true; poseState=CONFIRMED; geometryRole=${frozenCardFrame.geometryRole}; worldComparable=${frozenCardFrame.worldComparable!==false}; circularValidation=false; targetDimensionsNotReMeasured=true; diagnosticOnly=true`);
   if(el.cardValidationState) el.cardValidationState.textContent=`VALIDATION: ${measuredMm.toFixed(3)} mm / REF ${CARD_VALIDATION_REFERENCE_MM.toFixed(2)} mm / ERROR ${errorMm>=0?'+':''}${errorMm.toFixed(3)} mm (${errorPct>=0?'+':''}${errorPct.toFixed(2)}%)`;
   if(el.cardValidationBtn){ el.cardValidationBtn.classList.remove('active'); el.cardValidationBtn.textContent='REVALIDATE 100 mm'; }
   drawFrozenCardFrame(); updateCalibrationUI();
@@ -4507,10 +4587,10 @@ function finishFrozenCardValidation(){
 
 function handleCardValidationButton(){
   if(!frozenCardFrame || calibrationResult?.repeatConsensusState!=='CONFIRMED' || !calibrationResult?.imageFit) return;
-  frozenCardValidation={active:true,points:[],result:null};
+  frozenCardValidation={active:true,seeds:[],points:[],snaps:[],result:null};
   if(el.cardValidationBtn){ el.cardValidationBtn.classList.add('active'); el.cardValidationBtn.textContent='CANCEL VALIDATION'; }
-  if(el.cardValidationState) el.cardValidationState.textContent='VALIDATION A: tap the center of the first mark. The two physical marks must be exactly 100.00 mm apart on the A4 plane.';
-  log(`CARD VALIDATION ARMED frame=${frozenCardFrame.frameIndex}: reference=${CARD_VALIDATION_REFERENCE_MM.toFixed(2)}mm; poseState=CONFIRMED; geometryRole=${frozenCardFrame.geometryRole}; pointsRequired=2; sameFrozenFrame=true; diagnosticOnly=true`);
+  if(el.cardValidationState) el.cardValidationState.textContent='VALIDATION A: tap near the center of cross A. Frozen image snap will refine the center automatically.';
+  log(`CARD VALIDATION ARMED frame=${frozenCardFrame.frameIndex}: reference=${CARD_VALIDATION_REFERENCE_MM.toFixed(2)}mm; poseState=CONFIRMED; geometryRole=${frozenCardFrame.geometryRole}; pointsRequired=2; input=manual-seed->frozen-cross-center-snap; searchRadius=${CARD_VALIDATION_SNAP_SEARCH_RADIUS_PX.toFixed(1)}px; minAxisContrast=${CARD_VALIDATION_SNAP_MIN_AXIS_CONTRAST.toFixed(1)}; sameFrozenFrame=true; diagnosticOnly=true`);
   drawFrozenCardFrame(); updateCalibrationUI();
 }
 
@@ -4546,7 +4626,7 @@ function updateCalibrationUI(){
             ? `A4 EDGE TAPS: ${freezeAvail.role==='local'?'LOCAL world/local':'VIEWER-ONLY single-frame'} FREEZE ready`
             : `A4 CAMERA: local=${cameraFresh.state}, viewer=${viewerFresh.state}; press QUEUE FREEZE`));
   if(el.calibrationCaptureBtn){
-    // Rev.9: LOCAL geometry is preferred when the current pixels are LOCAL; VIEWER_FALLBACK may be frozen as viewer-only.
+    // Rev.10: LOCAL geometry is preferred when the current pixels are LOCAL; VIEWER_FALLBACK may be frozen as viewer-only.
     // The button queues only when the current display has no matching fresh geometry.
     el.calibrationCaptureBtn.disabled=!session || ending || (!!frozenCardFrame && !freezeAvail.ready);
     el.calibrationCaptureBtn.classList.remove('active','pending');
@@ -4607,7 +4687,7 @@ function updateCalibrationUI(){
       `Input ${inputQuality} / Seed ${fit.seed} / LM ${fit.iterations} iterations / converged ${fit.converged} / ${fit.termination}\n`+
       `Seed support ${(fit.supportedSeedRatio*100).toFixed(1)}% (${fit.supportedConvergedSeeds}/${fit.seedsTried}) / pose cluster ${(fit.seedClusterRatio*100).toFixed(1)}% (${fit.seedClusterCount}/${fit.supportedConvergedSeeds}) / ${fit.solverConsensusPass?'PASS':'LOW'}\n`+
       `Same-frozen repeat state: ${repeatState}${calibrationResult?.repeatConsensus?` / center ${calibrationResult.repeatConsensus.centerShiftMm.toFixed(3)} mm / normal ${calibrationResult.repeatConsensus.normalAxisShiftDeg.toFixed(3)}° / corner RMS ${calibrationResult.repeatConsensus.cornerRms.toFixed(3)} px`:''}\n`+
-      `NO VIRTUAL CORNERS — NO INDEPENDENT EDGE-u VARIABLES — ≥50% coverage required. Rev.9 requires seed consensus and two consecutive same-frozen pose fits before CONFIRMED. DIAGNOSTIC ONLY; internal consistency does not establish absolute accuracy.`;
+      `NO VIRTUAL CORNERS — NO INDEPENDENT EDGE-u VARIABLES — ≥50% coverage required. Rev.10 requires seed consensus and two consecutive same-frozen pose fits before CONFIRMED. DIAGNOSTIC ONLY; internal consistency does not establish absolute accuracy.`;
   }
 }
 
@@ -4682,9 +4762,14 @@ function drawFrozenCardFrame(){
     ctx.strokeStyle='#ffffff'; ctx.fillStyle='#ffffff';
     for(const c of CALIBRATION_CORNERS){ const p=frozenCardTaps[c]; ctx.beginPath(); ctx.arc(p.x,p.y,6,0,Math.PI*2); ctx.stroke(); ctx.fillText(c,p.x+8,p.y-7); }
   }
-  if(frozenCardValidation?.points?.length){
-    ctx.save(); ctx.strokeStyle='#ffffff'; ctx.fillStyle='#ffffff'; ctx.lineWidth=2;
-    frozenCardValidation.points.forEach((p,i)=>{ const label=i===0?'A':'B'; ctx.beginPath(); ctx.arc(p.x,p.y,7,0,Math.PI*2); ctx.stroke(); ctx.beginPath(); ctx.moveTo(p.x-9,p.y); ctx.lineTo(p.x+9,p.y); ctx.moveTo(p.x,p.y-9); ctx.lineTo(p.x,p.y+9); ctx.stroke(); ctx.fillText(`V${label}`,p.x+10,p.y-8); });
+  if(frozenCardValidation?.points?.length || frozenCardValidation?.seeds?.length){
+    ctx.save(); ctx.lineWidth=1;
+    if(Array.isArray(frozenCardValidation.seeds)){
+      ctx.strokeStyle='#ffd166'; ctx.globalAlpha=.65;
+      frozenCardValidation.seeds.forEach(p=>{ ctx.beginPath(); ctx.arc(p.x,p.y,5,0,Math.PI*2); ctx.stroke(); });
+    }
+    ctx.globalAlpha=1; ctx.strokeStyle='#ffffff'; ctx.fillStyle='#ffffff'; ctx.lineWidth=2;
+    (frozenCardValidation.points||[]).forEach((p,i)=>{ const label=i===0?'A':'B'; ctx.beginPath(); ctx.arc(p.x,p.y,7,0,Math.PI*2); ctx.stroke(); ctx.beginPath(); ctx.moveTo(p.x-9,p.y); ctx.lineTo(p.x+9,p.y); ctx.moveTo(p.x,p.y-9); ctx.lineTo(p.x,p.y+9); ctx.stroke(); ctx.fillText(`V${label}`,p.x+10,p.y-8); });
     ctx.restore();
   }
   ctx.restore();
@@ -4794,7 +4879,7 @@ function edgeLineQuality(line){
   if(line.imageSnapQuality && line.imageSnapQuality!=='GOOD') return 'INVALID';
   if(line.rms>CARD_EDGE_LINE_RMS_MAX_PX || line.span<CARD_EDGE_MIN_SPAN_PX) return 'INVALID';
   if(line.outlierRemoved && Number.isFinite(line.spanRetention) && line.spanRetention<CARD_EDGE_MIN_ACTIVE_SPAN_RETENTION) return 'INVALID';
-  // Rev.9 hard input gate: a successfully cleaned 4-of-5 edge may still be GOOD,
+  // Rev.10 hard input gate: a successfully cleaned 4-of-5 edge may still be GOOD,
   // but the residuals actually used for pose must be <= 2.5 px RMS.
   if(line.rms>CARD_EDGE_LINE_RMS_WARN_PX) return 'WARN';
   return 'GOOD';
@@ -5245,8 +5330,8 @@ function finalizeFrozenCardCalibration(){
       calibrationResult.repeatConsensusState='CONFIRMED';
       calibrationResult.repeatConsensus=repeat;
       log(`CARD SOLVER CONSENSUS CONFIRMED frame=${currentSnapshot.frameIndex}: consecutiveFits=2; centerShift=${repeat.centerShiftMm.toFixed(3)}mm; normalAxisShift=${repeat.normalAxisShiftDeg.toFixed(3)}deg; cornerRMS=${repeat.cornerRms.toFixed(3)}px; cornerMax=${repeat.cornerMax.toFixed(3)}px; solverSeedConsensus=PASS; sameFrozenFrame=true; fitFinalized=true; diagnosticOnly=true`);
-      if(el.cardFreezeTapState) el.cardFreezeTapState.textContent=`CONSENSUS CONFIRMED: pose is finalized for this frozen frame. Optional next step: VALIDATE 100 mm with two independent marks.`;
-      if(el.cardValidationState) el.cardValidationState.textContent='Pose CONFIRMED. Press VALIDATE 100 mm, then tap the centers of two marks exactly 100.00 mm apart on the A4 plane.';
+      if(el.cardFreezeTapState) el.cardFreezeTapState.textContent=`CONSENSUS CONFIRMED: pose is finalized for this frozen frame. Optional next step: VALIDATE 100 mm with two auto-snapped cross marks.`;
+      if(el.cardValidationState) el.cardValidationState.textContent='Pose CONFIRMED. Press VALIDATE 100 mm, then tap near two cross marks exactly 100.00 mm apart; Frozen image snap finds each center.';
     }else{
       frozenCardAcceptedFits=[currentSnapshot];
       frozenCardConfirmedFit=null;
@@ -5276,7 +5361,7 @@ function resetFrozenCardTaps(reason='user'){
 function leaveFrozenFrameForRetake(){
   if(el.cardFreezePanel) el.cardFreezePanel.hidden=true;
   cardFreezeRequestPending=false; cardFreezeRequestArmedAt=null; cardFreezeRequestReason=null;
-  frozenCardFrame=null; frozenCardTaps={}; frozenCardTapSamples=emptyFrozenTapSamples(); frozenCardEdgeTapSamples=emptyFrozenEdgeTapSamples(); frozenCardEdgeLines={}; frozenCardRefinement=null; frozenCardTapSets=[]; frozenCardAcceptedFits=[]; frozenCardConfirmedFit=null; frozenCardValidation={active:false,points:[],result:null}; calibrationPoints={}; calibrationResult=null;
+  frozenCardFrame=null; frozenCardTaps={}; frozenCardTapSamples=emptyFrozenTapSamples(); frozenCardEdgeTapSamples=emptyFrozenEdgeTapSamples(); frozenCardEdgeLines={}; frozenCardRefinement=null; frozenCardTapSets=[]; frozenCardAcceptedFits=[]; frozenCardConfirmedFit=null; frozenCardValidation={active:false,seeds:[],points:[],snaps:[],result:null}; calibrationPoints={}; calibrationResult=null;
   if(el.xrHint) el.xrHint.textContent='Live view restored. FREEZE will use fresh LOCAL geometry when available, otherwise fresh VIEWER-only geometry.';
   log('CARD EDGE FREEZE RETAKE: live view restored; previous frozen image and all edge taps discarded; measurementLock=true; freshFrameRequired=true; localOrViewerFreeze=true; queuedFreezeAvailable=true');
   requireNewRawCameraFrame('freeze-retake');
@@ -5337,7 +5422,7 @@ function freezeCardFrame(trigger='manual'){
   const centerRay=rayFromFrozenSourcePoint({x:CARD_FREEZE_SIZE/2,y:CARD_FREEZE_SIZE/2},frozenCardFrame);
   const m=frozenCardFrame.viewTransform; const expected=normalize3({x:-m[8],y:-m[9],z:-m[10]});
   frozenCardFrame.centerRayDeltaDeg=angleBetweenDirectionsDeg(centerRay?.direction,expected)??NaN;
-  frozenCardTaps={}; frozenCardTapSamples=emptyFrozenTapSamples(); frozenCardEdgeTapSamples=emptyFrozenEdgeTapSamples(); frozenCardEdgeLines={}; frozenCardRefinement=null; frozenCardTapSets=[]; frozenCardAcceptedFits=[]; frozenCardConfirmedFit=null; frozenCardValidation={active:false,points:[],result:null}; calibrationPoints={}; calibrationResult=null;
+  frozenCardTaps={}; frozenCardTapSamples=emptyFrozenTapSamples(); frozenCardEdgeTapSamples=emptyFrozenEdgeTapSamples(); frozenCardEdgeLines={}; frozenCardRefinement=null; frozenCardTapSets=[]; frozenCardAcceptedFits=[]; frozenCardConfirmedFit=null; frozenCardValidation={active:false,seeds:[],points:[],snaps:[],result:null}; calibrationPoints={}; calibrationResult=null;
   resetFrozenCardValidation('new-freeze',true);
   if(el.cardFreezePanel) el.cardFreezePanel.hidden=false;
   if(el.cardFreezeTapState) el.cardFreezeTapState.textContent='TOP sample 1/5: tap five separated seed points close to the black line; image snap will refine them.';
@@ -5390,12 +5475,21 @@ function handleFrozenCardTap(ev){
   if(edgeSamplingComplete()){
     if(!frozenCardValidation.active || calibrationResult?.repeatConsensusState!=='CONFIRMED') return;
     if(frozenCardValidation.points.length>=2) return;
-    frozenCardValidation.points.push({x:p.x,y:p.y});
-    const label=frozenCardValidation.points.length===1?'A':'B';
-    const uv=sourcePointToViewUv(p);
-    log(`CARD VALIDATION TAP frame=${frozenCardFrame.frameIndex} point=${label}: sourcePx=(${p.x.toFixed(2)},${p.y.toFixed(2)}); viewUV=(${uv.x.toFixed(6)},${uv.y.toFixed(6)}); role=manual-independent-validation-mark`);
+    const label=frozenCardValidation.points.length===0?'A':'B';
+    const snap=snapValidationMarkToFrozenImage(p);
+    const seedUv=sourcePointToViewUv(p);
+    if(!snap || snap.quality!=='GOOD'){
+      log(`CARD VALIDATION SNAP REJECT frame=${frozenCardFrame.frameIndex} point=${label}: seedPx=(${p.x.toFixed(2)},${p.y.toFixed(2)}); seedViewUV=(${seedUv.x.toFixed(6)},${seedUv.y.toFixed(6)}); reason=${snap?.reason??'n/a'}; xContrast=${Number.isFinite(snap?.xContrast)?snap.xContrast.toFixed(2):'n/a'}; yContrast=${Number.isFinite(snap?.yContrast)?snap.yContrast.toFixed(2):'n/a'}; minContrast=${Number.isFinite(snap?.minContrast)?snap.minContrast.toFixed(2):'n/a'}; displacement=${Number.isFinite(snap?.displacement)?snap.displacement.toFixed(2)+'px':'n/a'}; searchRadius=${CARD_VALIDATION_SNAP_SEARCH_RADIUS_PX.toFixed(1)}px; action=retap-same-validation-mark; diagnosticOnly=true`);
+      if(el.cardValidationState) el.cardValidationState.textContent=`VALIDATION ${label} snap failed (${snap?.reason??'unknown'}). Retap closer to the cross center; keep the cross away from the A4 border.`;
+      drawFrozenCardFrame(); updateCalibrationUI(); return;
+    }
+    frozenCardValidation.seeds.push({x:p.x,y:p.y});
+    frozenCardValidation.points.push({x:snap.x,y:snap.y});
+    frozenCardValidation.snaps.push(snap);
+    const uv=sourcePointToViewUv({x:snap.x,y:snap.y});
+    log(`CARD VALIDATION MARK SNAP frame=${frozenCardFrame.frameIndex} point=${label}: seedPx=(${p.x.toFixed(2)},${p.y.toFixed(2)}); snappedPx=(${snap.x.toFixed(2)},${snap.y.toFixed(2)}); snappedViewUV=(${uv.x.toFixed(6)},${uv.y.toFixed(6)}); displacement=${snap.displacement.toFixed(2)}px; xContrast=${snap.xContrast.toFixed(2)}; yContrast=${snap.yContrast.toFixed(2)}; minContrast=${snap.minContrast.toFixed(2)}; score=${snap.score.toFixed(2)}; role=manual-seed-only->auto-cross-center`);
     if(frozenCardValidation.points.length===1){
-      if(el.cardValidationState) el.cardValidationState.textContent='VALIDATION B: tap the center of the second mark exactly 100.00 mm from A.';
+      if(el.cardValidationState) el.cardValidationState.textContent='VALIDATION A snapped. Tap near cross B; its center will also be found automatically.';
       drawFrozenCardFrame();
     }else finishFrozenCardValidation();
     return;
@@ -5713,7 +5807,7 @@ async function startAR(){
   frozenCardEdgeLines={};
   frozenCardRefinement=null;
   frozenCardTapSets=[];
-  frozenCardAcceptedFits=[]; frozenCardConfirmedFit=null; frozenCardValidation={active:false,points:[],result:null};
+  frozenCardAcceptedFits=[]; frozenCardConfirmedFit=null; frozenCardValidation={active:false,seeds:[],points:[],snaps:[],result:null};
   latestRawCameraGeometry=null;
   rawCameraGeneration=0; rawCameraRequiredGeneration=1; rawCameraFreshnessState='WAITING_NEW_FRAME'; lastFrozenRawGeneration=0;
   latestViewerRawCameraGeometry=null; viewerRawCameraGeneration=0; viewerRawCameraRequiredGeneration=1; lastFrozenViewerRawGeneration=0;
@@ -6257,7 +6351,7 @@ function onXRFrame(time,frame){
   refreshRawCameraFreshnessUI('xr-frame-watchdog');
   if(localRawSampled) tryFulfillQueuedCardFreeze('new-local-raw-camera-frame');
 
-  // Phase 4.30 Rev.9 calibration freezes pixels and matching XRView geometry from the same sampling role: LOCAL when available, otherwise VIEWER-ONLY during fallback.
+  // Phase 4.30 Rev.10 calibration freezes pixels and matching XRView geometry from the same sampling role: LOCAL when available, otherwise VIEWER-ONLY during fallback.
   // VIEWER-ONLY solves the known rectangle in the frozen viewer reference space and is not world/local comparable across frames.
   // No live per-corner auto-dwell runs here; Hit/Depth remain independent diagnostics.
 
@@ -6502,7 +6596,7 @@ function onSessionEnd(){
   frozenCardEdgeLines={};
   frozenCardRefinement=null;
   frozenCardTapSets=[];
-  frozenCardAcceptedFits=[]; frozenCardConfirmedFit=null; frozenCardValidation={active:false,points:[],result:null};
+  frozenCardAcceptedFits=[]; frozenCardConfirmedFit=null; frozenCardValidation={active:false,seeds:[],points:[],snaps:[],result:null};
 
   alignmentMode=false;
   el.xrOverlay.classList.remove('align-mode');
