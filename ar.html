@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<title>AR DISTANCE LAB - Phase 4.26</title>
+<title>AR DISTANCE LAB - Phase 4.27</title>
 <style>
 :root{
   color-scheme:dark;
@@ -122,7 +122,7 @@ padding:10px;pointer-events:auto}
 <body>
 <main>
 <h1>AR DISTANCE LAB</h1>
-<p class="sub">Phase 4.26 — Robust Corner Taps + Deterministic Rigid Pose</p>
+<p class="sub">Phase 4.27 — A4 Edge Sampling + Virtual Corners + Rigid Pose</p>
 
 <section class="card">
 <h2>STATUS</h2>
@@ -263,53 +263,53 @@ padding:10px;pointer-events:auto}
 </section>
 
 <section class="card">
-<h2>KNOWN PLANAR TARGET / CARD CALIBRATION</h2>
+<h2>A4 PLANAR TARGET / EDGE CALIBRATION</h2>
 <p class="note">
-診断専用です。既定値は ID-1 形状 85.60 × 53.98 mm。Phase 4.26ではRaw Cameraの同一フレームを1枚固定し、TLを3回 → TRを3回 → BRを3回 → BLを3回、合計12回タップします。同じ角の過去タップは表示せず、各角3点のX/Y中央値だけを代表角として採用します。4代表角から既知85.60 × 53.98 mmの剛体長方形6DOF姿勢を1回だけ推定します。初期姿勢は4代表Rayの平面ホモグラフィから決定論的に生成し、LMは微調整だけに使用します。さらに観測した12タップから作れる3^4=81通りの角組み合わせを再フィットし、代表姿勢に対する中心位置・法線角度・Ray RMSの感度分布を算出します。これはタップ誤差に対する不確かさ診断であり、絶対精度や補正係数を意味しません。Hit Test / Depthはカード四隅には使用せず、校正中はA/B測距をロックします。
+診断専用です。Phase 4.27ではA4用紙上に作った150.00 × 237.00 mmの長方形を使用します。Raw Cameraの同一フレームを固定し、角そのものはタップしません。TOP → RIGHT → BOTTOM → LEFT の各直線部分を5点ずつタップし、各辺を画像上の直線として最小二乗フィットします。丸角や線の交点付近は避け、できるだけ辺の広い範囲へ点を分散してください。各辺は5点目で入力品質を検査し、直線RMSが5 pxを超える、またはタップ範囲が50 px未満の場合はその辺だけ自動的にやり直します。4本の直線の交点から仮想TL/TR/BR/BLを生成し、その4点だけをViewer Rayへ変換して、既知150 × 237 mmの剛体長方形6DOF姿勢を推定します。Hit Test / Depthは仮想角には使用せず、補正係数も適用しません。
 </p>
 <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
   <label for="calibrationWidthMm">Width</label>
-  <input id="calibrationWidthMm" class="calInput" type="number" min="10" max="1000" step="0.01" value="85.60">
+  <input id="calibrationWidthMm" class="calInput" type="number" min="10" max="1000" step="0.01" value="150.00">
   <span>mm</span>
   <label for="calibrationHeightMm">Height</label>
-  <input id="calibrationHeightMm" class="calInput" type="number" min="10" max="1000" step="0.01" value="53.98">
+  <input id="calibrationHeightMm" class="calInput" type="number" min="10" max="1000" step="0.01" value="237.00">
   <span>mm</span>
 </div>
 <div class="sweepGrid">
-  <div class="cell">Robust corner sampling</div><div class="cell calResult" id="calibrationSequenceState">TL 0 / 3 — freeze frame first</div>
-  <div class="cell">Freeze state</div><div class="cell calResult" id="calibrationAutoState">LIVE — press FREEZE CARD FRAME</div>
+  <div class="cell">Edge sampling</div><div class="cell calResult" id="calibrationSequenceState">TOP 0 / 5 — freeze frame first</div>
+  <div class="cell">Freeze state</div><div class="cell calResult" id="calibrationAutoState">LIVE — press FREEZE A4 FRAME</div>
   <div class="cell">Total tap progress</div><div class="cell" id="calibrationDwellState">WAITING</div>
-  <div class="cell">Target</div><div class="cell" id="calibrationTargetState">85.60 × 53.98 mm</div>
-  <div class="cell">Representative Ray miss TL / TR</div><div class="cell" id="calibrationWidthState">—</div>
-  <div class="cell">Representative Ray miss BR / BL</div><div class="cell" id="calibrationHeightState">—</div>
-  <div class="cell">Representative ray parameters TL / TR / BR / BL</div><div class="cell" id="calibrationDiagonalState">—</div>
-  <div class="cell">Representative Ray RMS</div><div class="cell" id="calibrationWidthErrorState">—</div>
-  <div class="cell">Representative max Ray miss</div><div class="cell" id="calibrationHeightErrorState">—</div>
-  <div class="cell">Representative pose quality</div><div class="cell" id="calibrationScaleState">—</div>
-  <div class="cell">Corner tap RMS TL / TR / BR / BL</div><div class="cell" id="calibrationScaleSpreadState">—</div>
-  <div class="cell">Corner max tap spread TL / TR / BR / BL</div><div class="cell" id="calibrationScaleResidualState">—</div>
-  <div class="cell">81-combination center sensitivity</div><div class="cell" id="calibrationAngleState">—</div>
-  <div class="cell">81-combination normal sensitivity</div><div class="cell" id="calibrationPlaneState">—</div>
-  <div class="cell">Representative center / normal</div><div class="cell" id="calibrationDepthState">—</div>
-  <div class="cell">Role</div><div class="cell" id="calibrationRoleState">MEDIAN CORNERS + 81-COMBINATION TAP SENSITIVITY — no correction</div>
+  <div class="cell">Target</div><div class="cell" id="calibrationTargetState">150.00 × 237.00 mm</div>
+  <div class="cell">Line RMS TOP / RIGHT</div><div class="cell" id="calibrationWidthState">—</div>
+  <div class="cell">Line RMS BOTTOM / LEFT</div><div class="cell" id="calibrationHeightState">—</div>
+  <div class="cell">Line span T / R / B / L</div><div class="cell" id="calibrationDiagonalState">—</div>
+  <div class="cell">Virtual-corner Ray RMS</div><div class="cell" id="calibrationWidthErrorState">—</div>
+  <div class="cell">Virtual-corner max Ray miss</div><div class="cell" id="calibrationHeightErrorState">—</div>
+  <div class="cell">Rigid pose quality</div><div class="cell" id="calibrationScaleState">—</div>
+  <div class="cell">Image top / bottom length</div><div class="cell" id="calibrationScaleSpreadState">—</div>
+  <div class="cell">Image left / right length</div><div class="cell" id="calibrationScaleResidualState">—</div>
+  <div class="cell">Virtual corner bounds</div><div class="cell" id="calibrationAngleState">—</div>
+  <div class="cell">Input quality</div><div class="cell" id="calibrationPlaneState">—</div>
+  <div class="cell">Estimated center / normal</div><div class="cell" id="calibrationDepthState">—</div>
+  <div class="cell">Role</div><div class="cell" id="calibrationRoleState">MANUAL EDGE POINTS → FITTED LINES → VIRTUAL CORNERS — no correction</div>
 </div>
 <div class="actions" style="margin-top:10px">
-  <button type="button" id="calibrationResetBtn">RESET CARD CAL</button>
+  <button type="button" id="calibrationResetBtn">RESET A4 CAL</button>
 </div>
-<pre id="calibrationText" style="margin-top:10px;max-height:220px">CARD ROBUST TAPS: start AR, center the whole card inside MAG source, then press FREEZE CARD FRAME.</pre>
+<pre id="calibrationText" style="margin-top:10px;max-height:240px">A4 EDGE TAPS: start AR, fit the complete 150 × 237 mm rectangle inside the frozen source, then press FREEZE A4 FRAME.</pre>
 </section>
 
 <section class="card">
-<h2>PHASE 4.26 TEST PROCEDURE</h2>
+<h2>PHASE 4.27 TEST PROCEDURE</h2>
 <ol class="procedure">
-  <li>85.60 × 53.98 mm のカード形状ターゲットを平らで動かない面に固定します。</li>
-  <li>START AR後、カード全体が中央のRaw Camera領域に入るように構え、FREEZE CARD FRAMEを1回押します。以後12タップすべて同じ静止フレームを使います。</li>
-  <li>TLを同じ角へ3回タップします。同じ角の過去タップ点は表示しないため、前回位置へ合わせる必要はありません。3回完了するとX/Y中央値をTL代表点として固定し、自動的にTRへ進みます。</li>
-  <li>同様に TR×3 → BR×3 → BL×3 を行います。合計12回です。各角の3回タップばらつきも保存します。</li>
-  <li>12回完了すると、4代表点から平面ホモグラフィで決定論的初期姿勢を求め、85.60 × 53.98 mmの剛体長方形をLMで微調整します。</li>
-  <li>続いて3^4=81通りの観測タップ組み合わせを自動再計算し、代表姿勢からの中心位置差・法線角度差・Ray RMS分布をタップ感度として集計します。</li>
-  <li>途中でやり直す場合は RESET CURRENT CORNER、12回完了後は同じボタンで12タップを最初からやり直せます。撮り直す場合は LIVE / RETAKE → FREEZE CARD FRAME を使用します。</li>
-  <li>ログの CARD ROBUST TAP / CARD CORNER REPRESENTATIVE / CARD ROBUST FIT SUMMARY / CARD TAP UNCERTAINTY SUMMARY を共有してください。A/B測距と20 / 50 / 100 cm sweepは今回不要です。</li>
+  <li>A4用紙の四辺から30 mm内側に細い線を引き、150.00 × 237.00 mmの長方形を作ります。用紙は平らな面へ固定します。</li>
+  <li>START AR後、長方形全体がRaw Camera中央領域へ入るように構え、FREEZE A4 FRAMEを1回押します。以後20タップすべて同じ静止フレームを使います。</li>
+  <li>TOPの直線部分を5点タップします。角・線の端は避け、左寄りから右寄りまで広く分散させます。生タップ点は表示しません。</li>
+  <li>5点目でTOPの直線フィットを検査します。RMS &gt; 5 pxまたは点群span &lt; 50 pxなら、その辺だけ自動リセットされます。PASSするとフィット線を表示してRIGHTへ進みます。</li>
+  <li>同様に RIGHT → BOTTOM → LEFT を各5点タップします。4辺完了時に4直線の交点から仮想TL/TR/BR/BLを作ります。</li>
+  <li>仮想4角からViewer Rayを生成し、150 × 237 mmの剛体長方形姿勢を推定します。Hit Test / Depthは角位置に使いません。</li>
+  <li>途中でやり直す場合は RESET CURRENT EDGE、4辺完了後は同じボタンで20タップを最初からやり直せます。撮り直す場合は LIVE / RETAKE → FREEZE A4 FRAME を使用します。</li>
+  <li>ログの CARD EDGE TAP / CARD EDGE LINE / CARD EDGE RECT SUMMARY / CARD EDGE FIT SUMMARY を共有してください。A/B測距と20 / 50 / 100 cm sweepは今回不要です。</li>
 </ol>
 </section>
 
@@ -323,7 +323,7 @@ padding:10px;pointer-events:auto}
 </section>
 
 <section class="card note">
-Phase 4.26でも通常の正式単発距離値はimmutable Hit-Hitのままです。カード校正を開始するとA/B測距はRESET CARDまたはEND ARまでロックします。カード校正は1枚のRaw Camera静止画像を使い、各角3タップの中央値を代表角にします。自動エッジ補正は使用しません。代表4点の姿勢推定と81通りのタップ感度解析は診断専用で、補正係数や絶対精度判定には使用しません。Hit Test / Depthはカード四隅には使いません。MAP integrity、Depth agreement、Hit entity probeなど従来の距離診断はそのまま維持します。
+Phase 4.27でも通常の正式単発距離値はimmutable Hit-Hitのままです。A4校正を開始するとA/B測距はRESET CARDまたはEND ARまでロックします。A4校正は1枚のRaw Camera静止画像を使い、4辺を各5点の手動サンプルから直線フィットし、交点を仮想四隅として剛体姿勢を推定します。Hit Test / Depthは四隅には使用せず、結果は診断専用で補正係数や絶対精度判定には使用しません。MAP integrity、Depth agreement、Hit entity probeなど従来の距離診断はそのまま維持します。
 </section>
 
 <section class="card">
@@ -346,11 +346,11 @@ Phase 4.26でも通常の正式単発距離値はimmutable Hit-Hitのままで�
     </div>
 
     <div id="cardFreezePanel" hidden>
-      <div id="cardFreezeTitle">CARD FROZEN FRAME — TL×3 → TR×3 → BR×3 → BL×3</div>
+      <div id="cardFreezeTitle">A4 FROZEN FRAME — TOP×5 → RIGHT×5 → BOTTOM×5 → LEFT×5</div>
       <canvas id="cardFreezeCanvas" width="512" height="512"></canvas>
-      <div id="cardFreezeTapState">Freeze a frame, then tap TL three times.</div>
+      <div id="cardFreezeTapState">Freeze a frame, then tap TOP at five separated positions.</div>
       <div class="freezeActions">
-        <button type="button" id="cardFreezeResetTapsBtn">RESET CURRENT CORNER</button>
+        <button type="button" id="cardFreezeResetTapsBtn">RESET CURRENT EDGE</button>
         <button type="button" id="cardFreezeRetakeBtn">LIVE / RETAKE</button>
       </div>
     </div>
@@ -373,7 +373,7 @@ Phase 4.26でも通常の正式単発距離値はimmutable Hit-Hitのままで�
       <div id="settlingText">SETTLING: —</div>
       <div id="preBText">PRE-B A DRIFT: —</div>
       <div id="alignmentText">CENTER ALIGN CHECK: OFF</div>
-      <div id="calibrationOverlayText">CARD ROBUST TAPS: LIVE — press FREEZE CARD FRAME</div>
+      <div id="calibrationOverlayText">A4 EDGE TAPS: LIVE — press FREEZE A4 FRAME</div>
       <div id="calibrationDwellTrack"><div id="calibrationDwellBar"></div></div>
       <div id="pointText">A: NOT SET / B: NOT SET</div>
       <div id="anchorText">ANCHOR A: — / ANCHOR B: —</div>
@@ -385,7 +385,7 @@ Phase 4.26でも通常の正式単発距離値はimmutable Hit-Hitのままで�
       <div class="diagRow">
         <button type="button" id="entitySnapshotBtn" disabled>HIT ENTITY SNAPSHOT</button>
         <button type="button" id="alignBtn">CENTER ALIGN CHECK</button>
-        <button type="button" id="calibrationCaptureBtn" disabled>FREEZE CARD FRAME</button>
+        <button type="button" id="calibrationCaptureBtn" disabled>FREEZE A4 FRAME</button>
         <button type="button" id="calibrationResetOverlayBtn" disabled>RESET CARD</button>
       </div>
       <div class="xrActions">
@@ -453,7 +453,7 @@ let raf = 0;
 let latestHitMatrix = null;
 let latestHitPoint = null;
 
-// Phase 4.26: one frozen Raw Camera frame + three taps per corner + median representatives + deterministic rigid pose.
+// Phase 4.27: one frozen Raw Camera frame + five manual samples per edge + line intersections + deterministic rigid pose.
 const CALIBRATION_CORNERS = ['TL','TR','BR','BL'];
 const DEFAULT_CALIBRATION_WIDTH_MM = 85.60;
 const DEFAULT_CALIBRATION_HEIGHT_MM = 53.98;
@@ -488,16 +488,21 @@ let calibrationTransitionThresholdDeg = CALIBRATION_TRANSITION_MIN_DEG;
 let calibrationRayHistory = [];
 let calibrationDwellRaySamples = [];
 
-// Phase 4.26 frozen-frame robust corner-tap state.
+// Phase 4.27 frozen-frame manual edge-sampling state.
 const CARD_FREEZE_SIZE = 512;
-const CARD_TAPS_PER_CORNER = 3;
-const CARD_RESAMPLE_COMBINATIONS = 81; // 3^4, all observed corner combinations
+const CARD_EDGE_NAMES = ['TOP','RIGHT','BOTTOM','LEFT'];
+const CARD_EDGE_TAPS = 5;
+const CARD_EDGE_LINE_RMS_WARN_PX = 2.5;
+const CARD_EDGE_LINE_RMS_MAX_PX = 5.0;
+const CARD_EDGE_MIN_SPAN_PX = 50.0;
 let latestRawCameraGeometry = null;
 let frozenCardFrame = null;
-let frozenCardTaps = {}; // representative coordinate-wise medians only
-let frozenCardTapSamples = {TL:[],TR:[],BR:[],BL:[]};
+let frozenCardTaps = {}; // virtual TL/TR/BR/BL intersections in Phase 4.27
+let frozenCardTapSamples = {TL:[],TR:[],BR:[],BL:[]}; // retained for inherited reset compatibility
+let frozenCardEdgeTapSamples = {TOP:[],RIGHT:[],BOTTOM:[],LEFT:[]};
+let frozenCardEdgeLines = {};
 let frozenCardRefinement = null;
-let frozenCardTapSets = []; // retained only for inherited reset compatibility; unused in Phase 4.26
+let frozenCardTapSets = []; // retained for inherited reset compatibility
 let frozenCardFrameIndex = 0;
 
 let anchorA = null;
@@ -866,7 +871,7 @@ function logHitABComparison(){
   return comparison;
 }
 
-// Phase 4.26 inherited from Phase 4.19: formal single-shot candidate remains frozen at Point B capture; repeated acquisitions form the consensus.
+// Phase 4.27 inherited from Phase 4.19: formal single-shot candidate remains frozen at Point B capture; repeated acquisitions form the consensus.
 let frozenMeasurement = null;
 let sessionFrozenMeasurements = [];
 let lastAAnchorPoseTime = null;
@@ -1119,7 +1124,7 @@ let qualityHistory = [];
 let lastQualitySampleTime = -Infinity;
 let latestHitDistance = null;
 
-// Phase 4.26 inherited from Phase 4.19: Phase 4.16 Depth 3D method retained.
+// Phase 4.27 inherited from Phase 4.19: Phase 4.16 Depth 3D method retained.
 // Depth never replaces/corrects or rejects the committed Hit-Hit value. It is agreement diagnostics only.
 const DEPTH_GRID = 3;
 const DEPTH_RADIUS = 0.01; // compact local region around projected Hit / screen center
@@ -1151,8 +1156,8 @@ const DETAIL_CONTRAST_LOW = 8.0;
 
 let ending = false;
 let cleanupDone = false;
-const LOG_STORAGE_KEY = 'ar-distance-lab-phase4-26-log';
-const SUMMARY_STORAGE_KEY = 'ar-distance-lab-phase4-26-summary';
+const LOG_STORAGE_KEY = 'ar-distance-lab-phase4-27-log';
+const SUMMARY_STORAGE_KEY = 'ar-distance-lab-phase4-27-summary';
 
 const TRACKING_UNSTABLE_MS = 250;
 const TRACKING_LOST_MS = 1000;
@@ -2321,7 +2326,7 @@ function assessDepthDistanceCrossCheck(){
 
 function applyDepthDistanceCrossCheck(){
   const q=assessDepthDistanceCrossCheck();
-  // Phase 4.26 inherited from Phase 4.19: rename the >=15 mm state for clarity. This is diagnostic only.
+  // Phase 4.27 inherited from Phase 4.19: rename the >=15 mm state for clarity. This is diagnostic only.
   if(q.state==='INVALID') q.state='DIVERGED';
   lastDepthAgreement=q;
   const cls=q.state==='AGREE'||q.state==='PASS'?'ok':q.state==='WARN'?'warn':q.state==='DIVERGED'?'warn':'warn';
@@ -2333,7 +2338,7 @@ function applyDepthDistanceCrossCheck(){
 }
 
 function combineQualityGates(mapIntegrity,depthDiagnostic){
-  // Phase 4.26 inherited from Phase 4.19: only MAP can reject a single-shot measurement.
+  // Phase 4.27 inherited from Phase 4.19: only MAP can reject a single-shot measurement.
   // Depth agreement is deliberately excluded from the commit gate because the
   // previous sweep proved that Hit and Depth can agree while both are wrong.
   let state='PASS';
@@ -4271,129 +4276,90 @@ function resetCalibrationDwell(){
 }
 
 function emptyFrozenTapSamples(){ return {TL:[],TR:[],BR:[],BL:[]}; }
-function frozenTapTotalCount(){ return CALIBRATION_CORNERS.reduce((a,c)=>a+(frozenCardTapSamples[c]?.length||0),0); }
-function currentRobustTapCorner(){ return CALIBRATION_CORNERS.find(c=>(frozenCardTapSamples[c]?.length||0)<CARD_TAPS_PER_CORNER) || null; }
-function robustTapCornerCount(c){ return frozenCardTapSamples[c]?.length||0; }
-function cardFreezeTapCount(){ return frozenTapTotalCount(); }
-function robustTapComplete(){ return frozenTapTotalCount()>=CARD_TAPS_PER_CORNER*CALIBRATION_CORNERS.length; }
-
-function representativeTapPoint(points){
-  if(!points||points.length<CARD_TAPS_PER_CORNER) return null;
-  return {x:median(points.map(p=>p.x)),y:median(points.map(p=>p.y))};
-}
-function robustTapStats(points,rep=representativeTapPoint(points)){
-  if(!points?.length||!rep) return null;
-  const radii=points.map(p=>Math.hypot(p.x-rep.x,p.y-rep.y));
-  let maxPair=0;
-  for(let i=0;i<points.length;i++) for(let j=i+1;j<points.length;j++) maxPair=Math.max(maxPair,Math.hypot(points[i].x-points[j].x,points[i].y-points[j].y));
-  return {
-    rep,maxPair,
-    rmsRadius:Math.sqrt(radii.reduce((a,v)=>a+v*v,0)/radii.length),
-    maxRadius:Math.max(...radii),
-    madX:median(points.map(p=>Math.abs(p.x-rep.x))),
-    madY:median(points.map(p=>Math.abs(p.y-rep.y)))
-  };
-}
+function emptyFrozenEdgeTapSamples(){ return {TOP:[],RIGHT:[],BOTTOM:[],LEFT:[]}; }
+function edgeTapTotalCount(){ return CARD_EDGE_NAMES.reduce((a,e)=>a+(frozenCardEdgeTapSamples[e]?.length||0),0); }
+function currentEdgeTapName(){ return CARD_EDGE_NAMES.find(e=>!frozenCardEdgeLines[e]) || null; }
+function edgeTapCount(e){ return frozenCardEdgeTapSamples[e]?.length||0; }
+function cardFreezeTapCount(){ return edgeTapTotalCount(); }
+function edgeSamplingComplete(){ return CARD_EDGE_NAMES.every(e=>!!frozenCardEdgeLines[e]); }
 
 function updateCalibrationUI(){
   const target=calibrationTargetFrozen || calibrationTargetDimensions();
-  const total=frozenTapTotalCount(), goal=CARD_TAPS_PER_CORNER*CALIBRATION_CORNERS.length;
-  const corner=currentRobustTapCorner();
-  const cornerN=corner?robustTapCornerCount(corner):CARD_TAPS_PER_CORNER;
-  const done=robustTapComplete();
+  const total=edgeTapTotalCount(), goal=CARD_EDGE_TAPS*CARD_EDGE_NAMES.length;
+  const edge=currentEdgeTapName();
+  const edgeN=edge?edgeTapCount(edge):CARD_EDGE_TAPS;
+  const done=edgeSamplingComplete() && !!calibrationResult?.rayFit;
   set('calibrationTargetState',`${target.widthMm.toFixed(2)} × ${target.heightMm.toFixed(2)} mm`,'ok');
   set('calibrationSequenceState',frozenCardFrame
-    ? (done?`12 / 12 — COMPLETE`:`${corner} ${cornerN} / ${CARD_TAPS_PER_CORNER} — total ${total}/${goal}`)
-    : `TL 0 / ${CARD_TAPS_PER_CORNER} — freeze frame first`,
+    ? (done?`20 / 20 — COMPLETE`:`${edge||'SOLVE'} ${edgeN} / ${CARD_EDGE_TAPS} — total ${total}/${goal}`)
+    : `TOP 0 / ${CARD_EDGE_TAPS} — freeze frame first`,
     frozenCardFrame?(done?'ok':'warn'):'warn');
-  set('calibrationAutoState',frozenCardFrame?(done?'FROZEN — ROBUST FIT COMPLETE':`FROZEN — ${corner} × ${cornerN}/${CARD_TAPS_PER_CORNER}`):'LIVE — press FREEZE CARD FRAME',frozenCardFrame?'ok':'warn');
-  set('calibrationDwellState',frozenCardFrame?(done?'12 / 12 COMPLETE':`${total} / ${goal} TAPS`):'WAITING',done?'ok':'');
+  set('calibrationAutoState',frozenCardFrame?(done?'FROZEN — EDGE FIT COMPLETE':`FROZEN — ${edge||'SOLVING'}`):'LIVE — press FREEZE A4 FRAME',frozenCardFrame?'ok':'warn');
+  set('calibrationDwellState',frozenCardFrame?(done?'20 / 20 COMPLETE':`${total} / ${goal} TAPS`):'WAITING',done?'ok':'');
   if(el.calibrationDwellTrack) el.calibrationDwellTrack.style.display='none';
   if(el.calibrationOverlayText) el.calibrationOverlayText.textContent=frozenCardFrame
-    ? (done?'CARD ROBUST TAPS: 12/12 complete — review fit + sensitivity':`CARD ROBUST TAPS: ${corner} sample ${cornerN+1}/${CARD_TAPS_PER_CORNER}`)
-    : 'CARD ROBUST TAPS: center full card, then FREEZE CARD FRAME';
+    ? (done?'A4 EDGE FIT COMPLETE — review line + pose diagnostics':`A4 EDGE TAPS: ${edge||'SOLVE'} ${edgeN+1}/${CARD_EDGE_TAPS}`)
+    : 'A4 EDGE TAPS: fit whole rectangle, then FREEZE A4 FRAME';
   if(el.calibrationCaptureBtn){
     el.calibrationCaptureBtn.disabled=!session || ending || !latestRawCameraGeometry;
     el.calibrationCaptureBtn.classList.remove('active','pending');
-    el.calibrationCaptureBtn.textContent=frozenCardFrame?'REFREEZE CARD FRAME':'FREEZE CARD FRAME';
+    el.calibrationCaptureBtn.textContent=frozenCardFrame?'REFREEZE A4 FRAME':'FREEZE A4 FRAME';
   }
   if(el.calibrationResetOverlayBtn) el.calibrationResetOverlayBtn.disabled=!session || ending;
-  if(el.cardFreezeResetTapsBtn) el.cardFreezeResetTapsBtn.textContent=done?'RESTART 12 TAPS':'RESET CURRENT CORNER';
+  if(el.cardFreezeResetTapsBtn) el.cardFreezeResetTapsBtn.textContent=edgeSamplingComplete()?'RESTART 20 TAPS':'RESET CURRENT EDGE';
 
   const fit=calibrationResult?.rayFit;
-  const unc=calibrationResult?.uncertainty;
-  const tapStats=calibrationResult?.tapStats;
-  if(!fit?.geometry){
+  const lines=calibrationResult?.lines;
+  const rect=calibrationResult?.imageGeometry;
+  if(!fit?.geometry || !lines){
     for(const id of ['calibrationWidthState','calibrationHeightState','calibrationDiagonalState','calibrationWidthErrorState','calibrationHeightErrorState','calibrationScaleState','calibrationScaleSpreadState','calibrationScaleResidualState','calibrationAngleState','calibrationPlaneState','calibrationDepthState']) set(id,'—','');
-    set('calibrationRoleState','MEDIAN CORNERS + 81-COMBINATION TAP SENSITIVITY — no correction','ok');
+    set('calibrationRoleState','MANUAL EDGE POINTS → FITTED LINES → VIRTUAL CORNERS — no correction','ok');
     if(el.calibrationText){
       el.calibrationText.textContent=frozenCardFrame
-        ? `CARD ROBUST TAPS — frozen frame #${frozenCardFrame.frameIndex}. ${total}/${goal} taps. ${corner?`Tap ${corner} (${cornerN+1}/${CARD_TAPS_PER_CORNER}).`:''}`
-        : 'CARD ROBUST TAPS: start AR, center the whole card inside MAG source, then press FREEZE CARD FRAME.';
+        ? `A4 EDGE TAPS — frozen frame #${frozenCardFrame.frameIndex}. ${total}/${goal} taps. ${edge?`Tap ${edge} at five separated positions, avoiding corners.`:'Solving…'}`
+        : 'A4 EDGE TAPS: start AR, fit the complete 150 × 237 mm rectangle inside MAG source, then press FREEZE A4 FRAME.';
     }
     return;
   }
+  const px=v=>Number.isFinite(v)?v.toFixed(2):'n/a';
   const mm=x=>Number.isFinite(x)?(x*1000).toFixed(3):'n/a';
-  const m=fit.misses;
-  set('calibrationWidthState',`${mm(m.TL)} / ${mm(m.TR)} mm`,Math.max(m.TL,m.TR)<=0.004?'ok':'warn');
-  set('calibrationHeightState',`${mm(m.BR)} / ${mm(m.BL)} mm`,Math.max(m.BR,m.BL)<=0.004?'ok':'warn');
-  set('calibrationDiagonalState',fit.rayParams.map(v=>v.toFixed(3)).join(' / ')+' m','');
+  set('calibrationWidthState',`${px(lines.TOP.rms)} / ${px(lines.RIGHT.rms)} px`,Math.max(lines.TOP.rms,lines.RIGHT.rms)<=CARD_EDGE_LINE_RMS_WARN_PX?'ok':'warn');
+  set('calibrationHeightState',`${px(lines.BOTTOM.rms)} / ${px(lines.LEFT.rms)} px`,Math.max(lines.BOTTOM.rms,lines.LEFT.rms)<=CARD_EDGE_LINE_RMS_WARN_PX?'ok':'warn');
+  set('calibrationDiagonalState',CARD_EDGE_NAMES.map(e=>`${e[0]} ${px(lines[e].span)}`).join(' / ')+' px','');
   set('calibrationWidthErrorState',`${mm(fit.rayRms)} mm`,fit.rayRms<=0.002?'ok':fit.rayRms<=0.005?'warn':'ng');
   set('calibrationHeightErrorState',`${mm(fit.rayMax)} mm`,fit.rayMax<=0.004?'ok':fit.rayMax<=0.010?'warn':'ng');
   set('calibrationScaleState',fit.quality,fit.quality==='GOOD'?'ok':fit.quality==='WARN'?'warn':'ng');
-  if(tapStats){
-    set('calibrationScaleSpreadState',CALIBRATION_CORNERS.map(c=>`${c} ${tapStats[c].rmsRadius.toFixed(2)}px`).join(' / '),'');
-    set('calibrationScaleResidualState',CALIBRATION_CORNERS.map(c=>`${c} ${tapStats[c].maxPair.toFixed(2)}px`).join(' / '),'');
+  if(rect){
+    set('calibrationScaleSpreadState',`${px(rect.top)} / ${px(rect.bottom)} px`,'');
+    set('calibrationScaleResidualState',`${px(rect.left)} / ${px(rect.right)} px`,'');
+    set('calibrationAngleState',rect.boundsOk?'WITHIN FROZEN FRAME':'OUTSIDE/NEAR FRAME EDGE',rect.boundsOk?'ok':'warn');
   }
-  if(unc){
-    set('calibrationAngleState',`p50 ${(unc.center.p50*1000).toFixed(2)} / p90 ${(unc.center.p90*1000).toFixed(2)} / max ${(unc.center.max*1000).toFixed(2)} mm`,'');
-    set('calibrationPlaneState',`p50 ${unc.normal.p50.toFixed(2)} / p90 ${unc.normal.p90.toFixed(2)} / max ${unc.normal.max.toFixed(2)}°`,'');
-  }else{
-    set('calibrationAngleState','—',''); set('calibrationPlaneState','—','');
-  }
+  const inputQuality=calibrationResult?.inputQuality||'UNKNOWN';
+  set('calibrationPlaneState',inputQuality,inputQuality==='GOOD'?'ok':inputQuality==='WARN'?'warn':'ng');
   set('calibrationDepthState',`C ${fmtPoint(fit.center)} / N ${fmtPoint(fit.normal)}`,'');
-  set('calibrationRoleState','COORDINATE-MEDIAN CORNERS / DETERMINISTIC HOMOGRAPHY SEED / TAP SENSITIVITY ONLY','ok');
+  set('calibrationRoleState','EDGE-LINE INTERSECTIONS / DETERMINISTIC HOMOGRAPHY SEED / DIAGNOSTIC ONLY','ok');
   if(el.calibrationText){
-    let txt=`CARD ROBUST FIT — ${fit.quality}\n`+
-      `Representative Ray RMS ${(fit.rayRms*1000).toFixed(3)} mm / max ${(fit.rayMax*1000).toFixed(3)} mm\n`+
+    el.calibrationText.textContent=`A4 EDGE FIT — ${fit.quality}\n`+
+      `Line RMS px: ${CARD_EDGE_NAMES.map(e=>`${e} ${lines[e].rms.toFixed(2)}`).join(' / ')}\n`+
+      `Line span px: ${CARD_EDGE_NAMES.map(e=>`${e} ${lines[e].span.toFixed(1)}`).join(' / ')}\n`+
+      `Virtual-corner Ray RMS ${(fit.rayRms*1000).toFixed(3)} mm / max ${(fit.rayMax*1000).toFixed(3)} mm\n`+
       `Center ${fmtPoint(fit.center)}\nNormal ${fmtPoint(fit.normal)}\n`+
-      `Seed ${fit.seed} / LM ${fit.iterations} iterations\n`;
-    if(tapStats) txt+=`\nCORNER TAP SPREAD\n${CALIBRATION_CORNERS.map(c=>`${c}: RMS ${tapStats[c].rmsRadius.toFixed(2)} px / max-pair ${tapStats[c].maxPair.toFixed(2)} px`).join('\n')}\n`;
-    if(unc) txt+=`\n81-COMBINATION TAP SENSITIVITY (${unc.valid}/${unc.total} valid)\n`+
-      `Center shift vs representative: p50 ${(unc.center.p50*1000).toFixed(2)} / p90 ${(unc.center.p90*1000).toFixed(2)} / max ${(unc.center.max*1000).toFixed(2)} mm\n`+
-      `Normal-axis shift: p50 ${unc.normal.p50.toFixed(2)} / p90 ${unc.normal.p90.toFixed(2)} / max ${unc.normal.max.toFixed(2)}°\n`+
-      `Ray RMS distribution: p50 ${(unc.rayRms.p50*1000).toFixed(2)} / p90 ${(unc.rayRms.p90*1000).toFixed(2)} / max ${(unc.rayRms.max*1000).toFixed(2)} mm\n`+
-      `DIAGNOSTIC ONLY — this is sensitivity to observed taps, not absolute accuracy.`;
-    el.calibrationText.textContent=txt;
+      `Input ${inputQuality} / Seed ${fit.seed} / LM ${fit.iterations} iterations\n`+
+      `DIAGNOSTIC ONLY — line-fit consistency and rigid fit do not establish absolute accuracy.`;
   }
 }
 
 function resetCalibration(reason='user'){
-  calibrationPoints={};
-  calibrationCapturePending=null;
-  calibrationTargetFrozen=null;
-  calibrationResult=null;
-  calibrationAutoEnabled=false;
-  calibrationAutoArmedAt=null;
-  calibrationLastCapturedHit=null;
-  calibrationLastCapturedRay=null;
-  calibrationLastCaptureTime=null;
-  calibrationTransitionSatisfied=true;
-  calibrationTransitionAngleDeg=null;
-  calibrationTransitionThresholdDeg=CALIBRATION_TRANSITION_MIN_DEG;
-  calibrationRayHistory=[];
-  calibrationDwellRaySamples=[];
-  frozenCardFrame=null;
-  frozenCardTaps={};
-  frozenCardTapSamples=emptyFrozenTapSamples();
-  frozenCardRefinement=null;
-  frozenCardTapSets=[];
+  calibrationPoints={}; calibrationCapturePending=null; calibrationTargetFrozen=null; calibrationResult=null;
+  calibrationAutoEnabled=false; calibrationAutoArmedAt=null; calibrationLastCapturedHit=null; calibrationLastCapturedRay=null; calibrationLastCaptureTime=null;
+  calibrationTransitionSatisfied=true; calibrationTransitionAngleDeg=null; calibrationTransitionThresholdDeg=CALIBRATION_TRANSITION_MIN_DEG;
+  calibrationRayHistory=[]; calibrationDwellRaySamples=[];
+  frozenCardFrame=null; frozenCardTaps={}; frozenCardTapSamples=emptyFrozenTapSamples(); frozenCardEdgeTapSamples=emptyFrozenEdgeTapSamples(); frozenCardEdgeLines={}; frozenCardRefinement=null; frozenCardTapSets=[];
   if(el.cardFreezePanel) el.cardFreezePanel.hidden=true;
   resetCalibrationDwell();
   if(el.calibrationCaptureBtn){ el.calibrationCaptureBtn.classList.remove('pending','active'); }
-  updateCalibrationUI();
-  updateDistanceUI();
-  log(`CARD ROBUST TAP RESET: reason=${reason}; frameCleared=true; taps=0/12; measurementLock=false; correctionApplied=false`);
+  updateCalibrationUI(); updateDistanceUI();
+  log(`CARD EDGE CAL RESET: reason=${reason}; frameCleared=true; edgeTaps=0/20; measurementLock=false; correctionApplied=false`);
 }
 
 function frozenFrameCanvasPoint(ev){
@@ -4432,12 +4398,18 @@ function drawFrozenCardFrame(){
   const canvas=el.cardFreezeCanvas,ctx=canvas?.getContext('2d');
   if(!ctx||!frozenCardFrame?.imageData) return;
   ctx.putImageData(frozenCardFrame.imageData,0,0);
-  // Only completed representative medians are shown. Raw repeats for the current corner remain hidden.
-  ctx.save(); ctx.lineWidth=2; ctx.font='bold 14px system-ui';
-  for(const c of CALIBRATION_CORNERS){
-    const p=frozenCardTaps[c]; if(!p) continue;
-    ctx.strokeStyle='#ffd166'; ctx.fillStyle='#ffd166';
-    ctx.beginPath(); ctx.arc(p.x,p.y,7,0,Math.PI*2); ctx.stroke(); ctx.fillText(c,p.x+9,p.y-8);
+  ctx.save(); ctx.lineWidth=2; ctx.font='bold 13px system-ui';
+  const styles={TOP:'#ffd166',RIGHT:'#7bdff2',BOTTOM:'#b2f7ef',LEFT:'#f7aef8'};
+  for(const e of CARD_EDGE_NAMES){
+    const l=frozenCardEdgeLines[e]; if(!l) continue;
+    const pts=lineCanvasEndpoints(l,CARD_FREEZE_SIZE,CARD_FREEZE_SIZE); if(!pts) continue;
+    ctx.strokeStyle=styles[e]; ctx.fillStyle=styles[e];
+    ctx.beginPath(); ctx.moveTo(pts[0].x,pts[0].y); ctx.lineTo(pts[1].x,pts[1].y); ctx.stroke();
+    ctx.fillText(e,l.centroid.x+6,l.centroid.y-6);
+  }
+  if(CALIBRATION_CORNERS.every(c=>frozenCardTaps[c])){
+    ctx.strokeStyle='#ffffff'; ctx.fillStyle='#ffffff';
+    for(const c of CALIBRATION_CORNERS){ const p=frozenCardTaps[c]; ctx.beginPath(); ctx.arc(p.x,p.y,6,0,Math.PI*2); ctx.stroke(); ctx.fillText(c,p.x+8,p.y-7); }
   }
   ctx.restore();
 }
@@ -4528,76 +4500,114 @@ function distributionStats(values){
   if(!a.length) return {n:0,p50:NaN,p90:NaN,max:NaN,rms:NaN};
   return {n:a.length,p50:quantileSorted(a,0.50),p90:quantileSorted(a,0.90),max:a[a.length-1],rms:Math.sqrt(a.reduce((s,v)=>s+v*v,0)/a.length)};
 }
-function computeTapCombinationUncertainty(target,representativeFit){
-  if(!representativeFit || !CALIBRATION_CORNERS.every(c=>(frozenCardTapSamples[c]?.length||0)===CARD_TAPS_PER_CORNER)) return null;
-  const centers=[],normals=[],rayRms=[];
-  let valid=0,total=0;
-  for(let a=0;a<CARD_TAPS_PER_CORNER;a++) for(let b=0;b<CARD_TAPS_PER_CORNER;b++) for(let d=0;d<CARD_TAPS_PER_CORNER;d++) for(let e=0;e<CARD_TAPS_PER_CORNER;e++){
-    total++;
-    const taps={TL:frozenCardTapSamples.TL[a],TR:frozenCardTapSamples.TR[b],BR:frozenCardTapSamples.BR[d],BL:frozenCardTapSamples.BL[e]};
-    const fit=fitFrozenCornersDeterministic(taps,target); if(!fit) continue;
-    valid++;
-    centers.push(distance3(fit.center,representativeFit.center));
-    normals.push(planeNormalAxisAngleDeg(fit.normal,representativeFit.normal));
-    rayRms.push(fit.rayRms);
-  }
-  return {valid,total,center:distributionStats(centers),normal:distributionStats(normals),rayRms:distributionStats(rayRms)};
+function fitImageLineTLS(points){
+  if(!points || points.length<2) return null;
+  const cx=points.reduce((a,p)=>a+p.x,0)/points.length, cy=points.reduce((a,p)=>a+p.y,0)/points.length;
+  let sxx=0,syy=0,sxy=0;
+  for(const p of points){ const dx=p.x-cx,dy=p.y-cy; sxx+=dx*dx; syy+=dy*dy; sxy+=dx*dy; }
+  const angle=0.5*Math.atan2(2*sxy,sxx-syy);
+  let dx=Math.cos(angle),dy=Math.sin(angle);
+  // Keep a deterministic direction sign for display/projection only.
+  if(Math.abs(dx)>=Math.abs(dy)){ if(dx<0){dx=-dx;dy=-dy;} } else if(dy<0){dx=-dx;dy=-dy;}
+  const nx=-dy,ny=dx,c=-(nx*cx+ny*cy);
+  const residuals=points.map(p=>Math.abs(nx*p.x+ny*p.y+c));
+  const along=points.map(p=>(p.x-cx)*dx+(p.y-cy)*dy);
+  const rms=Math.sqrt(residuals.reduce((a,v)=>a+v*v,0)/residuals.length);
+  return {centroid:{x:cx,y:cy},dx,dy,nx,ny,c,rms,maxResidual:Math.max(...residuals),span:Math.max(...along)-Math.min(...along),n:points.length};
 }
-
+function imageLineIntersection(a,b){
+  if(!a||!b) return null;
+  const det=a.nx*b.ny-a.ny*b.nx; if(Math.abs(det)<1e-7) return null;
+  const x=(-a.c*b.ny+a.ny*b.c)/det;
+  const y=(-a.nx*b.c+a.c*b.nx)/det;
+  return Number.isFinite(x)&&Number.isFinite(y)?{x,y}:null;
+}
+function lineCanvasEndpoints(l,w,h){
+  if(!l) return null;
+  const pts=[];
+  const add=(x,y)=>{ if(Number.isFinite(x)&&Number.isFinite(y)&&x>=-1&&x<=w+1&&y>=-1&&y<=h+1) pts.push({x,y}); };
+  if(Math.abs(l.ny)>1e-9){ add(0,-l.c/l.ny); add(w,-(l.nx*w+l.c)/l.ny); }
+  if(Math.abs(l.nx)>1e-9){ add(-l.c/l.nx,0); add(-(l.ny*h+l.c)/l.nx,h); }
+  const uniq=[]; for(const p of pts){ if(!uniq.some(q=>Math.hypot(p.x-q.x,p.y-q.y)<1)) uniq.push(p); }
+  if(uniq.length<2) return null;
+  let best=[uniq[0],uniq[1]],d=-1;
+  for(let i=0;i<uniq.length;i++) for(let j=i+1;j<uniq.length;j++){ const dd=Math.hypot(uniq[i].x-uniq[j].x,uniq[i].y-uniq[j].y); if(dd>d){d=dd;best=[uniq[i],uniq[j]];} }
+  return best;
+}
+function virtualCornersFromEdgeLines(lines){
+  const corners={
+    TL:imageLineIntersection(lines.TOP,lines.LEFT),
+    TR:imageLineIntersection(lines.TOP,lines.RIGHT),
+    BR:imageLineIntersection(lines.BOTTOM,lines.RIGHT),
+    BL:imageLineIntersection(lines.BOTTOM,lines.LEFT)
+  };
+  return CALIBRATION_CORNERS.every(c=>corners[c]&&Number.isFinite(corners[c].x)&&Number.isFinite(corners[c].y))?corners:null;
+}
+function imageQuadGeometry(c){
+  if(!c) return null;
+  const d=(a,b)=>Math.hypot(c[a].x-c[b].x,c[a].y-c[b].y);
+  const pts=CALIBRATION_CORNERS.map(k=>c[k]);
+  let area=0; for(let i=0;i<pts.length;i++){ const p=pts[i],q=pts[(i+1)%pts.length]; area+=p.x*q.y-q.x*p.y; } area=Math.abs(area)/2;
+  const margin=24;
+  const boundsOk=pts.every(p=>p.x>=-margin&&p.x<=CARD_FREEZE_SIZE+margin&&p.y>=-margin&&p.y<=CARD_FREEZE_SIZE+margin);
+  return {top:d('TL','TR'),right:d('TR','BR'),bottom:d('BL','BR'),left:d('TL','BL'),diag1:d('TL','BR'),diag2:d('TR','BL'),area,boundsOk};
+}
+function edgeLineQuality(line){
+  if(!line) return 'INVALID';
+  if(line.rms>CARD_EDGE_LINE_RMS_MAX_PX || line.span<CARD_EDGE_MIN_SPAN_PX) return 'INVALID';
+  if(line.rms>CARD_EDGE_LINE_RMS_WARN_PX) return 'WARN';
+  return 'GOOD';
+}
+function overallEdgeInputQuality(lines,geom){
+  if(!lines||!geom||!geom.boundsOk||geom.area<1000) return 'POOR';
+  const q=CARD_EDGE_NAMES.map(e=>edgeLineQuality(lines[e]));
+  if(q.includes('INVALID')) return 'POOR';
+  if(q.includes('WARN')) return 'WARN';
+  return 'GOOD';
+}
 function finalizeFrozenCardCalibration(){
   const target=calibrationTargetFrozen||calibrationTargetDimensions();
-  const reps={},tapStats={};
-  for(const c of CALIBRATION_CORNERS){
-    const st=robustTapStats(frozenCardTapSamples[c]); if(!st) return;
-    tapStats[c]=st; reps[c]={x:st.rep.x,y:st.rep.y}; frozenCardTaps[c]=reps[c];
-  }
-  const t0=performance.now();
-  const rayFit=fitFrozenCornersDeterministic(reps,target);
+  const corners=virtualCornersFromEdgeLines(frozenCardEdgeLines);
+  if(!corners){ log(`CARD EDGE RECT SUMMARY frame=${frozenCardFrame?.frameIndex??'n/a'}: FAILED — line intersections unavailable; diagnosticOnly=true`); return; }
+  frozenCardTaps=corners;
+  const geom=imageQuadGeometry(corners);
+  const inputQuality=overallEdgeInputQuality(frozenCardEdgeLines,geom);
+  const rayFit=fitFrozenCornersDeterministic(corners,target);
   calibrationRunIndex++;
   if(!rayFit){
-    log(`CARD ROBUST FIT SUMMARY frame=${frozenCardFrame?.frameIndex??'n/a'}: FAILED — deterministic planar-homography rigid solve unavailable; correctionApplied=false; diagnosticOnly=true`);
-    set('calibrationDwellState','ROBUST FIT FAILED','ng'); updateCalibrationUI(); return;
+    log(`CARD EDGE FIT SUMMARY frame=${frozenCardFrame?.frameIndex??'n/a'}: FAILED — deterministic planar-homography rigid solve unavailable; inputQuality=${inputQuality}; correctionApplied=false; diagnosticOnly=true`);
+    set('calibrationDwellState','EDGE FIT FAILED','ng'); drawFrozenCardFrame(); updateCalibrationUI(); return;
   }
-  const uncertainty=computeTapCombinationUncertainty(target,rayFit);
-  const elapsed=performance.now()-t0;
-  calibrationPoints={}; for(const c of CALIBRATION_CORNERS) calibrationPoints[c]={ray:rayFromFrozenSourcePoint(reps[c])};
-  calibrationResult={run:calibrationRunIndex,target,rayFit,tapStats,uncertainty};
+  calibrationPoints={}; for(const c of CALIBRATION_CORNERS) calibrationPoints[c]={ray:rayFromFrozenSourcePoint(corners[c])};
+  calibrationResult={run:calibrationRunIndex,target,rayFit,lines:{...frozenCardEdgeLines},imageGeometry:geom,inputQuality};
+  const lineText=CARD_EDGE_NAMES.map(e=>`${e}[rms=${frozenCardEdgeLines[e].rms.toFixed(3)}px,max=${frozenCardEdgeLines[e].maxResidual.toFixed(3)}px,span=${frozenCardEdgeLines[e].span.toFixed(1)}px,n=${frozenCardEdgeLines[e].n}]`).join(',');
+  const cornerText=CALIBRATION_CORNERS.map(c=>`${c}=(${corners[c].x.toFixed(2)},${corners[c].y.toFixed(2)})`).join(',');
+  log(`CARD EDGE RECT SUMMARY frame=${frozenCardFrame?.frameIndex??'n/a'}: target=${target.widthMm.toFixed(2)}x${target.heightMm.toFixed(2)}mm; lines=[${lineText}]; virtualCorners=[${cornerText}]; imageGeometry=[top=${geom.top.toFixed(2)}px,right=${geom.right.toFixed(2)}px,bottom=${geom.bottom.toFixed(2)}px,left=${geom.left.toFixed(2)}px,diagTLBR=${geom.diag1.toFixed(2)}px,diagTRBL=${geom.diag2.toFixed(2)}px,area=${geom.area.toFixed(1)}px2,boundsOk=${geom.boundsOk}]; inputQuality=${inputQuality}; edgeRefinement=manual-line-fit; roundedCornersUsed=false`);
   const miss=CALIBRATION_CORNERS.map(c=>`${c}=${(rayFit.misses[c]*1000).toFixed(3)}mm`).join(',');
-  const px=CALIBRATION_CORNERS.map(c=>`${c}=(${reps[c].x.toFixed(2)},${reps[c].y.toFixed(2)})`).join(',');
-  const uv=CALIBRATION_CORNERS.map(c=>{const q=sourcePointToViewUv(reps[c]);return `${c}=(${q.x.toFixed(6)},${q.y.toFixed(6)})`;}).join(',');
-  log(`CARD ROBUST FIT SUMMARY frame=${frozenCardFrame?.frameIndex??'n/a'}: target=${target.widthMm.toFixed(2)}x${target.heightMm.toFixed(2)}mm; representative=coordinate-wise-median-of-3-per-corner; source=frozen512-raw-taps; solver=planar-homography deterministic seed + rigid 6DOF LM; rayRMS=${(rayFit.rayRms*1000).toFixed(3)}mm; rayMax=${(rayFit.rayMax*1000).toFixed(3)}mm; quality=${rayFit.quality}; rayMiss=[${miss}]; reps=[${px}]; viewUV=[${uv}]; center=${fmtPoint(rayFit.center)}; normal=${fmtPoint(rayFit.normal)}; seed=${rayFit.seed}; iterations=${rayFit.iterations}; centerRayDelta=${frozenCardFrame.centerRayDeltaDeg.toFixed(6)}deg; sameFrozenFrame=true; HitUsedAsCorner=false; DepthUsedAsCorner=false; correctionApplied=false; diagnosticOnly=true`);
-  const tapText=CALIBRATION_CORNERS.map(c=>`${c}=rms${tapStats[c].rmsRadius.toFixed(2)}px/maxPair${tapStats[c].maxPair.toFixed(2)}px/maxFromMedian${tapStats[c].maxRadius.toFixed(2)}px`).join(',');
-  if(uncertainty){
-    log(`CARD TAP UNCERTAINTY SUMMARY frame=${frozenCardFrame?.frameIndex??'n/a'}: tapsPerCorner=${CARD_TAPS_PER_CORNER}; combinations=${uncertainty.valid}/${uncertainty.total}; tapSpread=[${tapText}]; centerShiftVsRepresentative=[p50=${(uncertainty.center.p50*1000).toFixed(3)}mm,p90=${(uncertainty.center.p90*1000).toFixed(3)}mm,max=${(uncertainty.center.max*1000).toFixed(3)}mm,rms=${(uncertainty.center.rms*1000).toFixed(3)}mm]; normalAxisShiftVsRepresentative=[p50=${uncertainty.normal.p50.toFixed(3)}deg,p90=${uncertainty.normal.p90.toFixed(3)}deg,max=${uncertainty.normal.max.toFixed(3)}deg,rms=${uncertainty.normal.rms.toFixed(3)}deg]; combinationRayRMS=[p50=${(uncertainty.rayRms.p50*1000).toFixed(3)}mm,p90=${(uncertainty.rayRms.p90*1000).toFixed(3)}mm,max=${(uncertainty.rayRms.max*1000).toFixed(3)}mm]; compute=${elapsed.toFixed(1)}ms; uncertaintyRole=tap-sensitivity-only; absoluteAccuracyClaim=false; correctionApplied=false; diagnosticOnly=true`);
-  }
-  if(el.cardFreezeTapState) el.cardFreezeTapState.textContent='12/12 complete. Representative medians and 81-combination tap sensitivity calculated.';
+  const uv=CALIBRATION_CORNERS.map(c=>{const q=sourcePointToViewUv(corners[c]);return `${c}=(${q.x.toFixed(6)},${q.y.toFixed(6)})`;}).join(',');
+  log(`CARD EDGE FIT SUMMARY frame=${frozenCardFrame?.frameIndex??'n/a'}: target=${target.widthMm.toFixed(2)}x${target.heightMm.toFixed(2)}mm; source=frozen512-manual-edge-lines; solver=planar-homography deterministic seed + rigid 6DOF LM; rayRMS=${(rayFit.rayRms*1000).toFixed(3)}mm; rayMax=${(rayFit.rayMax*1000).toFixed(3)}mm; quality=${rayFit.quality}; rayMiss=[${miss}]; viewUV=[${uv}]; center=${fmtPoint(rayFit.center)}; normal=${fmtPoint(rayFit.normal)}; seed=${rayFit.seed}; iterations=${rayFit.iterations}; centerRayDelta=${frozenCardFrame.centerRayDeltaDeg.toFixed(6)}deg; sameFrozenFrame=true; inputQuality=${inputQuality}; HitUsedAsCorner=false; DepthUsedAsCorner=false; correctionApplied=false; diagnosticOnly=true`);
+  if(el.cardFreezeTapState) el.cardFreezeTapState.textContent='20/20 complete. Four fitted lines, virtual corners, and rigid pose calculated.';
   drawFrozenCardFrame(); updateCalibrationUI(); updateDistanceUI();
 }
 
 function resetFrozenCardTaps(reason='user'){
-  if(robustTapComplete()){
-    frozenCardTapSamples=emptyFrozenTapSamples(); frozenCardTaps={}; calibrationResult=null; calibrationPoints={};
-    if(el.cardFreezeTapState) el.cardFreezeTapState.textContent='TL sample 1/3: tap the same TL corner three times. Raw repeat markers are hidden.';
-    log(`CARD ROBUST TAPS RESTARTED: reason=${reason}; framePreserved=${!!frozenCardFrame}; tapsCleared=12; measurementLock=${!!calibrationTargetFrozen}`);
+  if(edgeSamplingComplete()){
+    frozenCardEdgeTapSamples=emptyFrozenEdgeTapSamples(); frozenCardEdgeLines={}; frozenCardTaps={}; calibrationResult=null; calibrationPoints={};
+    if(el.cardFreezeTapState) el.cardFreezeTapState.textContent='TOP sample 1/5: tap five separated points on the straight line, avoiding corners.';
+    log(`CARD EDGE TAPS RESTARTED: reason=${reason}; framePreserved=${!!frozenCardFrame}; tapsCleared=20; measurementLock=${!!calibrationTargetFrozen}`);
   }else{
-    let c=currentRobustTapCorner();
-    if(c && robustTapCornerCount(c)===0){
-      const idx=CALIBRATION_CORNERS.indexOf(c);
-      if(idx>0){ c=CALIBRATION_CORNERS[idx-1]; frozenCardTaps[c]=undefined; }
-    }
-    if(c){ frozenCardTapSamples[c]=[]; delete frozenCardTaps[c]; }
-    calibrationResult=null; calibrationPoints={};
-    if(el.cardFreezeTapState) el.cardFreezeTapState.textContent=`${c||'TL'} sample 1/3: current corner cleared. Tap it three times.`;
-    log(`CARD CURRENT CORNER RESET: reason=${reason}; corner=${c||'TL'}; framePreserved=${!!frozenCardFrame}; totalRemaining=${frozenTapTotalCount()}/12; measurementLock=${!!calibrationTargetFrozen}`);
+    const e=currentEdgeTapName()||'TOP'; frozenCardEdgeTapSamples[e]=[]; delete frozenCardEdgeLines[e]; frozenCardTaps={}; calibrationResult=null; calibrationPoints={};
+    if(el.cardFreezeTapState) el.cardFreezeTapState.textContent=`${e} sample 1/5: current edge cleared. Spread five taps along the straight segment.`;
+    log(`CARD CURRENT EDGE RESET: reason=${reason}; edge=${e}; framePreserved=${!!frozenCardFrame}; total=${edgeTapTotalCount()}/20; measurementLock=${!!calibrationTargetFrozen}`);
   }
   frozenCardRefinement=null; drawFrozenCardFrame(); updateCalibrationUI();
 }
 
 function leaveFrozenFrameForRetake(){
   if(el.cardFreezePanel) el.cardFreezePanel.hidden=true;
-  frozenCardFrame=null; frozenCardTaps={}; frozenCardTapSamples=emptyFrozenTapSamples(); frozenCardRefinement=null; frozenCardTapSets=[]; calibrationPoints={}; calibrationResult=null;
-  if(el.xrHint) el.xrHint.textContent='Live view restored. Re-center the whole card, then press FREEZE CARD FRAME.';
-  log('CARD FREEZE RETAKE: live view restored; previous frozen image and all robust taps discarded; measurementLock=true');
+  frozenCardFrame=null; frozenCardTaps={}; frozenCardTapSamples=emptyFrozenTapSamples(); frozenCardEdgeTapSamples=emptyFrozenEdgeTapSamples(); frozenCardEdgeLines={}; frozenCardRefinement=null; frozenCardTapSets=[]; calibrationPoints={}; calibrationResult=null;
+  if(el.xrHint) el.xrHint.textContent='Live view restored. Fit the complete A4 target rectangle inside the source, then press FREEZE A4 FRAME.';
+  log('CARD EDGE FREEZE RETAKE: live view restored; previous frozen image and all edge taps discarded; measurementLock=true');
   updateCalibrationUI();
 }
 
@@ -4606,49 +4616,49 @@ function freezeCardFrame(){
   if(pointA||pointB||capturePending) resetMeasurement();
   if(!calibrationTargetFrozen) calibrationTargetFrozen=calibrationTargetDimensions();
   const g=latestRawCameraGeometry;
-  const canvas=el.cardFreezeCanvas,ctx=canvas?.getContext('2d',{willReadFrequently:true});
-  if(!ctx) return;
+  const canvas=el.cardFreezeCanvas,ctx=canvas?.getContext('2d',{willReadFrequently:true}); if(!ctx) return;
   canvas.width=CARD_FREEZE_SIZE; canvas.height=CARD_FREEZE_SIZE;
   ctx.drawImage(magnifierSourceCanvas,0,0,CARD_FREEZE_SIZE,CARD_FREEZE_SIZE);
   const imageData=ctx.getImageData(0,0,CARD_FREEZE_SIZE,CARD_FREEZE_SIZE);
   frozenCardFrameIndex++;
-  frozenCardFrame={
-    imageData,time:g.time,frame:g.frame,frameIndex:frozenCardFrameIndex,cameraWidth:g.cameraWidth,cameraHeight:g.cameraHeight,aspect:g.aspect,
-    projection:[...g.projection],viewTransform:[...g.viewTransform],centerRayDeltaDeg:null
-  };
+  frozenCardFrame={imageData,time:g.time,frame:g.frame,frameIndex:frozenCardFrameIndex,cameraWidth:g.cameraWidth,cameraHeight:g.cameraHeight,aspect:g.aspect,projection:[...g.projection],viewTransform:[...g.viewTransform],centerRayDeltaDeg:null};
   const centerRay=rayFromFrozenSourcePoint({x:CARD_FREEZE_SIZE/2,y:CARD_FREEZE_SIZE/2},frozenCardFrame);
-  const m=frozenCardFrame.viewTransform;
-  const expected=normalize3({x:-m[8],y:-m[9],z:-m[10]});
+  const m=frozenCardFrame.viewTransform; const expected=normalize3({x:-m[8],y:-m[9],z:-m[10]});
   frozenCardFrame.centerRayDeltaDeg=angleBetweenDirectionsDeg(centerRay?.direction,expected)??NaN;
-  frozenCardTaps={}; frozenCardTapSamples=emptyFrozenTapSamples(); frozenCardRefinement=null; frozenCardTapSets=[]; calibrationPoints={}; calibrationResult=null;
+  frozenCardTaps={}; frozenCardTapSamples=emptyFrozenTapSamples(); frozenCardEdgeTapSamples=emptyFrozenEdgeTapSamples(); frozenCardEdgeLines={}; frozenCardRefinement=null; frozenCardTapSets=[]; calibrationPoints={}; calibrationResult=null;
   if(el.cardFreezePanel) el.cardFreezePanel.hidden=false;
-  if(el.cardFreezeTapState) el.cardFreezeTapState.textContent='TL sample 1/3: tap the same TL corner three times. Raw repeat markers are hidden.';
+  if(el.cardFreezeTapState) el.cardFreezeTapState.textContent='TOP sample 1/5: tap five separated points along the straight segment; avoid both corners.';
   drawFrozenCardFrame();
-  const age=Math.max(0,performance.now()-g.time);
-  const y0=0.5-0.5*g.aspect,y1=0.5+0.5*g.aspect;
-  log(`CARD FREEZE FRAME #${frozenCardFrame.frameIndex}: source=RawCamera-center-square-512; camera=${g.cameraWidth}x${g.cameraHeight}; aspect=${g.aspect.toFixed(6)}; frame=${g.frame}; sourceAge=${age.toFixed(1)}ms; viewUvRange=x[0..1],y[${y0.toFixed(6)}..${y1.toFixed(6)}]; centerRayDelta=${frozenCardFrame.centerRayDeltaDeg.toFixed(6)}deg; mapping=frozen source pixel -> aligned XRView normalized UV -> projection ray; tapsPerCorner=${CARD_TAPS_PER_CORNER}; totalTaps=12; representative=coordinate-wise-median; deterministicSeed=planar-homography; resampleCombinations=${CARD_RESAMPLE_COMBINATIONS}; measurementLock=true; HitUsedAsCorner=false; DepthUsedAsCorner=false`);
-  if(el.xrHint) el.xrHint.textContent='Frozen frame captured. Tap TL three times, then TR×3 → BR×3 → BL×3.';
+  const age=Math.max(0,performance.now()-g.time),y0=0.5-0.5*g.aspect,y1=0.5+0.5*g.aspect;
+  log(`CARD FREEZE FRAME #${frozenCardFrame.frameIndex}: source=RawCamera-center-square-512; camera=${g.cameraWidth}x${g.cameraHeight}; aspect=${g.aspect.toFixed(6)}; frame=${g.frame}; sourceAge=${age.toFixed(1)}ms; viewUvRange=x[0..1],y[${y0.toFixed(6)}..${y1.toFixed(6)}]; centerRayDelta=${frozenCardFrame.centerRayDeltaDeg.toFixed(6)}deg; mapping=frozen source pixel -> aligned XRView normalized UV -> projection ray; target=${calibrationTargetFrozen.widthMm.toFixed(2)}x${calibrationTargetFrozen.heightMm.toFixed(2)}mm; edgeOrder=TOP,RIGHT,BOTTOM,LEFT; tapsPerEdge=${CARD_EDGE_TAPS}; totalTaps=20; lineRmsHardMax=${CARD_EDGE_LINE_RMS_MAX_PX.toFixed(1)}px; minSpan=${CARD_EDGE_MIN_SPAN_PX.toFixed(1)}px; virtualCorners=line-intersections; measurementLock=true; HitUsedAsCorner=false; DepthUsedAsCorner=false`);
+  if(el.xrHint) el.xrHint.textContent='Frozen A4 frame captured. Tap TOP five times across its straight section; avoid corners.';
   updateCalibrationUI(); updateDistanceUI();
 }
 
 function handleFrozenCardTap(ev){
-  if(!frozenCardFrame || robustTapComplete()) return;
+  if(!frozenCardFrame || edgeSamplingComplete()) return;
   ev.preventDefault(); ev.stopPropagation();
   const p=frozenFrameCanvasPoint(ev); if(!p) return;
-  const corner=currentRobustTapCorner(); if(!corner) return;
-  const arr=frozenCardTapSamples[corner]; arr.push(p);
+  const edge=currentEdgeTapName(); if(!edge) return;
+  const arr=frozenCardEdgeTapSamples[edge]; arr.push(p);
   const sampleNo=arr.length,uv=sourcePointToViewUv(p);
-  log(`CARD ROBUST TAP frame=${frozenCardFrame.frameIndex} corner=${corner} sample=${sampleNo}/${CARD_TAPS_PER_CORNER}: sourcePx=(${p.x.toFixed(2)},${p.y.toFixed(2)}); viewUV=(${uv.x.toFixed(6)},${uv.y.toFixed(6)}); rawRepeatMarkerHidden=true; edgeRefinement=false`);
-  if(sampleNo===CARD_TAPS_PER_CORNER){
-    const st=robustTapStats(arr); frozenCardTaps[corner]={x:st.rep.x,y:st.rep.y};
-    const repUv=sourcePointToViewUv(st.rep);
-    log(`CARD CORNER REPRESENTATIVE frame=${frozenCardFrame.frameIndex} corner=${corner}: method=coordinate-wise-median; representativePx=(${st.rep.x.toFixed(2)},${st.rep.y.toFixed(2)}); viewUV=(${repUv.x.toFixed(6)},${repUv.y.toFixed(6)}); rmsRadius=${st.rmsRadius.toFixed(3)}px; maxPair=${st.maxPair.toFixed(3)}px; maxFromMedian=${st.maxRadius.toFixed(3)}px; samples=[${arr.map(q=>`(${q.x.toFixed(2)},${q.y.toFixed(2)})`).join(',')}]; representativeUsedAsRay=true`);
+  log(`CARD EDGE TAP frame=${frozenCardFrame.frameIndex} edge=${edge} sample=${sampleNo}/${CARD_EDGE_TAPS}: sourcePx=(${p.x.toFixed(2)},${p.y.toFixed(2)}); viewUV=(${uv.x.toFixed(6)},${uv.y.toFixed(6)}); rawMarkerHidden=true; edgeRole=line-sample-only`);
+  if(sampleNo===CARD_EDGE_TAPS){
+    const line=fitImageLineTLS(arr),quality=edgeLineQuality(line);
+    if(!line || quality==='INVALID'){
+      log(`CARD EDGE LINE REJECT frame=${frozenCardFrame.frameIndex} edge=${edge}: rms=${line?.rms?.toFixed(3)??'n/a'}px; maxResidual=${line?.maxResidual?.toFixed(3)??'n/a'}px; span=${line?.span?.toFixed(1)??'n/a'}px; criteria=rms<=${CARD_EDGE_LINE_RMS_MAX_PX.toFixed(1)}px,span>=${CARD_EDGE_MIN_SPAN_PX.toFixed(1)}px; action=redo-current-edge`);
+      frozenCardEdgeTapSamples[edge]=[];
+      if(el.cardFreezeTapState) el.cardFreezeTapState.textContent=`${edge} rejected. Retap 5 separated points on the straight line; avoid corners.`;
+      drawFrozenCardFrame(); updateCalibrationUI(); return;
+    }
+    frozenCardEdgeLines[edge]=line;
+    log(`CARD EDGE LINE frame=${frozenCardFrame.frameIndex} edge=${edge}: quality=${quality}; rms=${line.rms.toFixed(3)}px; maxResidual=${line.maxResidual.toFixed(3)}px; span=${line.span.toFixed(1)}px; centroid=(${line.centroid.x.toFixed(2)},${line.centroid.y.toFixed(2)}); dir=(${line.dx.toFixed(6)},${line.dy.toFixed(6)}); n=${line.n}; lineUsedForVirtualCorner=true`);
     drawFrozenCardFrame();
   }
-  const next=currentRobustTapCorner();
-  if(el.cardFreezeTapState) el.cardFreezeTapState.textContent=next?`${next} sample ${robustTapCornerCount(next)+1}/${CARD_TAPS_PER_CORNER}. Total ${frozenTapTotalCount()}/12.`:'12/12 captured. Solving representative pose + 81 combinations…';
+  const next=currentEdgeTapName();
+  if(el.cardFreezeTapState) el.cardFreezeTapState.textContent=next?`${next} sample ${edgeTapCount(next)+1}/${CARD_EDGE_TAPS}. Spread taps along the straight line; avoid corners. Total ${edgeTapTotalCount()}/20.`:'20/20 captured. Computing virtual corners + rigid pose…';
   updateCalibrationUI();
-  if(robustTapComplete()) finalizeFrozenCardCalibration();
+  if(edgeSamplingComplete()) finalizeFrozenCardCalibration();
 }
 
 function toggleCalibrationAuto(){
@@ -4916,6 +4926,8 @@ async function startAR(){
   frozenCardFrame=null;
   frozenCardTaps={};
   frozenCardTapSamples=emptyFrozenTapSamples();
+  frozenCardEdgeTapSamples=emptyFrozenEdgeTapSamples();
+  frozenCardEdgeLines={};
   frozenCardRefinement=null;
   frozenCardTapSets=[];
   latestRawCameraGeometry=null;
@@ -5427,7 +5439,7 @@ function onXRFrame(time,frame){
     }
   }
 
-  // Phase 4.26 calibration uses one frozen Raw Camera frame and 12 robust corner taps.
+  // Phase 4.27 calibration uses one frozen Raw Camera frame and 20 manual edge samples.
   // No live per-corner auto-dwell runs here; Hit/Depth remain independent diagnostics.
 
   const layer = session.renderState.baseLayer;
@@ -5663,6 +5675,8 @@ function onSessionEnd(){
   frozenCardFrame=null;
   frozenCardTaps={};
   frozenCardTapSamples=emptyFrozenTapSamples();
+  frozenCardEdgeTapSamples=emptyFrozenEdgeTapSamples();
+  frozenCardEdgeLines={};
   frozenCardRefinement=null;
   frozenCardTapSets=[];
 
