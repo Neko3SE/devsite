@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<title>AR DISTANCE LAB - Phase 4.24</title>
+<title>AR DISTANCE LAB - Phase 4.25</title>
 <style>
 :root{
   color-scheme:dark;
@@ -122,7 +122,7 @@ padding:10px;pointer-events:auto}
 <body>
 <main>
 <h1>AR DISTANCE LAB</h1>
-<p class="sub">Phase 4.24 — Frozen Frame + Edge-Refined Rectangle Pose</p>
+<p class="sub">Phase 4.25 — Frozen Frame Tap Repeatability</p>
 
 <section class="card">
 <h2>STATUS</h2>
@@ -265,7 +265,7 @@ padding:10px;pointer-events:auto}
 <section class="card">
 <h2>KNOWN PLANAR TARGET / CARD CALIBRATION</h2>
 <p class="note">
-診断専用です。既定値は ID-1 形状 85.60 × 53.98 mm。Phase 4.24では端末を4隅へ順番に向け続ける方式をやめ、Raw Cameraの同一フレームを1枚固定します。固定画像上で TL → TR → BR → BL を「おおよそ」タップしてください。タップ位置そのものは真値扱いせず、4つの概略点から各辺の中央部（丸角を避けた18〜82%区間）を画像勾配で探索し、直線フィットした4辺の交点を仮想四隅として自動再推定します。その仮想四隅を、固定フレーム時点のXRView projection / transformからViewer Rayへ変換し、85.60 × 53.98 mmの剛体長方形を6自由度でフィットします。Raw Camera画像はXRViewに整合した画像として扱い、中央512×512表示はその中央クロップです。Hit Test / Depthはカード四隅には使用しません。校正中はA/B測距をロックし、補正係数はまだ適用しません。
+診断専用です。既定値は ID-1 形状 85.60 × 53.98 mm。Phase 4.25ではRaw Cameraの同一フレームを1枚固定し、その同じ静止画像上で TL → TR → BR → BL の4点タップを3セット繰り返します。タップ誤差は必ず存在する前提とし、自動エッジ補正は使用しません。各セットを独立にViewer Rayへ変換して85.60 × 53.98 mmの剛体長方形6DOF姿勢を推定し、セットごとのRay RMSに加えて、各角のタップ位置ばらつき、推定中心位置の差、平面法線の角度差を測定します。3セットは平均して校正値にはせず、まず人間のタップ再現性そのものを評価します。Raw Camera画像はXRViewに整合した画像として扱い、中央512×512表示はその中央クロップです。Hit Test / Depthはカード四隅には使用しません。校正中はA/B測距をロックし、補正係数はまだ適用しません。
 </p>
 <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
   <label for="calibrationWidthMm">Width</label>
@@ -276,39 +276,39 @@ padding:10px;pointer-events:auto}
   <span>mm</span>
 </div>
 <div class="sweepGrid">
-  <div class="cell">Frozen-frame taps</div><div class="cell calResult" id="calibrationSequenceState">0 / 4 — freeze frame first</div>
+  <div class="cell">Frozen-frame repetitions</div><div class="cell calResult" id="calibrationSequenceState">Set 1 / 3 — freeze frame first</div>
   <div class="cell">Freeze state</div><div class="cell calResult" id="calibrationAutoState">LIVE — press FREEZE CARD FRAME</div>
-  <div class="cell">Edge refinement</div><div class="cell" id="calibrationDwellState">WAITING</div>
+  <div class="cell">Tap-set progress</div><div class="cell" id="calibrationDwellState">WAITING</div>
   <div class="cell">Target</div><div class="cell" id="calibrationTargetState">85.60 × 53.98 mm</div>
   <div class="cell">Corner → Ray miss TL / TR</div><div class="cell" id="calibrationWidthState">—</div>
   <div class="cell">Corner → Ray miss BR / BL</div><div class="cell" id="calibrationHeightState">—</div>
   <div class="cell">Corner ray parameters TL / TR / BR / BL</div><div class="cell" id="calibrationDiagonalState">—</div>
-  <div class="cell">Refined-pose Ray RMS</div><div class="cell" id="calibrationWidthErrorState">—</div>
-  <div class="cell">Refined-pose max Ray miss</div><div class="cell" id="calibrationHeightErrorState">—</div>
-  <div class="cell">Pose quality</div><div class="cell" id="calibrationScaleState">—</div>
-  <div class="cell">Optimizer / seed</div><div class="cell" id="calibrationScaleSpreadState">—</div>
-  <div class="cell">Solved ray-parameter range</div><div class="cell" id="calibrationScaleResidualState">—</div>
-  <div class="cell">Rigid rectangle geometry</div><div class="cell" id="calibrationAngleState">—</div>
-  <div class="cell">Pose center / normal</div><div class="cell" id="calibrationPlaneState">—</div>
-  <div class="cell">Raw-tap fit vs refined fit</div><div class="cell" id="calibrationDepthState">—</div>
-  <div class="cell">Role</div><div class="cell" id="calibrationRoleState">FROZEN FRAME + EDGE REFINEMENT — no correction</div>
+  <div class="cell">Last-set Ray RMS</div><div class="cell" id="calibrationWidthErrorState">—</div>
+  <div class="cell">Last-set max Ray miss</div><div class="cell" id="calibrationHeightErrorState">—</div>
+  <div class="cell">Last-set pose quality</div><div class="cell" id="calibrationScaleState">—</div>
+  <div class="cell">Set Ray RMS 1 / 2 / 3</div><div class="cell" id="calibrationScaleSpreadState">—</div>
+  <div class="cell">Tap spread TL / TR / BR / BL</div><div class="cell" id="calibrationScaleResidualState">—</div>
+  <div class="cell">Center pairwise shift</div><div class="cell" id="calibrationAngleState">—</div>
+  <div class="cell">Normal-axis pairwise angle</div><div class="cell" id="calibrationPlaneState">—</div>
+  <div class="cell">Last pose center / normal</div><div class="cell" id="calibrationDepthState">—</div>
+  <div class="cell">Role</div><div class="cell" id="calibrationRoleState">SAME-FRAME 3-SET TAP REPEATABILITY — no correction</div>
 </div>
 <div class="actions" style="margin-top:10px">
   <button type="button" id="calibrationResetBtn">RESET CARD CAL</button>
 </div>
-<pre id="calibrationText" style="margin-top:10px;max-height:220px">CARD FREEZE: start AR, center the whole card inside MAG source, then press FREEZE CARD FRAME.</pre>
+<pre id="calibrationText" style="margin-top:10px;max-height:220px">CARD REPEATABILITY: start AR, center the whole card inside MAG source, then press FREEZE CARD FRAME.</pre>
 </section>
 
 <section class="card">
-<h2>PHASE 4.24 TEST PROCEDURE</h2>
+<h2>PHASE 4.25 TEST PROCEDURE</h2>
 <ol class="procedure">
   <li>85.60 × 53.98 mm のカード形状ターゲットを平らで動かない面に固定します。</li>
-  <li>START AR後、カード全体が中央のRaw Camera領域に入るように構え、FREEZE CARD FRAMEを押します。以後は静止画像なので端末を止め続ける必要はありません。</li>
-  <li>静止画像上で TL → TR → BR → BL を順に1回ずつ、おおよそタップします。厳密な角の1ピクセルを狙う必要はありません。</li>
-  <li>4点入力後、各辺の中央18〜82%を使ってカード境界を画像勾配から探索し、4本の直線をロバストフィットします。カードの丸角部分は意図的に使用しません。</li>
-  <li>4辺の交点で得た仮想四隅を固定フレームのXRView projection / transformからViewer Rayへ変換し、既知寸法の剛体長方形6DOF姿勢を推定します。raw tapだけで解いた場合とのRay RMS差も記録します。</li>
-  <li>同じ静止画でタップをやり直す場合は RESET TAPS、撮り直す場合は LIVE / RETAKE → FREEZE CARD FRAME を使用します。</li>
-  <li>ログの CARD FREEZE / CARD EDGE / CARD STATIC FIT SUMMARY を共有してください。A/B測距と20 / 50 / 100 cm sweepは今回不要です。</li>
+  <li>START AR後、カード全体が中央のRaw Camera領域に入るように構え、FREEZE CARD FRAMEを1回押します。以後3セットすべて同じ静止フレームを使います。</li>
+  <li>SET 1で TL → TR → BR → BL を順に1回ずつタップします。4点目で剛体フィットを独立計算し、画面は自動的にSET 2へ進みます。前セットの点は表示しないため、それを目印に合わせることはできません。</li>
+  <li>同じ操作をSET 2、SET 3でも繰り返します。各タップは最終角として使いますが、3セットを平均して補正値にはしません。</li>
+  <li>SET 3完了後、各角の3回タップばらつき、3つの姿勢中心の相互距離、3つの平面法線の相互角度、各セットのRay RMSを自動集計します。</li>
+  <li>途中でタップをやり直す場合は RESET CURRENT SET、3セット完了後は同じボタンで3セットを最初からやり直せます。撮り直す場合は LIVE / RETAKE → FREEZE CARD FRAME を使用します。</li>
+  <li>ログの CARD REPEAT TAP / CARD TAP SET SUMMARY / CARD TAP REPEATABILITY SUMMARY を共有してください。A/B測距と20 / 50 / 100 cm sweepは今回不要です。</li>
 </ol>
 </section>
 
@@ -345,11 +345,11 @@ Phase 4.24でも通常の正式単発距離値はimmutable Hit-Hitのままで�
     </div>
 
     <div id="cardFreezePanel" hidden>
-      <div id="cardFreezeTitle">CARD FROZEN FRAME — approximate taps are refined from straight edges</div>
+      <div id="cardFreezeTitle">CARD FROZEN FRAME — repeat the same 4 taps for 3 independent sets</div>
       <canvas id="cardFreezeCanvas" width="512" height="512"></canvas>
-      <div id="cardFreezeTapState">Freeze a frame, then tap TL → TR → BR → BL approximately.</div>
+      <div id="cardFreezeTapState">Freeze a frame, then SET 1: tap TL → TR → BR → BL.</div>
       <div class="freezeActions">
-        <button type="button" id="cardFreezeResetTapsBtn">RESET TAPS</button>
+        <button type="button" id="cardFreezeResetTapsBtn">RESET CURRENT SET</button>
         <button type="button" id="cardFreezeRetakeBtn">LIVE / RETAKE</button>
       </div>
     </div>
@@ -372,7 +372,7 @@ Phase 4.24でも通常の正式単発距離値はimmutable Hit-Hitのままで�
       <div id="settlingText">SETTLING: —</div>
       <div id="preBText">PRE-B A DRIFT: —</div>
       <div id="alignmentText">CENTER ALIGN CHECK: OFF</div>
-      <div id="calibrationOverlayText">CARD FREEZE: LIVE — press FREEZE CARD FRAME</div>
+      <div id="calibrationOverlayText">CARD REPEATABILITY: LIVE — press FREEZE CARD FRAME</div>
       <div id="calibrationDwellTrack"><div id="calibrationDwellBar"></div></div>
       <div id="pointText">A: NOT SET / B: NOT SET</div>
       <div id="anchorText">ANCHOR A: — / ANCHOR B: —</div>
@@ -452,7 +452,7 @@ let raf = 0;
 let latestHitMatrix = null;
 let latestHitPoint = null;
 
-// Phase 4.24: frozen Raw Camera frame + approximate taps + straight-edge refinement + rigid pose.
+// Phase 4.25: one frozen Raw Camera frame + three independent raw-tap rigid-pose fits.
 const CALIBRATION_CORNERS = ['TL','TR','BR','BL'];
 const DEFAULT_CALIBRATION_WIDTH_MM = 85.60;
 const DEFAULT_CALIBRATION_HEIGHT_MM = 53.98;
@@ -487,7 +487,7 @@ let calibrationTransitionThresholdDeg = CALIBRATION_TRANSITION_MIN_DEG;
 let calibrationRayHistory = [];
 let calibrationDwellRaySamples = [];
 
-// Phase 4.24 frozen-frame calibration state.
+// Phase 4.25 frozen-frame tap-repeatability state.
 const CARD_FREEZE_SIZE = 512;
 const CARD_EDGE_SEARCH_RADIUS_PX = 24;
 const CARD_EDGE_SAMPLE_COUNT = 30;
@@ -496,6 +496,9 @@ let latestRawCameraGeometry = null;
 let frozenCardFrame = null;
 let frozenCardTaps = {};
 let frozenCardRefinement = null;
+const CARD_TAP_SET_GOAL = 3;
+let frozenCardTapSets = [];
+let frozenCardFrameIndex = 0;
 
 let anchorA = null;
 let anchorB = null;
@@ -863,7 +866,7 @@ function logHitABComparison(){
   return comparison;
 }
 
-// Phase 4.24 inherited from Phase 4.19: formal single-shot candidate remains frozen at Point B capture; repeated acquisitions form the consensus.
+// Phase 4.25 inherited from Phase 4.19: formal single-shot candidate remains frozen at Point B capture; repeated acquisitions form the consensus.
 let frozenMeasurement = null;
 let sessionFrozenMeasurements = [];
 let lastAAnchorPoseTime = null;
@@ -1116,7 +1119,7 @@ let qualityHistory = [];
 let lastQualitySampleTime = -Infinity;
 let latestHitDistance = null;
 
-// Phase 4.24 inherited from Phase 4.19: Phase 4.16 Depth 3D method retained.
+// Phase 4.25 inherited from Phase 4.19: Phase 4.16 Depth 3D method retained.
 // Depth never replaces/corrects or rejects the committed Hit-Hit value. It is agreement diagnostics only.
 const DEPTH_GRID = 3;
 const DEPTH_RADIUS = 0.01; // compact local region around projected Hit / screen center
@@ -2318,7 +2321,7 @@ function assessDepthDistanceCrossCheck(){
 
 function applyDepthDistanceCrossCheck(){
   const q=assessDepthDistanceCrossCheck();
-  // Phase 4.24 inherited from Phase 4.19: rename the >=15 mm state for clarity. This is diagnostic only.
+  // Phase 4.25 inherited from Phase 4.19: rename the >=15 mm state for clarity. This is diagnostic only.
   if(q.state==='INVALID') q.state='DIVERGED';
   lastDepthAgreement=q;
   const cls=q.state==='AGREE'||q.state==='PASS'?'ok':q.state==='WARN'?'warn':q.state==='DIVERGED'?'warn':'warn';
@@ -2330,7 +2333,7 @@ function applyDepthDistanceCrossCheck(){
 }
 
 function combineQualityGates(mapIntegrity,depthDiagnostic){
-  // Phase 4.24 inherited from Phase 4.19: only MAP can reject a single-shot measurement.
+  // Phase 4.25 inherited from Phase 4.19: only MAP can reject a single-shot measurement.
   // Depth agreement is deliberately excluded from the commit gate because the
   // previous sweep proved that Hit and Depth can agree while both are wrong.
   let state='PASS';
@@ -4272,29 +4275,38 @@ function cardFreezeTapCount(){ return CALIBRATION_CORNERS.filter(c=>!!frozenCard
 function updateCalibrationUI(){
   const target=calibrationTargetFrozen || calibrationTargetDimensions();
   const n=cardFreezeTapCount();
-  const next=CALIBRATION_CORNERS.find(c=>!frozenCardTaps[c]) || null;
+  const completed=frozenCardTapSets.length;
+  const setNo=Math.min(completed+1,CARD_TAP_SET_GOAL);
+  const allDone=completed>=CARD_TAP_SET_GOAL;
+  const next=allDone?null:(CALIBRATION_CORNERS.find(c=>!frozenCardTaps[c]) || null);
   set('calibrationTargetState',`${target.widthMm.toFixed(2)} × ${target.heightMm.toFixed(2)} mm`,'ok');
-  set('calibrationSequenceState',frozenCardFrame?`${n} / 4${next?` — tap ${next}`:' — COMPLETE'}`:'0 / 4 — freeze frame first',frozenCardFrame?(next?'warn':'ok'):'warn');
-  set('calibrationAutoState',frozenCardFrame?(next?`FROZEN — tap ${next}`:'FROZEN — fit complete'):'LIVE — press FREEZE CARD FRAME',frozenCardFrame?'ok':'warn');
-  set('calibrationDwellState',frozenCardRefinement?`${frozenCardRefinement.quality} / edge RMS max ${frozenCardRefinement.maxLineRms.toFixed(2)} px`:frozenCardFrame?'WAITING FOR 4 TAPS':'WAITING',frozenCardRefinement?(frozenCardRefinement.quality==='GOOD'?'ok':frozenCardRefinement.quality==='WARN'?'warn':'ng'):'');
+  set('calibrationSequenceState',frozenCardFrame
+    ? (allDone?`3 / 3 SETS — COMPLETE`:`SET ${setNo} / ${CARD_TAP_SET_GOAL}: ${n}/4${next?` — tap ${next}`:''}`)
+    : `SET 1 / ${CARD_TAP_SET_GOAL} — freeze frame first`,
+    frozenCardFrame?(allDone?'ok':'warn'):'warn');
+  set('calibrationAutoState',frozenCardFrame?(allDone?'FROZEN — REPEATABILITY COMPLETE':`FROZEN — SET ${setNo}/${CARD_TAP_SET_GOAL}`):'LIVE — press FREEZE CARD FRAME',frozenCardFrame?'ok':'warn');
+  set('calibrationDwellState',frozenCardFrame?(allDone?'3 / 3 SETS COMPLETE':`SET ${setNo}/${CARD_TAP_SET_GOAL} — ${n}/4 TAPS`):'WAITING',allDone?'ok':'');
   if(el.calibrationDwellTrack) el.calibrationDwellTrack.style.display='none';
-  if(el.calibrationOverlayText) el.calibrationOverlayText.textContent=frozenCardFrame?(next?`CARD FREEZE: tap ${next} approximately on frozen image`:'CARD FREEZE: 4/4 — edge refine + rigid fit complete'):'CARD FREEZE: center full card, then FREEZE CARD FRAME';
+  if(el.calibrationOverlayText) el.calibrationOverlayText.textContent=frozenCardFrame
+    ? (allDone?'CARD REPEATABILITY: 3/3 sets complete — review reproducibility summary':`CARD REPEATABILITY: SET ${setNo}/${CARD_TAP_SET_GOAL} — tap ${next}`)
+    : 'CARD REPEATABILITY: center full card, then FREEZE CARD FRAME';
   if(el.calibrationCaptureBtn){
     el.calibrationCaptureBtn.disabled=!session || ending || !latestRawCameraGeometry;
     el.calibrationCaptureBtn.classList.remove('active','pending');
     el.calibrationCaptureBtn.textContent=frozenCardFrame?'REFREEZE CARD FRAME':'FREEZE CARD FRAME';
   }
   if(el.calibrationResetOverlayBtn) el.calibrationResetOverlayBtn.disabled=!session || ending;
+  if(el.cardFreezeResetTapsBtn) el.cardFreezeResetTapsBtn.textContent=allDone?'RESTART 3 SETS':'RESET CURRENT SET';
 
   const fit=calibrationResult?.rayFit;
-  const rawFit=calibrationResult?.rawTapFit;
+  const rep=calibrationResult?.repeatability;
   if(!fit?.geometry){
     for(const id of ['calibrationWidthState','calibrationHeightState','calibrationDiagonalState','calibrationWidthErrorState','calibrationHeightErrorState','calibrationScaleState','calibrationScaleSpreadState','calibrationScaleResidualState','calibrationAngleState','calibrationPlaneState','calibrationDepthState']) set(id,'—','');
-    set('calibrationRoleState','FROZEN FRAME + EDGE REFINEMENT — no correction','ok');
+    set('calibrationRoleState','SAME-FRAME 3-SET TAP REPEATABILITY — no correction','ok');
     if(el.calibrationText){
       el.calibrationText.textContent=frozenCardFrame
-        ? `CARD FROZEN FRAME: ${n}/4 approximate taps. ${next?`Tap ${next}; straight-edge refinement will run after BL.`:'Processing...'}`
-        : 'CARD FREEZE: start AR, center the whole card inside MAG source, then press FREEZE CARD FRAME.';
+        ? `CARD REPEATABILITY — frozen frame #${frozenCardFrame.frameIndex}. SET ${setNo}/${CARD_TAP_SET_GOAL}, ${n}/4 taps. ${next?`Tap ${next}.`:''}`
+        : 'CARD REPEATABILITY: start AR, center the whole card inside MAG source, then press FREEZE CARD FRAME.';
     }
     return;
   }
@@ -4306,22 +4318,30 @@ function updateCalibrationUI(){
   set('calibrationWidthErrorState',`${mm(fit.rayRms)} mm`,fit.rayRms<=0.002?'ok':fit.rayRms<=0.005?'warn':'ng');
   set('calibrationHeightErrorState',`${mm(fit.rayMax)} mm`,fit.rayMax<=0.004?'ok':fit.rayMax<=0.010?'warn':'ng');
   set('calibrationScaleState',fit.quality,fit.quality==='GOOD'?'ok':fit.quality==='WARN'?'warn':'ng');
-  set('calibrationScaleSpreadState',`LM ${fit.iterations} it / ${fit.seed}`,'');
-  set('calibrationScaleResidualState',`${((fit.depthMax-fit.depthMin)*1000).toFixed(3)} mm (${fit.depthMin.toFixed(3)}..${fit.depthMax.toFixed(3)} m)`,'');
-  set('calibrationAngleState',`${target.widthMm.toFixed(2)} × ${target.heightMm.toFixed(2)} mm / 90° fixed`,'ok');
-  set('calibrationPlaneState',`C ${fmtPoint(fit.center)} / N ${fmtPoint(fit.normal)}`,'');
-  set('calibrationDepthState',`raw ${rawFit?(rawFit.rayRms*1000).toFixed(3):'n/a'} mm → refined ${(fit.rayRms*1000).toFixed(3)} mm RMS`,rawFit&&fit.rayRms<rawFit.rayRms?'ok':'warn');
-  set('calibrationRoleState','STATIC FRAME / TAP-SEED / EDGE-REFINED RIGID POSE — no correction','ok');
+  set('calibrationScaleSpreadState',frozenCardTapSets.map((r,i)=>`S${i+1} ${(r.fit.rayRms*1000).toFixed(3)}`).join(' / ')+' mm','');
+  if(rep){
+    set('calibrationScaleResidualState',CALIBRATION_CORNERS.map(c=>`${c} ${rep.tapSpread[c].maxPair.toFixed(2)}px`).join(' / '),'');
+    set('calibrationAngleState',`12 ${(rep.centerPairs.d12*1000).toFixed(2)} / 13 ${(rep.centerPairs.d13*1000).toFixed(2)} / 23 ${(rep.centerPairs.d23*1000).toFixed(2)} mm`,'');
+    set('calibrationPlaneState',`12 ${rep.normalPairs.a12.toFixed(2)} / 13 ${rep.normalPairs.a13.toFixed(2)} / 23 ${rep.normalPairs.a23.toFixed(2)}°`,'');
+  }else{
+    set('calibrationScaleResidualState','waiting for 3 sets','');
+    set('calibrationAngleState','waiting for 3 sets','');
+    set('calibrationPlaneState','waiting for 3 sets','');
+  }
+  set('calibrationDepthState',`C ${fmtPoint(fit.center)} / N ${fmtPoint(fit.normal)}`,'');
+  set('calibrationRoleState','RAW TAPS / 3 INDEPENDENT SAME-FRAME FITS — no averaging, no correction','ok');
   if(el.calibrationText){
-    const r=frozenCardRefinement;
-    el.calibrationText.textContent=
-      `CARD STATIC FIT #${calibrationResult.run} — ${fit.quality}\n`+
-      `Refined Ray RMS ${(fit.rayRms*1000).toFixed(3)} mm / max ${(fit.rayMax*1000).toFixed(3)} mm\n`+
-      `Raw-tap Ray RMS ${rawFit?(rawFit.rayRms*1000).toFixed(3):'n/a'} mm\n`+
-      `Edge line RMS ${r?Object.entries(r.lines).map(([k,v])=>`${k} ${v.rms.toFixed(2)}px`).join(' / '):'n/a'}\n`+
-      `Tap→virtual-corner shift ${r?CALIBRATION_CORNERS.map(c=>`${c} ${r.shifts[c].toFixed(1)}px`).join(' / '):'n/a'}\n`+
-      `Center-ray mapping delta ${frozenCardFrame?.centerRayDeltaDeg?.toFixed?.(5)??'n/a'}°\n`+
-      `DIAGNOSTIC ONLY — no correction applied.`;
+    let txt=`CARD TAP SET ${frozenCardTapSets.length}/${CARD_TAP_SET_GOAL} — ${fit.quality}\n`+
+      `Ray RMS ${(fit.rayRms*1000).toFixed(3)} mm / max ${(fit.rayMax*1000).toFixed(3)} mm\n`+
+      `Center ${fmtPoint(fit.center)}\nNormal ${fmtPoint(fit.normal)}\n`;
+    if(rep){
+      txt+=`\n3-SET REPEATABILITY\n`+
+        `Tap max pairwise: ${CALIBRATION_CORNERS.map(c=>`${c} ${rep.tapSpread[c].maxPair.toFixed(2)}px`).join(' / ')}\n`+
+        `Center pairwise: ${(rep.centerPairs.d12*1000).toFixed(2)} / ${(rep.centerPairs.d13*1000).toFixed(2)} / ${(rep.centerPairs.d23*1000).toFixed(2)} mm\n`+
+        `Normal-axis pairwise: ${rep.normalPairs.a12.toFixed(2)} / ${rep.normalPairs.a13.toFixed(2)} / ${rep.normalPairs.a23.toFixed(2)}°\n`+
+        `DIAGNOSTIC ONLY — sets are not averaged into a correction.`;
+    }else txt+=`\nContinue with the same frozen frame until SET 3 is complete.`;
+    el.calibrationText.textContent=txt;
   }
 }
 
@@ -4343,12 +4363,13 @@ function resetCalibration(reason='user'){
   frozenCardFrame=null;
   frozenCardTaps={};
   frozenCardRefinement=null;
+  frozenCardTapSets=[];
   if(el.cardFreezePanel) el.cardFreezePanel.hidden=true;
   resetCalibrationDwell();
   if(el.calibrationCaptureBtn){ el.calibrationCaptureBtn.classList.remove('pending','active'); }
   updateCalibrationUI();
   updateDistanceUI();
-  log(`CARD FREEZE RESET: reason=${reason}; frameCleared=true; taps=0/4; measurementLock=false; correctionApplied=false`);
+  log(`CARD REPEATABILITY RESET: reason=${reason}; frameCleared=true; sets=0/${CARD_TAP_SET_GOAL}; measurementLock=false; correctionApplied=false`);
 }
 
 function frozenFrameCanvasPoint(ev){
@@ -4453,17 +4474,9 @@ function drawFrozenCardFrame(){
     ctx.strokeStyle='#ffd166'; ctx.fillStyle='#ffd166';
     ctx.beginPath(); ctx.arc(p.x,p.y,7,0,Math.PI*2); ctx.stroke(); ctx.fillText(c,p.x+9,p.y-8);
   }
-  const r=frozenCardRefinement;
-  if(r?.corners){
-    ctx.strokeStyle='#71f2a6'; ctx.fillStyle='#71f2a6'; ctx.lineWidth=2.5;
-    ctx.beginPath();
-    const cs=['TL','TR','BR','BL'];
-    cs.forEach((c,i)=>{ const p=r.corners[c]; if(i===0) ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y); });
-    ctx.closePath(); ctx.stroke();
-    for(const c of cs){ const p=r.corners[c]; ctx.beginPath(); ctx.arc(p.x,p.y,4,0,Math.PI*2); ctx.fill(); }
-  }
   ctx.restore();
 }
+
 function refineFrozenCardEdges(){
   const t=frozenCardTaps;
   if(!CALIBRATION_CORNERS.every(c=>t[c])) return null;
@@ -4494,49 +4507,94 @@ function fitFrozenCorners(corners,target){
   }
   return fitKnownRectangleRigidPose(pts,target);
 }
+function pairwisePixelStats(points){
+  if(!points||points.length<2) return {maxPair:0,rmsRadius:0};
+  const cx=points.reduce((a,p)=>a+p.x,0)/points.length;
+  const cy=points.reduce((a,p)=>a+p.y,0)/points.length;
+  const rmsRadius=Math.sqrt(points.reduce((a,p)=>a+(p.x-cx)**2+(p.y-cy)**2,0)/points.length);
+  let maxPair=0;
+  for(let i=0;i<points.length;i++) for(let j=i+1;j<points.length;j++) maxPair=Math.max(maxPair,Math.hypot(points[i].x-points[j].x,points[i].y-points[j].y));
+  return {maxPair,rmsRadius};
+}
+function planeNormalAxisAngleDeg(a,b){
+  if(!a||!b) return NaN;
+  const na=normalize3(a),nb=normalize3(b); if(!na||!nb) return NaN;
+  const d=Math.max(-1,Math.min(1,Math.abs(dot3(na,nb))));
+  return Math.acos(d)*180/Math.PI;
+}
+function computeFrozenTapRepeatability(){
+  if(frozenCardTapSets.length<CARD_TAP_SET_GOAL) return null;
+  const rows=frozenCardTapSets.slice(0,CARD_TAP_SET_GOAL);
+  const tapSpread={};
+  for(const c of CALIBRATION_CORNERS) tapSpread[c]=pairwisePixelStats(rows.map(r=>r.taps[c]));
+  const f1=rows[0].fit,f2=rows[1].fit,f3=rows[2].fit;
+  const centerPairs={d12:distance3(f1.center,f2.center),d13:distance3(f1.center,f3.center),d23:distance3(f2.center,f3.center)};
+  const normalPairs={a12:planeNormalAxisAngleDeg(f1.normal,f2.normal),a13:planeNormalAxisAngleDeg(f1.normal,f3.normal),a23:planeNormalAxisAngleDeg(f2.normal,f3.normal)};
+  return {tapSpread,centerPairs,normalPairs};
+}
 function finalizeFrozenCardCalibration(){
   const target=calibrationTargetFrozen||calibrationTargetDimensions();
-  const refinement=refineFrozenCardEdges();
-  if(!refinement){
-    log('CARD EDGE REFINEMENT FAILED: could not fit all four straight edges; reset taps or retake frame');
-    set('calibrationDwellState','EDGE REFINE FAILED','ng'); return;
-  }
-  frozenCardRefinement=refinement;
-  const rawTapFit=fitFrozenCorners(frozenCardTaps,target);
-  const rayFit=fitFrozenCorners(refinement.corners,target);
-  calibrationPoints={};
-  for(const c of CALIBRATION_CORNERS) calibrationPoints[c]={ray:rayFromFrozenSourcePoint(refinement.corners[c])};
+  const taps={}; for(const c of CALIBRATION_CORNERS) taps[c]={x:frozenCardTaps[c].x,y:frozenCardTaps[c].y};
+  const rayFit=fitFrozenCorners(taps,target);
+  const setIndex=frozenCardTapSets.length+1;
   calibrationRunIndex++;
-  calibrationResult={run:calibrationRunIndex,target,rayFit,rawTapFit,refinement};
-  drawFrozenCardFrame();
-  const lineText=Object.entries(refinement.lines).map(([k,v])=>`${k}=${v.rms.toFixed(3)}px(n=${v.n},resp=${v.medianResponse.toFixed(1)})`).join(',');
-  const shiftText=CALIBRATION_CORNERS.map(c=>`${c}=${refinement.shifts[c].toFixed(2)}px`).join(',');
-  const pxText=CALIBRATION_CORNERS.map(c=>`${c}=(${refinement.corners[c].x.toFixed(2)},${refinement.corners[c].y.toFixed(2)})`).join(',');
-  log(`CARD EDGE SUMMARY #${calibrationRunIndex}: quality=${refinement.quality}; lineRMS=[${lineText}]; tapToVirtualShift=[${shiftText}]; virtualCorners=[${pxText}]; roundedCornerExcluded=${(CARD_EDGE_TRIM_FRACTION*100).toFixed(0)}pct-each-end; searchRadius=${CARD_EDGE_SEARCH_RADIUS_PX}px`);
   if(!rayFit){
-    log(`CARD STATIC FIT SUMMARY #${calibrationRunIndex}: FAILED — rigid solve unavailable; rawTapFit=${rawTapFit?'available':'n/a'}; correctionApplied=false; diagnosticOnly=true`);
-  }else{
-    const miss=CALIBRATION_CORNERS.map(c=>`${c}=${(rayFit.misses[c]*1000).toFixed(3)}mm`).join(',');
-    const uv=CALIBRATION_CORNERS.map(c=>{const q=sourcePointToViewUv(refinement.corners[c]);return `${c}=(${q.x.toFixed(6)},${q.y.toFixed(6)})`;}).join(',');
-    log(`CARD STATIC FIT SUMMARY #${calibrationRunIndex}: target=${target.widthMm.toFixed(2)}x${target.heightMm.toFixed(2)}mm; source=frozen512-edge-refined; rawTapRayRMS=${rawTapFit?(rawTapFit.rayRms*1000).toFixed(3):'n/a'}mm; refinedRayRMS=${(rayFit.rayRms*1000).toFixed(3)}mm; refinedRayMax=${(rayFit.rayMax*1000).toFixed(3)}mm; quality=${rayFit.quality}; rayMiss=[${miss}]; viewUV=[${uv}]; center=${fmtPoint(rayFit.center)}; normal=${fmtPoint(rayFit.normal)}; seed=${rayFit.seed}; iterations=${rayFit.iterations}; centerRayDelta=${frozenCardFrame.centerRayDeltaDeg.toFixed(6)}deg; camera=${frozenCardFrame.cameraWidth}x${frozenCardFrame.cameraHeight}; cropAspect=${frozenCardFrame.aspect.toFixed(6)}; alignedXRViewMapping=true; HitUsedAsCorner=false; DepthUsedAsCorner=false; correctionApplied=false; diagnosticOnly=true`);
+    log(`CARD TAP SET SUMMARY frame=${frozenCardFrame?.frameIndex??'n/a'} set=${setIndex}/${CARD_TAP_SET_GOAL}: FAILED — rigid solve unavailable; source=frozen512-raw-taps; correctionApplied=false; diagnosticOnly=true`);
+    set('calibrationDwellState',`SET ${setIndex} FIT FAILED`,'ng');
+    return;
   }
-  if(el.cardFreezeTapState) el.cardFreezeTapState.textContent=`4/4 taps. Edge refine ${refinement.quality}. ${rayFit?`Rigid fit ${rayFit.quality}, RMS ${(rayFit.rayRms*1000).toFixed(2)} mm.`:'Rigid fit failed.'} RESET TAPS to repeat on this frame.`;
+  frozenCardTapSets.push({set:setIndex,taps,fit:rayFit});
+  calibrationPoints={};
+  for(const c of CALIBRATION_CORNERS) calibrationPoints[c]={ray:rayFromFrozenSourcePoint(taps[c])};
+  const miss=CALIBRATION_CORNERS.map(c=>`${c}=${(rayFit.misses[c]*1000).toFixed(3)}mm`).join(',');
+  const uv=CALIBRATION_CORNERS.map(c=>{const q=sourcePointToViewUv(taps[c]);return `${c}=(${q.x.toFixed(6)},${q.y.toFixed(6)})`;}).join(',');
+  const px=CALIBRATION_CORNERS.map(c=>`${c}=(${taps[c].x.toFixed(2)},${taps[c].y.toFixed(2)})`).join(',');
+  log(`CARD TAP SET SUMMARY frame=${frozenCardFrame?.frameIndex??'n/a'} set=${setIndex}/${CARD_TAP_SET_GOAL}: target=${target.widthMm.toFixed(2)}x${target.heightMm.toFixed(2)}mm; source=frozen512-raw-taps; rayRMS=${(rayFit.rayRms*1000).toFixed(3)}mm; rayMax=${(rayFit.rayMax*1000).toFixed(3)}mm; quality=${rayFit.quality}; rayMiss=[${miss}]; taps=[${px}]; viewUV=[${uv}]; center=${fmtPoint(rayFit.center)}; normal=${fmtPoint(rayFit.normal)}; seed=${rayFit.seed}; iterations=${rayFit.iterations}; centerRayDelta=${frozenCardFrame.centerRayDeltaDeg.toFixed(6)}deg; sameFrozenFrame=true; correctionApplied=false; diagnosticOnly=true`);
+
+  const rep=computeFrozenTapRepeatability();
+  calibrationResult={run:calibrationRunIndex,target,rayFit,repeatability:rep};
+  if(rep){
+    const tapText=CALIBRATION_CORNERS.map(c=>`${c}=max${rep.tapSpread[c].maxPair.toFixed(2)}px/rms${rep.tapSpread[c].rmsRadius.toFixed(2)}px`).join(',');
+    const rmsText=frozenCardTapSets.map(r=>`S${r.set}=${(r.fit.rayRms*1000).toFixed(3)}mm`).join(',');
+    log(`CARD TAP REPEATABILITY SUMMARY frame=${frozenCardFrame?.frameIndex??'n/a'}: sets=${CARD_TAP_SET_GOAL}; setRayRMS=[${rmsText}]; tapSpread=[${tapText}]; centerPairwise=[S1-S2=${(rep.centerPairs.d12*1000).toFixed(3)}mm,S1-S3=${(rep.centerPairs.d13*1000).toFixed(3)}mm,S2-S3=${(rep.centerPairs.d23*1000).toFixed(3)}mm]; centerMax=${(Math.max(rep.centerPairs.d12,rep.centerPairs.d13,rep.centerPairs.d23)*1000).toFixed(3)}mm; normalAxisPairwise=[S1-S2=${rep.normalPairs.a12.toFixed(3)}deg,S1-S3=${rep.normalPairs.a13.toFixed(3)}deg,S2-S3=${rep.normalPairs.a23.toFixed(3)}deg]; normalAxisMax=${Math.max(rep.normalPairs.a12,rep.normalPairs.a13,rep.normalPairs.a23).toFixed(3)}deg; sameFrozenFrame=true; setsAveraged=false; correctionApplied=false; diagnosticOnly=true`);
+    if(el.cardFreezeTapState) el.cardFreezeTapState.textContent='SET 3/3 complete. Review repeatability summary. Previous sets were never shown during tapping.';
+  }else{
+    frozenCardTaps={};
+    drawFrozenCardFrame();
+    const nextSet=frozenCardTapSets.length+1;
+    if(el.cardFreezeTapState) el.cardFreezeTapState.textContent=`SET ${setIndex}/${CARD_TAP_SET_GOAL} complete. SET ${nextSet}/${CARD_TAP_SET_GOAL}: tap TL → TR → BR → BL. Previous taps are hidden.`;
+  }
   updateCalibrationUI(); updateDistanceUI();
 }
+
 function resetFrozenCardTaps(reason='user'){
-  frozenCardTaps={}; frozenCardRefinement=null; calibrationPoints={}; calibrationResult=null;
+  const allDone=frozenCardTapSets.length>=CARD_TAP_SET_GOAL;
+  if(allDone){
+    frozenCardTapSets=[];
+    calibrationResult=null;
+    calibrationPoints={};
+    frozenCardTaps={};
+    if(el.cardFreezeTapState) el.cardFreezeTapState.textContent='SET 1/3: tap TL → TR → BR → BL. Same frozen frame preserved.';
+    log(`CARD REPEAT SETS RESTARTED: reason=${reason}; framePreserved=${!!frozenCardFrame}; completedSetsCleared=true; measurementLock=${!!calibrationTargetFrozen}`);
+  }else{
+    frozenCardTaps={};
+    calibrationPoints={};
+    if(el.cardFreezeTapState) el.cardFreezeTapState.textContent=`SET ${frozenCardTapSets.length+1}/${CARD_TAP_SET_GOAL}: tap TL → TR → BR → BL. Current incomplete set cleared; completed sets preserved.`;
+    log(`CARD CURRENT TAP SET RESET: reason=${reason}; framePreserved=${!!frozenCardFrame}; completedSets=${frozenCardTapSets.length}/${CARD_TAP_SET_GOAL}; measurementLock=${!!calibrationTargetFrozen}`);
+  }
+  frozenCardRefinement=null;
   drawFrozenCardFrame();
-  if(el.cardFreezeTapState) el.cardFreezeTapState.textContent='Tap TL → TR → BR → BL approximately. Straight edges will refine the result.';
-  log(`CARD FREEZE TAPS RESET: reason=${reason}; framePreserved=${!!frozenCardFrame}; measurementLock=${!!calibrationTargetFrozen}`);
   updateCalibrationUI();
 }
+
 function leaveFrozenFrameForRetake(){
   if(el.cardFreezePanel) el.cardFreezePanel.hidden=true;
-  frozenCardFrame=null; frozenCardTaps={}; frozenCardRefinement=null; calibrationPoints={}; calibrationResult=null;
+  frozenCardFrame=null; frozenCardTaps={}; frozenCardRefinement=null; frozenCardTapSets=[]; calibrationPoints={}; calibrationResult=null;
   if(el.xrHint) el.xrHint.textContent='Live view restored. Re-center the whole card, then press FREEZE CARD FRAME.';
-  log('CARD FREEZE RETAKE: live view restored; previous frozen image discarded; measurementLock=true');
+  log('CARD FREEZE RETAKE: live view restored; previous frozen image and all tap sets discarded; measurementLock=true');
   updateCalibrationUI();
 }
+
 function freezeCardFrame(){
   if(!session||ending||!magnifierSourceCanvas||!latestRawCameraGeometry) return;
   if(pointA||pointB||capturePending) resetMeasurement();
@@ -4549,36 +4607,39 @@ function freezeCardFrame(){
   const imageData=ctx.getImageData(0,0,CARD_FREEZE_SIZE,CARD_FREEZE_SIZE);
   const gray=new Float32Array(CARD_FREEZE_SIZE*CARD_FREEZE_SIZE);
   for(let i=0,j=0;i<imageData.data.length;i+=4,j++) gray[j]=0.2126*imageData.data[i]+0.7152*imageData.data[i+1]+0.0722*imageData.data[i+2];
+  frozenCardFrameIndex++;
   frozenCardFrame={
-    imageData,gray,time:g.time,frame:g.frame,cameraWidth:g.cameraWidth,cameraHeight:g.cameraHeight,aspect:g.aspect,
+    imageData,gray,time:g.time,frame:g.frame,frameIndex:frozenCardFrameIndex,cameraWidth:g.cameraWidth,cameraHeight:g.cameraHeight,aspect:g.aspect,
     projection:[...g.projection],viewTransform:[...g.viewTransform],centerRayDeltaDeg:null
   };
   const centerRay=rayFromFrozenSourcePoint({x:CARD_FREEZE_SIZE/2,y:CARD_FREEZE_SIZE/2},frozenCardFrame);
   const m=frozenCardFrame.viewTransform;
   const expected=normalize3({x:-m[8],y:-m[9],z:-m[10]});
   frozenCardFrame.centerRayDeltaDeg=angleBetweenDirectionsDeg(centerRay?.direction,expected)??NaN;
-  frozenCardTaps={}; frozenCardRefinement=null; calibrationPoints={}; calibrationResult=null;
+  frozenCardTaps={}; frozenCardRefinement=null; frozenCardTapSets=[]; calibrationPoints={}; calibrationResult=null;
   if(el.cardFreezePanel) el.cardFreezePanel.hidden=false;
-  if(el.cardFreezeTapState) el.cardFreezeTapState.textContent='Tap TL → TR → BR → BL approximately. Edge fitting uses the straight middle of each side, not the rounded corner.';
+  if(el.cardFreezeTapState) el.cardFreezeTapState.textContent='SET 1/3: tap TL → TR → BR → BL. Each set is fitted independently; previous sets will be hidden.';
   drawFrozenCardFrame();
   const age=Math.max(0,performance.now()-g.time);
   const y0=0.5-0.5*g.aspect,y1=0.5+0.5*g.aspect;
-  log(`CARD FREEZE FRAME: source=RawCamera-center-square-512; camera=${g.cameraWidth}x${g.cameraHeight}; aspect=${g.aspect.toFixed(6)}; frame=${g.frame}; sourceAge=${age.toFixed(1)}ms; viewUvRange=x[0..1],y[${y0.toFixed(6)}..${y1.toFixed(6)}]; centerRayDelta=${frozenCardFrame.centerRayDeltaDeg.toFixed(6)}deg; mapping=frozen source pixel -> aligned XRView normalized UV -> projection ray; measurementLock=true; HitUsedAsCorner=false; DepthUsedAsCorner=false`);
-  if(el.xrHint) el.xrHint.textContent='Frozen frame captured. Tap TL → TR → BR → BL approximately on the static image.';
+  log(`CARD FREEZE FRAME #${frozenCardFrame.frameIndex}: source=RawCamera-center-square-512; camera=${g.cameraWidth}x${g.cameraHeight}; aspect=${g.aspect.toFixed(6)}; frame=${g.frame}; sourceAge=${age.toFixed(1)}ms; viewUvRange=x[0..1],y[${y0.toFixed(6)}..${y1.toFixed(6)}]; centerRayDelta=${frozenCardFrame.centerRayDeltaDeg.toFixed(6)}deg; mapping=frozen source pixel -> aligned XRView normalized UV -> projection ray; repeatSets=${CARD_TAP_SET_GOAL}; previousSetMarkersHidden=true; measurementLock=true; HitUsedAsCorner=false; DepthUsedAsCorner=false`);
+  if(el.xrHint) el.xrHint.textContent='Frozen frame captured. SET 1/3: tap TL → TR → BR → BL on the static image.';
   updateCalibrationUI(); updateDistanceUI();
 }
+
 function handleFrozenCardTap(ev){
-  if(!frozenCardFrame) return;
+  if(!frozenCardFrame || frozenCardTapSets.length>=CARD_TAP_SET_GOAL) return;
   ev.preventDefault(); ev.stopPropagation();
   const p=frozenFrameCanvasPoint(ev); if(!p) return;
   const corner=CALIBRATION_CORNERS.find(c=>!frozenCardTaps[c]);
   if(!corner) return;
   frozenCardTaps[corner]=p;
   const uv=sourcePointToViewUv(p);
-  log(`CARD FREEZE TAP ${corner}: sourcePx=(${p.x.toFixed(2)},${p.y.toFixed(2)}); viewUV=(${uv.x.toFixed(6)},${uv.y.toFixed(6)}); role=approximate-seed-only; tapUsedAsFinalCorner=false`);
+  const setNo=frozenCardTapSets.length+1;
+  log(`CARD REPEAT TAP frame=${frozenCardFrame.frameIndex} set=${setNo}/${CARD_TAP_SET_GOAL} corner=${corner}: sourcePx=(${p.x.toFixed(2)},${p.y.toFixed(2)}); viewUV=(${uv.x.toFixed(6)},${uv.y.toFixed(6)}); rawTapUsedAsRay=true; edgeRefinement=false`);
   drawFrozenCardFrame();
   const n=cardFreezeTapCount(),next=CALIBRATION_CORNERS.find(c=>!frozenCardTaps[c]);
-  if(el.cardFreezeTapState) el.cardFreezeTapState.textContent=next?`${n}/4 captured. Tap ${next} approximately.`:'4/4 captured. Refining straight edges…';
+  if(el.cardFreezeTapState) el.cardFreezeTapState.textContent=next?`SET ${setNo}/${CARD_TAP_SET_GOAL}: ${n}/4 captured. Tap ${next}.`:`SET ${setNo}/${CARD_TAP_SET_GOAL}: 4/4 captured. Fitting independently…`;
   updateCalibrationUI();
   if(n===4) finalizeFrozenCardCalibration();
 }
@@ -4848,6 +4909,7 @@ async function startAR(){
   frozenCardFrame=null;
   frozenCardTaps={};
   frozenCardRefinement=null;
+  frozenCardTapSets=[];
   latestRawCameraGeometry=null;
   if(el.cardFreezePanel) el.cardFreezePanel.hidden=true;
   updateCalibrationUI();
@@ -5357,7 +5419,7 @@ function onXRFrame(time,frame){
     }
   }
 
-  // Phase 4.24 calibration uses one frozen Raw Camera frame.
+  // Phase 4.25 calibration uses one frozen Raw Camera frame for three independent tap sets.
   // No live per-corner auto-dwell runs here; Hit/Depth remain independent diagnostics.
 
   const layer = session.renderState.baseLayer;
@@ -5593,6 +5655,7 @@ function onSessionEnd(){
   frozenCardFrame=null;
   frozenCardTaps={};
   frozenCardRefinement=null;
+  frozenCardTapSets=[];
 
   alignmentMode=false;
   el.xrOverlay.classList.remove('align-mode');
