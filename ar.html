@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<title>AR DISTANCE LAB - Phase 4.14 Rev.2</title>
+<title>AR DISTANCE LAB - Phase 4.14 Rev.3</title>
 <style>
 :root{
   color-scheme:dark;
@@ -84,13 +84,7 @@ padding:10px;pointer-events:auto}
 #alignmentGrid{position:absolute;inset:0;display:none;pointer-events:none;background:
   linear-gradient(90deg,transparent calc(50% - .5px),#fde68a calc(50% - .5px),#fde68a calc(50% + .5px),transparent calc(50% + .5px)),
   linear-gradient(0deg,transparent calc(50% - .5px),#fde68a calc(50% - .5px),#fde68a calc(50% + .5px),transparent calc(50% + .5px));opacity:.72}
-#alignmentMark{position:absolute;width:26px;height:26px;border:3px solid #fca5a5;border-radius:50%;display:none;pointer-events:none;transform:translate(-50%,-50%);box-shadow:0 0 0 2px #000,0 0 14px #fca5a5;z-index:62}
-#alignmentMark::before,#alignmentMark::after{content:'';position:absolute;left:50%;top:50%;background:#fca5a5;transform:translate(-50%,-50%)}
-#alignmentMark::before{width:18px;height:2px}
-#alignmentMark::after{width:2px;height:18px}
-#alignmentTapLayer{position:absolute;inset:0;z-index:60;display:none;pointer-events:none;touch-action:none;background:transparent}
-#alignmentCapturedBadge{position:absolute;right:5px;bottom:5px;z-index:64;display:none;padding:3px 6px;border-radius:6px;background:#14532dcc;color:#dcfce7;border:1px solid #86efac;font-size:10px;font-weight:800;pointer-events:none}
-#xrOverlay.align-mode #alignmentTapLayer{display:block;pointer-events:auto}
+#alignmentMark{position:absolute;width:14px;height:14px;border:2px solid #fca5a5;border-radius:50%;display:none;pointer-events:none;transform:translate(-50%,-50%);box-shadow:0 0 0 1px #000}
 #xrOverlay.align-mode #centerGuide{color:#fde68a;font-size:34px}
 #xrOverlay.align-mode #centerGuide::after{content:'';position:absolute;left:50%;top:50%;width:34px;height:34px;border:1px solid #fde68a;border-radius:50%;transform:translate(-50%,-50%)}
 #xrOverlay.align-mode #magnifierWrap{border-color:#fde68a;pointer-events:auto;touch-action:none}
@@ -103,7 +97,7 @@ padding:10px;pointer-events:auto}
 <body>
 <main>
 <h1>AR DISTANCE LAB</h1>
-<p class="sub">Phase 4.14 Rev.2 — Measurement Quality Gate</p>
+<p class="sub">Phase 4.14 Rev.3 — Hit Stability Warning-only + Measurement-impact Integrity</p>
 
 <section class="card">
 <h2>STATUS</h2>
@@ -137,12 +131,9 @@ padding:10px;pointer-events:auto}
   <div class="cell">A max pre-B drift</div><div class="cell" id="preBMaxState">—</div>
   <div class="cell">PRE-B raw drift</div><div class="cell" id="preBIntegrityState">UNKNOWN</div>
   <div class="cell">A relocation → distance impact</div><div class="cell" id="distanceImpactState">—</div>
-  <div class="cell">MAP integrity</div><div class="cell" id="measurementIntegrityState">UNKNOWN</div>
-  <div class="cell">Post-B quality gate</div><div class="cell" id="postBQualityState">NOT STARTED</div>
+  <div class="cell">Measurement integrity</div><div class="cell" id="measurementIntegrityState">UNKNOWN</div>
   <div class="cell">Point A capture</div><div class="cell" id="captureAQualityState">—</div>
   <div class="cell">Point B capture</div><div class="cell" id="captureBQualityState">—</div>
-  <div class="cell">Point A surface incidence</div><div class="cell" id="captureAIncidenceState">—</div>
-  <div class="cell">Point B surface incidence</div><div class="cell" id="captureBIncidenceState">—</div>
   <div class="cell">Initial Anchor distance</div><div class="cell" id="initialAnchorDistanceState">—</div>
   <div class="cell">Current − Initial</div><div class="cell" id="anchorDeltaState">—</div>
   <div class="cell">Max |Anchor delta|</div><div class="cell" id="maxAnchorDeltaState">—</div>
@@ -217,9 +208,10 @@ padding:10px;pointer-events:auto}
 </section>
 
 <section class="card note">
-Phase 4.14 Rev.2では補正値を作らず、測定品質のゲートを追加します。0.3秒Hit安定性はmaxRadius 1.5 mm以下を取得条件とし、350 mm未満のカメラ→Hit距離はBLOCK、350–500 mmはWARNING、500 mm以上を推奨域として扱います。A-Bが20 mm未満の場合はPoint Bを棄却し、Point Aを維持したままRETAKE Bにします。
-PRE-BではPoint B取得時の「current A Anchor→B Hit」と「immutable A Hit→B Hit」の距離影響をMAP integrityとして評価し、2 mm以上WARN、5 mm以上INVALIDを維持します。さらにB Anchor作成後2.5秒をPost-B quality windowとし、その間のA-B Anchor距離変位が5 mm以上なら候補を後からINVALID化します。Repeatabilityへ登録するのはPost-B gateをPASSした測定だけです。
-Hit PoseのY軸とviewer→Hit rayからsurface incidence angleも記録しますが、これは診断専用でゲートには使用しません。DepthとCENTER ALIGN CHECKも引き続きdiagnostic onlyで、距離補正には使用しません。閾値はいずれもPixel 10 Proでの現時点の実測に基づく暫定値です。
+Phase 4.14ではImmutable Hit Commitを維持しつつ、PRE-B Anchor移動量そのものではなく、Point B取得時に「current A Anchor→B Hit」と「immutable A Hit→B Hit」の差から、Anchor再配置が距離値へ与える影響量を評価します。暫定閾値は2 mm以上WARN、5 mm以上INVALIDです。生のAnchor drift量は診断表示として残し、単独ではCommitを棄却しません。
+Depthは3×3局所サンプル＋直近5サンプルの時間方向中央値へ縮小し、IQR/MADと併せて診断します。Depthは引き続きCommit値の補正・ゲートには使用しません。
+CENTER ALIGN CHECKをONにし、通常パススルー中央の照準へ高コントラストの小さな目標を合わせてから、拡大鏡内で同じ目標をタップしてください。拡大鏡中心からの表示px・512px source換算・camera-normalized offsetを記録します。これはRaw Camera拡大鏡中心とDOM/XR中心レイの整合を人手で確認する診断で、自動補正は行いません。
+Hit Testの直前0.3秒STABLE / MOVINGは引き続きwarning-onlyです。XRReferenceSpace resetがA-B間に発生した場合はCommitをINVALIDにします。
 </section>
 
 <section class="card">
@@ -238,8 +230,6 @@ Hit PoseのY軸とviewer→Hit rayからsurface incidence angleも記録しま�
       <div id="alignmentGrid"></div>
       <div id="magnifierCross">＋</div>
       <div id="alignmentMark"></div>
-      <div id="alignmentTapLayer" aria-label="Tap the aligned target in the magnifier"></div>
-      <div id="alignmentCapturedBadge">ALIGN CAPTURED ✓</div>
       <div id="magnifierLabel">MAG 3×</div>
     </div>
 
@@ -251,7 +241,7 @@ Hit PoseのY軸とviewer→Hit rayからsurface incidence angleも記録しま�
     <div id="bottomPanel">
       <div id="distanceText">DISTANCE: —</div>
       <div id="qualityText">AIM QUALITY: ANALYZING</div>
-      <div id="hitStabilityText">HIT STABILITY: ANALYZING — capture gate</div>
+      <div id="hitStabilityText">HIT STABILITY: ANALYZING — warning only</div>
       <div id="depthText">DEPTH × HIT: WAITING — diagnostic only</div>
       <div id="accuracyText">REF: 50.0 cm / ERROR: —</div>
       <div id="stabilityText">STABILITY: —</div>
@@ -289,8 +279,8 @@ const el = {};
   'repeatCountState','repeatMeanState','repeatRangeState','captureDistanceState',
   'hitSpreadAState','hitSpreadBState','hitInstantABState','hitMedian300ABState',
   'hitMedian500ABState','hitMedian1000ABState','hitMedianDeltaState',
-  'preBElapsedState','preBOffsetState','preBDriftState','preBMaxState','preBIntegrityState','distanceImpactState','measurementIntegrityState','postBQualityState',
-  'captureAQualityState','captureBQualityState','captureAIncidenceState','captureBIncidenceState','initialAnchorDistanceState',
+  'preBElapsedState','preBOffsetState','preBDriftState','preBMaxState','preBIntegrityState','distanceImpactState','measurementIntegrityState',
+  'captureAQualityState','captureBQualityState','initialAnchorDistanceState',
   'anchorDeltaState','maxAnchorDeltaState','rollingRangeState','settlingState','stableAtState',
   'stabilitySamples','stabilityMedian','stabilityMinMax','stabilityRange','cameraAState','cameraBState','viewerRateState',
   'hitRateState','anchorARateState','anchorBRateState','referenceState',
@@ -298,7 +288,7 @@ const el = {};
   'rawCameraState','hitDistanceState','depthState','depthConfigState','depthBufferState',
   'depthCenterState','depthMedianState','depthTemporalState','depthValidState','depthCoherenceState','hitViewState','hitUvState','depthAtHitState','depthHitDeltaState',
   'captureADepthState','captureBDepthState','aimQualityState','edgeMedianState',
-  'contrastMedianState','magnifierState','magnifierCanvas','magnifierWrap','alignmentGrid','alignmentMark','alignmentTapLayer','alignmentCapturedBadge','alignmentState','alignmentOffsetState','alignmentUvState','alignBtn',
+  'contrastMedianState','magnifierState','magnifierCanvas','magnifierWrap','alignmentGrid','alignmentMark','alignmentState','alignmentOffsetState','alignmentUvState','alignBtn',
   'magnifierLabel','qualityText','hitStabilityText','depthText','alignmentText',
   'coordA','coordB','startBtn','resetBtn','endBtn','log','xrCanvas','xrOverlay','xrHud',
   'xrState','xrHint','pointText','anchorText','distanceText','accuracyText','stabilityText','settlingText','preBText','setPointBtn',
@@ -380,12 +370,7 @@ let settlingStableAtMs = null;
 let settlingStableMedian = null;
 let lastTimelineLogMs = -Infinity;
 let deltaThresholdLogged = {0.002:false,0.005:false,0.010:false};
-let postBQualityStatus = 'NOT STARTED';
-let postBQualityFinalized = false;
 
-const POST_B_QC_WINDOW_MS = 2500;
-const POST_B_INVALID_DELTA_M = 0.005;
-const MIN_AB_DISTANCE_M = 0.020;
 const SETTLING_WINDOW_MS = 2000;
 const SETTLING_MIN_SPAN_MS = 1500;
 const SETTLING_RANGE_M = 0.002;
@@ -423,13 +408,13 @@ const DISTANCE_IMPACT_INVALID_M = 0.005;
 
 
 
-// Phase 4.14 Rev.2: Hit Test capture stability gate.
+// Phase 4.14: Hit Test capture stability diagnostic.
 const HIT_HISTORY_RETENTION_MS = 1600;
 const HIT_WINDOW_MS = [300,500,1000];
-// 300 ms stability is now an actual capture gate. Formal distance still uses
-// the immutable Instant Hit; the history is only used to decide whether capture is allowed.
+// 300 ms is a warning-only short-window diagnostic. It never blocks capture
+// and never replaces the immutable Instant Hit used for the formal commit.
 const HIT_STABILITY_WINDOW_MS = 300;
-const HIT_STABLE_MAX_RADIUS_M = 0.0015;
+const HIT_STABLE_MAX_RADIUS_M = 0.003;
 const HIT_STABLE_MIN_COVERAGE_MS = 200;
 const HIT_STABLE_MIN_SAMPLES = 6;
 let liveHitStability = 'ANALYZING';
@@ -454,7 +439,7 @@ function resetHitStabilityDiagnostics(){
   liveHitStability = 'ANALYZING';
   lastHitStabilityUiMs = -Infinity;
   if(el.hitStabilityText){
-    el.hitStabilityText.textContent = 'HIT STABILITY: ANALYZING — capture blocked';
+    el.hitStabilityText.textContent = 'HIT STABILITY: ANALYZING — warning only';
   }
 }
 
@@ -545,7 +530,7 @@ function updateLiveHitStability(time){
   if(!latestHitPoint){
     liveHitStability = 'NO SURFACE';
     if(el.hitStabilityText){
-      el.hitStabilityText.textContent = 'HIT STABILITY: NO SURFACE — capture blocked';
+      el.hitStabilityText.textContent = 'HIT STABILITY: NO SURFACE — warning only';
     }
     return;
   }
@@ -559,27 +544,17 @@ function updateLiveHitStability(time){
 
   if(!el.hitStabilityText) return;
   if(!stats || liveHitStability==='ANALYZING'){
-    el.hitStabilityText.textContent = 'HIT STABILITY: ANALYZING — capture blocked';
+    el.hitStabilityText.textContent = 'HIT STABILITY: ANALYZING — warning only';
     return;
   }
 
   const maxR=(stats.maxRadius*1000).toFixed(1);
-  const suffix=`maxR ${maxR} mm / 300 ms / gate ≤ ${(HIT_STABLE_MAX_RADIUS_M*1000).toFixed(1)} mm`;
+  const suffix=`maxR ${maxR} mm / 300 ms / warning only`;
   if(liveHitStability==='STABLE'){
-    el.hitStabilityText.textContent = `HIT STABILITY: PASS — ${suffix}`;
+    el.hitStabilityText.textContent = `HIT STABILITY: STABLE — ${suffix}`;
   }else{
-    el.hitStabilityText.textContent = `HIT STABILITY: BLOCKED — ${suffix}`;
+    el.hitStabilityText.textContent = `HIT STABILITY: MOVING — ${suffix}`;
   }
-}
-
-function currentHitStabilityGate(){
-  if(!latestHitPoint || !hitHistory.length){
-    return {pass:false,state:'NO SURFACE',stats:null};
-  }
-  const t=hitHistory[hitHistory.length-1].time;
-  const stats=hitWindowStats(t,HIT_STABILITY_WINDOW_MS,latestHitPoint);
-  const state=classifyHitStability(stats);
-  return {pass:state==='STABLE',state,stats};
 }
 
 function captureHitStabilitySnapshot(slot,time,instantPoint){
@@ -594,16 +569,12 @@ function captureHitStabilitySnapshot(slot,time,instantPoint){
     time,
     frame:frameCount,
     instantPoint:clonePoint(instantPoint),
-    windows,
-    gateState:'ANALYZING',
-    gatePass:false
+    windows
   };
 
   const shortWindow=windows[HIT_STABILITY_WINDOW_MS];
   if(shortWindow){
     const state=classifyHitStability(shortWindow);
-    snapshot.gateState=state;
-    snapshot.gatePass=(state==='STABLE');
     set(
       slot==='A' ? 'hitSpreadAState' : 'hitSpreadBState',
       `${state} / maxR=${(shortWindow.maxRadius*1000).toFixed(2)} mm / ` +
@@ -611,8 +582,8 @@ function captureHitStabilitySnapshot(slot,time,instantPoint){
       state==='STABLE' ? 'ok' : 'warn'
     );
     log(
-      `Point ${slot} Hit gate: state=${state}; window=${HIT_STABILITY_WINDOW_MS} ms; ` +
-      `maxRadius=${(shortWindow.maxRadius*1000).toFixed(3)} mm; threshold=${(HIT_STABLE_MAX_RADIUS_M*1000).toFixed(3)} mm; gate=true`
+      `Point ${slot} Hit warning: state=${state}; window=${HIT_STABILITY_WINDOW_MS} ms; ` +
+      `maxRadius=${(shortWindow.maxRadius*1000).toFixed(3)} mm; warningOnly=true`
     );
   }
 
@@ -665,7 +636,7 @@ function logHitABComparison(){
     median300:medians[300],
     median500:medians[500],
     median1000:medians[1000],
-    formalCommitted:frozenCommittedDistance(),
+    formalCommitted:frozenMeasurement?.valid ? frozenMeasurement.distance : null,
     preBDrift:preBSummaryAtB?.driftFromFirst ?? null,
     preBOffset:preBSummaryAtB?.offsetFromCapture ?? null
   };
@@ -706,7 +677,7 @@ function logHitABComparison(){
   return comparison;
 }
 
-// Phase 4.14 Rev.2: formal Hit candidate is frozen at B, then Post-B QC finalizes it.
+// Phase 4.14: formal measurement candidate is frozen at Point B capture.
 let frozenMeasurement = null;
 let sessionFrozenMeasurements = [];
 let lastAAnchorPoseTime = null;
@@ -723,9 +694,6 @@ function resetCurrentFrozenMeasurement(){
   set('liveMinusFrozenState','—','');
   set('distanceImpactState','—','');
   set('measurementIntegrityState','UNKNOWN','');
-  set('postBQualityState','NOT STARTED','');
-  postBQualityStatus='NOT STARTED';
-  postBQualityFinalized=false;
   lastDistanceImpact=null;
 }
 
@@ -753,103 +721,6 @@ function updateRepeatabilityUI(){
     `${(range*1000).toFixed(2)} mm`,
     range<=0.002?'ok':'warn'
   );
-}
-
-function frozenCommittedDistance(){
-  return frozenMeasurement?.valid && frozenMeasurement?.postBStatus==='PASS'
-    ? frozenMeasurement.distance
-    : null;
-}
-
-function logCommittedRepeatability(){
-  const values=sessionFrozenMeasurements.map(v=>v.distance).filter(Number.isFinite);
-  if(!values.length) return;
-  const mean=values.reduce((a,b)=>a+b,0)/values.length;
-  const min=Math.min(...values);
-  const max=Math.max(...values);
-  log(
-    `COMMITTED REPEATABILITY: n=${values.length}; mean=${mean.toFixed(6)} m; ` +
-    `min=${min.toFixed(6)} m; max=${max.toFixed(6)} m; range=${((max-min)*1000).toFixed(3)} mm`
-  );
-}
-
-function finalizePostBQualityPass(elapsedMs){
-  if(!frozenMeasurement?.valid || frozenMeasurement.postBStatus!=='PENDING' || postBQualityFinalized) return;
-  postBQualityFinalized=true;
-  postBQualityStatus='PASS';
-  frozenMeasurement.postBStatus='PASS';
-  frozenMeasurement.postBElapsedMs=elapsedMs;
-  frozenMeasurement.postBMaxAnchorDelta=maxAnchorDeltaAbs;
-
-  sessionFrozenMeasurements.push({
-    distance:frozenMeasurement.distance,
-    referenceMeters:frozenMeasurement.referenceMeters,
-    absError:frozenMeasurement.absError,
-    relError:frozenMeasurement.relError,
-    time:frozenMeasurement.time,
-    frame:frozenMeasurement.frame,
-    sessionResetCount:frozenMeasurement.sessionResetCount,
-    integrity:frozenMeasurement.integrity,
-    distanceImpact:frozenMeasurement.distanceImpact,
-    postBMaxAnchorDelta:maxAnchorDeltaAbs
-  });
-
-  set('postBQualityState',`PASS / max Δ ${(maxAnchorDeltaAbs*1000).toFixed(2)} mm`,'ok');
-  set('distanceState',fmtDistance(frozenMeasurement.distance),'ok');
-  const commitWarning=frozenMeasurement.integrity==='WARN' || frozenMeasurement.integrity==='UNKNOWN' || frozenMeasurement.rangeWarning===true;
-  set('freezeStatusState',`${commitWarning?'COMMITTED WITH WARNING':'COMMITTED'} after ${(elapsedMs/1000).toFixed(2)} s Post-B QC`,commitWarning?'warn':'ok');
-  updateRepeatabilityUI();
-
-  log(
-    `POST-B QUALITY GATE: PASS; elapsed=${(elapsedMs/1000).toFixed(3)} s; ` +
-    `maxAnchorDelta=${(maxAnchorDeltaAbs*1000).toFixed(3)} mm; threshold=${(POST_B_INVALID_DELTA_M*1000).toFixed(0)} mm`
-  );
-  log(
-    `COMMITTED MEASUREMENT #${sessionFrozenMeasurements.length}: ` +
-    `distance=${frozenMeasurement.distance.toFixed(6)} m (${fmtDistance(frozenMeasurement.distance)}); ` +
-    `AHit=${fmtPoint(frozenMeasurement.aHit)}; BHit=${fmtPoint(frozenMeasurement.bHit)}; ` +
-    `error=${frozenMeasurement.absError.toFixed(6)} m (${frozenMeasurement.relError.toFixed(3)}%); ` +
-    `frame=${frozenMeasurement.frame}; sessionReset=${frozenMeasurement.sessionResetCount}; ` +
-    `source=immutable-hit; mapIntegrity=${frozenMeasurement.integrity}; postB=PASS; ` +
-    `rangeWarning=${frozenMeasurement.rangeWarning===true}`
-  );
-  logCommittedRepeatability();
-  updateDistanceUI();
-  updateMetricsUI();
-}
-
-function invalidatePostBQuality(reason,elapsedMs){
-  if(!frozenMeasurement?.valid || frozenMeasurement.postBStatus!=='PENDING' || postBQualityFinalized) return;
-  const candidate=frozenMeasurement.distance;
-  postBQualityFinalized=true;
-  postBQualityStatus='INVALID';
-  frozenMeasurement.valid=false;
-  frozenMeasurement.candidateDistance=candidate;
-  frozenMeasurement.reason=reason;
-  frozenMeasurement.postBStatus='INVALID';
-  frozenMeasurement.postBElapsedMs=elapsedMs;
-  frozenMeasurement.postBMaxAnchorDelta=maxAnchorDeltaAbs;
-
-  set('postBQualityState',`INVALID / max Δ ${(maxAnchorDeltaAbs*1000).toFixed(2)} mm`,'ng');
-  set('distanceState',`INVALID (${fmtDistance(candidate)})`,'ng');
-  set('freezeStatusState',`REJECTED — ${reason}`,'ng');
-  log(
-    `POST-B QUALITY GATE: INVALID; reason=${reason}; elapsed=${(elapsedMs/1000).toFixed(3)} s; ` +
-    `candidate=${candidate.toFixed(6)} m; maxAnchorDelta=${(maxAnchorDeltaAbs*1000).toFixed(3)} mm; ` +
-    `threshold=${(POST_B_INVALID_DELTA_M*1000).toFixed(0)} mm; excludedFromRepeatability=true`
-  );
-  updateDistanceUI();
-  updateMetricsUI();
-}
-
-function updatePostBQualityGate(elapsedMs){
-  if(!frozenMeasurement?.valid || frozenMeasurement.postBStatus!=='PENDING' || postBQualityFinalized) return;
-  set('postBQualityState',`PENDING ${(Math.min(elapsedMs,POST_B_QC_WINDOW_MS)/1000).toFixed(2)} / ${(POST_B_QC_WINDOW_MS/1000).toFixed(1)} s; max Δ ${(maxAnchorDeltaAbs*1000).toFixed(2)} mm`,'warn');
-  if(maxAnchorDeltaAbs>=POST_B_INVALID_DELTA_M){
-    invalidatePostBQuality(`post-B Anchor distance changed by >= ${(POST_B_INVALID_DELTA_M*1000).toFixed(0)} mm`,elapsedMs);
-  }else if(elapsedMs>=POST_B_QC_WINDOW_MS){
-    finalizePostBQualityPass(elapsedMs);
-  }
 }
 
 function freezeMeasurementAtB(hitPoint,time){
@@ -923,14 +794,10 @@ function freezeMeasurementAtB(hitPoint,time){
       sessionResetCount:sessionReferenceSpaceResetCount,
       aCaptureSnapshot:captureSnapshotA,bCaptureSnapshot:captureSnapshotB,
       aHitStability:hitStabilitySnapshotA,bHitStability:hitStabilitySnapshotB,
-      preB:preBSummaryAtB,integrity:integrity.state,distanceImpact:integrity.impact,signedDistanceImpact:integrity.signedImpact,
-      postBStatus:'INVALID'
+      preB:preBSummaryAtB,integrity:integrity.state,distanceImpact:integrity.impact,signedDistanceImpact:integrity.signedImpact
     };
     set('distanceState',`INVALID (${fmtDistance(distance)})`,'ng');
     set('freezeStatusState',`REJECTED — ${integrity.reason}`,'ng');
-    set('postBQualityState','SKIPPED — MAP INVALID','ng');
-    postBQualityStatus='SKIPPED';
-    postBQualityFinalized=true;
     log(
       `COMMITTED CANDIDATE REJECTED: distance=${distance.toFixed(6)} m (${fmtDistance(distance)}); ` +
       `error=${absError.toFixed(6)} m (${relError.toFixed(3)}%); reason=${integrity.reason}; ` +
@@ -960,21 +827,40 @@ function freezeMeasurementAtB(hitPoint,time){
     preB:preBSummaryAtB,
     integrity:integrity.state,
     distanceImpact:integrity.impact,
-    signedDistanceImpact:integrity.signedImpact,
-    rangeWarning:captureSnapshotA?.rangeClass==='WARNING' || captureSnapshotB?.rangeClass==='WARNING',
-    postBStatus:'PENDING'
+    signedDistanceImpact:integrity.signedImpact
   };
-  postBQualityStatus='PENDING';
-  postBQualityFinalized=false;
 
-  set('distanceState',`CANDIDATE ${fmtDistance(distance)}`,'warn');
-  set('freezeStatusState',`PENDING — ${(POST_B_QC_WINDOW_MS/1000).toFixed(1)} s Post-B quality gate`,'warn');
-  set('postBQualityState',`PENDING 0.00 / ${(POST_B_QC_WINDOW_MS/1000).toFixed(1)} s`,'warn');
+  sessionFrozenMeasurements.push({
+    distance,
+    referenceMeters,
+    absError,
+    relError,
+    time,
+    frame:frameCount,
+    sessionResetCount:sessionReferenceSpaceResetCount,
+    integrity:integrity.state,
+    distanceImpact:integrity.impact
+  });
+
+  set('distanceState',fmtDistance(distance),'ok');
+  set('freezeStatusState',`${integrity.state==='WARN'||integrity.state==='UNKNOWN'?'COMMITTED WITH WARNING':'COMMITTED'} HIT A↔B @ frame ${frameCount}`,integrity.state==='WARN'||integrity.state==='UNKNOWN'?'warn':'ok');
+  updateRepeatabilityUI();
+
+  const values=sessionFrozenMeasurements.map(v=>v.distance);
+  const mean=values.reduce((a,b)=>a+b,0)/values.length;
+  const range=Math.max(...values)-Math.min(...values);
+
   log(
-    `PROVISIONAL MEASUREMENT: distance=${distance.toFixed(6)} m (${fmtDistance(distance)}); ` +
-    `AHit=${fmtPoint(aHit)}; BHit=${fmtPoint(bHit)}; error=${absError.toFixed(6)} m (${relError.toFixed(3)}%); ` +
-    `frame=${frameCount}; source=immutable-hit; mapIntegrity=${integrity.state}; ` +
-    `postBQC=pending ${(POST_B_QC_WINDOW_MS/1000).toFixed(1)} s; repeatabilityPending=true`
+    `COMMITTED MEASUREMENT #${sessionFrozenMeasurements.length}: ` +
+    `distance=${distance.toFixed(6)} m (${fmtDistance(distance)}); ` +
+    `AHit=${fmtPoint(aHit)}; BHit=${fmtPoint(bHit)}; ` +
+    `error=${absError.toFixed(6)} m (${relError.toFixed(3)}%); ` +
+    `frame=${frameCount}; sessionReset=${sessionReferenceSpaceResetCount}; source=immutable-hit; integrity=${integrity.state}`
+  );
+  log(
+    `COMMITTED REPEATABILITY: n=${values.length}; mean=${mean.toFixed(6)} m; ` +
+    `min=${Math.min(...values).toFixed(6)} m; max=${Math.max(...values).toFixed(6)} m; ` +
+    `range=${(range*1000).toFixed(3)} mm`
   );
 
   return true;
@@ -1041,15 +927,14 @@ let magnifierDpr = 1;
 let alignmentMode = false;
 let alignmentMark = null;
 
-const NEAR_RANGE_BLOCK_M = 0.35;
-const NEAR_RANGE_WARN_M = 0.50;
+const NEAR_RANGE_M = 0.35;
 const DETAIL_EDGE_LOW = 2.5;
 const DETAIL_CONTRAST_LOW = 8.0;
 
 let ending = false;
 let cleanupDone = false;
-const LOG_STORAGE_KEY = 'ar-distance-lab-phase4-14-rev2-log';
-const SUMMARY_STORAGE_KEY = 'ar-distance-lab-phase4-14-rev2-summary';
+const LOG_STORAGE_KEY = 'ar-distance-lab-phase4-14-log';
+const SUMMARY_STORAGE_KEY = 'ar-distance-lab-phase4-14-summary';
 
 const TRACKING_UNSTABLE_MS = 250;
 const TRACKING_LOST_MS = 1000;
@@ -1082,8 +967,6 @@ function persistDiagnostics(){
       samples: distanceSamples.length,
       frozenMeasurement,
       sessionFrozenMeasurements,
-      postBQualityStatus,
-      postBQualityFinalized,
       hitStabilitySnapshotA,
       hitStabilitySnapshotB,
       hitABComparison,
@@ -1289,8 +1172,6 @@ function resetDepthDiagnostics(){
   set('depthHitDeltaState','—','');
   set('captureADepthState','—','');
   set('captureBDepthState','—','');
-  set('captureAIncidenceState','—','');
-  set('captureBIncidenceState','—','');
   if(el.depthText) el.depthText.textContent = 'DEPTH × HIT: WAITING — diagnostic only';
 }
 
@@ -1550,21 +1431,7 @@ function snapshotDepthCrossCheck(slot,time,hitDistance,hitViewDiag){
   return c;
 }
 
-function computeSurfaceIncidenceDeg(hitPose,viewerPose){
-  const m=hitPose?.transform?.matrix;
-  const hp=hitPose?.transform?.position;
-  const vp=viewerPose?.transform?.position;
-  if(!m || !hp || !vp) return null;
-  const nx=m[4], ny=m[5], nz=m[6]; // Hit Pose +Y axis = surface normal
-  const rx=hp.x-vp.x, ry=hp.y-vp.y, rz=hp.z-vp.z;
-  const nn=Math.hypot(nx,ny,nz);
-  const rn=Math.hypot(rx,ry,rz);
-  if(nn<1e-8 || rn<1e-8) return null;
-  const c=Math.max(0,Math.min(1,Math.abs((nx*rx+ny*ry+nz*rz)/(nn*rn))));
-  return Math.acos(c)*180/Math.PI;
-}
-
-function captureQualitySnapshot(slot,hitPoint,viewerPose,time,hitViewDiag,surfaceIncidenceDeg){
+function captureQualitySnapshot(slot,hitPoint,viewerPose,time,hitViewDiag){
   const viewer=viewerPose?.transform?.position;
   const cameraPoint =
     viewer && Number.isFinite(viewer.x)
@@ -1590,8 +1457,7 @@ function captureQualitySnapshot(slot,hitPoint,viewerPose,time,hitViewDiag,surfac
     edgeMedian:qualityMedian('edge'),
     contrastMedian:qualityMedian('contrast'),
     lumaMedian:qualityMedian('mean'),
-    rangeClass:Number.isFinite(hitDistance) ? (hitDistance<NEAR_RANGE_BLOCK_M?'BLOCK':hitDistance<NEAR_RANGE_WARN_M?'WARNING':'RECOMMENDED') : 'UNKNOWN',
-    surfaceIncidenceDeg:Number.isFinite(surfaceIncidenceDeg)?surfaceIncidenceDeg:null,
+    nearRange:Number.isFinite(hitDistance) ? hitDistance<=NEAR_RANGE_M : null,
     sessionResetCount:sessionReferenceSpaceResetCount,
     hitViewDiagnostic:hitViewDiag,
     depthCrossCheck
@@ -1605,13 +1471,7 @@ function captureQualitySnapshot(slot,hitPoint,viewerPose,time,hitViewDiag,surfac
   set(
     slot==='A' ? 'captureAQualityState' : 'captureBQualityState',
     compact,
-    snap.rangeClass==='BLOCK' ? 'ng' : snap.rangeClass==='WARNING' ? 'warn' : 'ok'
-  );
-
-  set(
-    slot==='A' ? 'captureAIncidenceState' : 'captureBIncidenceState',
-    snap.surfaceIncidenceDeg===null?'—':`${snap.surfaceIncidenceDeg.toFixed(1)}°`,
-    snap.surfaceIncidenceDeg===null?'':snap.surfaceIncidenceDeg<=45?'ok':'warn'
+    snap.nearRange ? 'warn' : 'ok'
   );
 
   log(
@@ -1619,8 +1479,8 @@ function captureQualitySnapshot(slot,hitPoint,viewerPose,time,hitViewDiag,surfac
     `cameraToHit=${hitDistance===null?'n/a':hitDistance.toFixed(6)} m; ` +
     `aim=${snap.aimQuality}; edge=${fmtMaybeNumber(snap.edgeMedian)}; ` +
     `contrast=${fmtMaybeNumber(snap.contrastMedian,3)}; ` +
-    `luma=${fmtMaybeNumber(snap.lumaMedian,2)}; rangeClass=${snap.rangeClass}; ` +
-    `surfaceIncidence=${snap.surfaceIncidenceDeg===null?'n/a':snap.surfaceIncidenceDeg.toFixed(3)+' deg'}; ` +
+    `luma=${fmtMaybeNumber(snap.lumaMedian,2)}; ` +
+    `nearRange=${snap.nearRange===null?'n/a':snap.nearRange}; ` +
     `sessionReset=${snap.sessionResetCount}; hit=${fmtPoint(hitPoint)}`
   );
 
@@ -1838,7 +1698,7 @@ function applyMeasurementIntegrity(summary,aHit,bHit){
     a.state==='PASS'?'ok':a.state==='WARN'?'warn':a.state==='INVALID'?'ng':''
   );
   log(
-    `MAP INTEGRITY: state=${a.state}; reason=${a.reason}; ` +
+    `MEASUREMENT IMPACT INTEGRITY: state=${a.state}; reason=${a.reason}; ` +
     `immutable=${a.immutableDistance===null?'n/a':a.immutableDistance.toFixed(6)} m; ` +
     `currentAtoB=${a.currentDistance===null?'n/a':a.currentDistance.toFixed(6)} m; ` +
     `signedImpact=${a.signedImpact===undefined||a.signedImpact===null?'n/a':(a.signedImpact*1000).toFixed(3)+' mm'}; ` +
@@ -1919,11 +1779,8 @@ function resetSettlingMetrics(){
   settlingStableMedian = null;
   lastTimelineLogMs = -Infinity;
   deltaThresholdLogged = {0.002:false,0.005:false,0.010:false};
-  postBQualityStatus='NOT STARTED';
-  postBQualityFinalized=false;
 
   set('captureDistanceState','—','');
-  set('postBQualityState','NOT STARTED','');
   set('initialAnchorDistanceState','—','');
   set('anchorDeltaState','—','');
   set('maxAnchorDeltaState','—','');
@@ -1980,8 +1837,6 @@ function updateSettlingState(time,d){
 
   distanceTimeline.push({t:time,d,elapsed});
   if(distanceTimeline.length>3600) distanceTimeline.shift();
-
-  updatePostBQualityGate(elapsed);
 
   for(const threshold of [0.002,0.005,0.010]){
     if(!deltaThresholdLogged[threshold] && Math.abs(delta)>=threshold){
@@ -2097,8 +1952,6 @@ function resetMeasurementMetrics(){
   captureDepthCrossCheckB = null;
   set('captureADepthState','—','');
   set('captureBDepthState','—','');
-  set('captureAIncidenceState','—','');
-  set('captureBIncidenceState','—','');
   resetCurrentFrozenMeasurement();
   updateRepeatabilityUI();
 
@@ -2151,7 +2004,7 @@ function startMeasurementMetrics(){
   lastTimelineLogMs = -Infinity;
   deltaThresholdLogged = {0.002:false,0.005:false,0.010:false};
 
-  log(`MEASUREMENT #${measurementIndex} START; reference=${referenceMeters.toFixed(6)} m; postBQC=${frozenMeasurement?.postBStatus??'n/a'}`);
+  log(`MEASUREMENT #${measurementIndex} START; reference=${referenceMeters.toFixed(6)} m`);
   if(captureHitDistance!==null){
     log(`capture Hit distance: ${captureHitDistance.toFixed(6)} m (${fmtDistance(captureHitDistance)})`);
   }else{
@@ -2163,11 +2016,6 @@ function startMeasurementMetrics(){
 function summarizeMeasurement(reason){
   if(!measurementActive) return;
 
-  if(frozenMeasurement?.valid && frozenMeasurement.postBStatus==='PENDING'){
-    const elapsed=distanceTimeline.length ? distanceTimeline[distanceTimeline.length-1].elapsed : 0;
-    invalidatePostBQuality(`post-B quality window incomplete before ${String(reason).toLowerCase()}`,elapsed);
-  }
-
   const n = distanceSamples.length;
   const med = n ? median(distanceSamples) : null;
   const min = n ? Math.min(...distanceSamples) : null;
@@ -2177,7 +2025,7 @@ function summarizeMeasurement(reason){
   const camAMed = cameraASamples.length ? median(cameraASamples) : null;
   const camBMed = cameraBSamples.length ? median(cameraBSamples) : null;
 
-  const formalDistance = frozenCommittedDistance();
+  const formalDistance = frozenMeasurement?.valid ? frozenMeasurement.distance : null;
   const rejectedCandidate = (!frozenMeasurement?.valid && Number.isFinite(frozenMeasurement?.candidateDistance)) ? frozenMeasurement.candidateDistance : null;
   const absError = formalDistance === null ? null : (formalDistance - referenceMeters);
   const relError = absError === null ? null : (absError / referenceMeters) * 100;
@@ -2230,7 +2078,7 @@ function summarizeMeasurement(reason){
 
   if(lastDistanceImpact){
     log(
-      `map integrity: state=${lastDistanceImpact.state}; ` +
+      `measurement-impact integrity: state=${lastDistanceImpact.state}; ` +
       `signedImpact=${lastDistanceImpact.signedImpact===undefined||lastDistanceImpact.signedImpact===null?'n/a':(lastDistanceImpact.signedImpact*1000).toFixed(3)+' mm'}; ` +
       `absImpact=${lastDistanceImpact.impact===null?'n/a':(lastDistanceImpact.impact*1000).toFixed(3)+' mm'}; ` +
       `immutable=${lastDistanceImpact.immutableDistance===null?'n/a':lastDistanceImpact.immutableDistance.toFixed(6)+' m'}; ` +
@@ -2238,15 +2086,13 @@ function summarizeMeasurement(reason){
     );
   }
 
-  log(`post-B quality: state=${frozenMeasurement?.postBStatus??postBQualityStatus}; maxAnchorDelta=${(maxAnchorDeltaAbs*1000).toFixed(3)} mm; window=${(POST_B_QC_WINDOW_MS/1000).toFixed(1)} s; threshold=${(POST_B_INVALID_DELTA_M*1000).toFixed(0)} mm`);
-
   if(captureSnapshotA || captureSnapshotB){
     const sa=captureSnapshotA;
     const sb=captureSnapshotB;
     log(
       `capture conditions: ` +
-      `A[d=${sa?.hitDistance==null?'n/a':sa.hitDistance.toFixed(3)+' m'},aim=${sa?.aimQuality??'n/a'},edge=${fmtMaybeNumber(sa?.edgeMedian)},inc=${sa?.surfaceIncidenceDeg==null?'n/a':sa.surfaceIncidenceDeg.toFixed(1)+'deg'}] ` +
-      `B[d=${sb?.hitDistance==null?'n/a':sb.hitDistance.toFixed(3)+' m'},aim=${sb?.aimQuality??'n/a'},edge=${fmtMaybeNumber(sb?.edgeMedian)},inc=${sb?.surfaceIncidenceDeg==null?'n/a':sb.surfaceIncidenceDeg.toFixed(1)+'deg'}]`
+      `A[d=${sa?.hitDistance==null?'n/a':sa.hitDistance.toFixed(3)+' m'},aim=${sa?.aimQuality??'n/a'},edge=${fmtMaybeNumber(sa?.edgeMedian)}] ` +
+      `B[d=${sb?.hitDistance==null?'n/a':sb.hitDistance.toFixed(3)+' m'},aim=${sb?.aimQuality??'n/a'},edge=${fmtMaybeNumber(sb?.edgeMedian)}]`
     );
   }
 
@@ -2301,7 +2147,7 @@ function updateMetricsUI(){
     set('cameraBState',fmtDistance(cameraBSamples[cameraBSamples.length-1]),'ok');
   }else set('cameraBState','—','');
 
-  const formalDistance = frozenCommittedDistance();
+  const formalDistance = frozenMeasurement?.valid ? frozenMeasurement.distance : null;
 
   if(formalDistance!==null){
     const absError=formalDistance-referenceMeters;
@@ -2391,21 +2237,21 @@ function classifyAimQuality(){
   const lowDetail = (edge !== null && edge < DETAIL_EDGE_LOW) ||
                     (contrast !== null && contrast < DETAIL_CONTRAST_LOW);
 
-  if(latestHitDistance < NEAR_RANGE_BLOCK_M){
-    aimQuality = lowDetail ? 'FOCUS LOW' : 'TOO CLOSE';
-    set('aimQualityState',`${aimQuality} / BLOCK`,'ng');
+  if(latestHitDistance <= NEAR_RANGE_M && lowDetail){
+    aimQuality = 'FOCUS LOW';
+    set('aimQualityState',`${aimQuality} / TOO CLOSE`,'ng');
     if(el.qualityText) el.qualityText.textContent =
-      `AIM QUALITY: BLOCK — move beyond ${(NEAR_RANGE_BLOCK_M*100).toFixed(0)} cm (${latestHitDistance.toFixed(2)} m)`;
+      `AIM QUALITY: FOCUS LOW — move farther away (${latestHitDistance.toFixed(2)} m)`;
   }else if(lowDetail){
     aimQuality = 'LOW DETAIL';
     set('aimQualityState',aimQuality,'warn');
     if(el.qualityText) el.qualityText.textContent =
       'AIM QUALITY: LOW DETAIL — aim at a clearer edge or texture';
-  }else if(latestHitDistance < NEAR_RANGE_WARN_M){
-    aimQuality = 'RANGE WARNING';
-    set('aimQualityState',`${aimQuality} / ${(latestHitDistance*100).toFixed(0)} cm`,'warn');
+  }else if(latestHitDistance <= NEAR_RANGE_M){
+    aimQuality = 'NEAR RANGE';
+    set('aimQualityState',aimQuality,'warn');
     if(el.qualityText) el.qualityText.textContent =
-      `AIM QUALITY: RANGE WARNING — ≥ ${(NEAR_RANGE_WARN_M*100).toFixed(0)} cm recommended`;
+      `AIM QUALITY: NEAR RANGE — verify focus (${latestHitDistance.toFixed(2)} m)`;
   }else{
     aimQuality = 'GOOD';
     set('aimQualityState',aimQuality,'ok');
@@ -2417,15 +2263,14 @@ function classifyAimQuality(){
 }
 
 function aimQualityAllowsCapture(){
-  return aimQuality === 'GOOD' || aimQuality === 'RANGE WARNING';
+  return aimQuality === 'GOOD' || aimQuality === 'NEAR RANGE';
 }
 
 function canCapturePoint(){
   return !!latestHitPoint &&
          !capturePending &&
          !anchorCreationBusy &&
-         aimQualityAllowsCapture() &&
-         currentHitStabilityGate().pass;
+         aimQualityAllowsCapture();
 }
 
 function compileRawShader(type,source){
@@ -2685,7 +2530,6 @@ function drawMagnifierPixels(){
 function resetAlignmentMark(){
   alignmentMark=null;
   if(el.alignmentMark) el.alignmentMark.style.display='none';
-  if(el.alignmentCapturedBadge) el.alignmentCapturedBadge.style.display='none';
   set('alignmentOffsetState','—','');
   set('alignmentUvState','—','');
 }
@@ -2694,18 +2538,18 @@ function setAlignmentMode(on){
   alignmentMode=!!on;
   el.xrOverlay.classList.toggle('align-mode',alignmentMode);
   el.alignBtn.classList.toggle('active',alignmentMode);
-  el.alignBtn.textContent=alignmentMode?'ALIGN WAITING TAP':'CENTER ALIGN CHECK';
-  set('alignmentState',alignmentMode?'WAITING TAP — align MAIN cross, then tap target in MAG':'OFF',alignmentMode?'warn':'');
+  el.alignBtn.textContent=alignmentMode?'ALIGN CHECK ON':'CENTER ALIGN CHECK';
+  set('alignmentState',alignmentMode?'ON — align main cross, then tap target in magnifier':'OFF',alignmentMode?'warn':'');
   if(el.alignmentText){
     el.alignmentText.textContent=alignmentMode
-      ? 'CENTER ALIGN CHECK: align the small target under the MAIN cross, then TAP THAT TARGET INSIDE MAG.'
+      ? 'CENTER ALIGN CHECK: put a small high-contrast target under the MAIN cross, then tap that same target inside MAG.'
       : 'CENTER ALIGN CHECK: OFF';
   }
   if(!alignmentMode) resetAlignmentMark();
-  log(`CENTER ALIGN CHECK ${alignmentMode?'ON':'OFF'}; manualDiagnostic=true; noAutoCorrection=true; captureLayer=${alignmentMode?'armed':'off'}`);
+  log(`CENTER ALIGN CHECK ${alignmentMode?'ON':'OFF'}; manualDiagnostic=true; noAutoCorrection=true`);
 }
 
-function markAlignmentAtEvent(ev, inputSource='pointer'){
+function markAlignmentAtEvent(ev){
   if(!alignmentMode || !el.magnifierCanvas) return;
   const rect=el.magnifierCanvas.getBoundingClientRect();
   if(!rect.width || !rect.height) return;
@@ -2734,9 +2578,6 @@ function markAlignmentAtEvent(ev, inputSource='pointer'){
     el.alignmentMark.style.left=`${x}px`;
     el.alignmentMark.style.top=`${y}px`;
   }
-  if(el.alignmentCapturedBadge) el.alignmentCapturedBadge.style.display='block';
-  el.alignBtn.textContent='ALIGN CAPTURED ✓';
-  set('alignmentState','ALIGN CAPTURED ✓ — tap MAG again to replace mark, or press button to exit','ok');
   set(
     'alignmentOffsetState',
     `display Δ=(${dx.toFixed(1)},${dy.toFixed(1)}) px / source Δ=(${sourceDx.toFixed(1)},${sourceDy.toFixed(1)}) px`,
@@ -2748,10 +2589,10 @@ function markAlignmentAtEvent(ev, inputSource='pointer'){
     cssMag<=3?'ok':cssMag<=8?'warn':'ng'
   );
   if(el.alignmentText){
-    el.alignmentText.textContent=`ALIGN CAPTURED ✓ — display ${cssMag.toFixed(1)} px from MAG center — manual diagnostic only`;
+    el.alignmentText.textContent=`ALIGN MARK: display ${cssMag.toFixed(1)} px from MAG center — manual diagnostic only`;
   }
   log(
-    `CENTER ALIGN MARK: input=${inputSource}; zoom=${magnifierZoom}x; ` +
+    `CENTER ALIGN MARK: zoom=${magnifierZoom}x; ` +
     `displayOffset=(${dx.toFixed(2)},${dy.toFixed(2)}) CSS px; displayRadius=${cssMag.toFixed(2)} px; ` +
     `source512Offset=(${sourceDx.toFixed(2)},${sourceDy.toFixed(2)}) px; ` +
     `cameraNormalizedOffset=(${normDx.toFixed(6)},${normDy.toFixed(6)}); normalizedRadius=${normMag.toFixed(6)}; ` +
@@ -2989,16 +2830,12 @@ function updateDistanceUI(){
     set('anchorBState','NOT SET','warn');
   }
 
-  const formalDistance = frozenCommittedDistance();
+  const formalDistance = frozenMeasurement?.valid ? frozenMeasurement.distance : null;
 
   if(formalDistance!==null){
     const frozenText=fmtDistance(formalDistance);
     set('distanceState',frozenText,'ok');
     el.distanceText.textContent = `DISTANCE (COMMITTED HIT): ${frozenText}`;
-  }else if(frozenMeasurement?.valid && frozenMeasurement.postBStatus==='PENDING'){
-    const candidateText=fmtDistance(frozenMeasurement.distance);
-    set('distanceState',`CANDIDATE ${candidateText}`,'warn');
-    el.distanceText.textContent = `DISTANCE CANDIDATE: ${candidateText} — POST-B QC PENDING`;
   }else if(frozenMeasurement && frozenMeasurement.valid===false){
     set('distanceState','INVALID','ng');
     el.distanceText.textContent = Number.isFinite(frozenMeasurement?.candidateDistance) ? `DISTANCE CANDIDATE: ${fmtDistance(frozenMeasurement.candidateDistance)} — INVALID / RETRY` : 'DISTANCE: INVALID — RESET AND RETRY';
@@ -3063,8 +2900,8 @@ function requestCapture(source){
   classifyAimQuality();
   if(!aimQualityAllowsCapture()){
     el.xrHint.textContent =
-      (aimQuality === 'FOCUS LOW' || aimQuality === 'TOO CLOSE')
-        ? `Too close. Move beyond ${(NEAR_RANGE_BLOCK_M*100).toFixed(0)} cm.`
+      aimQuality === 'FOCUS LOW'
+        ? 'Too close / focus low. Move slightly farther away.'
         : 'Aim quality is low. Point at a clearer edge or texture.';
     log(`capture blocked by AIM QUALITY=${aimQuality}; hitDistance=${latestHitDistance ?? 'n/a'}; edgeMedian=${qualityMedian('edge') ?? 'n/a'}`);
     return;
@@ -3075,16 +2912,8 @@ function requestCapture(source){
     return;
   }
 
-  const hitGate=currentHitStabilityGate();
-  if(!hitGate.pass){
-    const maxR=hitGate.stats ? (hitGate.stats.maxRadius*1000).toFixed(2)+' mm' : 'n/a';
-    el.xrHint.textContent = `Hit is not stable enough. Hold still (300 ms maxR ≤ ${(HIT_STABLE_MAX_RADIUS_M*1000).toFixed(1)} mm).`;
-    log(`capture blocked by HIT STABILITY GATE: state=${hitGate.state}; maxRadius=${maxR}; threshold=${(HIT_STABLE_MAX_RADIUS_M*1000).toFixed(1)} mm`);
-    return;
-  }
-
   capturePending = pointA ? 'B' : 'A';
-  log(`capture requested for Point ${capturePending} (${source}); hitStability=${hitGate.state}; hitMaxRadius=${(hitGate.stats.maxRadius*1000).toFixed(3)} mm; hitStabilityGate=true`);
+  log(`capture requested for Point ${capturePending} (${source}); hitStability=${liveHitStability}; hitStabilityGate=false`);
   el.xrState.textContent = `CAPTURING POINT ${capturePending}...`;
   el.xrHint.textContent = 'Hold the camera steady until the anchor is created.';
   updateDistanceUI();
@@ -3305,72 +3134,15 @@ function createAnchorFromHit(result,hitPose,slot,time,viewerPose){
   const fallbackPoint = {x:p.x,y:p.y,z:p.z};
   const fallbackMatrix = new Float32Array(hitPose.transform.matrix);
   const hitViewDiag = buildHitViewDiagnostic(result,fallbackPoint,viewerPose);
-  const surfaceIncidenceDeg = computeSurfaceIncidenceDeg(hitPose,viewerPose);
 
   const captureSnapshot =
-    captureQualitySnapshot(slot,fallbackPoint,viewerPose,time,hitViewDiag,surfaceIncidenceDeg);
+    captureQualitySnapshot(slot,fallbackPoint,viewerPose,time,hitViewDiag);
 
   if(slot==='A') captureSnapshotA=captureSnapshot;
   else captureSnapshotB=captureSnapshot;
 
   const hitStabilitySnapshot =
     captureHitStabilitySnapshot(slot,time,fallbackPoint);
-
-  if(hitStabilitySnapshot.gatePass!==true){
-    anchorCreationBusy=false;
-    if(slot==='A'){
-      captureSnapshotA=null; hitStabilitySnapshotA=null; captureDepthCrossCheckA=null;
-      set('captureADepthState','—',''); set('captureAIncidenceState','—','');
-    }else{
-      captureSnapshotB=null; hitStabilitySnapshotB=null; captureDepthCrossCheckB=null;
-      set('captureBDepthState','—',''); set('captureBIncidenceState','—','');
-    }
-    set(slot==='A'?'captureAQualityState':'captureBQualityState',`REJECTED / HIT ${hitStabilitySnapshot.gateState}`,'ng');
-    el.xrState.textContent=`POINT ${slot} RETAKE REQUIRED`;
-    el.xrHint.textContent=`Hold still until Hit stability passes (≤ ${(HIT_STABLE_MAX_RADIUS_M*1000).toFixed(1)} mm / 300 ms).`;
-    log(`Point ${slot} CAPTURE REJECTED by HIT STABILITY GATE: state=${hitStabilitySnapshot.gateState}; maxRadius=${hitStabilitySnapshot.windows[HIT_STABILITY_WINDOW_MS]?.maxRadius==null?'n/a':(hitStabilitySnapshot.windows[HIT_STABILITY_WINDOW_MS].maxRadius*1000).toFixed(3)+' mm'}`);
-    updateDistanceUI();
-    return;
-  }
-
-  if(Number.isFinite(captureSnapshot.hitDistance) && captureSnapshot.hitDistance<NEAR_RANGE_BLOCK_M){
-    anchorCreationBusy=false;
-    if(slot==='A'){
-      captureSnapshotA=null; hitStabilitySnapshotA=null; captureDepthCrossCheckA=null;
-      set('captureADepthState','—',''); set('captureAIncidenceState','—','');
-    }else{
-      captureSnapshotB=null; hitStabilitySnapshotB=null; captureDepthCrossCheckB=null;
-      set('captureBDepthState','—',''); set('captureBIncidenceState','—','');
-    }
-    set(slot==='A'?'captureAQualityState':'captureBQualityState',`REJECTED / TOO CLOSE ${(captureSnapshot.hitDistance*100).toFixed(1)} cm`,'ng');
-    el.xrState.textContent=`POINT ${slot} RETAKE REQUIRED`;
-    el.xrHint.textContent=`Move beyond ${(NEAR_RANGE_BLOCK_M*100).toFixed(0)} cm and retake Point ${slot}.`;
-    log(`Point ${slot} CAPTURE REJECTED by RANGE GATE: cameraToHit=${captureSnapshot.hitDistance.toFixed(6)} m; blockBelow=${NEAR_RANGE_BLOCK_M.toFixed(3)} m`);
-    updateDistanceUI();
-    return;
-  }
-
-  if(slot==='B' && capturePointA){
-    const endpointDistance=distance3(capturePointA,fallbackPoint);
-    if(endpointDistance<MIN_AB_DISTANCE_M){
-      anchorCreationBusy=false;
-      captureSnapshotB=null;
-      hitStabilitySnapshotB=null;
-      captureDepthCrossCheckB=null;
-      set('captureBDepthState','—','');
-      set('captureBIncidenceState','—','');
-      capturePointB=null;
-      captureResetCountB=null;
-      captureHitDistance=null;
-      set('captureDistanceState',`RETAKE B / ${(endpointDistance*1000).toFixed(1)} mm`,'ng');
-      set('freezeStatusState',`RETAKE B — endpoints < ${(MIN_AB_DISTANCE_M*1000).toFixed(0)} mm`,'ng');
-      el.xrState.textContent='POINT B RETAKE REQUIRED';
-      el.xrHint.textContent=`Point B is too close to A (${(endpointDistance*1000).toFixed(1)} mm). Keep A and retake B.`;
-      log(`POINT B CAPTURE REJECTED by ENDPOINT GATE: A-B=${(endpointDistance*1000).toFixed(3)} mm; minimum=${(MIN_AB_DISTANCE_M*1000).toFixed(0)} mm; Point A preserved=true`);
-      updateDistanceUI();
-      return;
-    }
-  }
 
   if(slot==='A'){
     hitStabilitySnapshotA=hitStabilitySnapshot;
@@ -3455,7 +3227,7 @@ function createAnchorFromHit(result,hitPose,slot,time,viewerPose){
       el.xrState.textContent = 'MEASUREMENT COMPLETE';
       el.xrHint.textContent = 'Move the camera; A/B anchors and line should stay fixed.';
       const d = calcDistance(pointA,pointB);
-      log(`B-created live Anchor distance: ${d.toFixed(6)} m (${fmtDistance(d)}); formalCommit=${frozenMeasurement?.postBStatus==='PASS'?frozenMeasurement.distance.toFixed(6)+' m':frozenMeasurement?.postBStatus==='PENDING'?'PENDING '+frozenMeasurement.distance.toFixed(6)+' m':Number.isFinite(frozenMeasurement?.candidateDistance)?'REJECTED '+frozenMeasurement.candidateDistance.toFixed(6)+' m':'INVALID'}`);
+      log(`B-created live Anchor distance: ${d.toFixed(6)} m (${fmtDistance(d)}); formalCommit=${frozenMeasurement?.valid?frozenMeasurement.distance.toFixed(6)+' m':Number.isFinite(frozenMeasurement?.candidateDistance)?'REJECTED '+frozenMeasurement.candidateDistance.toFixed(6)+' m':'INVALID'}`);
     }
   }).catch(err=>{
     anchorCreationBusy = false;
@@ -3551,7 +3323,7 @@ function onXRFrame(time,frame){
       recordHitSample(time,latestHitPoint,latestHitDistance);
       updateLiveHitStability(time);
 
-      set('hitDistanceState',`${latestHitDistance.toFixed(3)} m`,latestHitDistance<NEAR_RANGE_BLOCK_M?'ng':latestHitDistance<NEAR_RANGE_WARN_M?'warn':'ok');
+      set('hitDistanceState',`${latestHitDistance.toFixed(3)} m`,latestHitDistance>NEAR_RANGE_M?'ok':'warn');
       updateDepthHitCrossCheck(time);
 
       if(!hitSeen){
@@ -3895,37 +3667,13 @@ el.referenceCm.addEventListener('input',()=>{
 el.topPanel.addEventListener('beforexrselect',preventOverlayXRSelect);
 el.bottomPanel.addEventListener('beforexrselect',preventOverlayXRSelect);
 el.magnifierWrap.addEventListener('beforexrselect',preventOverlayXRSelect);
-el.alignmentTapLayer?.addEventListener('beforexrselect',preventOverlayXRSelect);
 el.alignBtn.addEventListener('click',()=>setAlignmentMode(!alignmentMode));
-
-// Dedicated top-most transparent capture layer: unlike the camera canvas itself,
-// this remains an explicit DOM interaction target while CENTER ALIGN CHECK is armed.
-// Use pointerup as primary input, click as a fallback for Android DOM Overlay, and
-// de-duplicate the synthetic click that normally follows a pointer event.
-let lastAlignmentPointerCaptureMs=-Infinity;
-el.alignmentTapLayer?.addEventListener('pointerup',event=>{
+el.magnifierWrap.addEventListener('pointerdown',event=>{
   if(!alignmentMode) return;
   event.preventDefault();
   event.stopPropagation();
-  lastAlignmentPointerCaptureMs=performance.now();
-  markAlignmentAtEvent(event,'pointerup');
+  markAlignmentAtEvent(event);
 });
-el.alignmentTapLayer?.addEventListener('click',event=>{
-  if(!alignmentMode) return;
-  event.preventDefault();
-  event.stopPropagation();
-  if(performance.now()-lastAlignmentPointerCaptureMs < 700) return;
-  markAlignmentAtEvent(event,'click-fallback');
-});
-el.alignmentTapLayer?.addEventListener('touchend',event=>{
-  if(!alignmentMode || !event.changedTouches?.length) return;
-  // Pointer Events should normally handle Chrome/Android. This is a final fallback.
-  if(performance.now()-lastAlignmentPointerCaptureMs < 700) return;
-  event.preventDefault();
-  event.stopPropagation();
-  const t=event.changedTouches[0];
-  markAlignmentAtEvent({clientX:t.clientX,clientY:t.clientY},'touchend-fallback');
-},{passive:false});
 
 el.startBtn.addEventListener('click',startAR);
 el.resetBtn.addEventListener('click',resetMeasurement);
@@ -3959,9 +3707,6 @@ resetDepthDiagnostics();
 resetAimQuality();
 set('magnifierState','3×','ok');
 set('alignmentState','OFF','');
-set('postBQualityState','NOT STARTED','');
-set('captureAIncidenceState','—','');
-set('captureBIncidenceState','—','');
 set('alignmentOffsetState','—','');
 set('alignmentUvState','—','');
 updateDistanceUI();
