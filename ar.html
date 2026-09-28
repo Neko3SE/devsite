@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<title>AR DISTANCE LAB - Phase 4.30 Rev.1</title>
+<title>AR DISTANCE LAB - Phase 4.30 Rev.2</title>
 <style>
 :root{
   color-scheme:dark;
@@ -122,7 +122,7 @@ padding:10px;pointer-events:auto}
 <body>
 <main>
 <h1>AR DISTANCE LAB</h1>
-<p class="sub">Phase 4.30 Rev.1 — A4 Projected-Line Pose Fit + Raw Camera Freshness Guard</p>
+<p class="sub">Phase 4.30 Rev.2 — A4 Projected-Line Pose Fit + Raw Camera Freshness Guard</p>
 
 <section class="card">
 <h2>STATUS</h2>
@@ -265,7 +265,7 @@ padding:10px;pointer-events:auto}
 <section class="card">
 <h2>A4 PLANAR TARGET / EDGE CALIBRATION</h2>
 <p class="note">
-診断専用です。Phase 4.30 Rev.1ではA4用紙上に作った150.00 × 237.00 mmの長方形を使用します。Raw Cameraの同一フレームを固定し、TOP → RIGHT → BOTTOM → LEFT の各直線部分を5点ずつタップします。各辺は5点の2D直線QCと4-of-5外れ値判定を行います。姿勢推定では仮想四隅を作らず、辺上位置uも自由変数にせず、既知150 × 237 mm剛体長方形をFrozen画像へ投影した4本の線と、残った16〜20個の画像タップ点との垂直ピクセル距離を直接最小化して6DOF姿勢を解きます。Hit Test / Depthは姿勢推定に使用せず、補正係数も適用しません。Rev.1ではRaw Cameraの鮮度を監視し、Tracking LOST/STALE/RESET後の新規フレーム未受信状態ではFREEZEを禁止します。
+診断専用です。Phase 4.30 Rev.2ではA4用紙上に作った150.00 × 237.00 mmの長方形を使用します。Raw Cameraの同一フレームを固定し、TOP → RIGHT → BOTTOM → LEFT の各直線部分を5点ずつタップします。各辺は5点の2D直線QCと4-of-5外れ値判定を行います。姿勢推定では仮想四隅を作らず、辺上位置uも自由変数にせず、既知150 × 237 mm剛体長方形をFrozen画像へ投影した4本の線と、残った16〜20個の画像タップ点との垂直ピクセル距離を直接最小化して6DOF姿勢を解きます。Hit Test / Depthは姿勢推定に使用せず、補正係数も適用しません。Rev.2ではRaw Cameraの鮮度を監視し、Tracking LOST/STALE/RESET後の新規フレーム未受信状態ではFREEZEを禁止します。Tracking LOST中もviewer参照空間で拡大鏡だけはライブ更新しますが、その画像は測定GeometryやFREEZEには使用しません。
 </p>
 <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
   <label for="calibrationWidthMm">Width</label>
@@ -324,7 +324,7 @@ padding:10px;pointer-events:auto}
 </section>
 
 <section class="card note">
-Phase 4.30 Rev.1でも通常の正式単発距離値はimmutable Hit-Hitのままです。A4校正を開始するとA/B測距はRESET A4 CALまたはEND ARまでロックします。A4校正は1枚のRaw Camera静止画像を使い、各辺5点を4-of-5外れ値QCした後、既知150 × 237 mm剛体長方形をFrozen画像へ投影した4辺と残った16〜20画像点の垂直距離を直接フィットします。仮想四隅も独立した辺上uも姿勢変数として使いません。LMの収束診断を明示します。Hit Test / Depthは姿勢推定に使用せず、結果は診断専用で補正係数や絶対精度判定には使用しません。MAP integrity、Depth agreement、Hit entity probeなど従来の距離診断はそのまま維持します。
+Phase 4.30 Rev.2でも通常の正式単発距離値はimmutable Hit-Hitのままです。A4校正を開始するとA/B測距はRESET A4 CALまたはEND ARまでロックします。A4校正は1枚のRaw Camera静止画像を使い、各辺5点を4-of-5外れ値QCした後、既知150 × 237 mm剛体長方形をFrozen画像へ投影した4辺と残った16〜20画像点の垂直距離を直接フィットします。仮想四隅も独立した辺上uも姿勢変数として使いません。LMの収束診断を明示します。Hit Test / Depthは姿勢推定に使用せず、結果は診断専用で補正係数や絶対精度判定には使用しません。MAP integrity、Depth agreement、Hit entity probeなど従来の距離診断はそのまま維持します。
 </section>
 
 <section class="card">
@@ -454,7 +454,7 @@ let raf = 0;
 let latestHitMatrix = null;
 let latestHitPoint = null;
 
-// Phase 4.30 Rev.1: one frozen Raw Camera frame + five manual samples per edge + deterministic 4-of-5 outlier QC + direct image-point-to-projected-rigid-edge pose solve with LM convergence diagnostics.
+// Phase 4.30 Rev.2: one frozen Raw Camera frame + five manual samples per edge + deterministic 4-of-5 outlier QC + direct image-point-to-projected-rigid-edge pose solve with LM convergence diagnostics.
 const CALIBRATION_CORNERS = ['TL','TR','BR','BL'];
 const DEFAULT_CALIBRATION_WIDTH_MM = 85.60;
 const DEFAULT_CALIBRATION_HEIGHT_MM = 53.98;
@@ -489,7 +489,7 @@ let calibrationTransitionThresholdDeg = CALIBRATION_TRANSITION_MIN_DEG;
 let calibrationRayHistory = [];
 let calibrationDwellRaySamples = [];
 
-// Phase 4.30 Rev.1 frozen-frame manual edge-sampling state: line fits/outlier QC select 4 or 5 samples per edge; active image points drive the projected-line rigid pose.
+// Phase 4.30 Rev.2 frozen-frame manual edge-sampling state: line fits/outlier QC select 4 or 5 samples per edge; active image points drive the projected-line rigid pose.
 const CARD_FREEZE_SIZE = 512;
 const CARD_EDGE_NAMES = ['TOP','RIGHT','BOTTOM','LEFT'];
 const CARD_EDGE_TAPS = 5;
@@ -506,6 +506,9 @@ let rawCameraGeneration = 0;
 let rawCameraRequiredGeneration = 1;
 let rawCameraFreshnessState = 'WAITING_NEW_FRAME';
 let lastFrozenRawGeneration = 0;
+let rawCameraDisplayMode = 'NONE'; // LOCAL or VIEWER_FALLBACK; display-only state is separate from measurement geometry
+let rawCameraDisplayReceivedAt = -Infinity;
+let rawCameraFallbackFrames = 0;
 let frozenCardFrame = null;
 let frozenCardTaps = {}; // retained legacy container; Phase 4.30 does not create or use virtual corners
 let frozenCardTapSamples = {TL:[],TR:[],BR:[],BL:[]}; // retained for inherited reset compatibility
@@ -881,7 +884,7 @@ function logHitABComparison(){
   return comparison;
 }
 
-// Phase 4.30 Rev.1 inherited from Phase 4.19: formal single-shot candidate remains frozen at Point B capture; repeated acquisitions form the consensus.
+// Phase 4.30 Rev.2 inherited from Phase 4.19: formal single-shot candidate remains frozen at Point B capture; repeated acquisitions form the consensus.
 let frozenMeasurement = null;
 let sessionFrozenMeasurements = [];
 let lastAAnchorPoseTime = null;
@@ -1134,7 +1137,7 @@ let qualityHistory = [];
 let lastQualitySampleTime = -Infinity;
 let latestHitDistance = null;
 
-// Phase 4.30 Rev.1 inherited from Phase 4.19: Phase 4.16 Depth 3D method retained.
+// Phase 4.30 Rev.2 inherited from Phase 4.19: Phase 4.16 Depth 3D method retained.
 // Depth never replaces/corrects or rejects the committed Hit-Hit value. It is agreement diagnostics only.
 const DEPTH_GRID = 3;
 const DEPTH_RADIUS = 0.01; // compact local region around projected Hit / screen center
@@ -1166,8 +1169,8 @@ const DETAIL_CONTRAST_LOW = 8.0;
 
 let ending = false;
 let cleanupDone = false;
-const LOG_STORAGE_KEY = 'ar-distance-lab-phase4-30-rev1-log';
-const SUMMARY_STORAGE_KEY = 'ar-distance-lab-phase4-30-rev1-summary';
+const LOG_STORAGE_KEY = 'ar-distance-lab-phase4-30-rev2-log';
+const SUMMARY_STORAGE_KEY = 'ar-distance-lab-phase4-30-rev2-summary';
 
 const TRACKING_UNSTABLE_MS = 250;
 const TRACKING_LOST_MS = 1000;
@@ -2336,7 +2339,7 @@ function assessDepthDistanceCrossCheck(){
 
 function applyDepthDistanceCrossCheck(){
   const q=assessDepthDistanceCrossCheck();
-  // Phase 4.30 Rev.1 inherited from Phase 4.19: rename the >=15 mm state for clarity. This is diagnostic only.
+  // Phase 4.30 Rev.2 inherited from Phase 4.19: rename the >=15 mm state for clarity. This is diagnostic only.
   if(q.state==='INVALID') q.state='DIVERGED';
   lastDepthAgreement=q;
   const cls=q.state==='AGREE'||q.state==='PASS'?'ok':q.state==='WARN'?'warn':q.state==='DIVERGED'?'warn':'warn';
@@ -2348,7 +2351,7 @@ function applyDepthDistanceCrossCheck(){
 }
 
 function combineQualityGates(mapIntegrity,depthDiagnostic){
-  // Phase 4.30 Rev.1 inherited from Phase 4.19: only MAP can reject a single-shot measurement.
+  // Phase 4.30 Rev.2 inherited from Phase 4.19: only MAP can reject a single-shot measurement.
   // Depth agreement is deliberately excluded from the commit gate because the
   // previous sweep proved that Hit and Depth can agree while both are wrong.
   let state='PASS';
@@ -3372,6 +3375,19 @@ function configureMagnifierCanvas(){
   el.magnifierCanvas.style.height=`${MAG_CSS_SIZE}px`;
 }
 
+function setRawCameraDisplayMode(mode){
+  if(rawCameraDisplayMode!==mode){
+    log(`RAW CAMERA DISPLAY MODE: ${rawCameraDisplayMode} -> ${mode}; tracking=${trackingMode}; measurementGeometry=${mode==='LOCAL'?'eligible-after-freshness':'disabled'}`);
+    rawCameraDisplayMode=mode;
+  }
+}
+function rawCameraDisplayAgeMs(){
+  return Number.isFinite(rawCameraDisplayReceivedAt) ? Math.max(0,performance.now()-rawCameraDisplayReceivedAt) : Infinity;
+}
+function rawCameraDisplayFresh(){
+  return rawCameraDisplayAgeMs()<=RAW_CAMERA_STALE_MS;
+}
+
 function rawCameraAgeMs(){
   if(!latestRawCameraGeometry || !Number.isFinite(latestRawCameraGeometry.receivedAt)) return Infinity;
   return Math.max(0,performance.now()-latestRawCameraGeometry.receivedAt);
@@ -3414,7 +3430,14 @@ function refreshRawCameraFreshnessUI(reason='watchdog',force=false){
     const ageText=Number.isFinite(st.age)?`${st.age.toFixed(1)}ms`:'n/a';
     if(changed) log(`RAW CAMERA FRESHNESS: ${rawCameraFreshnessState} -> ${st.state}; reason=${reason}; age=${ageText}; generation=${latestRawCameraGeometry?.generation??0}; requiredGeneration=${rawCameraRequiredGeneration}; tracking=${trackingMode}`);
     rawCameraFreshnessState=st.state;
-    if(!st.ready) paintMagnifierCameraUnavailable(st.state);
+    if(!st.ready){
+      if(rawCameraDisplayMode==='VIEWER_FALLBACK' && rawCameraDisplayFresh()){
+        if(el.magnifierLabel) el.magnifierLabel.textContent=`MAG ${magnifierZoom}× · VIEWER LIVE`;
+        set('magnifierState',`LIVE VIEWER-FALLBACK / FREEZE LOCKED / tracking ${trackingMode}`,'warn');
+      }else{
+        paintMagnifierCameraUnavailable(st.state);
+      }
+    }
     updateCalibrationUI();
   }
   return st;
@@ -3570,10 +3593,11 @@ function markAlignmentAtEvent(ev){
   );
 }
 
-function sampleRawCamera(cameraTexture,camera,time,view){
-  if(!sampleReady || !cameraTexture || !camera) return;
-  if(time-lastQualitySampleTime < 100) return; // <=10 Hz
+function sampleRawCamera(cameraTexture,camera,time,view,{updateMeasurementGeometry=true,sourceRole='local'}={}){
+  if(!sampleReady || !cameraTexture || !camera) return false;
+  if(time-lastQualitySampleTime < 100) return false; // <=10 Hz
   lastQualitySampleTime=time;
+  let sampled=false;
 
   const drawQuad=(program)=>{
     gl.useProgram(program);
@@ -3629,28 +3653,38 @@ function sampleRawCamera(cameraTexture,camera,time,view){
 
     updateMagnifierSourceCanvas();
     drawMagnifierPixels();
-    if(view?.projectionMatrix && view?.transform?.matrix){
+    rawCameraDisplayReceivedAt=performance.now();
+    if(updateMeasurementGeometry && view?.projectionMatrix && view?.transform?.matrix){
       const firstGeometry=!latestRawCameraGeometry;
       rawCameraGeneration++;
       latestRawCameraGeometry={
-        time,frame:frameCount,generation:rawCameraGeneration,receivedAt:performance.now(),
+        time,frame:frameCount,generation:rawCameraGeneration,receivedAt:rawCameraDisplayReceivedAt,geometryRole:'local',
         cameraWidth:Number(camera.width)||null,
         cameraHeight:Number(camera.height)||null,
         aspect,
         projection:Array.from(view.projectionMatrix),
         viewTransform:Array.from(view.transform.matrix)
       };
+      setRawCameraDisplayMode('LOCAL');
       if(firstGeometry && !frozenCardFrame) updateCalibrationUI();
-      refreshRawCameraFreshnessUI('new-raw-camera-frame');
+      refreshRawCameraFreshnessUI('new-local-raw-camera-frame');
+    }else{
+      rawCameraFallbackFrames++;
+      setRawCameraDisplayMode('VIEWER_FALLBACK');
+      if(el.magnifierLabel) el.magnifierLabel.textContent=`MAG ${magnifierZoom}× · VIEWER LIVE`;
+      set('magnifierState',`LIVE VIEWER-FALLBACK / FREEZE LOCKED / tracking ${trackingMode}`,'warn');
     }
     classifyAimQuality();
 
     rawCameraTextureFrames++;
     set(
       'rawCameraState',
-      `ACTIVE (${rawCameraTextureFrames} samples)`,
-      'ok'
+      updateMeasurementGeometry
+        ? `ACTIVE LOCAL (${rawCameraTextureFrames} samples)`
+        : `ACTIVE VIEWER-FALLBACK (${rawCameraFallbackFrames} display frames; FREEZE LOCKED)`,
+      updateMeasurementGeometry?'ok':'warn'
     );
+    sampled=true;
   }catch(err){
     set('rawCameraState',`${err.name}: ${err.message}`,'ng');
     log(`Raw Camera sample failed: ${err.name}: ${err.message}`);
@@ -3665,6 +3699,7 @@ function sampleRawCamera(cameraTexture,camera,time,view){
       }
     }catch{}
   }
+  return sampled;
 }
 
 async function preflight(){
@@ -4852,7 +4887,7 @@ function freezeCardFrame(){
   if(el.cardFreezeTapState) el.cardFreezeTapState.textContent='TOP sample 1/5: tap five separated points along the straight segment; avoid both corners.';
   drawFrozenCardFrame();
   const age=rawCameraAgeMs(),y0=0.5-0.5*g.aspect,y1=0.5+0.5*g.aspect;
-  log(`CARD FREEZE FRAME #${frozenCardFrame.frameIndex}: source=RawCamera-center-square-512; camera=${g.cameraWidth}x${g.cameraHeight}; aspect=${g.aspect.toFixed(6)}; frame=${g.frame}; rawGeneration=${g.generation}; sourceAge=${age.toFixed(1)}ms; viewUvRange=x[0..1],y[${y0.toFixed(6)}..${y1.toFixed(6)}]; centerRayDelta=${frozenCardFrame.centerRayDeltaDeg.toFixed(6)}deg; mapping=frozen source pixel -> aligned XRView normalized UV -> projection ray; target=${calibrationTargetFrozen.widthMm.toFixed(2)}x${calibrationTargetFrozen.heightMm.toFixed(2)}mm; edgeOrder=TOP,RIGHT,BOTTOM,LEFT; tapsPerEdge=${CARD_EDGE_TAPS}; totalTaps=20; lineRmsHardMax=${CARD_EDGE_LINE_RMS_MAX_PX.toFixed(1)}px; minSpan=${CARD_EDGE_MIN_SPAN_PX.toFixed(1)}px; outlierQC=4-of-5(triggerRms>${CARD_EDGE_OUTLIER_TRIGGER_RMS_PX.toFixed(1)}px,remainRms<=${CARD_EDGE_OUTLIER_REMAIN_RMS_MAX_PX.toFixed(1)}px,excludedResidual>=${CARD_EDGE_OUTLIER_MIN_RESIDUAL_PX.toFixed(1)}px,ratio<=${CARD_EDGE_OUTLIER_MAX_RMS_RATIO.toFixed(2)}); virtualCorners=false; projectedLineFit=true; measurementLock=true; HitUsedAsCorner=false; DepthUsedAsCorner=false`);
+  log(`CARD FREEZE FRAME #${frozenCardFrame.frameIndex}: source=RawCamera-center-square-512; camera=${g.cameraWidth}x${g.cameraHeight}; aspect=${g.aspect.toFixed(6)}; frame=${g.frame}; rawGeneration=${g.generation}; sourceAge=${age.toFixed(1)}ms; viewUvRange=x[0..1],y[${y0.toFixed(6)}..${y1.toFixed(6)}]; centerRayDelta=${frozenCardFrame.centerRayDeltaDeg.toFixed(6)}deg; mapping=frozen source pixel -> aligned LOCAL XRView normalized UV -> projection ray; geometryRole=local-only; target=${calibrationTargetFrozen.widthMm.toFixed(2)}x${calibrationTargetFrozen.heightMm.toFixed(2)}mm; edgeOrder=TOP,RIGHT,BOTTOM,LEFT; tapsPerEdge=${CARD_EDGE_TAPS}; totalTaps=20; lineRmsHardMax=${CARD_EDGE_LINE_RMS_MAX_PX.toFixed(1)}px; minSpan=${CARD_EDGE_MIN_SPAN_PX.toFixed(1)}px; outlierQC=4-of-5(triggerRms>${CARD_EDGE_OUTLIER_TRIGGER_RMS_PX.toFixed(1)}px,remainRms<=${CARD_EDGE_OUTLIER_REMAIN_RMS_MAX_PX.toFixed(1)}px,excludedResidual>=${CARD_EDGE_OUTLIER_MIN_RESIDUAL_PX.toFixed(1)}px,ratio<=${CARD_EDGE_OUTLIER_MAX_RMS_RATIO.toFixed(2)}); virtualCorners=false; projectedLineFit=true; measurementLock=true; HitUsedAsCorner=false; DepthUsedAsCorner=false`);
   if(el.xrHint) el.xrHint.textContent='Frozen A4 frame captured. Tap TOP five times across its straight section; avoid corners.';
   updateCalibrationUI(); updateDistanceUI();
 }
@@ -5156,7 +5191,7 @@ async function startAR(){
   frozenCardRefinement=null;
   frozenCardTapSets=[];
   latestRawCameraGeometry=null;
-  rawCameraGeneration=0; rawCameraRequiredGeneration=1; rawCameraFreshnessState='WAITING_NEW_FRAME'; lastFrozenRawGeneration=0;
+  rawCameraGeneration=0; rawCameraRequiredGeneration=1; rawCameraFreshnessState='WAITING_NEW_FRAME'; lastFrozenRawGeneration=0; rawCameraDisplayMode='NONE'; rawCameraDisplayReceivedAt=-Infinity; rawCameraFallbackFrames=0;
   if(el.cardFreezePanel) el.cardFreezePanel.hidden=true;
   updateCalibrationUI();
 
@@ -5522,7 +5557,25 @@ function onXRFrame(time,frame){
   updateTrackingState(time,pose);
 
   if(!pose){
-    refreshRawCameraFreshnessUI('null-viewer-pose');
+    // Keep the magnifier live via viewer-space pose when local tracking is unavailable.
+    // VIEWER_FALLBACK is display-only: it never updates latestRawCameraGeometry and can never satisfy FREEZE freshness.
+    let fallbackSampled=false;
+    if(rawCameraAvailable && xrBinding && viewerSpace){
+      try{
+        const viewerPoseFallback=frame.getViewerPose(viewerSpace);
+        const view0=viewerPoseFallback?.views?.[0];
+        const camera=view0?.camera;
+        if(camera){
+          const cameraTexture=xrBinding.getCameraImage(camera);
+          if(cameraTexture){
+            fallbackSampled=sampleRawCamera(cameraTexture,camera,time,view0,{updateMeasurementGeometry:false,sourceRole:'viewer-fallback'});
+          }
+        }
+      }catch(err){
+        set('rawCameraState',`VIEWER fallback ${err.name}: ${err.message}`,'warn');
+      }
+    }
+    refreshRawCameraFreshnessUI(fallbackSampled?'null-local-pose-viewer-camera-live':'null-local-pose');
     if(time - lastMetricsUiTime > 250){
       updateMetricsUI();
       lastMetricsUiTime = time;
@@ -5664,7 +5717,7 @@ function onXRFrame(time,frame){
       try{
         const cameraTexture = xrBinding.getCameraImage(camera);
         if(cameraTexture){
-          sampleRawCamera(cameraTexture,camera,time,view0);
+          sampleRawCamera(cameraTexture,camera,time,view0,{updateMeasurementGeometry:true,sourceRole:'local'});
         }
       }catch(err){
         set('rawCameraState',`${err.name}: ${err.message}`,'ng');
@@ -5674,7 +5727,7 @@ function onXRFrame(time,frame){
 
   refreshRawCameraFreshnessUI('xr-frame-watchdog');
 
-  // Phase 4.30 Rev.1 calibration uses one frozen Raw Camera frame and 20 manual edge samples; pose uses image-point-to-projected-edge residuals.
+  // Phase 4.30 Rev.2 calibration uses one frozen LOCAL-tracking Raw Camera frame and 20 manual edge samples; viewer-space Raw Camera fallback is display-only.
   // No live per-corner auto-dwell runs here; Hit/Depth remain independent diagnostics.
 
   const layer = session.renderState.baseLayer;
@@ -5907,7 +5960,7 @@ function onSessionEnd(){
   program = null;
   raf = 0;
   latestRawCameraGeometry=null;
-  rawCameraGeneration=0; rawCameraRequiredGeneration=1; rawCameraFreshnessState='WAITING_NEW_FRAME'; lastFrozenRawGeneration=0;
+  rawCameraGeneration=0; rawCameraRequiredGeneration=1; rawCameraFreshnessState='WAITING_NEW_FRAME'; lastFrozenRawGeneration=0; rawCameraDisplayMode='NONE'; rawCameraDisplayReceivedAt=-Infinity; rawCameraFallbackFrames=0;
   frozenCardFrame=null;
   frozenCardTaps={};
   frozenCardTapSamples=emptyFrozenTapSamples();
