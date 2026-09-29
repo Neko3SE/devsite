@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<title>AR DISTANCE LAB - Phase 4.40 Rev.4</title>
+<title>AR DISTANCE LAB - Phase 4.40 Rev.5</title>
 <style>
 :root{
   color-scheme:dark;
@@ -131,7 +131,7 @@ padding:8px 9px;pointer-events:auto}
 <body>
 <main>
 <h1>AR DISTANCE LAB</h1>
-<p class="sub">Phase 4.40 Rev.4 — Formal immutable Hit-Hit accuracy evaluation / compact measurement HUD</p>
+<p class="sub">Phase 4.40 Rev.5 — Formal immutable Hit-Hit accuracy evaluation / compact measurement HUD</p>
 
 <section class="card">
 <h2>STATUS</h2>
@@ -347,7 +347,7 @@ Phase 4.40の独立精度評価では使用しない旧診断機能です。必�
 </section>
 
 <section class="card note">
-Phase 4.40 Rev.4でも正式単発距離値はimmutable Hit-Hitのままです。Point BボタンはA-B距離では無効化せず、長い基線を移動中も操作可能にします。Point BのAIM QUALITYは警告専用とし、押下時のcurrent plane Hitだけを必須条件として維持します。カード機能は今回の独立精度評価には使用しません。A4校正を開始するとA/B測距はRESET A4 CALまたはEND ARまでロックします。A4校正は1枚のRaw Camera静止画像を使い、各辺5点を黒線探索の初期位置としてFrozen画像の暗線中心へ自動スナップし、4-of-5外れ値QCした後、既知150 × 237 mm剛体長方形をFrozen画像へ投影した4辺と残った16〜20画像点の垂直距離を直接フィットします。仮想四隅も独立した辺上uも姿勢変数として使いません。LMの収束診断を明示し、全4辺の使用点RMS 2.5px以下、span 50px以上、外れ値除去後のspan保持率65%以上を入力のhard GOOD gateとして要求します。WARN入力はその辺だけ再タップし、全辺GOODになるまで姿勢推定へ進みません。さらに投影後の全辺coverage 50%以上と全サンプルu∈[0,1]を別々に要求します。outside時は実際のoutside辺だけを再タップし、同一辺で2回失敗後はREFREEZEを要求します。coverage不足だけなら最も弱い辺だけ再タップします。同じFrozen画像をRESTART 20 TAPSで繰り返すと、全辺画像スナップGOOD＋入力GOOD＋coverage PASS＋最終fit GOODに加え、supported seed比率50%以上・選択解周辺cluster比率60%以上を要求します。最初の通過解はPROVISIONALとし、次の同一Frozen解がcenter 3 mm以内・normal 3°以内・projected-corner RMS 1.5 px以内かつmax 3 px以内に一致した時だけCONFIRMEDとします。LOCAL LOST時にVIEWER-ONLYでFREEZEした結果はそのFrozen時点のviewer参照空間だけで有効であり、別Frozenとのworld/local位置比較には使用しません。Hit Test / Depthは姿勢推定に使用せず、結果は診断専用で補正係数や絶対精度判定には使用しません。MAP integrity、Depth agreement、Hit entity probeなど従来の距離診断はそのまま維持します。
+Phase 4.40 Rev.5でも正式単発距離値はimmutable Hit-Hitのままです。Point BボタンはA-B距離では無効化せず、長い基線を移動中も操作可能にします。Point BのAIM QUALITYは警告専用とし、押下時のcurrent plane Hitだけを必須条件として維持します。 Rev.5ではBでplane Hitが無い場合に限り、point / mesh Hitの有無を同フレーム近傍で自動診断しログへ記録します。これらは診断専用で正式距離には使用しません。カード機能は今回の独立精度評価には使用しません。A4校正を開始するとA/B測距はRESET A4 CALまたはEND ARまでロックします。A4校正は1枚のRaw Camera静止画像を使い、各辺5点を黒線探索の初期位置としてFrozen画像の暗線中心へ自動スナップし、4-of-5外れ値QCした後、既知150 × 237 mm剛体長方形をFrozen画像へ投影した4辺と残った16〜20画像点の垂直距離を直接フィットします。仮想四隅も独立した辺上uも姿勢変数として使いません。LMの収束診断を明示し、全4辺の使用点RMS 2.5px以下、span 50px以上、外れ値除去後のspan保持率65%以上を入力のhard GOOD gateとして要求します。WARN入力はその辺だけ再タップし、全辺GOODになるまで姿勢推定へ進みません。さらに投影後の全辺coverage 50%以上と全サンプルu∈[0,1]を別々に要求します。outside時は実際のoutside辺だけを再タップし、同一辺で2回失敗後はREFREEZEを要求します。coverage不足だけなら最も弱い辺だけ再タップします。同じFrozen画像をRESTART 20 TAPSで繰り返すと、全辺画像スナップGOOD＋入力GOOD＋coverage PASS＋最終fit GOODに加え、supported seed比率50%以上・選択解周辺cluster比率60%以上を要求します。最初の通過解はPROVISIONALとし、次の同一Frozen解がcenter 3 mm以内・normal 3°以内・projected-corner RMS 1.5 px以内かつmax 3 px以内に一致した時だけCONFIRMEDとします。LOCAL LOST時にVIEWER-ONLYでFREEZEした結果はそのFrozen時点のviewer参照空間だけで有効であり、別Frozenとのworld/local位置比較には使用しません。Hit Test / Depthは姿勢推定に使用せず、結果は診断専用で補正係数や絶対精度判定には使用しません。MAP integrity、Depth agreement、Hit entity probeなど従来の距離診断はそのまま維持します。
 </section>
 
 <section class="card">
@@ -3309,7 +3309,7 @@ function canCapturePoint(){
          aimQualityAllowsCapture();
 }
 
-// Phase 4.40 Rev.4: once Point A exists, keep the Point B button actionable.
+// Phase 4.40 Rev.5: once Point A exists, keep the Point B button actionable.
 // The actual Point B capture still requires a current plane Hit at press time,
 // but temporary Hit/AIM fluctuations must not grey out the control while the
 // user is moving across a long baseline. AIM QUALITY for Point B is diagnostic
@@ -6091,10 +6091,32 @@ function requestCapture(source){
   }
 
   if(!latestHitPoint){
-    const msg = `Point ${requestedSlot}: no current plane Hit. Center on the target and move slowly until the surface is reacquired, then press CAPTURE again.`;
+    const pointItem = hitEntityLatest.point;
+    const meshItem = hitEntityLatest.mesh;
+    const pointCount = Number.isFinite(pointItem?.count) ? pointItem.count : 0;
+    const meshCount = Number.isFinite(meshItem?.count) ? meshItem.count : 0;
+    const altAvailable = pointCount > 0 || meshCount > 0;
+    const altText = altAvailable
+      ? `plane unavailable / diagnostic hit available: point=${pointCount}, mesh=${meshCount}`
+      : `no plane / point / mesh hit at center`;
+    const msg = requestedSlot === 'B'
+      ? `Point B: ${altText}. Formal capture remains plane-only; scan the target area and retry.`
+      : `Point A: no current plane Hit. Center on the target and move slowly until the surface is reacquired, then press CAPTURE again.`;
     el.xrHint.textContent = msg;
     if(el.operationText) el.operationText.textContent = msg;
-    log(`capture blocked: slot=${requestedSlot}; reason=no-current-plane-hit; AIM=${aimQuality}; pointBButtonDistanceIndependent=true`);
+    log(
+      `capture blocked: slot=${requestedSlot}; reason=no-current-plane-hit; AIM=${aimQuality}; ` +
+      `pointHits=${pointCount}; meshHits=${meshCount}; alternateHitAvailable=${altAvailable}; ` +
+      `alternateHitsDiagnosticOnly=true; formalMeasurementSource=plane; pointBButtonDistanceIndependent=true`
+    );
+    if(requestedSlot === 'B'){
+      log(
+        `B SURFACE SOURCE DIAGNOSTIC: plane=0; point=${pointCount}; mesh=${meshCount}; ` +
+        `pointNearest=${Number.isFinite(pointItem?.forward)?pointItem.forward.toFixed(6)+' m':'n/a'}; ` +
+        `meshNearest=${Number.isFinite(meshItem?.forward)?meshItem.forward.toFixed(6)+' m':'n/a'}; ` +
+        `formalCommitBlocked=true; diagnosticOnly=true`
+      );
+    }
     return;
   }
 
@@ -6581,7 +6603,9 @@ function onXRFrame(time,frame){
   const results = frame.getHitTestResults(hitTestSource);
   // Probe UI/logging runs at the Depth sampling cadence (~10 Hz), while an
   // explicit snapshot forces both Depth and entity sampling on the same frame.
-  if(entitySnapshotPending || calibrationCapturePending || latestDepthInfoFrame===frameCount || frameCount % DEPTH_SAMPLE_EVERY_FRAMES === 0){
+  // Rev.5: while the formal plane source is absent, sample point/mesh every XR frame.
+  // This is diagnostic only and never changes the formal immutable plane Hit-Hit source.
+  if(entitySnapshotPending || calibrationCapturePending || latestDepthInfoFrame===frameCount || frameCount % DEPTH_SAMPLE_EVERY_FRAMES === 0 || !results.length){
     processHitEntityProbe(frame,pose,time,results);
   }
 
@@ -6682,7 +6706,7 @@ function onXRFrame(time,frame){
   refreshRawCameraFreshnessUI('xr-frame-watchdog');
   if(localRawSampled) tryFulfillQueuedCardFreeze('new-local-raw-camera-frame');
 
-  // Phase 4.40 Rev.4 inherits Phase 4.30 Rev.16 calibration: freezes pixels and matching XRView geometry from the same sampling role: LOCAL when available, otherwise VIEWER-ONLY during fallback.
+  // Phase 4.40 Rev.5 inherits Phase 4.30 Rev.16 calibration: freezes pixels and matching XRView geometry from the same sampling role: LOCAL when available, otherwise VIEWER-ONLY during fallback.
   // VIEWER-ONLY solves the known rectangle in the frozen viewer reference space and is not world/local comparable across frames.
   // No live per-corner auto-dwell runs here; Hit/Depth remain independent diagnostics.
 
