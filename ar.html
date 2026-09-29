@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<title>AR DISTANCE LAB - Phase 4.50 Rev.1</title>
+<title>AR DISTANCE LAB - Phase 4.50 Rev.2</title>
 <style>
 :root{
   color-scheme:dark;
@@ -131,7 +131,7 @@ padding:8px 9px;pointer-events:auto}
 <body>
 <main>
 <h1>AR DISTANCE LAB</h1>
-<p class="sub">Phase 4.50 Rev.1 — Persistent 9-sample accuracy sweep / immutable Hit-Hit</p>
+<p class="sub">Phase 4.50 Rev.2 — Persistent 9-sample accuracy sweep / strict storage validation / immutable Hit-Hit</p>
 
 <section class="card">
 <h2>STATUS</h2>
@@ -243,7 +243,7 @@ padding:8px 9px;pointer-events:auto}
 
 <section class="card">
 <h2>PHASE 4.50 — PERSISTENT FORMAL HIT-HIT ACCURACY SWEEP</h2>
-<p class="note">Phase 4.50では、50 / 100 / 150 cm × 各3回 = 合計9回の正式 immutable plane Hit-Hit を1つのAccuracy Sweepとして永続管理します。Sweep状態はlocalStorageへ保存し、ARのEND、ページ再読込、同一Originでの再開後も復元します。値が悪いことを理由に有効サンプルを捨てたり追加測定したりせず、各距離の最初の有効3回だけを固定します。MAP INVALID / reference-space reset など既存の安全ゲートで無効になった測定だけが数え直し対象です。Repeatability cluster、Depth、Anchorは診断専用で、正式Hit-Hit値の補正・採否には使用しません。</p>
+<p class="note">Phase 4.50では、50 / 100 / 150 cm × 各3回 = 合計9回の正式 immutable plane Hit-Hit を1つのAccuracy Sweepとして永続管理します。Sweep状態はlocalStorageへ保存し、ARのEND、ページ再読込、同一Originでの再開後も復元します。値が悪いことを理由に有効サンプルを捨てたり追加測定したりせず、各距離の最初の有効3回だけを固定します。MAP INVALID / reference-space reset など既存の安全ゲートで無効になった測定だけが数え直し対象です。Repeatability cluster、Depth、Anchorは診断専用で、正式Hit-Hit値の補正・採否には使用しません。 Rev.2では保存前と復元時の両方でSweep全体をschema 2として検証し、1件でも構造・Sweep ID・順序・状態値などに不整合があれば部分復元せず、その保存Sweep全体を無効として新しい0/9 Sweepを開始します。旧v1保存キーは読み込まず、削除を試みます。削除できない環境でも旧キーは参照しません。</p>
 <div class="actions">
   <button type="button" class="refPreset" data-cm="50">50 cm</button>
   <button type="button" class="refPreset" data-cm="100">100 cm</button>
@@ -273,7 +273,7 @@ padding:8px 9px;pointer-events:auto}
 </section>
 
 <section class="card">
-<h2>PHASE 4.50 REV.1 — PERSISTENT ACCURACY PROCEDURE</h2>
+<h2>PHASE 4.50 REV.2 — PERSISTENT ACCURACY PROCEDURE</h2>
 <ol class="procedure">
   <li>カード校正は使用しません。外部の巻尺・スケール等で、同一の平坦かつテクスチャのある面に A/B の中心間距離 50.0 cm、100.0 cm、150.0 cm の基準を用意します。アプリの値を見て基準位置を調整しないでください。</li>
   <li>初回は新しいAccuracy Sweepが自動生成されます。START AR後、Tracking が ACTIVE になり、Hitが安定するまで待ちます。初回ターゲットは50 cmです。END ARやページ再読込後は、保存済みSweepから未完了の次ターゲットを自動復元します。</li>
@@ -348,7 +348,7 @@ Phase 4.40の独立精度評価では使用しない旧診断機能です。必�
 </section>
 
 <section class="card note">
-Phase 4.50 Rev.1でも正式単発距離値はimmutable Hit-Hitのままです。Point BボタンはA-B距離では無効化しませんが、A取得からB取得までA AnchorのCapture位置からの再配置を継続監視し、5 mm以上でその試行をINVALIDとしてBをロックします。2〜5 mm未満はWARNのみで、Anchor座標による正式値の補正は行いません。Point BのAIM QUALITYは警告専用とし、押下時のcurrent plane Hitだけを必須条件として維持します。 Rev.5ではBでplane Hitが無い場合に限り、point / mesh Hitの有無を同フレーム近傍で自動診断しログへ記録します。これらは診断専用で正式距離には使用しません。カード機能は今回の独立精度評価には使用しません。A4校正を開始するとA/B測距はRESET A4 CALまたはEND ARまでロックします。A4校正は1枚のRaw Camera静止画像を使い、各辺5点を黒線探索の初期位置としてFrozen画像の暗線中心へ自動スナップし、4-of-5外れ値QCした後、既知150 × 237 mm剛体長方形をFrozen画像へ投影した4辺と残った16〜20画像点の垂直距離を直接フィットします。仮想四隅も独立した辺上uも姿勢変数として使いません。LMの収束診断を明示し、全4辺の使用点RMS 2.5px以下、span 50px以上、外れ値除去後のspan保持率65%以上を入力のhard GOOD gateとして要求します。WARN入力はその辺だけ再タップし、全辺GOODになるまで姿勢推定へ進みません。さらに投影後の全辺coverage 50%以上と全サンプルu∈[0,1]を別々に要求します。outside時は実際のoutside辺だけを再タップし、同一辺で2回失敗後はREFREEZEを要求します。coverage不足だけなら最も弱い辺だけ再タップします。同じFrozen画像をRESTART 20 TAPSで繰り返すと、全辺画像スナップGOOD＋入力GOOD＋coverage PASS＋最終fit GOODに加え、supported seed比率50%以上・選択解周辺cluster比率60%以上を要求します。最初の通過解はPROVISIONALとし、次の同一Frozen解がcenter 3 mm以内・normal 3°以内・projected-corner RMS 1.5 px以内かつmax 3 px以内に一致した時だけCONFIRMEDとします。LOCAL LOST時にVIEWER-ONLYでFREEZEした結果はそのFrozen時点のviewer参照空間だけで有効であり、別Frozenとのworld/local位置比較には使用しません。Hit Test / Depthは姿勢推定に使用せず、結果は診断専用で補正係数や絶対精度判定には使用しません。MAP integrity、Depth agreement、Hit entity probeなど従来の距離診断はそのまま維持します。
+Phase 4.50 Rev.2でも正式単発距離値はimmutable Hit-Hitのままです。Point BボタンはA-B距離では無効化しませんが、A取得からB取得までA AnchorのCapture位置からの再配置を継続監視し、5 mm以上でその試行をINVALIDとしてBをロックします。2〜5 mm未満はWARNのみで、Anchor座標による正式値の補正は行いません。Point BのAIM QUALITYは警告専用とし、押下時のcurrent plane Hitだけを必須条件として維持します。 Rev.5ではBでplane Hitが無い場合に限り、point / mesh Hitの有無を同フレーム近傍で自動診断しログへ記録します。これらは診断専用で正式距離には使用しません。カード機能は今回の独立精度評価には使用しません。A4校正を開始するとA/B測距はRESET A4 CALまたはEND ARまでロックします。A4校正は1枚のRaw Camera静止画像を使い、各辺5点を黒線探索の初期位置としてFrozen画像の暗線中心へ自動スナップし、4-of-5外れ値QCした後、既知150 × 237 mm剛体長方形をFrozen画像へ投影した4辺と残った16〜20画像点の垂直距離を直接フィットします。仮想四隅も独立した辺上uも姿勢変数として使いません。LMの収束診断を明示し、全4辺の使用点RMS 2.5px以下、span 50px以上、外れ値除去後のspan保持率65%以上を入力のhard GOOD gateとして要求します。WARN入力はその辺だけ再タップし、全辺GOODになるまで姿勢推定へ進みません。さらに投影後の全辺coverage 50%以上と全サンプルu∈[0,1]を別々に要求します。outside時は実際のoutside辺だけを再タップし、同一辺で2回失敗後はREFREEZEを要求します。coverage不足だけなら最も弱い辺だけ再タップします。同じFrozen画像をRESTART 20 TAPSで繰り返すと、全辺画像スナップGOOD＋入力GOOD＋coverage PASS＋最終fit GOODに加え、supported seed比率50%以上・選択解周辺cluster比率60%以上を要求します。最初の通過解はPROVISIONALとし、次の同一Frozen解がcenter 3 mm以内・normal 3°以内・projected-corner RMS 1.5 px以内かつmax 3 px以内に一致した時だけCONFIRMEDとします。LOCAL LOST時にVIEWER-ONLYでFREEZEした結果はそのFrozen時点のviewer参照空間だけで有効であり、別Frozenとのworld/local位置比較には使用しません。Hit Test / Depthは姿勢推定に使用せず、結果は診断専用で補正係数や絶対精度判定には使用しません。MAP integrity、Depth agreement、Hit entity probeなど従来の距離診断はそのまま維持します。
 </section>
 
 <section class="card">
@@ -705,7 +705,7 @@ let preBSummaryAtB = null;
 let preBIntegrity = 'UNKNOWN';
 let lastDistanceImpact = null;
 
-// Phase 4.50 Rev.1: continuous Point-A map-integrity gate retained unchanged from Rev.7.
+// Phase 4.50 Rev.2: continuous Point-A map-integrity gate retained unchanged from Rev.7.
 // The first 2 s are the initial settle check. After PASS, Point A continues
 // to be monitored until B capture. A >=5 mm relocation invalidates the trial
 // and locks Point B; 2..<5 mm is warning-only. The formal distance remains
@@ -1284,11 +1284,18 @@ const DETAIL_CONTRAST_LOW = 8.0;
 
 let ending = false;
 let cleanupDone = false;
-const LOG_STORAGE_KEY = 'ar-distance-lab-phase4-50-rev1-log';
-const SUMMARY_STORAGE_KEY = 'ar-distance-lab-phase4-50-rev1-summary';
-const SWEEP_STORAGE_KEY = 'ar-distance-lab-phase4-50-accuracy-sweep-v1';
-const SWEEP_FALLBACK_STORAGE_KEY = 'ar-distance-lab-phase4-50-accuracy-sweep-v1-session-fallback';
-const SWEEP_STORAGE_SCHEMA = 1;
+const LOG_STORAGE_KEY = 'ar-distance-lab-phase4-50-rev2-log';
+const SUMMARY_STORAGE_KEY = 'ar-distance-lab-phase4-50-rev2-summary';
+const SWEEP_STORAGE_KEY = 'ar-distance-lab-phase4-50-accuracy-sweep-v2';
+const SWEEP_FALLBACK_STORAGE_KEY = 'ar-distance-lab-phase4-50-accuracy-sweep-v2-session-fallback';
+const LEGACY_SWEEP_STORAGE_KEYS = ['ar-distance-lab-phase4-50-accuracy-sweep-v1'];
+const LEGACY_SWEEP_FALLBACK_STORAGE_KEYS = ['ar-distance-lab-phase4-50-accuracy-sweep-v1-session-fallback'];
+const SWEEP_STORAGE_SCHEMA = 2;
+const SWEEP_STORAGE_MAX_DISTANCE_M = 100; // corruption guard only; never used as an accuracy/outlier gate
+const SWEEP_ALLOWED_INTEGRITY = new Set(['PASS','WARN']);
+const SWEEP_ALLOWED_DEPTH_AGREEMENT = new Set(['AGREE','WARN','DIVERGED','UNKNOWN']);
+const SWEEP_ALLOWED_COHERENCE = new Set(['COHERENT','MIXED','LOW VALID','LOW COHERENCE','NO DEPTH']);
+const SWEEP_ALLOWED_HIT_STABILITY = new Set(['STABLE','MOVING','ANALYZING']);
 const DIAGNOSTIC_PROTOCOL_REVISION = 8;
 
 const TRACKING_UNSTABLE_MS = 250;
@@ -2780,29 +2787,106 @@ function makeSweepId(){
 function sweepTotalValid(){
   return SWEEP_TARGETS_M.reduce((n,t)=>n+targetRows(t).length,0);
 }
-function validSweepSampleRow(x){
-  if(!x || !Number.isFinite(x.referenceMeters) || !Number.isFinite(x.hitDistance)) return false;
-  return SWEEP_TARGETS_M.some(t=>Math.abs(t-x.referenceMeters)<0.0005);
+function validIsoUtcTimestamp(value){
+  return typeof value==='string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(value) && Number.isFinite(Date.parse(value));
 }
-function sanitizeSweepRows(rows){
-  const accepted=[];
-  const counts=new Map(SWEEP_TARGETS_M.map(t=>[t,0]));
-  for(const raw of Array.isArray(rows)?rows:[]){
-    if(!validSweepSampleRow(raw)) continue;
-    const target=SWEEP_TARGETS_M.find(t=>Math.abs(t-raw.referenceMeters)<0.0005);
-    if(target===undefined || (counts.get(target)||0)>=SWEEP_GOAL_PER_TARGET) continue;
-    const row={...raw,referenceMeters:target};
-    accepted.push(row);
-    counts.set(target,(counts.get(target)||0)+1);
+function validSweepId(value){
+  return typeof value==='string' && /^S\d{8}T\d{6}Z-[0-9A-F]{6}$/.test(value);
+}
+function validStoredDistance(value,{nullable=false,allowZero=false}={}){
+  if(value===null) return nullable;
+  if(typeof value!=='number' || !Number.isFinite(value)) return false;
+  if(allowZero ? value<0 : value<=0) return false;
+  return value<=SWEEP_STORAGE_MAX_DISTANCE_M;
+}
+function validNullableEnum(value,allowed){
+  return value===null || (typeof value==='string' && allowed.has(value));
+}
+function expectedSweepTargetForRow(position){
+  const targetIndex=Math.floor(position/SWEEP_GOAL_PER_TARGET);
+  return SWEEP_TARGETS_M[targetIndex] ?? null;
+}
+function rebuildValidatedSweepRow(raw,position,expectedSweepId,seenFingerprints){
+  if(!raw || typeof raw!=='object' || Array.isArray(raw)) return {ok:false,reason:`sample-${position+1}-not-object`};
+  const expectedIndex=position+1;
+  const expectedTarget=expectedSweepTargetForRow(position);
+  if(expectedTarget===null) return {ok:false,reason:`sample-${expectedIndex}-beyond-fixed-count`};
+  if(raw.index!==expectedIndex || !Number.isInteger(raw.index)) return {ok:false,reason:`sample-${expectedIndex}-index-mismatch`};
+  if(raw.sweepId!==expectedSweepId) return {ok:false,reason:`sample-${expectedIndex}-sweep-id-mismatch`};
+  if(!validIsoUtcTimestamp(raw.time)) return {ok:false,reason:`sample-${expectedIndex}-invalid-time`};
+  if(raw.referenceMeters!==expectedTarget) return {ok:false,reason:`sample-${expectedIndex}-target-order-mismatch`};
+  if(!validStoredDistance(raw.hitDistance)) return {ok:false,reason:`sample-${expectedIndex}-invalid-hit-distance`};
+  if(!validStoredDistance(raw.centerDistance,{nullable:true})) return {ok:false,reason:`sample-${expectedIndex}-invalid-depth-center`};
+  if(!validStoredDistance(raw.medianDistance,{nullable:true})) return {ok:false,reason:`sample-${expectedIndex}-invalid-depth-median`};
+  if(!SWEEP_ALLOWED_INTEGRITY.has(raw.integrity)) return {ok:false,reason:`sample-${expectedIndex}-invalid-integrity`};
+  if(!SWEEP_ALLOWED_DEPTH_AGREEMENT.has(raw.depthAgreement)) return {ok:false,reason:`sample-${expectedIndex}-invalid-depth-agreement`};
+  if(!validStoredDistance(raw.depthAgreementDelta,{nullable:true,allowZero:true})) return {ok:false,reason:`sample-${expectedIndex}-invalid-depth-delta`};
+  if(raw.medianDistance===null && raw.depthAgreementDelta!==null) return {ok:false,reason:`sample-${expectedIndex}-depth-delta-without-depth`};
+  if(raw.depthAgreement!=='UNKNOWN' && (raw.medianDistance===null || raw.depthAgreementDelta===null)) return {ok:false,reason:`sample-${expectedIndex}-depth-state-without-metric`};
+  if(!validNullableEnum(raw.aCoherence,SWEEP_ALLOWED_COHERENCE) || !validNullableEnum(raw.bCoherence,SWEEP_ALLOWED_COHERENCE)) return {ok:false,reason:`sample-${expectedIndex}-invalid-coherence`};
+  if(!validNullableEnum(raw.aHitStability,SWEEP_ALLOWED_HIT_STABILITY) || !validNullableEnum(raw.bHitStability,SWEEP_ALLOWED_HIT_STABILITY)) return {ok:false,reason:`sample-${expectedIndex}-invalid-hit-stability`};
+
+  const fingerprint=`${raw.time}|${raw.referenceMeters}|${raw.hitDistance}`;
+  if(seenFingerprints.has(fingerprint)) return {ok:false,reason:`sample-${expectedIndex}-duplicate`};
+  seenFingerprints.add(fingerprint);
+
+  // Rebuild from the strict allow-list instead of spreading untrusted storage fields.
+  return {ok:true,row:{
+    index:expectedIndex,
+    sweepId:expectedSweepId,
+    time:raw.time,
+    referenceMeters:expectedTarget,
+    hitDistance:raw.hitDistance,
+    centerDistance:raw.centerDistance,
+    medianDistance:raw.medianDistance,
+    aCoherence:raw.aCoherence,
+    bCoherence:raw.bCoherence,
+    integrity:raw.integrity,
+    depthAgreement:raw.depthAgreement,
+    depthAgreementDelta:raw.depthAgreementDelta,
+    aHitStability:raw.aHitStability,
+    bHitStability:raw.bHitStability
+  }};
+}
+function validateSweepSnapshot(parsed){
+  if(!parsed || typeof parsed!=='object' || Array.isArray(parsed)) return {ok:false,reason:'snapshot-not-object'};
+  if(parsed.schema!==SWEEP_STORAGE_SCHEMA) return {ok:false,reason:'schema-mismatch'};
+  if(parsed.phase!=='4.50' || parsed.revision!==2) return {ok:false,reason:'phase-or-revision-mismatch'};
+  if(!validSweepId(parsed.sweepId)) return {ok:false,reason:'invalid-sweep-id'};
+  if(!validIsoUtcTimestamp(parsed.createdAt) || !validIsoUtcTimestamp(parsed.updatedAt)) return {ok:false,reason:'invalid-snapshot-time'};
+  if(Date.parse(parsed.updatedAt)<Date.parse(parsed.createdAt)) return {ok:false,reason:'snapshot-time-order-invalid'};
+  if(parsed.expectedValid!==SWEEP_TARGETS_M.length*SWEEP_GOAL_PER_TARGET || parsed.fixedCountPerTarget!==SWEEP_GOAL_PER_TARGET) return {ok:false,reason:'fixed-protocol-mismatch'};
+  if(parsed.formalSource!=='immutable-hit' || parsed.valueBasedDiscard!==false) return {ok:false,reason:'formal-semantics-mismatch'};
+  if(!Array.isArray(parsed.samples) || parsed.samples.length>SWEEP_TARGETS_M.length*SWEEP_GOAL_PER_TARGET) return {ok:false,reason:'invalid-sample-array'};
+  if(parsed.totalValid!==parsed.samples.length || !Number.isInteger(parsed.totalValid)) return {ok:false,reason:'total-valid-mismatch'};
+
+  const rows=[];
+  const seenFingerprints=new Set();
+  for(let i=0;i<parsed.samples.length;i++){
+    const checked=rebuildValidatedSweepRow(parsed.samples[i],i,parsed.sweepId,seenFingerprints);
+    if(!checked.ok) return checked;
+    rows.push(checked.row);
   }
-  accepted.forEach((x,i)=>x.index=i+1);
-  return accepted;
+  return {ok:true,snapshot:{
+    schema:SWEEP_STORAGE_SCHEMA,
+    phase:'4.50',
+    revision:2,
+    sweepId:parsed.sweepId,
+    createdAt:parsed.createdAt,
+    updatedAt:parsed.updatedAt,
+    samples:rows,
+    totalValid:rows.length,
+    expectedValid:SWEEP_TARGETS_M.length*SWEEP_GOAL_PER_TARGET,
+    fixedCountPerTarget:SWEEP_GOAL_PER_TARGET,
+    formalSource:'immutable-hit',
+    valueBasedDiscard:false
+  }};
 }
-function sweepSnapshot(){
+function sweepSnapshotUnchecked(){
   return {
     schema:SWEEP_STORAGE_SCHEMA,
     phase:'4.50',
-    revision:1,
+    revision:2,
     sweepId,
     createdAt:sweepCreatedAt,
     updatedAt:now(),
@@ -2814,9 +2898,49 @@ function sweepSnapshot(){
     valueBasedDiscard:false
   };
 }
+function sweepSnapshot(){
+  const checked=validateSweepSnapshot(sweepSnapshotUnchecked());
+  if(!checked.ok) throw new Error(`sweep-storage-validation:${checked.reason}`);
+  return checked.snapshot;
+}
+function storageRead(kind,key){
+  try{
+    const area=kind==='LOCAL_STORAGE'?window.localStorage:window.sessionStorage;
+    return {raw:area.getItem(key),error:null};
+  }catch(err){
+    return {raw:null,error:err?.name||'StorageError'};
+  }
+}
+function storageRemove(kind,key){
+  try{
+    const area=kind==='LOCAL_STORAGE'?window.localStorage:window.sessionStorage;
+    area.removeItem(key);
+    return true;
+  }catch{}
+  return false;
+}
+function purgeLegacySweepStorage(){
+  let removed=0,failed=0;
+  for(const key of LEGACY_SWEEP_STORAGE_KEYS){
+    const r=storageRead('LOCAL_STORAGE',key);
+    if(r.raw!==null){ if(storageRemove('LOCAL_STORAGE',key)) removed++; else failed++; }
+  }
+  for(const key of LEGACY_SWEEP_FALLBACK_STORAGE_KEYS){
+    const r=storageRead('SESSION_FALLBACK',key);
+    if(r.raw!==null){ if(storageRemove('SESSION_FALLBACK',key)) removed++; else failed++; }
+  }
+  return {removed,failed};
+}
 function persistAccuracySweep(){
   if(!sweepId) return false;
-  const payload=JSON.stringify(sweepSnapshot());
+  let payload;
+  try{
+    payload=JSON.stringify(sweepSnapshot());
+  }catch(err){
+    sweepPersistenceMode='VALIDATION_FAILED';
+    sweepRestoreNote=`SAVE_REJECTED:${err?.message||'validation'}`;
+    return false;
+  }
   try{
     localStorage.setItem(SWEEP_STORAGE_KEY,payload);
     sweepPersistenceMode='LOCAL_STORAGE';
@@ -2832,17 +2956,6 @@ function persistAccuracySweep(){
     return false;
   }
 }
-function readAccuracySweepRaw(){
-  try{
-    const raw=localStorage.getItem(SWEEP_STORAGE_KEY);
-    if(raw){ sweepPersistenceMode='LOCAL_STORAGE'; return raw; }
-  }catch{}
-  try{
-    const raw=sessionStorage.getItem(SWEEP_FALLBACK_STORAGE_KEY);
-    if(raw){ sweepPersistenceMode='SESSION_FALLBACK'; return raw; }
-  }catch{}
-  return null;
-}
 function createNewAccuracySweepState(){
   depthSweepSamples=[];
   pendingSweepTarget=null;
@@ -2853,29 +2966,66 @@ function createNewAccuracySweepState(){
   persistAccuracySweep();
 }
 function restoreAccuracySweep(){
-  const raw=readAccuracySweepRaw();
-  if(!raw){
-    createNewAccuracySweepState();
-    return {restored:false,reason:'no-persistent-sweep'};
-  }
-  try{
-    const parsed=JSON.parse(raw);
-    if(Number(parsed?.schema)!==SWEEP_STORAGE_SCHEMA || parsed?.phase!=='4.50' || typeof parsed?.sweepId!=='string'){
-      createNewAccuracySweepState();
-      return {restored:false,reason:'schema-or-phase-mismatch'};
+  const legacy=purgeLegacySweepStorage();
+  const invalid=[];
+  const readErrors=[];
+  const candidates=[
+    {kind:'LOCAL_STORAGE',key:SWEEP_STORAGE_KEY},
+    {kind:'SESSION_FALLBACK',key:SWEEP_FALLBACK_STORAGE_KEY}
+  ];
+
+  for(const source of candidates){
+    const read=storageRead(source.kind,source.key);
+    if(read.error){ readErrors.push(`${source.kind}:${read.error}`); continue; }
+    if(!read.raw) continue;
+
+    let parsed;
+    try{ parsed=JSON.parse(read.raw); }
+    catch(err){
+      invalid.push(`${source.kind}:parse-${err?.name||'Error'}`);
+      storageRemove(source.kind,source.key);
+      continue;
     }
-    sweepId=parsed.sweepId;
-    sweepCreatedAt=typeof parsed.createdAt==='string'?parsed.createdAt:now();
-    depthSweepSamples=sanitizeSweepRows(parsed.samples);
+    const checked=validateSweepSnapshot(parsed);
+    if(!checked.ok){
+      invalid.push(`${source.kind}:${checked.reason}`);
+      storageRemove(source.kind,source.key);
+      continue;
+    }
+
+    const snap=checked.snapshot;
+    sweepId=snap.sweepId;
+    sweepCreatedAt=snap.createdAt;
+    depthSweepSamples=snap.samples;
     pendingSweepTarget=null;
     sweepCompleteLogged=sweepTotalValid()>=SWEEP_TARGETS_M.length*SWEEP_GOAL_PER_TARGET;
-    sweepRestoreNote='RESTORED';
+    sweepPersistenceMode=source.kind;
+    sweepRestoreNote='RESTORED_VALIDATED';
+    // Re-save the reconstructed allow-listed snapshot. This also promotes a valid
+    // session fallback to localStorage when localStorage is writable.
     persistAccuracySweep();
-    return {restored:true,reason:'persistent-sweep',count:sweepTotalValid()};
-  }catch(err){
-    createNewAccuracySweepState();
-    return {restored:false,reason:`parse-failed:${err?.name||'Error'}`};
+    return {
+      restored:true,
+      reason:'validated-persistent-sweep',
+      count:sweepTotalValid(),
+      source:source.kind,
+      invalidRejected:invalid,
+      storageReadErrors:readErrors,
+      legacyRemoved:legacy.removed,
+      legacyRemoveFailed:legacy.failed
+    };
   }
+
+  createNewAccuracySweepState();
+  const reason=invalid.length ? `invalid-storage-reset:${invalid.join(',')}` : 'no-persistent-sweep';
+  return {
+    restored:false,
+    reason,
+    invalidRejected:invalid,
+    storageReadErrors:readErrors,
+    legacyRemoved:legacy.removed,
+    legacyRemoveFailed:legacy.failed
+  };
 }
 function shortSweepId(){
   if(!sweepId) return '—';
@@ -3519,7 +3669,7 @@ function canCapturePoint(){
          aimQualityAllowsCapture();
 }
 
-// Phase 4.50 Rev.1: Point B stays distance-independent after Point A.
+// Phase 4.50 Rev.2: Point B stays distance-independent after Point A.
 // The initial 2 s settle must pass and the A map-integrity gate remains active
 // until B capture. Any >=5 mm A relocation locks B until RESET MEASURE.
 // Hit/AIM fluctuations do not grey out B; a current plane Hit is checked at press time.
@@ -6943,7 +7093,7 @@ function onXRFrame(time,frame){
   refreshRawCameraFreshnessUI('xr-frame-watchdog');
   if(localRawSampled) tryFulfillQueuedCardFreeze('new-local-raw-camera-frame');
 
-  // Phase 4.50 Rev.1 inherits the Phase 4.40 Rev.7 / Phase 4.30 Rev.16 calibration path unchanged: freezes pixels and matching XRView geometry from the same sampling role: LOCAL when available, otherwise VIEWER-ONLY during fallback.
+  // Phase 4.50 Rev.2 inherits the Phase 4.40 Rev.7 / Phase 4.30 Rev.16 calibration path unchanged: freezes pixels and matching XRView geometry from the same sampling role: LOCAL when available, otherwise VIEWER-ONLY during fallback.
   // VIEWER-ONLY solves the known rectangle in the frozen viewer reference space and is not world/local comparable across frames.
   // No live per-corner auto-dwell runs here; Hit/Depth remain independent diagnostics.
 
@@ -7318,9 +7468,9 @@ restoreDiagnostics();
 setReferenceCm(nextSweepTargetFromStats()*100);
 persistAccuracySweep();
 if(sweepRestore.restored){
-  log(`ACCURACY SWEEP RESTORED: sweepId=${sweepId}; totalValid=${sweepTotalValid()}/${SWEEP_TARGETS_M.length*SWEEP_GOAL_PER_TARGET}; progress=${sweepProgressText()}; nextReference=${(nextSweepTargetFromStats()*100).toFixed(1)} cm; persistence=${sweepPersistenceMode}; formalSource=immutable-hit`);
+  log(`ACCURACY SWEEP RESTORED: sweepId=${sweepId}; totalValid=${sweepTotalValid()}/${SWEEP_TARGETS_M.length*SWEEP_GOAL_PER_TARGET}; progress=${sweepProgressText()}; nextReference=${(nextSweepTargetFromStats()*100).toFixed(1)} cm; persistence=${sweepPersistenceMode}; storageValidation=PASS; schema=${SWEEP_STORAGE_SCHEMA}; source=${sweepRestore.source}; invalidRejected=${sweepRestore.invalidRejected?.length||0}; legacyRemoved=${sweepRestore.legacyRemoved||0}; legacyRemoveFailed=${sweepRestore.legacyRemoveFailed||0}; formalSource=immutable-hit`);
 }else{
-  log(`NEW ACCURACY SWEEP CREATED: sweepId=${sweepId}; totalValid=0/${SWEEP_TARGETS_M.length*SWEEP_GOAL_PER_TARGET}; target=50 cm; persistence=${sweepPersistenceMode}; legacyPhase440SamplesImported=false; reason=${sweepRestore.reason}; formalSource=immutable-hit`);
+  log(`NEW ACCURACY SWEEP CREATED: sweepId=${sweepId}; totalValid=0/${SWEEP_TARGETS_M.length*SWEEP_GOAL_PER_TARGET}; target=50 cm; persistence=${sweepPersistenceMode}; storageValidation=NEW_CLEAN_STATE; schema=${SWEEP_STORAGE_SCHEMA}; invalidRejected=${sweepRestore.invalidRejected?.length||0}; legacyRemoved=${sweepRestore.legacyRemoved||0}; legacyRemoveFailed=${sweepRestore.legacyRemoveFailed||0}; legacyPhase440SamplesImported=false; reason=${sweepRestore.reason}; formalSource=immutable-hit`);
 }
 updateDepthSweepUI();
 resetMeasurementMetrics();
