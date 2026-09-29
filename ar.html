@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<title>AR DISTANCE LAB - Phase 4.50 Rev.6</title>
+<title>AR DISTANCE LAB - Phase 4.60 Rev.1</title>
 <style>
 :root{
   color-scheme:dark;
@@ -63,6 +63,8 @@ padding:8px 9px;pointer-events:auto}
 #xrCanvas{position:fixed;inset:0;width:1px;height:1px;pointer-events:none}
 
 #qualityText{font-size:12px;font-weight:700;margin-top:4px;color:#cfe8f5}
+#surfaceConsistencyText{font-size:11px;font-weight:700;line-height:1.25;margin-top:4px;padding:4px 5px;border:1px solid #263441;border-radius:7px;background:#08131c;color:#cfe8f5}
+#surfaceConsistencyText.ok{color:var(--ok)}#surfaceConsistencyText.warn{color:var(--warn)}#surfaceConsistencyText.ng{color:var(--ng)}
 #depthText,#depthABText,#entityText,#settlingText,#preBText,#alignmentText,
 #calibrationOverlayText,#calibrationDwellTrack,.magRow,.diagRow{display:none!important}
 #sweepText{font-size:11px;font-weight:700;color:#bfdbfe;margin-top:3px}
@@ -133,7 +135,7 @@ padding:8px 9px;pointer-events:auto}
 <body>
 <main>
 <h1>AR DISTANCE LAB</h1>
-<p class="sub">Phase 4.50 Rev.6 — Lowered top status message / surface-qualified scene setup / persistent 9-sample accuracy sweep / immutable Hit-Hit</p>
+<p class="sub">Phase 4.60 Rev.1 — Hit/Depth surface consistency diagnostic / completed Phase 4.50 sweep preserved / immutable Hit-Hit</p>
 
 <section class="card">
 <h2>STATUS</h2>
@@ -211,6 +213,10 @@ padding:8px 9px;pointer-events:auto}
   <div class="cell">Hit projected UV</div><div class="cell" id="hitUvState">—</div>
   <div class="cell">Depth @ Hit UV</div><div class="cell" id="depthAtHitState">—</div>
   <div class="cell">Hit −Z − Depth@UV</div><div class="cell" id="depthHitDeltaState">—</div>
+  <div class="cell">Live Surface consistency</div><div class="cell" id="surfaceConsistencyLiveState">UNKNOWN</div>
+  <div class="cell">Point A Surface consistency</div><div class="cell" id="surfaceConsistencyAState">—</div>
+  <div class="cell">Point B Surface consistency</div><div class="cell" id="surfaceConsistencyBState">—</div>
+  <div class="cell">A/B Surface consistency</div><div class="cell" id="surfaceConsistencyPairState">—</div>
   <div class="cell">Point A View-Z × Depth</div><div class="cell" id="captureADepthState">—</div>
   <div class="cell">Point B View-Z × Depth</div><div class="cell" id="captureBDepthState">—</div>
   <div class="cell">Depth 3D geometry</div><div class="cell" id="depth3DGeometryState">WAITING</div>
@@ -244,8 +250,13 @@ padding:8px 9px;pointer-events:auto}
 </section>
 
 <section class="card">
+<h2>PHASE 4.60 — HIT / DEPTH SURFACE CONSISTENCY DIAGNOSTIC</h2>
+<p class="note">Point A / B の取得フレームで、formal plane Hit を同じXRViewへ変換した前方距離（Hit View −Z）と、同じ画面UVにある同一フレームDepthを比較します。Depth coherence が COHERENT で |Hit View −Z − Depth@UV| &lt; 20 mm のとき MATCH、20 mm以上は MISMATCH、同一フレームDepthが無い場合やcoherenceがCOHERENTでない場合は UNKNOWN と表示します。これは<strong>診断専用</strong>です。CAPTUREをブロックせず、MAPゲート・Accuracy Sweepの採否・正式距離の値を変更せず、Depthによる補正も行いません。Phase 4.50で確定した9サンプルは既存localStorageのまま保持します。比較実験では、この表示がMATCHになるまで待つなど取得タイミングを変えず、従来と同じSURFACE / AIM手順で取得してください。</p>
+</section>
+
+<section class="card">
 <h2>PHASE 4.50 — PERSISTENT FORMAL HIT-HIT ACCURACY SWEEP</h2>
-<p class="note">Phase 4.50では、50 / 100 / 150 cm × 各3回 = 合計9回の正式 immutable plane Hit-Hit を1つのAccuracy Sweepとして永続管理します。Sweep状態はlocalStorageへ保存し、ARのEND、ページ再読込、同一Originでの再開後も復元します。値が悪いことを理由に有効サンプルを捨てたり追加測定したりせず、各距離の最初の有効3回だけを固定します。MAP INVALID / reference-space reset など既存の安全ゲートで無効になった測定だけが数え直し対象です。Repeatability cluster、Depth、Anchorは診断専用で、正式Hit-Hit値の補正・採否には使用しません。 Rev.2では保存前と復元時の両方でSweep全体をschema 2として検証し、1件でも構造・Sweep ID・順序・状態値などに不整合があれば部分復元せず、その保存Sweep全体を無効として新しい0/9 Sweepを開始します。旧v1保存キーは読み込まず、削除を試みます。削除できない環境でも旧キーは参照しません。 Rev.3ではARセッション開始直後にSTEP 0 / SCENE SETUPを表示し、A付近→B付近→周囲の床・壁・物体→A付近の順にゆっくり見渡して空間認識を促します。SCENE READYを押すまでPoint A取得へ進みません。これは操作ガイドであり、正式距離の計算式・Hit採用条件・Sweep採否条件は変更しません。 Rev.4ではXR画面上部の状態メッセージをsafe-area上端から従来より約1行分（16 px）下げ、画面切り欠き・パンチホールとの重なりを避けます。測定ロジックと保存形式は変更しません。 Rev.5ではSCENE READYを単なる確認ボタンではなく、A付近へ戻った時点で現在のformal plane Hitが取得できている場合だけ成立するsurface-qualified gateに変更します。シーン認識ガイドには、A→B→周囲→Aの順に加え、端末をその場で回転させるだけでなく少し横・斜めにも移動して視差を作り、床壁境界・角・模様・掲示物などの特徴を画面へ入れることを明示します。これは操作フローの改善だけで、正式距離は引き続きimmutable plane Hit-Hitです。 Rev.6では画面切り欠きとの重なりをさらに避けるため、XR画面上部の状態メッセージだけをRev.5から32 px（約2行分）下へ移動します。測定ロジック、SCENE READY条件、保存形式、正式距離の計算には変更ありません。</p>
+<p class="note">Phase 4.50では、50 / 100 / 150 cm × 各3回 = 合計9回の正式 immutable plane Hit-Hit を1つのAccuracy Sweepとして永続管理します。Sweep状態はlocalStorageへ保存し、ARのEND、ページ再読込、同一Originでの再開後も復元します。値が悪いことを理由に有効サンプルを捨てたり追加測定したりせず、各距離の最初の有効3回だけを固定します。MAP INVALID / reference-space reset など既存の安全ゲートで無効になった測定だけが数え直し対象です。Repeatability cluster、Depth、Anchorは診断専用で、正式Hit-Hit値の補正・採否には使用しません。 Rev.2では保存前と復元時の両方でSweep全体をschema 2として検証し、1件でも構造・Sweep ID・順序・状態値などに不整合があれば部分復元せず、その保存Sweep全体を無効として新しい0/9 Sweepを開始します。旧v1保存キーは読み込まず、削除を試みます。削除できない環境でも旧キーは参照しません。 Rev.3ではARセッション開始直後にSTEP 0 / SCENE SETUPを表示し、A付近→B付近→周囲の床・壁・物体→A付近の順にゆっくり見渡して空間認識を促します。SCENE READYを押すまでPoint A取得へ進みません。これは操作ガイドであり、正式距離の計算式・Hit採用条件・Sweep採否条件は変更しません。 Rev.4ではXR画面上部の状態メッセージをsafe-area上端から従来より約1行分（16 px）下げ、画面切り欠き・パンチホールとの重なりを避けます。測定ロジックと保存形式は変更しません。 Rev.5ではSCENE READYを単なる確認ボタンではなく、A付近へ戻った時点で現在のformal plane Hitが取得できている場合だけ成立するsurface-qualified gateに変更します。シーン認識ガイドには、A→B→周囲→Aの順に加え、端末をその場で回転させるだけでなく少し横・斜めにも移動して視差を作り、床壁境界・角・模様・掲示物などの特徴を画面へ入れることを明示します。これは操作フローの改善だけで、正式距離は引き続きimmutable plane Hit-Hitです。 Rev.6では画面切り欠きとの重なりをさらに避けるため、XR画面上部の状態メッセージだけをRev.5から32 px（約2行分）下へ移動します。測定ロジック、SCENE READY条件、保存形式、正式距離の計算には変更ありません。 Phase 4.60 Rev.1では完了済みSweepを保持したまま、Point A/B取得時のHit View-Zと同一フレームDepth@UVのSurface Consistencyを追加します。この診断は正式値・採否に影響しません。</p>
 <div class="actions">
   <button type="button" class="refPreset" data-cm="50">50 cm</button>
   <button type="button" class="refPreset" data-cm="100">100 cm</button>
@@ -398,6 +409,7 @@ Phase 4.50 Rev.4でも正式単発距離値はimmutable Hit-Hitのままです�
         <div id="qualityText">AIM QUALITY: ANALYZING</div>
         <div id="hitStabilityText">HIT STABILITY: ANALYZING</div>
       </div>
+      <div id="surfaceConsistencyText">SURFACE CONSISTENCY: UNKNOWN — diagnostic only</div>
       <div id="depthText">DEPTH × HIT: WAITING — diagnostic only</div>
       <div id="depthABText">DEPTH 3D A↔B: — agreement diagnostic</div>
       <div id="sweepText">ACCURACY: 50 cm 0/3 | 100 cm 0/3 | 150 cm 0/3</div>
@@ -453,9 +465,10 @@ const el = {};
   'absErrorState','relErrorState','resetEventState','referenceCm',
   'rawCameraState','hitDistanceState','depthState','depthConfigState','depthBufferState',
   'depthCenterState','depthMedianState','depthTemporalState','depthValidState','depthCoherenceState','hitViewState','hitUvState','depthAtHitState','depthHitDeltaState',
+  'surfaceConsistencyLiveState','surfaceConsistencyAState','surfaceConsistencyBState','surfaceConsistencyPairState',
   'captureADepthState','captureBDepthState','depth3DGeometryState','depth3DAState','depth3DBState','compareHitABState','compareDepthCenterABState','compareDepthMedianABState','compareHitADepthBState','compareDepthAHitBState','depthCenterErrorState','depthMedianErrorState','entityProbeState','entityPlaneSourceState','entityPlaneHitState','entityPointSourceState','entityPointHitState','entityMeshSourceState','entityMeshHitState','entitySnapshotState','aimQualityState','edgeMedianState',
   'contrastMedianState','calibrationWidthMm','calibrationHeightMm','calibrationSequenceState','calibrationAutoState','calibrationDwellState','calibrationTargetState','calibrationWidthState','calibrationHeightState','calibrationDiagonalState','calibrationWidthErrorState','calibrationHeightErrorState','calibrationScaleState','calibrationScaleSpreadState','calibrationScaleResidualState','calibrationAngleState','calibrationPlaneState','calibrationDepthState','calibrationRoleState','calibrationResetBtn','calibrationText','calibrationOverlayText','calibrationDwellTrack','calibrationDwellBar','calibrationCaptureBtn','calibrationResetOverlayBtn','sweepRunState','sweepProgressState','sweepSelectedCountState','sweepConsensusState','sweepNextState','sweepHitState','sweepConsensusDistanceState','sweepDepthCenterState','sweepDepthMedianState','discardSweepBtn','clearSweepBtn','sweepText','magnifierState','magnifierCanvas','magnifierWrap','cardFreezePanel','cardFreezeCanvas','cardFreezeTitle','cardFreezeTapState','cardFreezeResetTapsBtn','cardFreezeRetakeBtn','cardValidationBtn','cardValidationState','alignmentGrid','alignmentMark','alignmentState','alignmentOffsetState','alignmentUvState','alignBtn','entitySnapshotBtn',
-  'magnifierLabel','qualityText','hitStabilityText','depthText','depthABText','entityText','alignmentText',
+  'magnifierLabel','qualityText','hitStabilityText','surfaceConsistencyText','depthText','depthABText','entityText','alignmentText',
   'coordA','coordB','startBtn','resetBtn','endBtn','log','xrCanvas','xrOverlay','xrHud',
   'xrState','xrHint','pointText','anchorText','distanceText','accuracyText','stabilityText','settlingText','preBText','sweepText','sceneSetupText','operationText','setPointBtn',
   'xrResetBtn','xrEndBtn','topPanel','bottomPanel'
@@ -1278,6 +1291,14 @@ let latestDepthHitCrossCheck = null;
 let captureDepthAgreementA = null;
 let captureDepthAgreementB = null;
 
+// Phase 4.60 Rev.1: same-frame surface-consistency diagnostic only.
+// This never gates capture, rejects a formal measurement, or corrects Hit-Hit.
+const SURFACE_CONSISTENCY_MATCH_M = 0.020; // preserves the existing 20 mm UI boundary
+let liveSurfaceConsistency = null;
+let captureSurfaceConsistencyA = null;
+let captureSurfaceConsistencyB = null;
+let surfaceConsistencyPair = null;
+
 let aimQuality = 'ANALYZING';
 let magnifierZoom = 3;
 let magnifierFirstPaintLogged = false;
@@ -1305,7 +1326,7 @@ const SWEEP_ALLOWED_INTEGRITY = new Set(['PASS','WARN']);
 const SWEEP_ALLOWED_DEPTH_AGREEMENT = new Set(['AGREE','WARN','DIVERGED','UNKNOWN']);
 const SWEEP_ALLOWED_COHERENCE = new Set(['COHERENT','MIXED','LOW VALID','LOW COHERENCE','NO DEPTH']);
 const SWEEP_ALLOWED_HIT_STABILITY = new Set(['STABLE','MOVING','ANALYZING']);
-const DIAGNOSTIC_PROTOCOL_REVISION = 8;
+const DIAGNOSTIC_PROTOCOL_REVISION = 9;
 
 const TRACKING_UNSTABLE_MS = 250;
 const TRACKING_LOST_MS = 1000;
@@ -1347,6 +1368,10 @@ function persistDiagnostics(){
       captureHitDistance,
       captureSnapshotA,
       captureSnapshotB,
+      liveSurfaceConsistency,
+      captureSurfaceConsistencyA,
+      captureSurfaceConsistencyB,
+      surfaceConsistencyPair,
       preBSummaryAtB,
       lastDistanceImpact,
       alignmentMode,
@@ -1689,6 +1714,10 @@ function resetDepthDiagnostics(){
   latestDepthHitCrossCheck = null;
   captureDepthAgreementA = null;
   captureDepthAgreementB = null;
+  liveSurfaceConsistency = null;
+  captureSurfaceConsistencyA = null;
+  captureSurfaceConsistencyB = null;
+  surfaceConsistencyPair = null;
   captureDepth3DA = null;
   captureDepth3DB = null;
   depthABComparison = null;
@@ -1706,6 +1735,11 @@ function resetDepthDiagnostics(){
   set('hitUvState','—','');
   set('depthAtHitState','—','');
   set('depthHitDeltaState','—','');
+  set('surfaceConsistencyLiveState','UNKNOWN','warn');
+  set('surfaceConsistencyAState','—','');
+  set('surfaceConsistencyBState','—','');
+  set('surfaceConsistencyPairState','—','');
+  if(el.surfaceConsistencyText) el.surfaceConsistencyText.textContent='SURFACE CONSISTENCY: UNKNOWN — diagnostic only';
   set('captureADepthState','—','');
   set('captureBDepthState','—','');
   set('depth3DGeometryState','WAITING','warn');
@@ -1920,9 +1954,95 @@ function buildDepthHitCrossCheck(time,hitDistance,hitViewDiag=latestHitViewDiagn
   };
 }
 
+function classifySurfaceConsistency(c){
+  if(!c){
+    return {state:'UNKNOWN',reason:'no same-frame Hit/Depth overlap',signedDelta:null,absDelta:null,coherence:null};
+  }
+  if(c.depthCoherence!=='COHERENT'){
+    return {state:'UNKNOWN',reason:`Depth coherence=${c.depthCoherence??'n/a'}`,signedDelta:Number.isFinite(c.deltaViewForwardMinusDepth)?c.deltaViewForwardMinusDepth:null,absDelta:Number.isFinite(c.deltaViewForwardMinusDepth)?Math.abs(c.deltaViewForwardMinusDepth):null,coherence:c.depthCoherence??null};
+  }
+  const signedDelta=Number.isFinite(c.deltaViewForwardMinusDepth)?c.deltaViewForwardMinusDepth:null;
+  if(signedDelta===null){
+    return {state:'UNKNOWN',reason:'non-finite Hit/Depth delta',signedDelta:null,absDelta:null,coherence:c.depthCoherence};
+  }
+  const absDelta=Math.abs(signedDelta);
+  return {
+    state:absDelta<SURFACE_CONSISTENCY_MATCH_M?'MATCH':'MISMATCH',
+    reason:absDelta<SURFACE_CONSISTENCY_MATCH_M?'|Hit View-Z - Depth@UV| < 20 mm':'|Hit View-Z - Depth@UV| >= 20 mm',
+    signedDelta,absDelta,coherence:c.depthCoherence,
+    hitViewForward:c.hitViewForward,depthAtHitUv:c.depthAtHitUv,
+    frame:c.frame,sampleFrame:c.sampleFrame,ageMs:c.ageMs
+  };
+}
+
+function surfaceConsistencyCss(state){
+  return state==='MATCH'?'ok':'warn';
+}
+
+function surfaceConsistencyText(sc){
+  if(!sc || sc.state==='UNKNOWN') return `UNKNOWN${sc?.reason?' / '+sc.reason:''}`;
+  const mm=sc.signedDelta*1000;
+  return `${sc.state} / Δ ${mm>=0?'+':''}${mm.toFixed(1)} mm`;
+}
+
+function renderLiveSurfaceConsistency(sc){
+  liveSurfaceConsistency=sc;
+  set('surfaceConsistencyLiveState',surfaceConsistencyText(sc),surfaceConsistencyCss(sc?.state));
+  if(el.surfaceConsistencyText){
+    el.surfaceConsistencyText.textContent=`SURFACE CONSISTENCY: ${surfaceConsistencyText(sc)} — diagnostic only`;
+    el.surfaceConsistencyText.className=surfaceConsistencyCss(sc?.state);
+  }
+}
+
+function recordCaptureSurfaceConsistency(slot,c){
+  const sc=classifySurfaceConsistency(c);
+  if(slot==='A') captureSurfaceConsistencyA=sc;
+  else captureSurfaceConsistencyB=sc;
+  set(slot==='A'?'surfaceConsistencyAState':'surfaceConsistencyBState',surfaceConsistencyText(sc),surfaceConsistencyCss(sc.state));
+  log(
+    `SURFACE CONSISTENCY ${slot}: state=${sc.state}; `+
+    `hitViewForward=${Number.isFinite(sc.hitViewForward)?sc.hitViewForward.toFixed(6)+' m':'n/a'}; `+
+    `depthAtUv=${Number.isFinite(sc.depthAtHitUv)?sc.depthAtHitUv.toFixed(6)+' m':'n/a'}; `+
+    `signedDelta=${Number.isFinite(sc.signedDelta)?(sc.signedDelta*1000).toFixed(3)+' mm':'n/a'}; `+
+    `absDelta=${Number.isFinite(sc.absDelta)?(sc.absDelta*1000).toFixed(3)+' mm':'n/a'}; `+
+    `coherence=${sc.coherence??'n/a'}; reason=${sc.reason}; threshold=20.0 mm; `+
+    `affectsCaptureGate=false; affectsFormalGate=false; correctionApplied=false; diagnosticOnly=true; formalSource=immutable-hit`
+  );
+  return sc;
+}
+
+function updateSurfaceConsistencyPair(){
+  const a=captureSurfaceConsistencyA;
+  const b=captureSurfaceConsistencyB;
+  let state='UNKNOWN';
+  let reason='A/B consistency unavailable';
+  if(a?.state!=='UNKNOWN' && b?.state!=='UNKNOWN'){
+    state=(a.state==='MATCH' && b.state==='MATCH')?'MATCH':'MISMATCH';
+    reason=state==='MATCH'?'both endpoints match same-frame Depth within 20 mm':'one or both endpoints differ from same-frame Depth by >= 20 mm';
+  }
+  const pair={
+    state,reason,
+    aState:a?.state??'UNKNOWN',bState:b?.state??'UNKNOWN',
+    aSignedDelta:a?.signedDelta??null,bSignedDelta:b?.signedDelta??null,
+    maxAbsDelta:[a?.absDelta,b?.absDelta].filter(Number.isFinite).reduce((m,v)=>Math.max(m,v),0)
+  };
+  if(![a?.absDelta,b?.absDelta].some(Number.isFinite)) pair.maxAbsDelta=null;
+  surfaceConsistencyPair=pair;
+  const aText=Number.isFinite(pair.aSignedDelta)?`${pair.aSignedDelta>=0?'+':''}${(pair.aSignedDelta*1000).toFixed(1)}mm`:'n/a';
+  const bText=Number.isFinite(pair.bSignedDelta)?`${pair.bSignedDelta>=0?'+':''}${(pair.bSignedDelta*1000).toFixed(1)}mm`:'n/a';
+  set('surfaceConsistencyPairState',`${pair.state} / A ${aText} / B ${bText}`,surfaceConsistencyCss(pair.state));
+  log(
+    `SURFACE CONSISTENCY PAIR: state=${pair.state}; A=${pair.aState}(${aText}); B=${pair.bState}(${bText}); `+
+    `maxAbsDelta=${Number.isFinite(pair.maxAbsDelta)?(pair.maxAbsDelta*1000).toFixed(3)+' mm':'n/a'}; reason=${pair.reason}; `+
+    `threshold=20.0 mm; affectsCaptureGate=false; affectsFormalGate=false; correctionApplied=false; diagnosticOnly=true; formalSource=immutable-hit`
+  );
+  return pair;
+}
+
 function updateDepthHitCrossCheck(time){
   const current=buildDepthHitCrossCheck(time,latestHitDistance,latestHitViewDiagnostic);
   if(!current){
+    renderLiveSurfaceConsistency(classifySurfaceConsistency(null));
     if(latestDepthHitCrossCheck) return;
     set('hitViewState','—','');
     set('hitUvState','—','');
@@ -1933,6 +2053,7 @@ function updateDepthHitCrossCheck(time){
   }
   latestDepthHitCrossCheck=current;
   const c=current;
+  renderLiveSurfaceConsistency(classifySurfaceConsistency(c));
 
   const deltaMm=c.deltaViewForwardMinusDepth*1000;
   set('hitViewState',`x=${(c.hitViewX*1000).toFixed(1)} / y=${(c.hitViewY*1000).toFixed(1)} / −z=${c.hitViewForward.toFixed(3)} m`,'ok');
@@ -1953,10 +2074,12 @@ function snapshotDepthAgreement(slot,time,hitDistance,hitViewDiag){
 
   if(!c){
     set(stateId,'N/A','warn');
+    recordCaptureSurfaceConsistency(slot,null);
     log(`Point ${slot} View-Z × Depth: unavailable at capture frame`);
     return null;
   }
 
+  recordCaptureSurfaceConsistency(slot,c);
   const deltaMm=c.deltaViewForwardMinusDepth*1000;
   const text=
     `−z ${c.hitViewForward.toFixed(3)} / depth ${c.depthAtHitUv.toFixed(3)} m / ` +
@@ -3324,6 +3447,12 @@ function resetMeasurementMetrics(){
   resetHitStabilityDiagnostics();
   captureDepthAgreementA = null;
   captureDepthAgreementB = null;
+  captureSurfaceConsistencyA = null;
+  captureSurfaceConsistencyB = null;
+  surfaceConsistencyPair = null;
+  set('surfaceConsistencyAState','—','');
+  set('surfaceConsistencyBState','—','');
+  set('surfaceConsistencyPairState','—','');
   set('captureADepthState','—','');
   set('captureBDepthState','—','');
   set('depth3DAState','—','');
@@ -3436,6 +3565,12 @@ function summarizeMeasurement(reason){
   log(
     `camera distance median: A=${camAMed===null?'n/a':camAMed.toFixed(6)} m; ` +
     `B=${camBMed===null?'n/a':camBMed.toFixed(6)} m`
+  );
+  log(
+    `surface consistency summary: pair=${surfaceConsistencyPair?.state??'UNKNOWN'}; ` +
+    `A=${captureSurfaceConsistencyA?.state??'UNKNOWN'}(${Number.isFinite(captureSurfaceConsistencyA?.signedDelta)?(captureSurfaceConsistencyA.signedDelta*1000).toFixed(3)+' mm':'n/a'}); ` +
+    `B=${captureSurfaceConsistencyB?.state??'UNKNOWN'}(${Number.isFinite(captureSurfaceConsistencyB?.signedDelta)?(captureSurfaceConsistencyB.signedDelta*1000).toFixed(3)+' mm':'n/a'}); ` +
+    `threshold=20.0 mm; affectsFormalGate=false; correctionApplied=false; diagnosticOnly=true`
   );
 
   const finalAnchor = currentAnchorDistance;
@@ -6644,6 +6779,7 @@ async function startAR(){
 
     set('sessionState','STARTED','ok');
     log(`session started; enabledFeatures=[${session.enabledFeatures ? Array.from(session.enabledFeatures).join(', ') : 'not exposed'}]`);
+    log('SURFACE CONSISTENCY DIAGNOSTIC ACTIVE: comparison=HitViewForward-vs-sameFrameDepthAtHitUv; match<20mm; mismatch>=20mm; coherenceRequired=COHERENT; affectsCaptureGate=false; affectsFormalGate=false; correctionApplied=false; diagnosticOnly=true; formalSource=immutable-hit');
 
     try{
       const usage=session.depthUsage ?? 'not exposed';
@@ -6916,6 +7052,7 @@ function createAnchorFromHit(result,hitPose,slot,time,viewerPose){
     preBActive = false;
 
     updateDepthABComparison();
+    updateSurfaceConsistencyPair();
     freezeMeasurementAtB(fallbackPoint,time);
     logHitABComparison();
 
