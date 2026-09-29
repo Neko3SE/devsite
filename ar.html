@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<title>AR DISTANCE LAB - Phase 4.50 Rev.4</title>
+<title>AR DISTANCE LAB - Phase 4.50 Rev.6</title>
 <style>
 :root{
   color-scheme:dark;
@@ -41,7 +41,7 @@ pre{white-space:pre-wrap;overflow-wrap:anywhere;margin:0;max-height:260px;overfl
 #xrHud{position:absolute;inset:0;pointer-events:none}
 #centerGuide{position:absolute;z-index:25;left:50%;top:50%;transform:translate(-50%,-50%);
 font-size:28px;line-height:1;color:#fff;text-shadow:0 0 5px #000}
-#topPanel{position:absolute;z-index:20;left:50%;top:calc(env(safe-area-inset-top, 0px) + 26px);transform:translateX(-50%);
+#topPanel{position:absolute;z-index:20;left:50%;top:calc(env(safe-area-inset-top, 0px) + 58px);transform:translateX(-50%);
 width:auto;max-width:92vw;background:#071019df;border:1px solid #587086;border-radius:999px;
 padding:5px 10px;text-align:center;pointer-events:none}
 #bottomPanel{position:absolute;z-index:20;left:50%;bottom:max(8px,env(safe-area-inset-bottom));transform:translateX(-50%);
@@ -133,7 +133,7 @@ padding:8px 9px;pointer-events:auto}
 <body>
 <main>
 <h1>AR DISTANCE LAB</h1>
-<p class="sub">Phase 4.50 Rev.4 — Persistent 9-sample accuracy sweep / guided scene setup / notch-safe top message / immutable Hit-Hit</p>
+<p class="sub">Phase 4.50 Rev.6 — Lowered top status message / surface-qualified scene setup / persistent 9-sample accuracy sweep / immutable Hit-Hit</p>
 
 <section class="card">
 <h2>STATUS</h2>
@@ -245,7 +245,7 @@ padding:8px 9px;pointer-events:auto}
 
 <section class="card">
 <h2>PHASE 4.50 — PERSISTENT FORMAL HIT-HIT ACCURACY SWEEP</h2>
-<p class="note">Phase 4.50では、50 / 100 / 150 cm × 各3回 = 合計9回の正式 immutable plane Hit-Hit を1つのAccuracy Sweepとして永続管理します。Sweep状態はlocalStorageへ保存し、ARのEND、ページ再読込、同一Originでの再開後も復元します。値が悪いことを理由に有効サンプルを捨てたり追加測定したりせず、各距離の最初の有効3回だけを固定します。MAP INVALID / reference-space reset など既存の安全ゲートで無効になった測定だけが数え直し対象です。Repeatability cluster、Depth、Anchorは診断専用で、正式Hit-Hit値の補正・採否には使用しません。 Rev.2では保存前と復元時の両方でSweep全体をschema 2として検証し、1件でも構造・Sweep ID・順序・状態値などに不整合があれば部分復元せず、その保存Sweep全体を無効として新しい0/9 Sweepを開始します。旧v1保存キーは読み込まず、削除を試みます。削除できない環境でも旧キーは参照しません。 Rev.3ではARセッション開始直後にSTEP 0 / SCENE SETUPを表示し、A付近→B付近→周囲の床・壁・物体→A付近の順にゆっくり見渡して空間認識を促します。SCENE READYを押すまでPoint A取得へ進みません。これは操作ガイドであり、正式距離の計算式・Hit採用条件・Sweep採否条件は変更しません。 Rev.4ではXR画面上部の状態メッセージをsafe-area上端から従来より約1行分（16 px）下げ、画面切り欠き・パンチホールとの重なりを避けます。測定ロジックと保存形式は変更しません。</p>
+<p class="note">Phase 4.50では、50 / 100 / 150 cm × 各3回 = 合計9回の正式 immutable plane Hit-Hit を1つのAccuracy Sweepとして永続管理します。Sweep状態はlocalStorageへ保存し、ARのEND、ページ再読込、同一Originでの再開後も復元します。値が悪いことを理由に有効サンプルを捨てたり追加測定したりせず、各距離の最初の有効3回だけを固定します。MAP INVALID / reference-space reset など既存の安全ゲートで無効になった測定だけが数え直し対象です。Repeatability cluster、Depth、Anchorは診断専用で、正式Hit-Hit値の補正・採否には使用しません。 Rev.2では保存前と復元時の両方でSweep全体をschema 2として検証し、1件でも構造・Sweep ID・順序・状態値などに不整合があれば部分復元せず、その保存Sweep全体を無効として新しい0/9 Sweepを開始します。旧v1保存キーは読み込まず、削除を試みます。削除できない環境でも旧キーは参照しません。 Rev.3ではARセッション開始直後にSTEP 0 / SCENE SETUPを表示し、A付近→B付近→周囲の床・壁・物体→A付近の順にゆっくり見渡して空間認識を促します。SCENE READYを押すまでPoint A取得へ進みません。これは操作ガイドであり、正式距離の計算式・Hit採用条件・Sweep採否条件は変更しません。 Rev.4ではXR画面上部の状態メッセージをsafe-area上端から従来より約1行分（16 px）下げ、画面切り欠き・パンチホールとの重なりを避けます。測定ロジックと保存形式は変更しません。 Rev.5ではSCENE READYを単なる確認ボタンではなく、A付近へ戻った時点で現在のformal plane Hitが取得できている場合だけ成立するsurface-qualified gateに変更します。シーン認識ガイドには、A→B→周囲→Aの順に加え、端末をその場で回転させるだけでなく少し横・斜めにも移動して視差を作り、床壁境界・角・模様・掲示物などの特徴を画面へ入れることを明示します。これは操作フローの改善だけで、正式距離は引き続きimmutable plane Hit-Hitです。 Rev.6では画面切り欠きとの重なりをさらに避けるため、XR画面上部の状態メッセージだけをRev.5から32 px（約2行分）下へ移動します。測定ロジック、SCENE READY条件、保存形式、正式距離の計算には変更ありません。</p>
 <div class="actions">
   <button type="button" class="refPreset" data-cm="50">50 cm</button>
   <button type="button" class="refPreset" data-cm="100">100 cm</button>
@@ -401,7 +401,7 @@ Phase 4.50 Rev.4でも正式単発距離値はimmutable Hit-Hitのままです�
       <div id="depthText">DEPTH × HIT: WAITING — diagnostic only</div>
       <div id="depthABText">DEPTH 3D A↔B: — agreement diagnostic</div>
       <div id="sweepText">ACCURACY: 50 cm 0/3 | 100 cm 0/3 | 150 cm 0/3</div>
-      <div id="sceneSetupText">STEP 0 / SCENE SETUP — ゆっくり A付近 → B付近 → 周囲の床・壁・物体 → A付近。模様・角・家具など特徴のある場所も映し、戻ったら SCENE READY。</div>
+      <div id="sceneSetupText">STEP 0 / SCENE SETUP — 測定前に風景全体を認識させます。A付近 → B付近 → 床壁境界・角・模様・物体 → A付近。端末は向きを変えるだけでなく少し横・斜めにも動かします。Aへ戻り SURFACE DETECTED を確認すると SCENE READY が有効になります。</div>
       <div id="operationText" style="margin-top:4px;color:#ffe08a">STEP 0: Scan A → B → surroundings → A slowly, then press SCENE READY.</div>
       <div id="entityText">ENTITY PROBE: waiting</div>
       <div id="accuracyText">REF: 50.0 cm / ERROR: —</div>
@@ -641,6 +641,7 @@ let trackingMode = 'NOT STARTED';
 // Rev.3: session-level user acknowledgment after scanning the measurement area.
 // This is a UX/workflow gate only; it never changes the formal Hit-Hit geometry.
 let sceneSetupReady = false;
+let sceneSetupSurfaceEligible = false; // Rev.5: UX-only transition marker for Point-A plane availability during STEP 0.
 let logLines = [];
 
 // Per-measurement stability / quality metrics.
@@ -3677,7 +3678,7 @@ function canCapturePoint(){
          aimQualityAllowsCapture();
 }
 
-// Phase 4.50 Rev.4: Point B stays distance-independent after Point A.
+// Phase 4.50 Rev.5: Point B stays distance-independent after Point A.
 // The initial 2 s settle must pass and the A map-integrity gate remains active
 // until B capture. Any >=5 mm A relocation locks B until RESET MEASURE.
 // Hit/AIM fluctuations do not grey out B; a current plane Hit is checked at press time.
@@ -4376,7 +4377,16 @@ function updateLineBuffer(){
 }
 
 function sceneSetupGuideText(){
-  return 'STEP 0: Slowly scan A → B → surrounding floor / walls / objects → back to A. Then press SCENE READY.';
+  return 'STEP 0: Scan the whole scene A → B → edges / textured surroundings → A. Move slightly sideways / diagonally for parallax; do not only rotate in place. At A, wait for SURFACE DETECTED, then press SCENE READY.';
+}
+
+function sceneSetupCanConfirm(){
+  return !!session &&
+         trackingMode === 'ACTIVE' &&
+         !!latestHitPoint &&
+         !capturePending &&
+         !anchorCreationBusy &&
+         !calibrationModeActive();
 }
 
 function updateSceneSetupUI(){
@@ -4385,13 +4395,30 @@ function updateSceneSetupUI(){
 
 function confirmSceneSetup(){
   if(!session || sceneSetupReady) return;
+
+  if(trackingMode !== 'ACTIVE'){
+    if(el.xrState) el.xrState.textContent = 'STEP 0 / TRACKING...';
+    if(el.xrHint) el.xrHint.textContent = 'Wait for TRACKING ACTIVE, then continue scanning the whole scene.';
+    if(el.operationText) el.operationText.textContent = sceneSetupGuideText();
+    log('SCENE SETUP CONFIRM BLOCKED: reason=tracking-not-active; formalMeasurementGeometryUnchanged=true; formalSource=immutable-hit');
+    updateDistanceUI();
+    return;
+  }
+
+  if(!latestHitPoint){
+    if(el.xrState) el.xrState.textContent = 'STEP 0 / A SURFACE NOT FOUND';
+    if(el.xrHint) el.xrHint.textContent = 'At Point A, move slightly sideways / diagonally and include wall-floor edges, corners or textured objects. Return the center ＋ to A when SURFACE DETECTED appears.';
+    if(el.operationText) el.operationText.textContent = 'STEP 0: SCENE READY requires a current plane surface at Point A. Keep scanning; do not wait while aiming at a blank wall.';
+    log('SCENE SETUP CONFIRM BLOCKED: reason=no-current-plane-hit-at-A; userAcknowledged=true; formalSource=immutable-hit; pointMeshNotAcceptedForFormal=true');
+    updateDistanceUI();
+    return;
+  }
+
   sceneSetupReady = true;
   updateSceneSetupUI();
-  log('SCENE SETUP CONFIRMED: path=A-area->B-area->surroundings->A-area; userAcknowledged=true; formalMeasurementGeometryUnchanged=true; formalSource=immutable-hit');
-  if(el.xrState) el.xrState.textContent = latestHitPoint ? 'SCENE READY / SURFACE DETECTED' : 'SCENE READY / SEARCHING SURFACE';
-  if(el.xrHint) el.xrHint.textContent = latestHitPoint
-    ? 'Scene setup complete. Aim center ＋ at Point A and capture when AIM QUALITY is GOOD.'
-    : 'Scene setup complete. Slowly scan nearby textured features and return to Point A until SURFACE DETECTED.';
+  log(`SCENE SETUP CONFIRMED: path=A-area->B-area->surroundings->A-area; userAcknowledged=true; currentPlaneAtA=true; hitDistance=${Number.isFinite(latestHitDistance)?latestHitDistance.toFixed(6)+' m':'n/a'}; formalMeasurementGeometryUnchanged=true; formalSource=immutable-hit`);
+  if(el.xrState) el.xrState.textContent = 'SCENE READY / SURFACE DETECTED';
+  if(el.xrHint) el.xrHint.textContent = 'Scene setup complete. Keep center ＋ on Point A and capture when AIM QUALITY is GOOD.';
   updateDistanceUI();
 }
 
@@ -4487,9 +4514,12 @@ function updateDistanceUI(){
     el.xrResetBtn.disabled = true;
     updateSceneSetupUI();
     if(!sceneSetupReady){
-      el.setPointBtn.textContent = 'SCENE READY';
-      el.setPointBtn.disabled = !session || trackingMode !== 'ACTIVE';
-      if(el.operationText) el.operationText.textContent = sceneSetupGuideText();
+      const sceneConfirmable = sceneSetupCanConfirm();
+      el.setPointBtn.textContent = sceneConfirmable ? 'SCENE READY AT A' : 'SCENE READY — NEED SURFACE';
+      el.setPointBtn.disabled = !sceneConfirmable;
+      if(el.operationText) el.operationText.textContent = sceneConfirmable
+        ? 'STEP 0: Point A surface is detected. Press SCENE READY AT A.'
+        : sceneSetupGuideText();
     }else{
       el.setPointBtn.textContent = capturePending === 'A' ? 'CAPTURING A...' : 'CAPTURE POINT A';
       el.setPointBtn.disabled = !canCapturePoint();
@@ -6567,6 +6597,7 @@ async function startAR(){
   sessionReferenceSpaceResetCount = 0;
   sessionFrozenMeasurements = [];
   sceneSetupReady = false;
+  sceneSetupSurfaceEligible = false;
   updateSceneSetupUI();
   // Keep the persistent 9-sample Accuracy Sweep across AR session restarts.
   // START NEW ACCURACY SWEEP is the explicit way to start a new controlled dataset.
@@ -6721,7 +6752,7 @@ async function startAR(){
     updateCalibrationUI();
 
     el.xrState.textContent = 'STEP 0 / SCAN SCENE';
-    el.xrHint.textContent = 'Slowly scan Point A area → Point B area → surrounding floor/walls/objects → back to A, then press SCENE READY.';
+    el.xrHint.textContent = 'Scan A → B → wall/floor edges and textured surroundings → A. Move slightly sideways / diagonally, not only by rotation. SCENE READY activates only when a plane surface is detected at A.';
     if(el.operationText) el.operationText.textContent = sceneSetupGuideText();
     updateSceneSetupUI();
 
@@ -7080,6 +7111,15 @@ function onXRFrame(time,frame){
 
       set('surfaceState','DETECTED','ok');
 
+      if(!sceneSetupReady && !pointA){
+        if(!sceneSetupSurfaceEligible){
+          sceneSetupSurfaceEligible = true;
+          log(`SCENE SETUP A-SURFACE ELIGIBLE: currentPlane=true; hitDistance=${Number.isFinite(latestHitDistance)?latestHitDistance.toFixed(6)+' m':'n/a'}; pressSceneReadyAllowed=true; formalSource=immutable-hit`);
+        }
+        el.setPointBtn.textContent = 'SCENE READY AT A';
+        if(el.operationText) el.operationText.textContent = 'STEP 0: Point A surface is detected. Press SCENE READY AT A.';
+      }
+
       if(capturePending && !anchorCreationBusy){
         const slot = capturePending;
         createAnchorFromHit(result,hitPose,slot,time,pose);
@@ -7095,7 +7135,7 @@ function onXRFrame(time,frame){
       if(!pointA && !capturePending){
         if(!sceneSetupReady){
           el.xrState.textContent = 'STEP 0 / SCAN SCENE';
-          el.xrHint.textContent = 'Scan A → B → surroundings → A slowly. Include textured features, then press SCENE READY.';
+          el.xrHint.textContent = 'Scan A → B → edges / textured surroundings → A. Move slightly sideways / diagonally. At A, wait for SURFACE DETECTED; then SCENE READY becomes available.';
         }else{
           el.xrState.textContent = 'SURFACE DETECTED';
           el.xrHint.textContent = 'Aim center ＋ at Point A, then press CAPTURE POINT A. Camera-image taps do not capture.';
@@ -7117,18 +7157,26 @@ function onXRFrame(time,frame){
     updateLiveHitStability(time);
     classifyAimQuality();
 
+    if(!sceneSetupReady && !pointA){
+      el.setPointBtn.textContent = 'SCENE READY — NEED SURFACE';
+      if(noHitFrames > 15 && sceneSetupSurfaceEligible){
+        sceneSetupSurfaceEligible = false;
+        log('SCENE SETUP A-SURFACE LOST: currentPlane=false; pressSceneReadyAllowed=false; continueWholeSceneScan=true; formalSource=immutable-hit');
+      }
+    }
+
     if(noHitFrames > 180){
       set('surfaceState','SEARCHING / LOW FEATURES?','warn');
       if(!(pointA && pointB)){
         if(!sceneSetupReady){
           el.xrState.textContent = 'STEP 0 / SCAN SCENE';
-          el.xrHint.textContent = 'Slowly scan A → B → surrounding floor/walls/objects → A. Include textured features; do not wait in one direction.';
+          el.xrHint.textContent = 'No plane surface at the center. Keep scanning the whole scene with small sideways / diagonal motion and include floor-wall edges, corners or textured objects; return to A after SURFACE DETECTED.';
         }else if(pointA && !pointB){
           el.xrState.textContent = 'SURFACE LOST';
           el.xrHint.textContent = 'No current surface at Point B. Slowly show nearby textured surroundings, then return to B; do not wait in one direction.';
         }else{
           el.xrState.textContent = 'SURFACE NOT FOUND';
-          el.xrHint.textContent = 'Slowly show nearby textured surroundings, then return to Point A until SURFACE DETECTED; do not wait in one direction.';
+          el.xrHint.textContent = 'Point A plane surface is not currently available. Move slightly sideways / diagonally, show nearby edges or textured objects, then return the center ＋ to A; do not wait while staring at a blank wall.';
         }
       }
     }else{
@@ -7257,7 +7305,7 @@ function resetMeasurement(){
         : 'Slowly scan nearby textured surroundings, then return to Point A; do not wait in one direction.';
     }else{
       el.xrState.textContent = 'STEP 0 / SCAN SCENE';
-      el.xrHint.textContent = 'Slowly scan Point A area → Point B area → surroundings → back to A, then press SCENE READY.';
+      el.xrHint.textContent = 'Scan A → B → wall/floor edges and textured surroundings → A with some sideways / diagonal motion. At A, wait for SURFACE DETECTED, then press SCENE READY.';
     }
   }
 
