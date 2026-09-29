@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<title>AR DISTANCE LAB - Phase 4.60 Rev.1</title>
+<title>AR DISTANCE LAB - Phase 4.60 Rev.2</title>
 <style>
 :root{
   color-scheme:dark;
@@ -41,7 +41,7 @@ pre{white-space:pre-wrap;overflow-wrap:anywhere;margin:0;max-height:260px;overfl
 #xrHud{position:absolute;inset:0;pointer-events:none}
 #centerGuide{position:absolute;z-index:25;left:50%;top:50%;transform:translate(-50%,-50%);
 font-size:28px;line-height:1;color:#fff;text-shadow:0 0 5px #000}
-#topPanel{position:absolute;z-index:20;left:50%;top:calc(env(safe-area-inset-top, 0px) + 58px);transform:translateX(-50%);
+#topPanel{position:absolute;z-index:20;left:50%;top:calc(env(safe-area-inset-top, 0px) + 10px);transform:translateX(-50%);
 width:auto;max-width:92vw;background:#071019df;border:1px solid #587086;border-radius:999px;
 padding:5px 10px;text-align:center;pointer-events:none}
 #bottomPanel{position:absolute;z-index:20;left:50%;bottom:max(8px,env(safe-area-inset-bottom));transform:translateX(-50%);
@@ -56,15 +56,11 @@ padding:8px 9px;pointer-events:auto}
 #measureGateRow{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:4px}
 #measureGateRow>div{margin-top:0!important;padding:4px 5px;border:1px solid #263441;border-radius:7px;background:#08131c;font-size:11px!important;line-height:1.2}
 #operationText{font-size:11px;line-height:1.35;margin-top:4px!important}
-#sceneSetupText{font-size:11px;line-height:1.35;margin-top:4px;padding:5px 6px;border:1px solid #435565;border-radius:7px;background:#0b1720;color:#d7ecf8}
-#sceneSetupText[hidden]{display:none!important}
 .xrActions{display:grid;grid-template-columns:1.25fr .8fr .7fr;gap:6px;margin-top:6px}
 .xrActions button{padding:8px 5px;min-height:40px;font-size:12px}
 #xrCanvas{position:fixed;inset:0;width:1px;height:1px;pointer-events:none}
 
 #qualityText{font-size:12px;font-weight:700;margin-top:4px;color:#cfe8f5}
-#surfaceConsistencyText{font-size:11px;font-weight:700;line-height:1.25;margin-top:4px;padding:4px 5px;border:1px solid #263441;border-radius:7px;background:#08131c;color:#cfe8f5}
-#surfaceConsistencyText.ok{color:var(--ok)}#surfaceConsistencyText.warn{color:var(--warn)}#surfaceConsistencyText.ng{color:var(--ng)}
 #depthText,#depthABText,#entityText,#settlingText,#preBText,#alignmentText,
 #calibrationOverlayText,#calibrationDwellTrack,.magRow,.diagRow{display:none!important}
 #sweepText{font-size:11px;font-weight:700;color:#bfdbfe;margin-top:3px}
@@ -135,7 +131,7 @@ padding:8px 9px;pointer-events:auto}
 <body>
 <main>
 <h1>AR DISTANCE LAB</h1>
-<p class="sub">Phase 4.60 Rev.1 — Hit/Depth surface consistency diagnostic / completed Phase 4.50 sweep preserved / immutable Hit-Hit</p>
+<p class="sub">Phase 4.60 Rev.2 — Surface offset → A-B axis effect diagnostic / persistent 9-sample sweep / immutable Hit-Hit</p>
 
 <section class="card">
 <h2>STATUS</h2>
@@ -213,10 +209,6 @@ padding:8px 9px;pointer-events:auto}
   <div class="cell">Hit projected UV</div><div class="cell" id="hitUvState">—</div>
   <div class="cell">Depth @ Hit UV</div><div class="cell" id="depthAtHitState">—</div>
   <div class="cell">Hit −Z − Depth@UV</div><div class="cell" id="depthHitDeltaState">—</div>
-  <div class="cell">Live Surface consistency</div><div class="cell" id="surfaceConsistencyLiveState">UNKNOWN</div>
-  <div class="cell">Point A Surface consistency</div><div class="cell" id="surfaceConsistencyAState">—</div>
-  <div class="cell">Point B Surface consistency</div><div class="cell" id="surfaceConsistencyBState">—</div>
-  <div class="cell">A/B Surface consistency</div><div class="cell" id="surfaceConsistencyPairState">—</div>
   <div class="cell">Point A View-Z × Depth</div><div class="cell" id="captureADepthState">—</div>
   <div class="cell">Point B View-Z × Depth</div><div class="cell" id="captureBDepthState">—</div>
   <div class="cell">Depth 3D geometry</div><div class="cell" id="depth3DGeometryState">WAITING</div>
@@ -227,6 +219,12 @@ padding:8px 9px;pointer-events:auto}
   <div class="cell">Depth-median A↔B</div><div class="cell" id="compareDepthMedianABState">—</div>
   <div class="cell">A Hit ↔ B Depth-center</div><div class="cell" id="compareHitADepthBState">—</div>
   <div class="cell">A Depth-center ↔ B Hit</div><div class="cell" id="compareDepthAHitBState">—</div>
+  <div class="cell">Point A Hit→Depth 3D offset</div><div class="cell" id="surfaceOffsetAState">—</div>
+  <div class="cell">Point A A-B effect (exact / projected)</div><div class="cell" id="surfaceAxialAState">—</div>
+  <div class="cell">Point B Hit→Depth 3D offset</div><div class="cell" id="surfaceOffsetBState">—</div>
+  <div class="cell">Point B A-B effect (exact / projected)</div><div class="cell" id="surfaceAxialBState">—</div>
+  <div class="cell">Projected net A-B effect</div><div class="cell" id="surfaceAxialNetState">—</div>
+  <div class="cell">Exact Depth-center − Hit-Hit</div><div class="cell" id="surfaceExactNetState">—</div>
   <div class="cell">Depth-center error vs REF</div><div class="cell" id="depthCenterErrorState">—</div>
   <div class="cell">Depth-median error vs REF</div><div class="cell" id="depthMedianErrorState">—</div>
   <div class="cell">Hit entity probe</div><div class="cell" id="entityProbeState">WAITING</div>
@@ -250,13 +248,13 @@ padding:8px 9px;pointer-events:auto}
 </section>
 
 <section class="card">
-<h2>PHASE 4.60 — HIT / DEPTH SURFACE CONSISTENCY DIAGNOSTIC</h2>
-<p class="note">Point A / B の取得フレームで、formal plane Hit を同じXRViewへ変換した前方距離（Hit View −Z）と、同じ画面UVにある同一フレームDepthを比較します。Depth coherence が COHERENT で |Hit View −Z − Depth@UV| &lt; 20 mm のとき MATCH、20 mm以上は MISMATCH、同一フレームDepthが無い場合やcoherenceがCOHERENTでない場合は UNKNOWN と表示します。これは<strong>診断専用</strong>です。CAPTUREをブロックせず、MAPゲート・Accuracy Sweepの採否・正式距離の値を変更せず、Depthによる補正も行いません。Phase 4.50で確定した9サンプルは既存localStorageのまま保持します。比較実験では、この表示がMATCHになるまで待つなど取得タイミングを変えず、従来と同じSURFACE / AIM手順で取得してください。</p>
+<h2>PHASE 4.60 REV.2 — SURFACE OFFSET → A-B AXIS EFFECT</h2>
+<p class="note">Hit と同一フレーム Depth-center の3D差分ベクトルを、immutable Hit-Hit の A→B 軸へ射影します。各端点について「Hit→Depth 3D offset」に加え、Depthへその端点だけ置換した場合のA-B距離変化（exact one-side effect）と、A→B軸への一次射影寄与（projected effect）を表示します。正値は A-B を長くする方向、負値は短くする方向です。さらに両端の projected net と、Depth-center A↔B − Hit-Hit の実距離差を併記します。この診断は正式距離の補正・採否・Capture gate・MAP gateには一切使用しません。既存の Phase 4.50 schema 2 Sweep 保存キーは互換性維持のため変更しません。</p>
 </section>
 
 <section class="card">
 <h2>PHASE 4.50 — PERSISTENT FORMAL HIT-HIT ACCURACY SWEEP</h2>
-<p class="note">Phase 4.50では、50 / 100 / 150 cm × 各3回 = 合計9回の正式 immutable plane Hit-Hit を1つのAccuracy Sweepとして永続管理します。Sweep状態はlocalStorageへ保存し、ARのEND、ページ再読込、同一Originでの再開後も復元します。値が悪いことを理由に有効サンプルを捨てたり追加測定したりせず、各距離の最初の有効3回だけを固定します。MAP INVALID / reference-space reset など既存の安全ゲートで無効になった測定だけが数え直し対象です。Repeatability cluster、Depth、Anchorは診断専用で、正式Hit-Hit値の補正・採否には使用しません。 Rev.2では保存前と復元時の両方でSweep全体をschema 2として検証し、1件でも構造・Sweep ID・順序・状態値などに不整合があれば部分復元せず、その保存Sweep全体を無効として新しい0/9 Sweepを開始します。旧v1保存キーは読み込まず、削除を試みます。削除できない環境でも旧キーは参照しません。 Rev.3ではARセッション開始直後にSTEP 0 / SCENE SETUPを表示し、A付近→B付近→周囲の床・壁・物体→A付近の順にゆっくり見渡して空間認識を促します。SCENE READYを押すまでPoint A取得へ進みません。これは操作ガイドであり、正式距離の計算式・Hit採用条件・Sweep採否条件は変更しません。 Rev.4ではXR画面上部の状態メッセージをsafe-area上端から従来より約1行分（16 px）下げ、画面切り欠き・パンチホールとの重なりを避けます。測定ロジックと保存形式は変更しません。 Rev.5ではSCENE READYを単なる確認ボタンではなく、A付近へ戻った時点で現在のformal plane Hitが取得できている場合だけ成立するsurface-qualified gateに変更します。シーン認識ガイドには、A→B→周囲→Aの順に加え、端末をその場で回転させるだけでなく少し横・斜めにも移動して視差を作り、床壁境界・角・模様・掲示物などの特徴を画面へ入れることを明示します。これは操作フローの改善だけで、正式距離は引き続きimmutable plane Hit-Hitです。 Rev.6では画面切り欠きとの重なりをさらに避けるため、XR画面上部の状態メッセージだけをRev.5から32 px（約2行分）下へ移動します。測定ロジック、SCENE READY条件、保存形式、正式距離の計算には変更ありません。 Phase 4.60 Rev.1では完了済みSweepを保持したまま、Point A/B取得時のHit View-Zと同一フレームDepth@UVのSurface Consistencyを追加します。この診断は正式値・採否に影響しません。</p>
+<p class="note">Phase 4.50では、50 / 100 / 150 cm × 各3回 = 合計9回の正式 immutable plane Hit-Hit を1つのAccuracy Sweepとして永続管理します。Sweep状態はlocalStorageへ保存し、ARのEND、ページ再読込、同一Originでの再開後も復元します。値が悪いことを理由に有効サンプルを捨てたり追加測定したりせず、各距離の最初の有効3回だけを固定します。MAP INVALID / reference-space reset など既存の安全ゲートで無効になった測定だけが数え直し対象です。Repeatability cluster、Depth、Anchorは診断専用で、正式Hit-Hit値の補正・採否には使用しません。 Rev.2では保存前と復元時の両方でSweep全体をschema 2として検証し、1件でも構造・Sweep ID・順序・状態値などに不整合があれば部分復元せず、その保存Sweep全体を無効として新しい0/9 Sweepを開始します。旧v1保存キーは読み込まず、削除を試みます。削除できない環境でも旧キーは参照しません。</p>
 <div class="actions">
   <button type="button" class="refPreset" data-cm="50">50 cm</button>
   <button type="button" class="refPreset" data-cm="100">100 cm</button>
@@ -286,11 +284,10 @@ padding:8px 9px;pointer-events:auto}
 </section>
 
 <section class="card">
-<h2>PHASE 4.50 REV.4 — PERSISTENT ACCURACY PROCEDURE</h2>
+<h2>PHASE 4.50 REV.2 — PERSISTENT ACCURACY PROCEDURE</h2>
 <ol class="procedure">
   <li>カード校正は使用しません。外部の巻尺・スケール等で、同一の平坦かつテクスチャのある面に A/B の中心間距離 50.0 cm、100.0 cm、150.0 cm の基準を用意します。アプリの値を見て基準位置を調整しないでください。</li>
   <li>初回は新しいAccuracy Sweepが自動生成されます。START AR後、Tracking が ACTIVE になり、Hitが安定するまで待ちます。初回ターゲットは50 cmです。END ARやページ再読込後は、保存済みSweepから未完了の次ターゲットを自動復元します。</li>
-  <li><strong>STEP 0 / SCENE SETUP:</strong> Tracking が ACTIVE になったら、まだPoint Aを取得せず、カメラをゆっくり動かして <strong>A付近 → B付近 → 周囲の床・壁・物体 → A付近</strong> の順に見渡します。模様・角・家具など特徴のある場所も画面へ入れてください。Aへ戻ったら <strong>SCENE READY</strong> を押して測定へ進みます。SURFACEが消えた場合は同じ場所で待ち続けず、周囲をゆっくり見せてから測定点へ戻ります。</li>
   <li>RESET MEASURE後、基準点Aの中心を中央照準＋へ合わせます。`SURFACE DETECTED` かつ `AIM QUALITY: GOOD`（または NEAR RANGE）で <strong>CAPTURE POINT A</strong> を押します。A取得後はその場で約2秒保持し、`POINT A READY` を確認してからBへ移動します。A取得からB取得まで継続監視し、A AnchorがCapture位置から5 mm以上再配置された時点で `A MAP SHIFT` としてBをロックし、RESETを要求します。2〜5 mm未満はWARNのみです。正式値はA/Bのimmutable plane Hit位置だけから確定し、Anchor値では補正しません。</li>
   <li>COMMITTED MEASUREMENT / ACCURACY SAMPLE が記録されたら1回完了です。誤差が大きくても有効サンプルは捨てません。MAP INVALIDやreference-space resetで自動的にINVALIDとなった試行だけを数え直します。</li>
   <li>RESET MEASUREして同じ50 cmを合計3回測定します。3回目の有効値が記録されると次ターゲットが予約され、次のRESETで100 cmへ自動切替します。</li>
@@ -362,7 +359,7 @@ Phase 4.40の独立精度評価では使用しない旧診断機能です。必�
 </section>
 
 <section class="card note">
-Phase 4.50 Rev.4でも正式単発距離値はimmutable Hit-Hitのままです。Point BボタンはA-B距離では無効化しませんが、A取得からB取得までA AnchorのCapture位置からの再配置を継続監視し、5 mm以上でその試行をINVALIDとしてBをロックします。2〜5 mm未満はWARNのみで、Anchor座標による正式値の補正は行いません。Point BのAIM QUALITYは警告専用とし、押下時のcurrent plane Hitだけを必須条件として維持します。 Rev.5ではBでplane Hitが無い場合に限り、point / mesh Hitの有無を同フレーム近傍で自動診断しログへ記録します。これらは診断専用で正式距離には使用しません。カード機能は今回の独立精度評価には使用しません。A4校正を開始するとA/B測距はRESET A4 CALまたはEND ARまでロックします。A4校正は1枚のRaw Camera静止画像を使い、各辺5点を黒線探索の初期位置としてFrozen画像の暗線中心へ自動スナップし、4-of-5外れ値QCした後、既知150 × 237 mm剛体長方形をFrozen画像へ投影した4辺と残った16〜20画像点の垂直距離を直接フィットします。仮想四隅も独立した辺上uも姿勢変数として使いません。LMの収束診断を明示し、全4辺の使用点RMS 2.5px以下、span 50px以上、外れ値除去後のspan保持率65%以上を入力のhard GOOD gateとして要求します。WARN入力はその辺だけ再タップし、全辺GOODになるまで姿勢推定へ進みません。さらに投影後の全辺coverage 50%以上と全サンプルu∈[0,1]を別々に要求します。outside時は実際のoutside辺だけを再タップし、同一辺で2回失敗後はREFREEZEを要求します。coverage不足だけなら最も弱い辺だけ再タップします。同じFrozen画像をRESTART 20 TAPSで繰り返すと、全辺画像スナップGOOD＋入力GOOD＋coverage PASS＋最終fit GOODに加え、supported seed比率50%以上・選択解周辺cluster比率60%以上を要求します。最初の通過解はPROVISIONALとし、次の同一Frozen解がcenter 3 mm以内・normal 3°以内・projected-corner RMS 1.5 px以内かつmax 3 px以内に一致した時だけCONFIRMEDとします。LOCAL LOST時にVIEWER-ONLYでFREEZEした結果はそのFrozen時点のviewer参照空間だけで有効であり、別Frozenとのworld/local位置比較には使用しません。Hit Test / Depthは姿勢推定に使用せず、結果は診断専用で補正係数や絶対精度判定には使用しません。MAP integrity、Depth agreement、Hit entity probeなど従来の距離診断はそのまま維持します。
+Phase 4.50 Rev.2でも正式単発距離値はimmutable Hit-Hitのままです。Point BボタンはA-B距離では無効化しませんが、A取得からB取得までA AnchorのCapture位置からの再配置を継続監視し、5 mm以上でその試行をINVALIDとしてBをロックします。2〜5 mm未満はWARNのみで、Anchor座標による正式値の補正は行いません。Point BのAIM QUALITYは警告専用とし、押下時のcurrent plane Hitだけを必須条件として維持します。 Rev.5ではBでplane Hitが無い場合に限り、point / mesh Hitの有無を同フレーム近傍で自動診断しログへ記録します。これらは診断専用で正式距離には使用しません。カード機能は今回の独立精度評価には使用しません。A4校正を開始するとA/B測距はRESET A4 CALまたはEND ARまでロックします。A4校正は1枚のRaw Camera静止画像を使い、各辺5点を黒線探索の初期位置としてFrozen画像の暗線中心へ自動スナップし、4-of-5外れ値QCした後、既知150 × 237 mm剛体長方形をFrozen画像へ投影した4辺と残った16〜20画像点の垂直距離を直接フィットします。仮想四隅も独立した辺上uも姿勢変数として使いません。LMの収束診断を明示し、全4辺の使用点RMS 2.5px以下、span 50px以上、外れ値除去後のspan保持率65%以上を入力のhard GOOD gateとして要求します。WARN入力はその辺だけ再タップし、全辺GOODになるまで姿勢推定へ進みません。さらに投影後の全辺coverage 50%以上と全サンプルu∈[0,1]を別々に要求します。outside時は実際のoutside辺だけを再タップし、同一辺で2回失敗後はREFREEZEを要求します。coverage不足だけなら最も弱い辺だけ再タップします。同じFrozen画像をRESTART 20 TAPSで繰り返すと、全辺画像スナップGOOD＋入力GOOD＋coverage PASS＋最終fit GOODに加え、supported seed比率50%以上・選択解周辺cluster比率60%以上を要求します。最初の通過解はPROVISIONALとし、次の同一Frozen解がcenter 3 mm以内・normal 3°以内・projected-corner RMS 1.5 px以内かつmax 3 px以内に一致した時だけCONFIRMEDとします。LOCAL LOST時にVIEWER-ONLYでFREEZEした結果はそのFrozen時点のviewer参照空間だけで有効であり、別Frozenとのworld/local位置比較には使用しません。Hit Test / Depthは姿勢推定に使用せず、結果は診断専用で補正係数や絶対精度判定には使用しません。MAP integrity、Depth agreement、Hit entity probeなど従来の距離診断はそのまま維持します。
 </section>
 
 <section class="card">
@@ -409,12 +406,10 @@ Phase 4.50 Rev.4でも正式単発距離値はimmutable Hit-Hitのままです�
         <div id="qualityText">AIM QUALITY: ANALYZING</div>
         <div id="hitStabilityText">HIT STABILITY: ANALYZING</div>
       </div>
-      <div id="surfaceConsistencyText">SURFACE CONSISTENCY: UNKNOWN — diagnostic only</div>
       <div id="depthText">DEPTH × HIT: WAITING — diagnostic only</div>
       <div id="depthABText">DEPTH 3D A↔B: — agreement diagnostic</div>
       <div id="sweepText">ACCURACY: 50 cm 0/3 | 100 cm 0/3 | 150 cm 0/3</div>
-      <div id="sceneSetupText">STEP 0 / SCENE SETUP — 測定前に風景全体を認識させます。A付近 → B付近 → 床壁境界・角・模様・物体 → A付近。端末は向きを変えるだけでなく少し横・斜めにも動かします。Aへ戻り SURFACE DETECTED を確認すると SCENE READY が有効になります。</div>
-      <div id="operationText" style="margin-top:4px;color:#ffe08a">STEP 0: Scan A → B → surroundings → A slowly, then press SCENE READY.</div>
+      <div id="operationText" style="margin-top:4px;color:#ffe08a">STEP 1: Aim center ＋ at Point A. Wait for SURFACE DETECTED + AIM QUALITY GOOD, then press CAPTURE POINT A. Camera-image taps do not capture points.</div>
       <div id="entityText">ENTITY PROBE: waiting</div>
       <div id="accuracyText">REF: 50.0 cm / ERROR: —</div>
       <div id="stabilityText">STABILITY: —</div>
@@ -465,12 +460,11 @@ const el = {};
   'absErrorState','relErrorState','resetEventState','referenceCm',
   'rawCameraState','hitDistanceState','depthState','depthConfigState','depthBufferState',
   'depthCenterState','depthMedianState','depthTemporalState','depthValidState','depthCoherenceState','hitViewState','hitUvState','depthAtHitState','depthHitDeltaState',
-  'surfaceConsistencyLiveState','surfaceConsistencyAState','surfaceConsistencyBState','surfaceConsistencyPairState',
-  'captureADepthState','captureBDepthState','depth3DGeometryState','depth3DAState','depth3DBState','compareHitABState','compareDepthCenterABState','compareDepthMedianABState','compareHitADepthBState','compareDepthAHitBState','depthCenterErrorState','depthMedianErrorState','entityProbeState','entityPlaneSourceState','entityPlaneHitState','entityPointSourceState','entityPointHitState','entityMeshSourceState','entityMeshHitState','entitySnapshotState','aimQualityState','edgeMedianState',
+  'captureADepthState','captureBDepthState','depth3DGeometryState','depth3DAState','depth3DBState','compareHitABState','compareDepthCenterABState','compareDepthMedianABState','compareHitADepthBState','compareDepthAHitBState','surfaceOffsetAState','surfaceAxialAState','surfaceOffsetBState','surfaceAxialBState','surfaceAxialNetState','surfaceExactNetState','depthCenterErrorState','depthMedianErrorState','entityProbeState','entityPlaneSourceState','entityPlaneHitState','entityPointSourceState','entityPointHitState','entityMeshSourceState','entityMeshHitState','entitySnapshotState','aimQualityState','edgeMedianState',
   'contrastMedianState','calibrationWidthMm','calibrationHeightMm','calibrationSequenceState','calibrationAutoState','calibrationDwellState','calibrationTargetState','calibrationWidthState','calibrationHeightState','calibrationDiagonalState','calibrationWidthErrorState','calibrationHeightErrorState','calibrationScaleState','calibrationScaleSpreadState','calibrationScaleResidualState','calibrationAngleState','calibrationPlaneState','calibrationDepthState','calibrationRoleState','calibrationResetBtn','calibrationText','calibrationOverlayText','calibrationDwellTrack','calibrationDwellBar','calibrationCaptureBtn','calibrationResetOverlayBtn','sweepRunState','sweepProgressState','sweepSelectedCountState','sweepConsensusState','sweepNextState','sweepHitState','sweepConsensusDistanceState','sweepDepthCenterState','sweepDepthMedianState','discardSweepBtn','clearSweepBtn','sweepText','magnifierState','magnifierCanvas','magnifierWrap','cardFreezePanel','cardFreezeCanvas','cardFreezeTitle','cardFreezeTapState','cardFreezeResetTapsBtn','cardFreezeRetakeBtn','cardValidationBtn','cardValidationState','alignmentGrid','alignmentMark','alignmentState','alignmentOffsetState','alignmentUvState','alignBtn','entitySnapshotBtn',
-  'magnifierLabel','qualityText','hitStabilityText','surfaceConsistencyText','depthText','depthABText','entityText','alignmentText',
+  'magnifierLabel','qualityText','hitStabilityText','depthText','depthABText','entityText','alignmentText',
   'coordA','coordB','startBtn','resetBtn','endBtn','log','xrCanvas','xrOverlay','xrHud',
-  'xrState','xrHint','pointText','anchorText','distanceText','accuracyText','stabilityText','settlingText','preBText','sweepText','sceneSetupText','operationText','setPointBtn',
+  'xrState','xrHint','pointText','anchorText','distanceText','accuracyText','stabilityText','settlingText','preBText','sweepText','operationText','setPointBtn',
   'xrResetBtn','xrEndBtn','topPanel','bottomPanel'
 ].forEach(id => el[id] = $(id));
 
@@ -651,10 +645,6 @@ let frameCount = 0;
 let noHitFrames = 0;
 let nullPoseSince = null;
 let trackingMode = 'NOT STARTED';
-// Rev.3: session-level user acknowledgment after scanning the measurement area.
-// This is a UX/workflow gate only; it never changes the formal Hit-Hit geometry.
-let sceneSetupReady = false;
-let sceneSetupSurfaceEligible = false; // Rev.5: UX-only transition marker for Point-A plane availability during STEP 0.
 let logLines = [];
 
 // Per-measurement stability / quality metrics.
@@ -726,7 +716,7 @@ let preBSummaryAtB = null;
 let preBIntegrity = 'UNKNOWN';
 let lastDistanceImpact = null;
 
-// Phase 4.50 Rev.3: continuous Point-A map-integrity gate retained unchanged from Rev.7.
+// Phase 4.50 Rev.2: continuous Point-A map-integrity gate retained unchanged from Rev.7.
 // The first 2 s are the initial settle check. After PASS, Point A continues
 // to be monitored until B capture. A >=5 mm relocation invalidates the trial
 // and locks Point B; 2..<5 mm is warning-only. The formal distance remains
@@ -1291,14 +1281,6 @@ let latestDepthHitCrossCheck = null;
 let captureDepthAgreementA = null;
 let captureDepthAgreementB = null;
 
-// Phase 4.60 Rev.1: same-frame surface-consistency diagnostic only.
-// This never gates capture, rejects a formal measurement, or corrects Hit-Hit.
-const SURFACE_CONSISTENCY_MATCH_M = 0.020; // preserves the existing 20 mm UI boundary
-let liveSurfaceConsistency = null;
-let captureSurfaceConsistencyA = null;
-let captureSurfaceConsistencyB = null;
-let surfaceConsistencyPair = null;
-
 let aimQuality = 'ANALYZING';
 let magnifierZoom = 3;
 let magnifierFirstPaintLogged = false;
@@ -1313,7 +1295,6 @@ const DETAIL_CONTRAST_LOW = 8.0;
 
 let ending = false;
 let cleanupDone = false;
-// Rev.4 intentionally keeps the Rev.2 log/summary and v2 sweep keys so an in-progress controlled dataset survives this UI-only revision.
 const LOG_STORAGE_KEY = 'ar-distance-lab-phase4-50-rev2-log';
 const SUMMARY_STORAGE_KEY = 'ar-distance-lab-phase4-50-rev2-summary';
 const SWEEP_STORAGE_KEY = 'ar-distance-lab-phase4-50-accuracy-sweep-v2';
@@ -1326,7 +1307,7 @@ const SWEEP_ALLOWED_INTEGRITY = new Set(['PASS','WARN']);
 const SWEEP_ALLOWED_DEPTH_AGREEMENT = new Set(['AGREE','WARN','DIVERGED','UNKNOWN']);
 const SWEEP_ALLOWED_COHERENCE = new Set(['COHERENT','MIXED','LOW VALID','LOW COHERENCE','NO DEPTH']);
 const SWEEP_ALLOWED_HIT_STABILITY = new Set(['STABLE','MOVING','ANALYZING']);
-const DIAGNOSTIC_PROTOCOL_REVISION = 9;
+const DIAGNOSTIC_PROTOCOL_REVISION = 8;
 
 const TRACKING_UNSTABLE_MS = 250;
 const TRACKING_LOST_MS = 1000;
@@ -1368,10 +1349,6 @@ function persistDiagnostics(){
       captureHitDistance,
       captureSnapshotA,
       captureSnapshotB,
-      liveSurfaceConsistency,
-      captureSurfaceConsistencyA,
-      captureSurfaceConsistencyB,
-      surfaceConsistencyPair,
       preBSummaryAtB,
       lastDistanceImpact,
       alignmentMode,
@@ -1626,19 +1603,90 @@ function captureDepth3DPoint(slot,viewerPose,hitViewDiag){
   return result;
 }
 
+function buildSurfaceAxisEffectDiagnostic(hitA,hitB,depthA,depthB){
+  if(!hitA || !hitB) return null;
+  const axisVector=vectorBetween(hitA,hitB);
+  const hitDistance=norm3(axisVector);
+  const axisUnit=normalize3(axisVector);
+  if(!axisUnit || !Number.isFinite(hitDistance) || hitDistance<=1e-12) return null;
+
+  function endpoint(slot,hitPoint,depthPoint){
+    if(!hitPoint || !depthPoint) return null;
+    const delta=vectorBetween(hitPoint,depthPoint); // Hit -> Depth in local/world coordinates.
+    const offset=norm3(delta);
+    const axialShift=dot3(delta,axisUnit); // + means Depth is displaced toward B along A->B axis.
+    // Signed first-order contribution to the scalar A-B length.
+    // A moving toward B shortens the distance, while B moving toward B lengthens it.
+    const projectedEffect=slot==='A' ? -axialShift : axialShift;
+    const oneSideDistance=slot==='A' ? distance3(depthPoint,hitB) : distance3(hitA,depthPoint);
+    const exactOneSideEffect=oneSideDistance-hitDistance;
+    const perpendicularSq=Math.max(0,offset*offset-axialShift*axialShift);
+    return {
+      slot,
+      delta,
+      offset,
+      axialShift,
+      perpendicular:Math.sqrt(perpendicularSq),
+      projectedEffect,
+      oneSideDistance,
+      exactOneSideEffect
+    };
+  }
+
+  const a=endpoint('A',hitA,depthA);
+  const b=endpoint('B',hitB,depthB);
+  const projectedNet=(a&&b) ? a.projectedEffect+b.projectedEffect : null;
+  const depthDistance=(depthA&&depthB) ? distance3(depthA,depthB) : null;
+  const exactNet=(depthDistance==null) ? null : depthDistance-hitDistance;
+  const projectionResidual=(projectedNet==null || exactNet==null) ? null : exactNet-projectedNet;
+
+  return {
+    hitDistance,
+    axisUnit,
+    a,b,
+    projectedNet,
+    depthDistance,
+    exactNet,
+    projectionResidual
+  };
+}
+
+function formatSurfaceAxisEndpoint(item){
+  if(!item) return 'N/A';
+  return `offset=${(item.offset*1000).toFixed(3)} mm; exactOneSideABEffect=${item.exactOneSideEffect>=0?'+':''}${(item.exactOneSideEffect*1000).toFixed(3)} mm; projectedABEffect=${item.projectedEffect>=0?'+':''}${(item.projectedEffect*1000).toFixed(3)} mm; axisShift=${item.axialShift>=0?'+':''}${(item.axialShift*1000).toFixed(3)} mm`;
+}
+
 function updateDepthABComparison(){
   const hitDistance=(capturePointA&&capturePointB)?distance3(capturePointA,capturePointB):null;
   const centerDistance=(captureDepth3DA?.centerLocal&&captureDepth3DB?.centerLocal)?distance3(captureDepth3DA.centerLocal,captureDepth3DB.centerLocal):null;
   const medianDistance=(captureDepth3DA?.medianLocal&&captureDepth3DB?.medianLocal)?distance3(captureDepth3DA.medianLocal,captureDepth3DB.medianLocal):null;
   const hitAToDepthB=(capturePointA&&captureDepth3DB?.centerLocal)?distance3(capturePointA,captureDepth3DB.centerLocal):null;
   const depthAToHitB=(captureDepth3DA?.centerLocal&&capturePointB)?distance3(captureDepth3DA.centerLocal,capturePointB):null;
-  depthABComparison={hitDistance,centerDistance,medianDistance,hitAToDepthB,depthAToHitB,a:captureDepth3DA,b:captureDepth3DB,referenceMeters};
+  const surfaceAxisCenter=buildSurfaceAxisEffectDiagnostic(
+    capturePointA,
+    capturePointB,
+    captureDepth3DA?.centerLocal??null,
+    captureDepth3DB?.centerLocal??null
+  );
+  const surfaceAxisMedian=buildSurfaceAxisEffectDiagnostic(
+    capturePointA,
+    capturePointB,
+    captureDepth3DA?.medianLocal??null,
+    captureDepth3DB?.medianLocal??null
+  );
+  depthABComparison={hitDistance,centerDistance,medianDistance,hitAToDepthB,depthAToHitB,surfaceAxisCenter,surfaceAxisMedian,a:captureDepth3DA,b:captureDepth3DB,referenceMeters};
 
   set('compareHitABState',hitDistance==null?'—':fmtDistance(hitDistance),hitDistance==null?'':'ok');
   set('compareDepthCenterABState',centerDistance==null?'N/A':fmtDistance(centerDistance),centerDistance==null?'warn':captureDepth3DA?.coherence==='COHERENT'&&captureDepth3DB?.coherence==='COHERENT'?'ok':'warn');
   set('compareDepthMedianABState',medianDistance==null?'N/A':fmtDistance(medianDistance),medianDistance==null?'warn':captureDepth3DA?.coherence==='COHERENT'&&captureDepth3DB?.coherence==='COHERENT'?'ok':'warn');
   set('compareHitADepthBState',hitAToDepthB==null?'N/A':fmtDistance(hitAToDepthB),hitAToDepthB==null?'':'warn');
   set('compareDepthAHitBState',depthAToHitB==null?'N/A':fmtDistance(depthAToHitB),depthAToHitB==null?'':'warn');
+  set('surfaceOffsetAState',surfaceAxisCenter?.a ? `${(surfaceAxisCenter.a.offset*1000).toFixed(3)} mm` : 'N/A',surfaceAxisCenter?.a?'ok':'warn');
+  set('surfaceAxialAState',surfaceAxisCenter?.a ? `exact ${surfaceAxisCenter.a.exactOneSideEffect>=0?'+':''}${(surfaceAxisCenter.a.exactOneSideEffect*1000).toFixed(3)} / proj ${surfaceAxisCenter.a.projectedEffect>=0?'+':''}${(surfaceAxisCenter.a.projectedEffect*1000).toFixed(3)} mm` : 'N/A',surfaceAxisCenter?.a?'ok':'warn');
+  set('surfaceOffsetBState',surfaceAxisCenter?.b ? `${(surfaceAxisCenter.b.offset*1000).toFixed(3)} mm` : 'N/A',surfaceAxisCenter?.b?'ok':'warn');
+  set('surfaceAxialBState',surfaceAxisCenter?.b ? `exact ${surfaceAxisCenter.b.exactOneSideEffect>=0?'+':''}${(surfaceAxisCenter.b.exactOneSideEffect*1000).toFixed(3)} / proj ${surfaceAxisCenter.b.projectedEffect>=0?'+':''}${(surfaceAxisCenter.b.projectedEffect*1000).toFixed(3)} mm` : 'N/A',surfaceAxisCenter?.b?'ok':'warn');
+  set('surfaceAxialNetState',surfaceAxisCenter?.projectedNet==null?'N/A':`${surfaceAxisCenter.projectedNet>=0?'+':''}${(surfaceAxisCenter.projectedNet*1000).toFixed(3)} mm`,surfaceAxisCenter?.projectedNet==null?'warn':'ok');
+  set('surfaceExactNetState',surfaceAxisCenter?.exactNet==null?'N/A':`${surfaceAxisCenter.exactNet>=0?'+':''}${(surfaceAxisCenter.exactNet*1000).toFixed(3)} mm`,surfaceAxisCenter?.exactNet==null?'warn':'ok');
   set('depthCenterErrorState',centerDistance==null?'—':fmtErrorAgainstReference(centerDistance),centerDistance==null?'':Math.abs(centerDistance-referenceMeters)<=0.005?'ok':'warn');
   set('depthMedianErrorState',medianDistance==null?'—':fmtErrorAgainstReference(medianDistance),medianDistance==null?'':Math.abs(medianDistance-referenceMeters)<=0.005?'ok':'warn');
   if(el.depthABText){
@@ -1654,6 +1702,18 @@ function updateDepthABComparison(){
     `ADepthCenter-BHit=${depthAToHitB==null?'n/a':depthAToHitB.toFixed(6)} m; ` +
     `Acoherence=${captureDepth3DA?.coherence??'n/a'}; Bcoherence=${captureDepth3DB?.coherence??'n/a'}; ` +
     `Ageometry=${captureDepth3DA?.geometrySource??'n/a'}; Bgeometry=${captureDepth3DB?.geometrySource??'n/a'}; formalCorrection=false; agreementDiagnosticOnly=true; formalCommit=Hit-Hit`
+  );
+
+  const sa=surfaceAxisCenter;
+  log(
+    `SURFACE OFFSET -> A-B AXIS EFFECT: ` +
+    `A[${formatSurfaceAxisEndpoint(sa?.a)}; vector=${sa?.a?formatVectorMm(sa.a.delta):'n/a'}; perpendicular=${sa?.a?(sa.a.perpendicular*1000).toFixed(3)+' mm':'n/a'}]; ` +
+    `B[${formatSurfaceAxisEndpoint(sa?.b)}; vector=${sa?.b?formatVectorMm(sa.b.delta):'n/a'}; perpendicular=${sa?.b?(sa.b.perpendicular*1000).toFixed(3)+' mm':'n/a'}]; ` +
+    `projectedNet=${sa?.projectedNet==null?'n/a':(sa.projectedNet>=0?'+':'')+(sa.projectedNet*1000).toFixed(3)+' mm'}; ` +
+    `exactDepthCenterMinusHit=${sa?.exactNet==null?'n/a':(sa.exactNet>=0?'+':'')+(sa.exactNet*1000).toFixed(3)+' mm'}; ` +
+    `projectionResidual=${sa?.projectionResidual==null?'n/a':(sa.projectionResidual>=0?'+':'')+(sa.projectionResidual*1000).toFixed(3)+' mm'}; ` +
+    `signConvention=positive-lengthens-A-B; method=local-3D-Hit-to-DepthCenter-projected-on-immutable-Hit-axis; ` +
+    `affectsCaptureGate=false; affectsFormalGate=false; correctionApplied=false; diagnosticOnly=true; formalSource=immutable-hit`
   );
 }
 
@@ -1714,10 +1774,6 @@ function resetDepthDiagnostics(){
   latestDepthHitCrossCheck = null;
   captureDepthAgreementA = null;
   captureDepthAgreementB = null;
-  liveSurfaceConsistency = null;
-  captureSurfaceConsistencyA = null;
-  captureSurfaceConsistencyB = null;
-  surfaceConsistencyPair = null;
   captureDepth3DA = null;
   captureDepth3DB = null;
   depthABComparison = null;
@@ -1735,11 +1791,6 @@ function resetDepthDiagnostics(){
   set('hitUvState','—','');
   set('depthAtHitState','—','');
   set('depthHitDeltaState','—','');
-  set('surfaceConsistencyLiveState','UNKNOWN','warn');
-  set('surfaceConsistencyAState','—','');
-  set('surfaceConsistencyBState','—','');
-  set('surfaceConsistencyPairState','—','');
-  if(el.surfaceConsistencyText) el.surfaceConsistencyText.textContent='SURFACE CONSISTENCY: UNKNOWN — diagnostic only';
   set('captureADepthState','—','');
   set('captureBDepthState','—','');
   set('depth3DGeometryState','WAITING','warn');
@@ -1750,6 +1801,12 @@ function resetDepthDiagnostics(){
   set('compareDepthMedianABState','—','');
   set('compareHitADepthBState','—','');
   set('compareDepthAHitBState','—','');
+  set('surfaceOffsetAState','—','');
+  set('surfaceAxialAState','—','');
+  set('surfaceOffsetBState','—','');
+  set('surfaceAxialBState','—','');
+  set('surfaceAxialNetState','—','');
+  set('surfaceExactNetState','—','');
   set('depthCenterErrorState','—','');
   set('depthMedianErrorState','—','');
   lastDepthAgreement = null;
@@ -1954,95 +2011,9 @@ function buildDepthHitCrossCheck(time,hitDistance,hitViewDiag=latestHitViewDiagn
   };
 }
 
-function classifySurfaceConsistency(c){
-  if(!c){
-    return {state:'UNKNOWN',reason:'no same-frame Hit/Depth overlap',signedDelta:null,absDelta:null,coherence:null};
-  }
-  if(c.depthCoherence!=='COHERENT'){
-    return {state:'UNKNOWN',reason:`Depth coherence=${c.depthCoherence??'n/a'}`,signedDelta:Number.isFinite(c.deltaViewForwardMinusDepth)?c.deltaViewForwardMinusDepth:null,absDelta:Number.isFinite(c.deltaViewForwardMinusDepth)?Math.abs(c.deltaViewForwardMinusDepth):null,coherence:c.depthCoherence??null};
-  }
-  const signedDelta=Number.isFinite(c.deltaViewForwardMinusDepth)?c.deltaViewForwardMinusDepth:null;
-  if(signedDelta===null){
-    return {state:'UNKNOWN',reason:'non-finite Hit/Depth delta',signedDelta:null,absDelta:null,coherence:c.depthCoherence};
-  }
-  const absDelta=Math.abs(signedDelta);
-  return {
-    state:absDelta<SURFACE_CONSISTENCY_MATCH_M?'MATCH':'MISMATCH',
-    reason:absDelta<SURFACE_CONSISTENCY_MATCH_M?'|Hit View-Z - Depth@UV| < 20 mm':'|Hit View-Z - Depth@UV| >= 20 mm',
-    signedDelta,absDelta,coherence:c.depthCoherence,
-    hitViewForward:c.hitViewForward,depthAtHitUv:c.depthAtHitUv,
-    frame:c.frame,sampleFrame:c.sampleFrame,ageMs:c.ageMs
-  };
-}
-
-function surfaceConsistencyCss(state){
-  return state==='MATCH'?'ok':'warn';
-}
-
-function surfaceConsistencyText(sc){
-  if(!sc || sc.state==='UNKNOWN') return `UNKNOWN${sc?.reason?' / '+sc.reason:''}`;
-  const mm=sc.signedDelta*1000;
-  return `${sc.state} / Δ ${mm>=0?'+':''}${mm.toFixed(1)} mm`;
-}
-
-function renderLiveSurfaceConsistency(sc){
-  liveSurfaceConsistency=sc;
-  set('surfaceConsistencyLiveState',surfaceConsistencyText(sc),surfaceConsistencyCss(sc?.state));
-  if(el.surfaceConsistencyText){
-    el.surfaceConsistencyText.textContent=`SURFACE CONSISTENCY: ${surfaceConsistencyText(sc)} — diagnostic only`;
-    el.surfaceConsistencyText.className=surfaceConsistencyCss(sc?.state);
-  }
-}
-
-function recordCaptureSurfaceConsistency(slot,c){
-  const sc=classifySurfaceConsistency(c);
-  if(slot==='A') captureSurfaceConsistencyA=sc;
-  else captureSurfaceConsistencyB=sc;
-  set(slot==='A'?'surfaceConsistencyAState':'surfaceConsistencyBState',surfaceConsistencyText(sc),surfaceConsistencyCss(sc.state));
-  log(
-    `SURFACE CONSISTENCY ${slot}: state=${sc.state}; `+
-    `hitViewForward=${Number.isFinite(sc.hitViewForward)?sc.hitViewForward.toFixed(6)+' m':'n/a'}; `+
-    `depthAtUv=${Number.isFinite(sc.depthAtHitUv)?sc.depthAtHitUv.toFixed(6)+' m':'n/a'}; `+
-    `signedDelta=${Number.isFinite(sc.signedDelta)?(sc.signedDelta*1000).toFixed(3)+' mm':'n/a'}; `+
-    `absDelta=${Number.isFinite(sc.absDelta)?(sc.absDelta*1000).toFixed(3)+' mm':'n/a'}; `+
-    `coherence=${sc.coherence??'n/a'}; reason=${sc.reason}; threshold=20.0 mm; `+
-    `affectsCaptureGate=false; affectsFormalGate=false; correctionApplied=false; diagnosticOnly=true; formalSource=immutable-hit`
-  );
-  return sc;
-}
-
-function updateSurfaceConsistencyPair(){
-  const a=captureSurfaceConsistencyA;
-  const b=captureSurfaceConsistencyB;
-  let state='UNKNOWN';
-  let reason='A/B consistency unavailable';
-  if(a?.state!=='UNKNOWN' && b?.state!=='UNKNOWN'){
-    state=(a.state==='MATCH' && b.state==='MATCH')?'MATCH':'MISMATCH';
-    reason=state==='MATCH'?'both endpoints match same-frame Depth within 20 mm':'one or both endpoints differ from same-frame Depth by >= 20 mm';
-  }
-  const pair={
-    state,reason,
-    aState:a?.state??'UNKNOWN',bState:b?.state??'UNKNOWN',
-    aSignedDelta:a?.signedDelta??null,bSignedDelta:b?.signedDelta??null,
-    maxAbsDelta:[a?.absDelta,b?.absDelta].filter(Number.isFinite).reduce((m,v)=>Math.max(m,v),0)
-  };
-  if(![a?.absDelta,b?.absDelta].some(Number.isFinite)) pair.maxAbsDelta=null;
-  surfaceConsistencyPair=pair;
-  const aText=Number.isFinite(pair.aSignedDelta)?`${pair.aSignedDelta>=0?'+':''}${(pair.aSignedDelta*1000).toFixed(1)}mm`:'n/a';
-  const bText=Number.isFinite(pair.bSignedDelta)?`${pair.bSignedDelta>=0?'+':''}${(pair.bSignedDelta*1000).toFixed(1)}mm`:'n/a';
-  set('surfaceConsistencyPairState',`${pair.state} / A ${aText} / B ${bText}`,surfaceConsistencyCss(pair.state));
-  log(
-    `SURFACE CONSISTENCY PAIR: state=${pair.state}; A=${pair.aState}(${aText}); B=${pair.bState}(${bText}); `+
-    `maxAbsDelta=${Number.isFinite(pair.maxAbsDelta)?(pair.maxAbsDelta*1000).toFixed(3)+' mm':'n/a'}; reason=${pair.reason}; `+
-    `threshold=20.0 mm; affectsCaptureGate=false; affectsFormalGate=false; correctionApplied=false; diagnosticOnly=true; formalSource=immutable-hit`
-  );
-  return pair;
-}
-
 function updateDepthHitCrossCheck(time){
   const current=buildDepthHitCrossCheck(time,latestHitDistance,latestHitViewDiagnostic);
   if(!current){
-    renderLiveSurfaceConsistency(classifySurfaceConsistency(null));
     if(latestDepthHitCrossCheck) return;
     set('hitViewState','—','');
     set('hitUvState','—','');
@@ -2053,7 +2024,6 @@ function updateDepthHitCrossCheck(time){
   }
   latestDepthHitCrossCheck=current;
   const c=current;
-  renderLiveSurfaceConsistency(classifySurfaceConsistency(c));
 
   const deltaMm=c.deltaViewForwardMinusDepth*1000;
   set('hitViewState',`x=${(c.hitViewX*1000).toFixed(1)} / y=${(c.hitViewY*1000).toFixed(1)} / −z=${c.hitViewForward.toFixed(3)} m`,'ok');
@@ -2074,12 +2044,10 @@ function snapshotDepthAgreement(slot,time,hitDistance,hitViewDiag){
 
   if(!c){
     set(stateId,'N/A','warn');
-    recordCaptureSurfaceConsistency(slot,null);
     log(`Point ${slot} View-Z × Depth: unavailable at capture frame`);
     return null;
   }
 
-  recordCaptureSurfaceConsistency(slot,c);
   const deltaMm=c.deltaViewForwardMinusDepth*1000;
   const text=
     `−z ${c.hitViewForward.toFixed(3)} / depth ${c.depthAtHitUv.toFixed(3)} m / ` +
@@ -2768,6 +2736,12 @@ function resetSettlingMetrics(){
   set('compareDepthMedianABState','—','');
   set('compareHitADepthBState','—','');
   set('compareDepthAHitBState','—','');
+  set('surfaceOffsetAState','—','');
+  set('surfaceAxialAState','—','');
+  set('surfaceOffsetBState','—','');
+  set('surfaceAxialBState','—','');
+  set('surfaceAxialNetState','—','');
+  set('surfaceExactNetState','—','');
   set('depthCenterErrorState','—','');
   set('depthMedianErrorState','—','');
   lastDepthAgreement = null;
@@ -3447,12 +3421,6 @@ function resetMeasurementMetrics(){
   resetHitStabilityDiagnostics();
   captureDepthAgreementA = null;
   captureDepthAgreementB = null;
-  captureSurfaceConsistencyA = null;
-  captureSurfaceConsistencyB = null;
-  surfaceConsistencyPair = null;
-  set('surfaceConsistencyAState','—','');
-  set('surfaceConsistencyBState','—','');
-  set('surfaceConsistencyPairState','—','');
   set('captureADepthState','—','');
   set('captureBDepthState','—','');
   set('depth3DAState','—','');
@@ -3462,6 +3430,12 @@ function resetMeasurementMetrics(){
   set('compareDepthMedianABState','—','');
   set('compareHitADepthBState','—','');
   set('compareDepthAHitBState','—','');
+  set('surfaceOffsetAState','—','');
+  set('surfaceAxialAState','—','');
+  set('surfaceOffsetBState','—','');
+  set('surfaceAxialBState','—','');
+  set('surfaceAxialNetState','—','');
+  set('surfaceExactNetState','—','');
   set('depthCenterErrorState','—','');
   set('depthMedianErrorState','—','');
   lastDepthAgreement = null;
@@ -3566,12 +3540,6 @@ function summarizeMeasurement(reason){
     `camera distance median: A=${camAMed===null?'n/a':camAMed.toFixed(6)} m; ` +
     `B=${camBMed===null?'n/a':camBMed.toFixed(6)} m`
   );
-  log(
-    `surface consistency summary: pair=${surfaceConsistencyPair?.state??'UNKNOWN'}; ` +
-    `A=${captureSurfaceConsistencyA?.state??'UNKNOWN'}(${Number.isFinite(captureSurfaceConsistencyA?.signedDelta)?(captureSurfaceConsistencyA.signedDelta*1000).toFixed(3)+' mm':'n/a'}); ` +
-    `B=${captureSurfaceConsistencyB?.state??'UNKNOWN'}(${Number.isFinite(captureSurfaceConsistencyB?.signedDelta)?(captureSurfaceConsistencyB.signedDelta*1000).toFixed(3)+' mm':'n/a'}); ` +
-    `threshold=20.0 mm; affectsFormalGate=false; correctionApplied=false; diagnosticOnly=true`
-  );
 
   const finalAnchor = currentAnchorDistance;
   const finalDelta =
@@ -3638,6 +3606,16 @@ function summarizeMeasurement(reason){
       `AHit-BDepth=${d.hitAToDepthB==null?'n/a':d.hitAToDepthB.toFixed(6)} m; ` +
       `ADepth-BHit=${d.depthAToHitB==null?'n/a':d.depthAToHitB.toFixed(6)} m; ` +
       `reference=${referenceMeters.toFixed(6)} m; formalCorrection=false; agreementDiagnosticOnly=true`
+    );
+    const sa=d.surfaceAxisCenter;
+    log(
+      `surface offset axis summary: ` +
+      `A[offset=${sa?.a==null?'n/a':(sa.a.offset*1000).toFixed(3)+' mm'},projectedABEffect=${sa?.a==null?'n/a':(sa.a.projectedEffect>=0?'+':'')+(sa.a.projectedEffect*1000).toFixed(3)+' mm'},exactOneSide=${sa?.a==null?'n/a':(sa.a.exactOneSideEffect>=0?'+':'')+(sa.a.exactOneSideEffect*1000).toFixed(3)+' mm'}]; ` +
+      `B[offset=${sa?.b==null?'n/a':(sa.b.offset*1000).toFixed(3)+' mm'},projectedABEffect=${sa?.b==null?'n/a':(sa.b.projectedEffect>=0?'+':'')+(sa.b.projectedEffect*1000).toFixed(3)+' mm'},exactOneSide=${sa?.b==null?'n/a':(sa.b.exactOneSideEffect>=0?'+':'')+(sa.b.exactOneSideEffect*1000).toFixed(3)+' mm'}]; ` +
+      `projectedNet=${sa?.projectedNet==null?'n/a':(sa.projectedNet>=0?'+':'')+(sa.projectedNet*1000).toFixed(3)+' mm'}; ` +
+      `exactDepthCenterMinusHit=${sa?.exactNet==null?'n/a':(sa.exactNet>=0?'+':'')+(sa.exactNet*1000).toFixed(3)+' mm'}; ` +
+      `projectionResidual=${sa?.projectionResidual==null?'n/a':(sa.projectionResidual>=0?'+':'')+(sa.projectionResidual*1000).toFixed(3)+' mm'}; ` +
+      `diagnosticOnly=true; affectsFormalGate=false; correctionApplied=false; formalSource=immutable-hit`
     );
   }
 
@@ -3813,7 +3791,7 @@ function canCapturePoint(){
          aimQualityAllowsCapture();
 }
 
-// Phase 4.50 Rev.5: Point B stays distance-independent after Point A.
+// Phase 4.50 Rev.2: Point B stays distance-independent after Point A.
 // The initial 2 s settle must pass and the A map-integrity gate remains active
 // until B capture. Any >=5 mm A relocation locks B until RESET MEASURE.
 // Hit/AIM fluctuations do not grey out B; a current plane Hit is checked at press time.
@@ -4511,52 +4489,6 @@ function updateLineBuffer(){
   ]),gl.DYNAMIC_DRAW);
 }
 
-function sceneSetupGuideText(){
-  return 'STEP 0: Scan the whole scene A → B → edges / textured surroundings → A. Move slightly sideways / diagonally for parallax; do not only rotate in place. At A, wait for SURFACE DETECTED, then press SCENE READY.';
-}
-
-function sceneSetupCanConfirm(){
-  return !!session &&
-         trackingMode === 'ACTIVE' &&
-         !!latestHitPoint &&
-         !capturePending &&
-         !anchorCreationBusy &&
-         !calibrationModeActive();
-}
-
-function updateSceneSetupUI(){
-  if(el.sceneSetupText) el.sceneSetupText.hidden = sceneSetupReady;
-}
-
-function confirmSceneSetup(){
-  if(!session || sceneSetupReady) return;
-
-  if(trackingMode !== 'ACTIVE'){
-    if(el.xrState) el.xrState.textContent = 'STEP 0 / TRACKING...';
-    if(el.xrHint) el.xrHint.textContent = 'Wait for TRACKING ACTIVE, then continue scanning the whole scene.';
-    if(el.operationText) el.operationText.textContent = sceneSetupGuideText();
-    log('SCENE SETUP CONFIRM BLOCKED: reason=tracking-not-active; formalMeasurementGeometryUnchanged=true; formalSource=immutable-hit');
-    updateDistanceUI();
-    return;
-  }
-
-  if(!latestHitPoint){
-    if(el.xrState) el.xrState.textContent = 'STEP 0 / A SURFACE NOT FOUND';
-    if(el.xrHint) el.xrHint.textContent = 'At Point A, move slightly sideways / diagonally and include wall-floor edges, corners or textured objects. Return the center ＋ to A when SURFACE DETECTED appears.';
-    if(el.operationText) el.operationText.textContent = 'STEP 0: SCENE READY requires a current plane surface at Point A. Keep scanning; do not wait while aiming at a blank wall.';
-    log('SCENE SETUP CONFIRM BLOCKED: reason=no-current-plane-hit-at-A; userAcknowledged=true; formalSource=immutable-hit; pointMeshNotAcceptedForFormal=true');
-    updateDistanceUI();
-    return;
-  }
-
-  sceneSetupReady = true;
-  updateSceneSetupUI();
-  log(`SCENE SETUP CONFIRMED: path=A-area->B-area->surroundings->A-area; userAcknowledged=true; currentPlaneAtA=true; hitDistance=${Number.isFinite(latestHitDistance)?latestHitDistance.toFixed(6)+' m':'n/a'}; formalMeasurementGeometryUnchanged=true; formalSource=immutable-hit`);
-  if(el.xrState) el.xrState.textContent = 'SCENE READY / SURFACE DETECTED';
-  if(el.xrHint) el.xrHint.textContent = 'Scene setup complete. Keep center ＋ on Point A and capture when AIM QUALITY is GOOD.';
-  updateDistanceUI();
-}
-
 function updateDistanceUI(){
   if(pointA){
     set('coordA',fmtPoint(pointA),'ok');
@@ -4645,23 +4577,13 @@ function updateDistanceUI(){
     set('liveDistanceState','—','');
     set('liveMinusFrozenState','—','');
     el.pointText.textContent = 'A: NOT SET / B: NOT SET';
+    el.setPointBtn.textContent = capturePending === 'A' ? 'CAPTURING A...' : 'CAPTURE POINT A';
+    el.setPointBtn.disabled = !canCapturePoint();
     el.resetBtn.disabled = true;
     el.xrResetBtn.disabled = true;
-    updateSceneSetupUI();
-    if(!sceneSetupReady){
-      const sceneConfirmable = sceneSetupCanConfirm();
-      el.setPointBtn.textContent = sceneConfirmable ? 'SCENE READY AT A' : 'SCENE READY — NEED SURFACE';
-      el.setPointBtn.disabled = !sceneConfirmable;
-      if(el.operationText) el.operationText.textContent = sceneConfirmable
-        ? 'STEP 0: Point A surface is detected. Press SCENE READY AT A.'
-        : sceneSetupGuideText();
-    }else{
-      el.setPointBtn.textContent = capturePending === 'A' ? 'CAPTURING A...' : 'CAPTURE POINT A';
-      el.setPointBtn.disabled = !canCapturePoint();
-      if(el.operationText) el.operationText.textContent = canCapturePoint()
-        ? 'STEP 1: Aim ＋ at Point A, then CAPTURE POINT A.'
-        : 'STEP 1: Aim ＋ at Point A. Wait for SURFACE + AIM GOOD.';
-    }
+    if(el.operationText) el.operationText.textContent = canCapturePoint()
+      ? 'STEP 1: Aim ＋ at Point A, then CAPTURE POINT A.'
+      : 'STEP 1: Aim ＋ at Point A. Wait for SURFACE + AIM GOOD.';
   }
 
   el.anchorText.textContent =
@@ -6639,13 +6561,6 @@ function captureCalibrationFromCurrentRay(time,viewerPose){
 }
 
 function requestCapture(source){
-  if(!sceneSetupReady){
-    const msg = 'STEP 0 is not complete. Slowly scan A → B → surroundings → A, then press SCENE READY.';
-    if(el.xrHint) el.xrHint.textContent = msg;
-    if(el.operationText) el.operationText.textContent = msg;
-    log(`MEASUREMENT CAPTURE BLOCKED: source=${source}; reason=scene-setup-not-confirmed; formalSource=immutable-hit`);
-    return;
-  }
   if(calibrationModeActive()){
     if(el.xrHint) el.xrHint.textContent='A/B measurement locked during card ray calibration. RESET CARD to unlock.';
     log(`MEASUREMENT CAPTURE BLOCKED: source=${source}; reason=card-ray-calibration-active`);
@@ -6694,8 +6609,8 @@ function requestCapture(source){
       ? `plane unavailable / diagnostic hit available: point=${pointCount}, mesh=${meshCount}`
       : `no plane / point / mesh hit at center`;
     const msg = requestedSlot === 'B'
-      ? `Point B: ${altText}. Formal capture remains plane-only. Slowly scan nearby floor / walls / textured objects, then return to Point B and retry; do not wait in one direction.`
-      : `Point A: no current plane Hit. Slowly scan nearby floor / walls / textured objects, then return to Point A until the surface is reacquired; do not wait in one direction.`;
+      ? `Point B: ${altText}. Formal capture remains plane-only; scan the target area and retry.`
+      : `Point A: no current plane Hit. Center on the target and move slowly until the surface is reacquired, then press CAPTURE again.`;
     el.xrHint.textContent = msg;
     if(el.operationText) el.operationText.textContent = msg;
     log(
@@ -6731,9 +6646,6 @@ async function startAR(){
   cleanupDone = false;
   sessionReferenceSpaceResetCount = 0;
   sessionFrozenMeasurements = [];
-  sceneSetupReady = false;
-  sceneSetupSurfaceEligible = false;
-  updateSceneSetupUI();
   // Keep the persistent 9-sample Accuracy Sweep across AR session restarts.
   // START NEW ACCURACY SWEEP is the explicit way to start a new controlled dataset.
   updateDepthSweepUI();
@@ -6779,7 +6691,7 @@ async function startAR(){
 
     set('sessionState','STARTED','ok');
     log(`session started; enabledFeatures=[${session.enabledFeatures ? Array.from(session.enabledFeatures).join(', ') : 'not exposed'}]`);
-    log('SURFACE CONSISTENCY DIAGNOSTIC ACTIVE: comparison=HitViewForward-vs-sameFrameDepthAtHitUv; match<20mm; mismatch>=20mm; coherenceRequired=COHERENT; affectsCaptureGate=false; affectsFormalGate=false; correctionApplied=false; diagnosticOnly=true; formalSource=immutable-hit');
+    log('SURFACE OFFSET AXIS DIAGNOSTIC ACTIVE: method=local-3D Hit->same-frame Depth-center projected onto immutable Hit A->B axis; positiveEffect=lengthens-A-B; negativeEffect=shortens-A-B; endpointOffsetMagnitudeIsDiagnostic=true; affectsCaptureGate=false; affectsFormalGate=false; correctionApplied=false; diagnosticOnly=true; formalSource=immutable-hit; sweepStorageCompatibility=phase4.50-schema2');
 
     try{
       const usage=session.depthUsage ?? 'not exposed';
@@ -6799,10 +6711,6 @@ async function startAR(){
     session.addEventListener('end',onSessionEnd,{once:true});
 
     session.addEventListener('select',()=>{
-      if(!sceneSetupReady){
-        log('XR SELECT IGNORED: scene-setup-not-confirmed');
-        return;
-      }
       if(calibrationModeActive()){
         log('XR SELECT IGNORED: card-ray-calibration-active');
         return;
@@ -6887,10 +6795,8 @@ async function startAR(){
     el.calibrationResetOverlayBtn.disabled = false;
     updateCalibrationUI();
 
-    el.xrState.textContent = 'STEP 0 / SCAN SCENE';
-    el.xrHint.textContent = 'Scan A → B → wall/floor edges and textured surroundings → A. Move slightly sideways / diagonally, not only by rotation. SCENE READY activates only when a plane surface is detected at A.';
-    if(el.operationText) el.operationText.textContent = sceneSetupGuideText();
-    updateSceneSetupUI();
+    el.xrState.textContent = 'TRACKING...';
+    el.xrHint.textContent = 'Move slowly and point at a textured floor, desk, or wall.';
 
     set('trackingState','PENDING','warn');
     set('surfaceState','SEARCHING','warn');
@@ -7052,7 +6958,6 @@ function createAnchorFromHit(result,hitPose,slot,time,viewerPose){
     preBActive = false;
 
     updateDepthABComparison();
-    updateSurfaceConsistencyPair();
     freezeMeasurementAtB(fallbackPoint,time);
     logHitABComparison();
 
@@ -7248,15 +7153,6 @@ function onXRFrame(time,frame){
 
       set('surfaceState','DETECTED','ok');
 
-      if(!sceneSetupReady && !pointA){
-        if(!sceneSetupSurfaceEligible){
-          sceneSetupSurfaceEligible = true;
-          log(`SCENE SETUP A-SURFACE ELIGIBLE: currentPlane=true; hitDistance=${Number.isFinite(latestHitDistance)?latestHitDistance.toFixed(6)+' m':'n/a'}; pressSceneReadyAllowed=true; formalSource=immutable-hit`);
-        }
-        el.setPointBtn.textContent = 'SCENE READY AT A';
-        if(el.operationText) el.operationText.textContent = 'STEP 0: Point A surface is detected. Press SCENE READY AT A.';
-      }
-
       if(capturePending && !anchorCreationBusy){
         const slot = capturePending;
         createAnchorFromHit(result,hitPose,slot,time,pose);
@@ -7264,19 +7160,12 @@ function onXRFrame(time,frame){
 
       if(!(pointA && pointB) && !capturePending && !anchorCreationBusy){
         classifyAimQuality();
-        el.setPointBtn.disabled = !sceneSetupReady
-          ? trackingMode !== 'ACTIVE'
-          : !canPressCaptureButton();
+        el.setPointBtn.disabled = !canPressCaptureButton();
       }
 
       if(!pointA && !capturePending){
-        if(!sceneSetupReady){
-          el.xrState.textContent = 'STEP 0 / SCAN SCENE';
-          el.xrHint.textContent = 'Scan A → B → edges / textured surroundings → A. Move slightly sideways / diagonally. At A, wait for SURFACE DETECTED; then SCENE READY becomes available.';
-        }else{
-          el.xrState.textContent = 'SURFACE DETECTED';
-          el.xrHint.textContent = 'Aim center ＋ at Point A, then press CAPTURE POINT A. Camera-image taps do not capture.';
-        }
+        el.xrState.textContent = 'SURFACE DETECTED';
+        el.xrHint.textContent = 'Aim center ＋ at Point A, then press CAPTURE POINT A. Camera-image taps do not capture.';
       }else if(pointA && !pointB && !capturePending){
         el.xrState.textContent = 'POINT A ANCHORED';
         el.xrHint.textContent = 'Aim center ＋ at Point B, then press CAPTURE POINT B.';
@@ -7294,37 +7183,17 @@ function onXRFrame(time,frame){
     updateLiveHitStability(time);
     classifyAimQuality();
 
-    if(!sceneSetupReady && !pointA){
-      el.setPointBtn.textContent = 'SCENE READY — NEED SURFACE';
-      if(noHitFrames > 15 && sceneSetupSurfaceEligible){
-        sceneSetupSurfaceEligible = false;
-        log('SCENE SETUP A-SURFACE LOST: currentPlane=false; pressSceneReadyAllowed=false; continueWholeSceneScan=true; formalSource=immutable-hit');
-      }
-    }
-
     if(noHitFrames > 180){
       set('surfaceState','SEARCHING / LOW FEATURES?','warn');
       if(!(pointA && pointB)){
-        if(!sceneSetupReady){
-          el.xrState.textContent = 'STEP 0 / SCAN SCENE';
-          el.xrHint.textContent = 'No plane surface at the center. Keep scanning the whole scene with small sideways / diagonal motion and include floor-wall edges, corners or textured objects; return to A after SURFACE DETECTED.';
-        }else if(pointA && !pointB){
-          el.xrState.textContent = 'SURFACE LOST';
-          el.xrHint.textContent = 'No current surface at Point B. Slowly show nearby textured surroundings, then return to B; do not wait in one direction.';
-        }else{
-          el.xrState.textContent = 'SURFACE NOT FOUND';
-          el.xrHint.textContent = 'Point A plane surface is not currently available. Move slightly sideways / diagonally, show nearby edges or textured objects, then return the center ＋ to A; do not wait while staring at a blank wall.';
-        }
+        el.xrState.textContent = 'SURFACE NOT FOUND';
+        el.xrHint.textContent = 'No current plane Hit. Move slowly over a textured, well-lit surface until SURFACE DETECTED appears; CAPTURE stays disabled meanwhile.';
       }
     }else{
       set('surfaceState','SEARCHING','warn');
     }
 
-    if(!(pointA && pointB)){
-      el.setPointBtn.disabled = !sceneSetupReady
-        ? trackingMode !== 'ACTIVE'
-        : (pointA && !pointB ? !canPressCaptureButton() : true);
-    }
+    if(!(pointA && pointB)) el.setPointBtn.disabled = pointA && !pointB ? !canPressCaptureButton() : true;
   }
 
   // Raw Camera Access: analyze/display the same XR camera stream.
@@ -7347,7 +7216,7 @@ function onXRFrame(time,frame){
   refreshRawCameraFreshnessUI('xr-frame-watchdog');
   if(localRawSampled) tryFulfillQueuedCardFreeze('new-local-raw-camera-frame');
 
-  // Phase 4.50 Rev.4 inherits the Phase 4.40 Rev.7 / Phase 4.30 Rev.16 calibration path unchanged: freezes pixels and matching XRView geometry from the same sampling role: LOCAL when available, otherwise VIEWER-ONLY during fallback.
+  // Phase 4.50 Rev.2 inherits the Phase 4.40 Rev.7 / Phase 4.30 Rev.16 calibration path unchanged: freezes pixels and matching XRView geometry from the same sampling role: LOCAL when available, otherwise VIEWER-ONLY during fallback.
   // VIEWER-ONLY solves the known rectangle in the frozen viewer reference space and is not world/local comparable across frames.
   // No live per-corner auto-dwell runs here; Hit/Depth remain independent diagnostics.
 
@@ -7435,15 +7304,8 @@ function resetMeasurement(){
   updateMetricsUI();
 
   if(session){
-    if(sceneSetupReady){
-      el.xrState.textContent = latestHitPoint ? 'SURFACE DETECTED' : 'SEARCHING SURFACE...';
-      el.xrHint.textContent = latestHitPoint
-        ? 'Set Point A.'
-        : 'Slowly scan nearby textured surroundings, then return to Point A; do not wait in one direction.';
-    }else{
-      el.xrState.textContent = 'STEP 0 / SCAN SCENE';
-      el.xrHint.textContent = 'Scan A → B → wall/floor edges and textured surroundings → A with some sideways / diagonal motion. At A, wait for SURFACE DETECTED, then press SCENE READY.';
-    }
+    el.xrState.textContent = latestHitPoint ? 'SURFACE DETECTED' : 'SEARCHING SURFACE...';
+    el.xrHint.textContent = latestHitPoint ? 'Set Point A.' : 'Move slowly and point at a textured surface.';
   }
 
   log('measurement reset');
@@ -7702,10 +7564,7 @@ el.startBtn.addEventListener('click',startAR);
 el.resetBtn.addEventListener('click',resetMeasurement);
 el.endBtn.addEventListener('click',endAR);
 
-el.setPointBtn.addEventListener('click',()=>{
-  if(!sceneSetupReady) confirmSceneSetup();
-  else requestCapture('dom-button');
-});
+el.setPointBtn.addEventListener('click',()=>requestCapture('dom-button'));
 el.xrResetBtn.addEventListener('click',resetMeasurement);
 el.xrEndBtn.addEventListener('click',endAR);
 
