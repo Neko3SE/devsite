@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<title>AR DISTANCE LAB - Phase 4.60 Rev.3</title>
+<title>AR DISTANCE LAB - Phase 4.60 Rev.4</title>
 <style>
 :root{
   color-scheme:dark;
@@ -28,6 +28,13 @@ h2{font-size:14px;letter-spacing:.08em;color:var(--accent);margin:0 0 10px}
 .refPreset.active{border-color:var(--accent);background:#17374b}
 .sweepGrid{display:grid;grid-template-columns:minmax(150px,.9fr) minmax(160px,1.1fr);gap:0;margin-top:10px}
 .sweepValue{font-weight:700}
+.protocolInvalidation{margin-top:10px;padding:10px;border:1px solid #553b3f;border-radius:10px;background:#140d10}
+.protocolInvalidationGrid{display:grid;grid-template-columns:minmax(120px,.7fr) minmax(0,1.3fr);gap:8px;align-items:center}
+.protocolInvalidation select{width:100%;min-width:0;background:#080d12;color:var(--text);border:1px solid #3b4b59;border-radius:8px;padding:10px;font:inherit}
+.protocolInvalidation label.confirm{display:flex;gap:8px;align-items:flex-start;grid-column:1/-1;color:#d8c9cc;font-size:12px;line-height:1.45}
+.protocolInvalidation input[type=checkbox]{margin-top:2px;accent-color:#fca5a5}
+#protocolInvalidationState{grid-column:1/-1;color:var(--muted);font-size:11px;line-height:1.45}
+#invalidateProtocolTrialBtn{grid-column:1/-1}
 .procedure{margin:0;padding-left:1.35em;color:#cbd7e1;font-size:12px;line-height:1.7}
 #depthABText{font-size:14px;font-weight:700;color:#a7f3d0;margin-top:4px}
 #sweepText{font-size:12px;font-weight:700;color:#bfdbfe;margin-top:4px}
@@ -135,7 +142,7 @@ padding:8px 9px;pointer-events:auto}
 <body>
 <main>
 <h1>AR DISTANCE LAB</h1>
-<p class="sub">Phase 4.60 Rev.3 — surface consistency + A-B axis effect diagnostics / guided scene setup / immutable Hit-Hit</p>
+<p class="sub">Phase 4.60 Rev.4 — protocol-invalid trial handling / surface consistency + A-B axis effect diagnostics / immutable Hit-Hit</p>
 
 <section class="card">
 <h2>STATUS</h2>
@@ -257,12 +264,12 @@ padding:8px 9px;pointer-events:auto}
 
 <section class="card">
 <h2>PHASE 4.60 — HIT / DEPTH SURFACE CONSISTENCY DIAGNOSTIC</h2>
-<p class="note">Point A / B の取得フレームで、formal plane Hit を同じXRViewへ変換した前方距離（Hit View −Z）と、同じ画面UVにある同一フレームDepthを比較します。Depth coherence が COHERENT で |Hit View −Z − Depth@UV| &lt; 20 mm のとき MATCH、20 mm以上は MISMATCH、同一フレームDepthが無い場合やcoherenceがCOHERENTでない場合は UNKNOWN と表示します。これは<strong>診断専用</strong>です。CAPTUREをブロックせず、MAPゲート・Accuracy Sweepの採否・正式距離の値を変更せず、Depthによる補正も行いません。Rev.3ではさらに、Point A / B のHit→同一フレームDepth-centerの3D変位を、immutable Hit A→B軸へ射影し、各端点の距離への一次寄与量と、片側だけDepthへ置換した場合の正確なA-B距離差、両端Depth-center距離−Hit-Hit距離を併記します。大きなHit↔Depth表面offsetが、そのままA-B距離誤差を意味するとは限らないことを分離して確認するための診断であり、正式値・採否・MAP gate・Capture gateには一切使用しません。Phase 4.50で確定した9サンプルは既存localStorageのまま保持します。比較実験では、この表示がMATCHになるまで待つなど取得タイミングを変えず、従来と同じSCENE SETUP / SURFACE / AIM手順で取得してください。</p>
+<p class="note">Point A / B の取得フレームで、formal plane Hit を同じXRViewへ変換した前方距離（Hit View −Z）と、同じ画面UVにある同一フレームDepthを比較します。Depth coherence が COHERENT で |Hit View −Z − Depth@UV| &lt; 20 mm のとき MATCH、20 mm以上は MISMATCH、同一フレームDepthが無い場合やcoherenceがCOHERENTでない場合は UNKNOWN と表示します。これは<strong>診断専用</strong>です。CAPTUREをブロックせず、MAPゲート・Accuracy Sweepの採否・正式距離の値を変更せず、Depthによる補正も行いません。Rev.3ではさらに、Point A / B のHit→同一フレームDepth-centerの3D変位を、immutable Hit A→B軸へ射影し、各端点の距離への一次寄与量と、片側だけDepthへ置換した場合の正確なA-B距離差、両端Depth-center距離−Hit-Hit距離を併記します。大きなHit↔Depth表面offsetが、そのままA-B距離誤差を意味するとは限らないことを分離して確認するための診断であり、正式値・採否・MAP gate・Capture gateには一切使用しません。Rev.4ではAccuracy Sweepに、測定値とは独立して確認できた操作・プロトコルミスだけを監査ログ付きで無効化する機能を追加します。Surface ConsistencyやDepth値を理由に無効化することはできません。比較実験では、この表示がMATCHになるまで待つなど取得タイミングを変えず、従来と同じSCENE SETUP / SURFACE / AIM手順で取得してください。</p>
 </section>
 
 <section class="card">
 <h2>PHASE 4.50 — PERSISTENT FORMAL HIT-HIT ACCURACY SWEEP</h2>
-<p class="note">Phase 4.50では、50 / 100 / 150 cm × 各3回 = 合計9回の正式 immutable plane Hit-Hit を1つのAccuracy Sweepとして永続管理します。Sweep状態はlocalStorageへ保存し、ARのEND、ページ再読込、同一Originでの再開後も復元します。値が悪いことを理由に有効サンプルを捨てたり追加測定したりせず、各距離の最初の有効3回だけを固定します。MAP INVALID / reference-space reset など既存の安全ゲートで無効になった測定だけが数え直し対象です。Repeatability cluster、Depth、Anchorは診断専用で、正式Hit-Hit値の補正・採否には使用しません。 Rev.2では保存前と復元時の両方でSweep全体をschema 2として検証し、1件でも構造・Sweep ID・順序・状態値などに不整合があれば部分復元せず、その保存Sweep全体を無効として新しい0/9 Sweepを開始します。旧v1保存キーは読み込まず、削除を試みます。削除できない環境でも旧キーは参照しません。 Rev.3ではARセッション開始直後にSTEP 0 / SCENE SETUPを表示し、A付近→B付近→周囲の床・壁・物体→A付近の順にゆっくり見渡して空間認識を促します。SCENE READYを押すまでPoint A取得へ進みません。これは操作ガイドであり、正式距離の計算式・Hit採用条件・Sweep採否条件は変更しません。 Rev.4ではXR画面上部の状態メッセージをsafe-area上端から従来より約1行分（16 px）下げ、画面切り欠き・パンチホールとの重なりを避けます。測定ロジックと保存形式は変更しません。 Rev.5ではSCENE READYを単なる確認ボタンではなく、A付近へ戻った時点で現在のformal plane Hitが取得できている場合だけ成立するsurface-qualified gateに変更します。シーン認識ガイドには、A→B→周囲→Aの順に加え、端末をその場で回転させるだけでなく少し横・斜めにも移動して視差を作り、床壁境界・角・模様・掲示物などの特徴を画面へ入れることを明示します。これは操作フローの改善だけで、正式距離は引き続きimmutable plane Hit-Hitです。 Rev.6では画面切り欠きとの重なりをさらに避けるため、XR画面上部の状態メッセージだけをRev.5から32 px（約2行分）下へ移動します。測定ロジック、SCENE READY条件、保存形式、正式距離の計算には変更ありません。 Phase 4.60 Rev.1では完了済みSweepを保持したまま、Point A/B取得時のHit View-Zと同一フレームDepth@UVのSurface Consistencyを追加します。この診断は正式値・採否に影響しません。 Phase 4.60 Rev.3ではRev.1を正式ベースラインとして維持したまま、Hit→Depth 3D変位のA-B軸方向寄与を診断表示します。Rev.1のSCENE READY surface-qualified gate、Surface Consistency、保存schema 2、正式immutable Hit-Hit測定は変更しません。</p>
+<p class="note">Phase 4.50では、50 / 100 / 150 cm × 各3回 = 合計9回の正式 immutable plane Hit-Hit を1つのAccuracy Sweepとして永続管理します。Sweep状態はlocalStorageへ保存し、ARのEND、ページ再読込、同一Originでの再開後も復元します。値が悪いことを理由に有効サンプルを捨てたり追加測定したりせず、各距離の最初の有効3回だけを固定します。MAP INVALID / reference-space reset など既存の安全ゲートで無効になった測定だけが数え直し対象です。Repeatability cluster、Depth、Anchorは診断専用で、正式Hit-Hit値の補正・採否には使用しません。 Rev.2では保存前と復元時の両方でSweep全体をschema 2として検証し、1件でも構造・Sweep ID・順序・状態値などに不整合があれば部分復元せず、その保存Sweep全体を無効として新しい0/9 Sweepを開始します。旧v1保存キーは読み込まず、削除を試みます。削除できない環境でも旧キーは参照しません。 Rev.3ではARセッション開始直後にSTEP 0 / SCENE SETUPを表示し、A付近→B付近→周囲の床・壁・物体→A付近の順にゆっくり見渡して空間認識を促します。SCENE READYを押すまでPoint A取得へ進みません。これは操作ガイドであり、正式距離の計算式・Hit採用条件・Sweep採否条件は変更しません。 Rev.4ではXR画面上部の状態メッセージをsafe-area上端から従来より約1行分（16 px）下げ、画面切り欠き・パンチホールとの重なりを避けます。測定ロジックと保存形式は変更しません。 Rev.5ではSCENE READYを単なる確認ボタンではなく、A付近へ戻った時点で現在のformal plane Hitが取得できている場合だけ成立するsurface-qualified gateに変更します。シーン認識ガイドには、A→B→周囲→Aの順に加え、端末をその場で回転させるだけでなく少し横・斜めにも移動して視差を作り、床壁境界・角・模様・掲示物などの特徴を画面へ入れることを明示します。これは操作フローの改善だけで、正式距離は引き続きimmutable plane Hit-Hitです。 Rev.6では画面切り欠きとの重なりをさらに避けるため、XR画面上部の状態メッセージだけをRev.5から32 px（約2行分）下へ移動します。測定ロジック、SCENE READY条件、保存形式、正式距離の計算には変更ありません。 Phase 4.60 Rev.1では完了済みSweepを保持したまま、Point A/B取得時のHit View-Zと同一フレームDepth@UVのSurface Consistencyを追加します。この診断は正式値・採否に影響しません。 Phase 4.60 Rev.3ではRev.1を正式ベースラインとして維持したまま、Hit→Depth 3D変位のA-B軸方向寄与を診断表示します。Rev.1のSCENE READY surface-qualified gate、Surface Consistency、保存schema 2、正式immutable Hit-Hit測定は変更しません。 Phase 4.60 Rev.4では、計測値の大小とは独立して後から判明した明確な操作・プロトコルミスだけを、固定理由＋明示確認付きで「PROTOCOL INVALID」として有効Sweepから外せる監査付き操作を追加します。value-based discardは禁止のままです。保存schema 2との互換性を維持するため、無効化できるのは現在もっとも後ろに進んでいるターゲット距離のサンプルだけです。過去ターゲットのサンプルを遡って外す場合はSweep全体を再開始します。正式距離の計算、MAP / Depth / Surface Consistencyのゲート意味は変更しません。</p>
 <div class="actions">
   <button type="button" class="refPreset" data-cm="50">50 cm</button>
   <button type="button" class="refPreset" data-cm="100">100 cm</button>
@@ -286,19 +293,35 @@ padding:8px 9px;pointer-events:auto}
   <div class="cell">Depth-median median / error (diagnostic)</div><div class="cell" id="sweepDepthMedianState">—</div>
 </div>
 <div class="actions" style="margin-top:10px">
-  <button type="button" id="discardSweepBtn" disabled>VALID SAMPLES LOCKED</button>
+  <button type="button" id="discardSweepBtn" disabled>VALUE-BASED DISCARD LOCKED</button>
   <button type="button" id="clearSweepBtn">START NEW ACCURACY SWEEP</button>
+</div>
+<div class="protocolInvalidation">
+  <div class="protocolInvalidationGrid">
+    <div>Protocol-invalid trial</div>
+    <select id="protocolInvalidSample" aria-label="Protocol-invalid trial"></select>
+    <div>Fixed reason</div>
+    <select id="protocolInvalidReason" aria-label="Protocol invalidation reason">
+      <option value="">SELECT REASON</option>
+      <option value="WRONG_REFERENCE_OR_POINT_PAIR">WRONG PHYSICAL REFERENCE / POINT PAIR</option>
+      <option value="ACCIDENTAL_CAPTURE">ACCIDENTAL CAPTURE / WRONG POINT CAPTURED</option>
+      <option value="PHYSICAL_REFERENCE_MOVED">PHYSICAL REFERENCE / MARK MOVED</option>
+    </select>
+    <label class="confirm"><input type="checkbox" id="protocolInvalidConfirm"> <span>この理由は測定値を見て決めたものではなく、測定値とは独立して確認できた操作・プロトコルミスです。</span></label>
+    <button type="button" class="danger" id="invalidateProtocolTrialBtn" disabled>INVALIDATE PROTOCOL TRIAL</button>
+    <div id="protocolInvalidationState">Only the latest collected target block can be invalidated. End AR before changing the persistent Sweep.</div>
+  </div>
 </div>
 </section>
 
 <section class="card">
-<h2>PHASE 4.50 REV.4 — PERSISTENT ACCURACY PROCEDURE</h2>
+<h2>PHASE 4.60 REV.4 — PERSISTENT ACCURACY PROCEDURE</h2>
 <ol class="procedure">
   <li>カード校正は使用しません。外部の巻尺・スケール等で、同一の平坦かつテクスチャのある面に A/B の中心間距離 50.0 cm、100.0 cm、150.0 cm の基準を用意します。アプリの値を見て基準位置を調整しないでください。</li>
   <li>初回は新しいAccuracy Sweepが自動生成されます。START AR後、Tracking が ACTIVE になり、Hitが安定するまで待ちます。初回ターゲットは50 cmです。END ARやページ再読込後は、保存済みSweepから未完了の次ターゲットを自動復元します。</li>
   <li><strong>STEP 0 / SCENE SETUP:</strong> Tracking が ACTIVE になったら、まだPoint Aを取得せず、カメラをゆっくり動かして <strong>A付近 → B付近 → 周囲の床・壁・物体 → A付近</strong> の順に見渡します。模様・角・家具など特徴のある場所も画面へ入れてください。Aへ戻ったら <strong>SCENE READY</strong> を押して測定へ進みます。SURFACEが消えた場合は同じ場所で待ち続けず、周囲をゆっくり見せてから測定点へ戻ります。</li>
   <li>RESET MEASURE後、基準点Aの中心を中央照準＋へ合わせます。`SURFACE DETECTED` かつ `AIM QUALITY: GOOD`（または NEAR RANGE）で <strong>CAPTURE POINT A</strong> を押します。A取得後はその場で約2秒保持し、`POINT A READY` を確認してからBへ移動します。A取得からB取得まで継続監視し、A AnchorがCapture位置から5 mm以上再配置された時点で `A MAP SHIFT` としてBをロックし、RESETを要求します。2〜5 mm未満はWARNのみです。正式値はA/Bのimmutable plane Hit位置だけから確定し、Anchor値では補正しません。</li>
-  <li>COMMITTED MEASUREMENT / ACCURACY SAMPLE が記録されたら1回完了です。誤差が大きくても有効サンプルは捨てません。MAP INVALIDやreference-space resetで自動的にINVALIDとなった試行だけを数え直します。</li>
+  <li>COMMITTED MEASUREMENT / ACCURACY SAMPLE が記録されたら1回完了です。誤差が大きいこと自体を理由に有効サンプルは捨てません。MAP INVALIDやreference-space resetで自動的にINVALIDとなった試行は従来どおり数え直します。加えてRev.4では、<strong>測定値とは独立して確認できた操作・プロトコルミス</strong>（物理基準/点ペアの取り違え、誤操作CAPTURE、物理マーク移動）に限り、END AR後に固定理由と確認チェックを指定してPROTOCOL INVALIDへ変更できます。schema 2互換維持のため対象は現在もっとも後ろに進んだターゲット距離のサンプルだけです。</li>
   <li>RESET MEASUREして同じ50 cmを合計3回測定します。3回目の有効値が記録されると次ターゲットが予約され、次のRESETで100 cmへ自動切替します。</li>
   <li>100 cmを3回、続いて150 cmを3回、同じ手順で測定します。合計9個の有効Hit-Hit値を取得します。各距離が3/3になった後は、その距離の4件目以降をAccuracy Sweepへ追加しません。</li>
   <li>Repeatability cluster、Anchor drift、Depth-center / Depth-medianは診断として記録しますが、正式距離の補正・拒否・サンプル選別には使いません。</li>
@@ -473,7 +496,7 @@ const el = {};
   'depthCenterState','depthMedianState','depthTemporalState','depthValidState','depthCoherenceState','hitViewState','hitUvState','depthAtHitState','depthHitDeltaState',
   'surfaceConsistencyLiveState','surfaceConsistencyAState','surfaceConsistencyBState','surfaceConsistencyPairState',
   'captureADepthState','captureBDepthState','depth3DGeometryState','depth3DAState','depth3DBState','compareHitABState','compareDepthCenterABState','compareDepthMedianABState','compareHitADepthBState','compareDepthAHitBState','surfaceOffsetAState','surfaceAxialAState','surfaceOffsetBState','surfaceAxialBState','surfaceAxialNetState','surfaceExactNetState','depthCenterErrorState','depthMedianErrorState','entityProbeState','entityPlaneSourceState','entityPlaneHitState','entityPointSourceState','entityPointHitState','entityMeshSourceState','entityMeshHitState','entitySnapshotState','aimQualityState','edgeMedianState',
-  'contrastMedianState','calibrationWidthMm','calibrationHeightMm','calibrationSequenceState','calibrationAutoState','calibrationDwellState','calibrationTargetState','calibrationWidthState','calibrationHeightState','calibrationDiagonalState','calibrationWidthErrorState','calibrationHeightErrorState','calibrationScaleState','calibrationScaleSpreadState','calibrationScaleResidualState','calibrationAngleState','calibrationPlaneState','calibrationDepthState','calibrationRoleState','calibrationResetBtn','calibrationText','calibrationOverlayText','calibrationDwellTrack','calibrationDwellBar','calibrationCaptureBtn','calibrationResetOverlayBtn','sweepRunState','sweepProgressState','sweepSelectedCountState','sweepConsensusState','sweepNextState','sweepHitState','sweepConsensusDistanceState','sweepDepthCenterState','sweepDepthMedianState','discardSweepBtn','clearSweepBtn','sweepText','magnifierState','magnifierCanvas','magnifierWrap','cardFreezePanel','cardFreezeCanvas','cardFreezeTitle','cardFreezeTapState','cardFreezeResetTapsBtn','cardFreezeRetakeBtn','cardValidationBtn','cardValidationState','alignmentGrid','alignmentMark','alignmentState','alignmentOffsetState','alignmentUvState','alignBtn','entitySnapshotBtn',
+  'contrastMedianState','calibrationWidthMm','calibrationHeightMm','calibrationSequenceState','calibrationAutoState','calibrationDwellState','calibrationTargetState','calibrationWidthState','calibrationHeightState','calibrationDiagonalState','calibrationWidthErrorState','calibrationHeightErrorState','calibrationScaleState','calibrationScaleSpreadState','calibrationScaleResidualState','calibrationAngleState','calibrationPlaneState','calibrationDepthState','calibrationRoleState','calibrationResetBtn','calibrationText','calibrationOverlayText','calibrationDwellTrack','calibrationDwellBar','calibrationCaptureBtn','calibrationResetOverlayBtn','sweepRunState','sweepProgressState','sweepSelectedCountState','sweepConsensusState','sweepNextState','sweepHitState','sweepConsensusDistanceState','sweepDepthCenterState','sweepDepthMedianState','discardSweepBtn','clearSweepBtn','protocolInvalidSample','protocolInvalidReason','protocolInvalidConfirm','invalidateProtocolTrialBtn','protocolInvalidationState','sweepText','magnifierState','magnifierCanvas','magnifierWrap','cardFreezePanel','cardFreezeCanvas','cardFreezeTitle','cardFreezeTapState','cardFreezeResetTapsBtn','cardFreezeRetakeBtn','cardValidationBtn','cardValidationState','alignmentGrid','alignmentMark','alignmentState','alignmentOffsetState','alignmentUvState','alignBtn','entitySnapshotBtn',
   'magnifierLabel','qualityText','hitStabilityText','surfaceConsistencyText','depthText','depthABText','entityText','alignmentText',
   'coordA','coordB','startBtn','resetBtn','endBtn','log','xrCanvas','xrOverlay','xrHud',
   'xrState','xrHint','pointText','anchorText','distanceText','accuracyText','stabilityText','settlingText','preBText','sweepText','sceneSetupText','operationText','setPointBtn',
@@ -1332,7 +1355,7 @@ const SWEEP_ALLOWED_INTEGRITY = new Set(['PASS','WARN']);
 const SWEEP_ALLOWED_DEPTH_AGREEMENT = new Set(['AGREE','WARN','DIVERGED','UNKNOWN']);
 const SWEEP_ALLOWED_COHERENCE = new Set(['COHERENT','MIXED','LOW VALID','LOW COHERENCE','NO DEPTH']);
 const SWEEP_ALLOWED_HIT_STABILITY = new Set(['STABLE','MOVING','ANALYZING']);
-const DIAGNOSTIC_PROTOCOL_REVISION = 9;
+const DIAGNOSTIC_PROTOCOL_REVISION = 10;
 
 const TRACKING_UNSTABLE_MS = 250;
 const TRACKING_LOST_MS = 1000;
@@ -3370,7 +3393,8 @@ function updateDepthSweepUI(){
       ? `TRIALS: CUSTOM · TOTAL ${total}/${expected}`
       : `TRIALS: ${currentCount}/${SWEEP_GOAL_PER_TARGET} @ ${Math.round(currentTarget*100)} cm · TOTAL ${total}/${expected}`;
   }
-  if(el.discardSweepBtn){ el.discardSweepBtn.disabled=true; el.discardSweepBtn.textContent='VALID SAMPLES LOCKED'; }
+  if(el.discardSweepBtn){ el.discardSweepBtn.disabled=true; el.discardSweepBtn.textContent='VALUE-BASED DISCARD LOCKED'; }
+  updateProtocolInvalidationUI();
   document.querySelectorAll('.refPreset').forEach(btn=>{
     const cm=Number(btn.dataset.cm);
     btn.classList.toggle('active',Math.abs(referenceMeters-cm/100)<0.0005);
@@ -3471,8 +3495,169 @@ function applyPendingSweepTarget(){
   log(`ACCURACY AUTO TARGET APPLIED: sweepId=${sweepId}; reference=${(next*100).toFixed(1)} cm after RESET`);
 }
 function discardLastSweepSample(){
-  log('ACCURACY SAMPLE DISCARD BLOCKED: valid formal samples are locked to prevent value-based selection; use RESTART ACCURACY PHASE only if the entire protocol must be restarted');
-  if(el.discardSweepBtn){ el.discardSweepBtn.disabled=true; el.discardSweepBtn.textContent='VALID SAMPLES LOCKED'; }
+  log('ACCURACY SAMPLE DISCARD BLOCKED: value-based discard remains prohibited; use PROTOCOL INVALID only for independently confirmed operation/protocol mistakes in the latest target block');
+  if(el.discardSweepBtn){ el.discardSweepBtn.disabled=true; el.discardSweepBtn.textContent='VALUE-BASED DISCARD LOCKED'; }
+}
+
+
+const PROTOCOL_INVALIDATION_REASONS = new Set([
+  'WRONG_REFERENCE_OR_POINT_PAIR',
+  'ACCIDENTAL_CAPTURE',
+  'PHYSICAL_REFERENCE_MOVED'
+]);
+
+function latestCollectedSweepTarget(){
+  for(let i=SWEEP_TARGETS_M.length-1;i>=0;i--){
+    if(targetRows(SWEEP_TARGETS_M[i]).length) return SWEEP_TARGETS_M[i];
+  }
+  return null;
+}
+
+function protocolInvalidationEligibleRows(){
+  const target=latestCollectedSweepTarget();
+  if(target===null) return [];
+  return depthSweepSamples.filter(row=>Math.abs(row.referenceMeters-target)<0.0005);
+}
+
+function refreshProtocolInvalidationButton(){
+  if(!el.invalidateProtocolTrialBtn) return;
+  const selectedIndex=Number(el.protocolInvalidSample?.value);
+  const reason=el.protocolInvalidReason?.value||'';
+  const confirmed=!!el.protocolInvalidConfirm?.checked;
+  const row=depthSweepSamples.find(x=>x.index===selectedIndex);
+  const latestTarget=latestCollectedSweepTarget();
+  const eligible=!!row && latestTarget!==null && Math.abs(row.referenceMeters-latestTarget)<0.0005;
+  el.invalidateProtocolTrialBtn.disabled=!!session || !eligible || !PROTOCOL_INVALIDATION_REASONS.has(reason) || !confirmed;
+}
+
+function updateProtocolInvalidationUI(){
+  if(!el.protocolInvalidSample) return;
+  const oldValue=el.protocolInvalidSample.value;
+  const rows=protocolInvalidationEligibleRows();
+  const latestTarget=latestCollectedSweepTarget();
+  el.protocolInvalidSample.innerHTML='';
+  if(!rows.length){
+    const opt=document.createElement('option');
+    opt.value='';
+    opt.textContent='NO VALID SAMPLE';
+    el.protocolInvalidSample.appendChild(opt);
+  }else{
+    for(const row of rows){
+      const opt=document.createElement('option');
+      opt.value=String(row.index);
+      const time=typeof row.time==='string' ? row.time.slice(11,19)+'Z' : 'time n/a';
+      // Deliberately omit the measured distance from the selector so this control
+      // is not a value-ranking/discard interface.
+      opt.textContent=`#${row.index} · ${Math.round(row.referenceMeters*100)} cm · ${time}`;
+      el.protocolInvalidSample.appendChild(opt);
+    }
+    if(rows.some(r=>String(r.index)===oldValue)) el.protocolInvalidSample.value=oldValue;
+  }
+  const blockedBySession=!!session;
+  el.protocolInvalidSample.disabled=blockedBySession || !rows.length;
+  el.protocolInvalidReason.disabled=blockedBySession || !rows.length;
+  el.protocolInvalidConfirm.disabled=blockedBySession || !rows.length;
+  if(el.protocolInvalidationState){
+    if(blockedBySession){
+      el.protocolInvalidationState.textContent='END AR required. Persistent Sweep changes are blocked while an XRSession is active.';
+      el.protocolInvalidationState.className='warn';
+    }else if(!rows.length){
+      el.protocolInvalidationState.textContent='No valid sample is available for protocol invalidation.';
+      el.protocolInvalidationState.className='';
+    }else{
+      el.protocolInvalidationState.textContent=`Eligible block: ${Math.round(latestTarget*100)} cm only. Sample labels intentionally hide measured values. Earlier target blocks remain locked; restart the whole Sweep if an earlier block is invalid.`;
+      el.protocolInvalidationState.className='';
+    }
+  }
+  refreshProtocolInvalidationButton();
+}
+
+function invalidateProtocolSweepSample(){
+  if(session){
+    log('PROTOCOL INVALIDATION BLOCKED: XRSession active; press END AR before changing persistent Sweep data');
+    if(el.protocolInvalidationState){ el.protocolInvalidationState.textContent='END AR first.'; el.protocolInvalidationState.className='warn'; }
+    refreshProtocolInvalidationButton();
+    return;
+  }
+  const selectedIndex=Number(el.protocolInvalidSample?.value);
+  const reason=el.protocolInvalidReason?.value||'';
+  const confirmed=!!el.protocolInvalidConfirm?.checked;
+  const row=depthSweepSamples.find(x=>x.index===selectedIndex);
+  const latestTarget=latestCollectedSweepTarget();
+
+  if(!row || latestTarget===null || Math.abs(row.referenceMeters-latestTarget)>=0.0005){
+    log(`PROTOCOL INVALIDATION BLOCKED: sample=${Number.isFinite(selectedIndex)?selectedIndex:'n/a'} is not in the latest collected target block; schema2-order-preserved=true; valueBasedDiscard=false`);
+    return;
+  }
+  if(!PROTOCOL_INVALIDATION_REASONS.has(reason)){
+    log(`PROTOCOL INVALIDATION BLOCKED: sample=${row.index}; reason=missing-or-not-allowed; fixedReasonsOnly=true; valueBasedDiscard=false`);
+    return;
+  }
+  if(!confirmed){
+    log(`PROTOCOL INVALIDATION BLOCKED: sample=${row.index}; independent-of-value confirmation missing; valueBasedDiscard=false`);
+    return;
+  }
+
+  const previousSamples=depthSweepSamples;
+  const previousPending=pendingSweepTarget;
+  const previousCompleteLogged=sweepCompleteLogged;
+  const previousReference=referenceMeters;
+  const previousPersistenceMode=sweepPersistenceMode;
+  const previousRestoreNote=sweepRestoreNote;
+  const priorTotal=sweepTotalValid();
+  const originalIndex=row.index;
+  const removedHit=row.hitDistance;
+  const removedTime=row.time;
+  const removedTarget=row.referenceMeters;
+
+  const candidate=depthSweepSamples
+    .filter(x=>x!==row)
+    .map((x,i)=>({...x,index:i+1}));
+  const candidateRaw={
+    ...sweepSnapshotUnchecked(),
+    updatedAt:now(),
+    samples:candidate,
+    totalValid:candidate.length
+  };
+  const checked=validateSweepSnapshot(candidateRaw);
+  if(!checked.ok){
+    log(`PROTOCOL INVALIDATION BLOCKED: sample=${originalIndex}; reason=${reason}; candidateStorageValidation=${checked.reason}; schema=${SWEEP_STORAGE_SCHEMA}; valueBasedDiscard=false`);
+    return;
+  }
+
+  depthSweepSamples=checked.snapshot.samples;
+  pendingSweepTarget=null;
+  sweepCompleteLogged=false;
+  referenceMeters=removedTarget;
+  el.referenceCm.value=(removedTarget*100).toFixed(1).replace(/\.0$/,'');
+  set('referenceState',`${(removedTarget*100).toFixed(1)} cm`,'ok');
+  if(el.accuracyText) el.accuracyText.textContent=`REF: ${(removedTarget*100).toFixed(1)} cm / ERROR: —`;
+
+  if(!persistAccuracySweep()){
+    depthSweepSamples=previousSamples;
+    pendingSweepTarget=previousPending;
+    sweepCompleteLogged=previousCompleteLogged;
+    referenceMeters=previousReference;
+    sweepPersistenceMode=previousPersistenceMode;
+    sweepRestoreNote=previousRestoreNote;
+    el.referenceCm.value=(previousReference*100).toFixed(1).replace(/\.0$/,'');
+    set('referenceState',`${(previousReference*100).toFixed(1)} cm`,'ok');
+    log(`PROTOCOL INVALIDATION ABORTED: sample=${originalIndex}; reason=${reason}; persistence=${sweepPersistenceMode}; runtimeRolledBack=true; storedSweepPreserved=true; valueBasedDiscard=false`);
+    updateDepthSweepUI();
+    persistDiagnostics();
+    return;
+  }
+
+  const newTotal=sweepTotalValid();
+  const remaining=targetRows(removedTarget).length;
+  log(`PROTOCOL TRIAL INVALIDATED: sweepId=${sweepId}; originalSampleIndex=${originalIndex}; target=${(removedTarget*100).toFixed(1)} cm; Hit=${removedHit.toFixed(6)} m; capturedAt=${removedTime}; reason=${reason}; reasonIndependentOfMeasuredValue=true; valueBasedDiscard=false; removedFromValidSweep=true; priorTotalValid=${priorTotal}; newTotalValid=${newTotal}; targetRemaining=${remaining}/${SWEEP_GOAL_PER_TARGET}; laterRowsReindexed=true; schema=${SWEEP_STORAGE_SCHEMA}; formalSource=immutable-hit`);
+  log(`ACCURACY SWEEP REOPENED: sweepId=${sweepId}; nextReference=${(removedTarget*100).toFixed(1)} cm; totalValid=${newTotal}/${SWEEP_TARGETS_M.length*SWEEP_GOAL_PER_TARGET}; protocolInvalidOnly=true; previousComplete=${priorTotal===SWEEP_TARGETS_M.length*SWEEP_GOAL_PER_TARGET}; valueBasedDiscard=false`);
+
+  if(el.protocolInvalidReason) el.protocolInvalidReason.value='';
+  if(el.protocolInvalidConfirm) el.protocolInvalidConfirm.checked=false;
+  updateDepthSweepUI();
+  logSweepSummary(removedTarget);
+  persistDiagnostics();
 }
 
 function clearDepthSweepStats(){
@@ -7722,6 +7907,7 @@ function onSessionEnd(){
   set('anchorBState',pointB ? 'SESSION ENDED':'NOT SET','warn');
 
   ending = false;
+  updateProtocolInvalidationUI();
   persistDiagnostics();
 }
 
@@ -7765,6 +7951,10 @@ document.querySelectorAll('.refPreset').forEach(btn=>{
 el.referenceCm.addEventListener('change',()=>setReferenceCm(el.referenceCm.value));
 el.discardSweepBtn.addEventListener('click',discardLastSweepSample);
 el.clearSweepBtn.addEventListener('click',clearDepthSweepStats);
+el.protocolInvalidSample.addEventListener('change',refreshProtocolInvalidationButton);
+el.protocolInvalidReason.addEventListener('change',refreshProtocolInvalidationButton);
+el.protocolInvalidConfirm.addEventListener('change',refreshProtocolInvalidationButton);
+el.invalidateProtocolTrialBtn.addEventListener('click',invalidateProtocolSweepSample);
 el.referenceCm.addEventListener('input',()=>{
   const v = Number(el.referenceCm.value);
   if(Number.isFinite(v) && v > 0){
