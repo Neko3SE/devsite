@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<title>AR DISTANCE LAB - Phase 4.30 Rev.16</title>
+<title>AR DISTANCE LAB - Phase 4.40 Rev.1</title>
 <style>
 :root{
   color-scheme:dark;
@@ -125,7 +125,7 @@ padding:10px;pointer-events:auto}
 <body>
 <main>
 <h1>AR DISTANCE LAB</h1>
-<p class="sub">Phase 4.30 Rev.16 — Rev.14 verified core + 90° mismatch UI lock / REFREEZE-only guard</p>
+<p class="sub">Phase 4.40 Rev.1 — Formal immutable Hit-Hit independent accuracy evaluation (50 / 100 / 150 cm × 3)</p>
 
 <section class="card">
 <h2>STATUS</h2>
@@ -185,7 +185,7 @@ padding:10px;pointer-events:auto}
   <div class="cell">Hit Test success</div><div class="cell" id="hitRateState">—</div>
   <div class="cell">Anchor A tracked</div><div class="cell" id="anchorARateState">—</div>
   <div class="cell">Anchor B tracked</div><div class="cell" id="anchorBRateState">—</div>
-  <div class="cell">Reference length</div><div class="cell" id="referenceState">20.0 cm</div>
+  <div class="cell">Reference length</div><div class="cell" id="referenceState">50.0 cm</div>
   <div class="cell">Absolute error</div><div class="cell" id="absErrorState">—</div>
   <div class="cell">Relative error</div><div class="cell" id="relErrorState">—</div>
   <div class="cell">Reference-space resets</div><div class="cell" id="resetEventState">0</div>
@@ -236,39 +236,53 @@ padding:10px;pointer-events:auto}
 </section>
 
 <section class="card">
-<h2>REFERENCE LENGTH / SWEEP TARGET</h2>
-<p class="note">比較用のrepeatability sweepでは 20 / 50 / 100 cm を最低3回測定し、MAPで有効なHit-Hit値から多数派クラスタを探索します。3回で合意しなければ同じ距離を4回目以降も継続し、コンセンサス成立後のRESETで次の距離へ自動切替します。Depth-median 3Dは正式値の補正・拒否には使わず、一致度の診断情報として残します。</p>
+<h2>FORMAL HIT-HIT ACCURACY / REFERENCE TARGET</h2>
+<p class="note">Phase 4.40では、外部の物理基準で作った 50 / 100 / 150 cm を各3回だけ測定し、正式な immutable plane Hit-Hit の絶対誤差と再現性を評価します。値が悪いことを理由に有効サンプルを捨てたり追加測定したりせず、各距離の最初の有効3回をすべて統計へ含めます。MAP INVALID / reference-space reset など既存の安全ゲートで無効になった測定だけが自動除外されます。Repeatability cluster、Depth、Anchorは診断専用で、正式Hit-Hit値の補正・採否には使用しません。</p>
 <div class="actions">
-  <button type="button" class="refPreset" data-cm="20">20 cm</button>
   <button type="button" class="refPreset" data-cm="50">50 cm</button>
   <button type="button" class="refPreset" data-cm="100">100 cm</button>
+  <button type="button" class="refPreset" data-cm="150">150 cm</button>
 </div>
 <div style="display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap">
   <label for="referenceCm">Custom</label>
-  <input id="referenceCm" type="number" min="1" max="1000" step="0.1" value="20"
+  <input id="referenceCm" type="number" min="1" max="1000" step="0.1" value="50"
     style="width:120px;background:#080d12;color:#e8f0f6;border:1px solid #263441;border-radius:8px;padding:10px;font:inherit">
   <span>cm</span>
 </div>
 <div class="sweepGrid">
-  <div class="cell">Sweep progress</div><div class="cell sweepValue" id="sweepProgressState">20 cm n=0 WAIT | 50 cm n=0 WAIT | 100 cm n=0 WAIT</div>
-  <div class="cell">Selected target attempts</div><div class="cell sweepValue" id="sweepSelectedCountState">0 / min 3</div>
-  <div class="cell">Consensus</div><div class="cell sweepValue" id="sweepConsensusState">COLLECTING</div>
-  <div class="cell">Next target</div><div class="cell sweepValue" id="sweepNextState">20 cm</div>
-  <div class="cell">Hit-Hit all median / error</div><div class="cell" id="sweepHitState">—</div>
-  <div class="cell">Consensus cluster median</div><div class="cell" id="sweepConsensusDistanceState">—</div>
-  <div class="cell">Depth-center all median / error</div><div class="cell" id="sweepDepthCenterState">—</div>
-  <div class="cell">Depth-median all median / error</div><div class="cell" id="sweepDepthMedianState">—</div>
+  <div class="cell">Accuracy progress</div><div class="cell sweepValue" id="sweepProgressState">50 cm n=0/3 WAIT | 100 cm n=0/3 WAIT | 150 cm n=0/3 WAIT</div>
+  <div class="cell">Valid trials</div><div class="cell sweepValue" id="sweepSelectedCountState">0 / 3</div>
+  <div class="cell">Repeatability cluster (diagnostic)</div><div class="cell sweepValue" id="sweepConsensusState">COLLECTING</div>
+  <div class="cell">Next reference</div><div class="cell sweepValue" id="sweepNextState">50 cm</div>
+  <div class="cell">Formal Hit mean / median</div><div class="cell" id="sweepHitState">—</div>
+  <div class="cell">Formal error / spread</div><div class="cell" id="sweepConsensusDistanceState">—</div>
+  <div class="cell">Depth-center median / error (diagnostic)</div><div class="cell" id="sweepDepthCenterState">—</div>
+  <div class="cell">Depth-median median / error (diagnostic)</div><div class="cell" id="sweepDepthMedianState">—</div>
 </div>
 <div class="actions" style="margin-top:10px">
-  <button type="button" id="discardSweepBtn" disabled>DISCARD LAST SWEEP SAMPLE</button>
-  <button type="button" id="clearSweepBtn">CLEAR SWEEP STATS</button>
+  <button type="button" id="discardSweepBtn" disabled>VALID SAMPLES LOCKED</button>
+  <button type="button" id="clearSweepBtn">RESTART ACCURACY PHASE</button>
 </div>
 </section>
 
 <section class="card">
-<h2>A4 PLANAR TARGET / EDGE CALIBRATION</h2>
+<h2>PHASE 4.40 REV.1 — INDEPENDENT ACCURACY PROCEDURE</h2>
+<ol class="procedure">
+  <li>カード校正は使用しません。外部の巻尺・スケール等で、同一の平坦かつテクスチャのある面に A/B の中心間距離 50.0 cm、100.0 cm、150.0 cm の基準を用意します。アプリの値を見て基準位置を調整しないでください。</li>
+  <li>START AR後、Tracking が ACTIVE になり、Hitが安定するまで待ちます。初回ターゲットは50 cmです。</li>
+  <li>RESET MEASURE後、基準点Aの中心を照準してPoint Aを取得し、続いて基準点Bの中心を照準してPoint Bを取得します。正式値はその2つのimmutable plane Hit位置だけから確定します。</li>
+  <li>COMMITTED MEASUREMENT / ACCURACY SAMPLE が記録されたら1回完了です。誤差が大きくても有効サンプルは捨てません。MAP INVALIDやreference-space resetで自動的にINVALIDとなった試行だけを数え直します。</li>
+  <li>RESET MEASUREして同じ50 cmを合計3回測定します。3回目の有効値が記録されると次ターゲットが予約され、次のRESETで100 cmへ自動切替します。</li>
+  <li>100 cmを3回、続いて150 cmを3回、同じ手順で測定します。合計9個の有効Hit-Hit値を取得します。</li>
+  <li>Repeatability cluster、Anchor drift、Depth-center / Depth-medianは診断として記録しますが、正式距離の補正・拒否・サンプル選別には使いません。</li>
+  <li>150 cmの3回目まで完了し、ログに ACCURACY SWEEP COMPLETE が出たらEND ARを押し、LOGを共有してください。</li>
+</ol>
+</section>
+
+<section class="card">
+<h2>A4 PLANAR TARGET / EDGE CALIBRATION — LEGACY DIAGNOSTIC</h2>
 <p class="note">
-診断専用です。Phase 4.30 Rev.16ではA4用紙上に作った150.00 × 237.00 mmの長方形を使用します。Raw Cameraの同一フレームを固定し、TOP → RIGHT → BOTTOM → LEFT の各直線部分を5点ずつ大まかにタップします。5点は測定点そのものではなく黒線探索の初期位置として扱い、Frozen画像の輝度から各タップ近傍の暗い細線中心へ法線方向に自動スナップしてから2D直線QCと4-of-5外れ値判定を行います。姿勢推定では仮想四隅を作らず、辺上位置uも自由変数にせず、既知150 × 237 mm剛体長方形をFrozen画像へ投影した4本の線と、残った16〜20個のスナップ済み画像点との垂直ピクセル距離を直接最小化して6DOF姿勢を解きます。Hit Test / Depthは姿勢推定に使用せず、補正係数も適用しません。全辺の画像スナップGOOD・使用点RMS 2.5px以下・span 50px以上・外れ値除去時の有効span保持率65%以上を必須とし、姿勢解の各辺coverage 50%以上かつ最終fit quality=GOODの場合だけ同一Frozen比較の正式基準へ保存します。Tracking ACTIVE時は従来どおりLOCAL参照空間のRaw Camera幾何でFREEZEします。LOCAL trackingがLOST/UNSTABLEでもviewer参照空間のRaw CameraとXRView幾何が新鮮なら、そのフレームをVIEWER-ONLYとして単発FREEZEできます。VIEWER-ONLY結果はFrozen時点のviewer参照空間でのみ解釈し、world/local座標のフレーム間比較には使用しません。LOCALもVIEWERも新鮮でない場合だけFREEZE要求を予約し、どちらかの新しい有効フレームが到着した最初のタイミングで自動FREEZEします。予約中に同じボタンを押すとキャンセルできます。 Rev.16ではさらに、LMマルチスタートのsupported seed比率と選択解周辺のpose cluster比率をhard gate化し、seed consensusを通過した解でも同一Frozen画像で2回連続の姿勢一致を確認してからCONFIRMEDとします。CONFIRMED後は、姿勢推定に使用していないA4平面上の独立した十字マークA〜Dを1回ずつ取得します。タップはseedとしてのみ扱い、Frozen画像から投影A4軸に沿う暗い十字の交点へ自動スナップします。同じ4中心からA-B / B-C / C-D = 50 mm、A-C / B-D = 100 mm、A-D = 150 mmの6距離を一括算出し、確定平面への3D ray交点距離と、確定した投影剛体矩形から逆変換する2D homography距離を並記します。補正値は適用せず、画像位置依存の偏りと3D/2D経路の整合性を診断します。A〜Dのsnapには補正を伴わないsanity guardを追加し、既存点との20 mm未満の重複候補またはカード座標で5 mmを超える横方向spanを検出した場合は、その点だけ取り直します。 Rev.16では、4辺がGOODになった直後に投影矩形の縦横比を確認し、150 × 237 mmターゲットが90°横向きと強く判定できる場合は6DOF Solverへ進まず、90°回転してREFREEZEするよう案内します（180°反転は許可）。 90°不一致を検出したFrozen画像ではRESTART 20 TAPSを無効化し、再タップではなく新しいREFREEZEだけを許可します。またRIGHT / LEFTの画像スナップが通常18px探索で距離不足または境界到達により失敗した場合だけ、同じ5 seedを28pxまで自動再探索してから再タップを要求します。コントラスト・角度・直線QC・coverage・Solver consensus・同一Frozen repeatの合格条件は緩和しません。
+Phase 4.40の独立精度評価では使用しない旧診断機能です。必要な回帰確認時のみ使用します。Phase 4.30 Rev.16由来のA4用紙上に作った150.00 × 237.00 mmの長方形を使用します。Raw Cameraの同一フレームを固定し、TOP → RIGHT → BOTTOM → LEFT の各直線部分を5点ずつ大まかにタップします。5点は測定点そのものではなく黒線探索の初期位置として扱い、Frozen画像の輝度から各タップ近傍の暗い細線中心へ法線方向に自動スナップしてから2D直線QCと4-of-5外れ値判定を行います。姿勢推定では仮想四隅を作らず、辺上位置uも自由変数にせず、既知150 × 237 mm剛体長方形をFrozen画像へ投影した4本の線と、残った16〜20個のスナップ済み画像点との垂直ピクセル距離を直接最小化して6DOF姿勢を解きます。Hit Test / Depthは姿勢推定に使用せず、補正係数も適用しません。全辺の画像スナップGOOD・使用点RMS 2.5px以下・span 50px以上・外れ値除去時の有効span保持率65%以上を必須とし、姿勢解の各辺coverage 50%以上かつ最終fit quality=GOODの場合だけ同一Frozen比較の正式基準へ保存します。Tracking ACTIVE時は従来どおりLOCAL参照空間のRaw Camera幾何でFREEZEします。LOCAL trackingがLOST/UNSTABLEでもviewer参照空間のRaw CameraとXRView幾何が新鮮なら、そのフレームをVIEWER-ONLYとして単発FREEZEできます。VIEWER-ONLY結果はFrozen時点のviewer参照空間でのみ解釈し、world/local座標のフレーム間比較には使用しません。LOCALもVIEWERも新鮮でない場合だけFREEZE要求を予約し、どちらかの新しい有効フレームが到着した最初のタイミングで自動FREEZEします。予約中に同じボタンを押すとキャンセルできます。 Rev.16ではさらに、LMマルチスタートのsupported seed比率と選択解周辺のpose cluster比率をhard gate化し、seed consensusを通過した解でも同一Frozen画像で2回連続の姿勢一致を確認してからCONFIRMEDとします。CONFIRMED後は、姿勢推定に使用していないA4平面上の独立した十字マークA〜Dを1回ずつ取得します。タップはseedとしてのみ扱い、Frozen画像から投影A4軸に沿う暗い十字の交点へ自動スナップします。同じ4中心からA-B / B-C / C-D = 50 mm、A-C / B-D = 100 mm、A-D = 150 mmの6距離を一括算出し、確定平面への3D ray交点距離と、確定した投影剛体矩形から逆変換する2D homography距離を並記します。補正値は適用せず、画像位置依存の偏りと3D/2D経路の整合性を診断します。A〜Dのsnapには補正を伴わないsanity guardを追加し、既存点との20 mm未満の重複候補またはカード座標で5 mmを超える横方向spanを検出した場合は、その点だけ取り直します。 Rev.16では、4辺がGOODになった直後に投影矩形の縦横比を確認し、150 × 237 mmターゲットが90°横向きと強く判定できる場合は6DOF Solverへ進まず、90°回転してREFREEZEするよう案内します（180°反転は許可）。 90°不一致を検出したFrozen画像ではRESTART 20 TAPSを無効化し、再タップではなく新しいREFREEZEだけを許可します。またRIGHT / LEFTの画像スナップが通常18px探索で距離不足または境界到達により失敗した場合だけ、同じ5 seedを28pxまで自動再探索してから再タップを要求します。コントラスト・角度・直線QC・coverage・Solver consensus・同一Frozen repeatの合格条件は緩和しません。
 </p>
 <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
   <label for="calibrationWidthMm">Width</label>
@@ -303,7 +317,7 @@ padding:10px;pointer-events:auto}
 </section>
 
 <section class="card">
-<h2>PHASE 4.30 REV.16 CORE TEST PROCEDURE</h2>
+<h2>LEGACY CARD SOLVER PROCEDURE — NOT USED IN PHASE 4.40</h2>
 <ol class="procedure">
   <li>A4用紙の四辺から30 mm内側に引いた150.00 × 237.00 mm長方形を平らな面へ固定します。</li>
   <li>START AR後、長方形全体をRaw Camera中央領域へ入れてFREEZEを押します。現在のライブ表示がLOCALならLOCAL幾何、LOCAL LOST/UNSTABLEでVIEWER_FALLBACKが新鮮ならVIEWER-ONLY幾何でその場でFREEZEします。どちらも新鮮でない場合だけQUEUE FREEZEとして予約され、次の新鮮なLOCALまたはVIEWERフレームで自動FREEZEします。予約中はCANCEL FREEZEで取り消せます。以後のタップは同じFrozen画像を使います。</li>
@@ -327,7 +341,7 @@ padding:10px;pointer-events:auto}
 </section>
 
 <section class="card note">
-Phase 4.30 Rev.16でも通常の正式単発距離値はimmutable Hit-Hitのままです。A4校正を開始するとA/B測距はRESET A4 CALまたはEND ARまでロックします。A4校正は1枚のRaw Camera静止画像を使い、各辺5点を黒線探索の初期位置としてFrozen画像の暗線中心へ自動スナップし、4-of-5外れ値QCした後、既知150 × 237 mm剛体長方形をFrozen画像へ投影した4辺と残った16〜20画像点の垂直距離を直接フィットします。仮想四隅も独立した辺上uも姿勢変数として使いません。LMの収束診断を明示し、全4辺の使用点RMS 2.5px以下、span 50px以上、外れ値除去後のspan保持率65%以上を入力のhard GOOD gateとして要求します。WARN入力はその辺だけ再タップし、全辺GOODになるまで姿勢推定へ進みません。さらに投影後の全辺coverage 50%以上と全サンプルu∈[0,1]を別々に要求します。outside時は実際のoutside辺だけを再タップし、同一辺で2回失敗後はREFREEZEを要求します。coverage不足だけなら最も弱い辺だけ再タップします。同じFrozen画像をRESTART 20 TAPSで繰り返すと、全辺画像スナップGOOD＋入力GOOD＋coverage PASS＋最終fit GOODに加え、supported seed比率50%以上・選択解周辺cluster比率60%以上を要求します。最初の通過解はPROVISIONALとし、次の同一Frozen解がcenter 3 mm以内・normal 3°以内・projected-corner RMS 1.5 px以内かつmax 3 px以内に一致した時だけCONFIRMEDとします。LOCAL LOST時にVIEWER-ONLYでFREEZEした結果はそのFrozen時点のviewer参照空間だけで有効であり、別Frozenとのworld/local位置比較には使用しません。Hit Test / Depthは姿勢推定に使用せず、結果は診断専用で補正係数や絶対精度判定には使用しません。MAP integrity、Depth agreement、Hit entity probeなど従来の距離診断はそのまま維持します。
+Phase 4.40 Rev.1でも正式単発距離値はimmutable Hit-Hitのままです。カード機能は今回の独立精度評価には使用しません。A4校正を開始するとA/B測距はRESET A4 CALまたはEND ARまでロックします。A4校正は1枚のRaw Camera静止画像を使い、各辺5点を黒線探索の初期位置としてFrozen画像の暗線中心へ自動スナップし、4-of-5外れ値QCした後、既知150 × 237 mm剛体長方形をFrozen画像へ投影した4辺と残った16〜20画像点の垂直距離を直接フィットします。仮想四隅も独立した辺上uも姿勢変数として使いません。LMの収束診断を明示し、全4辺の使用点RMS 2.5px以下、span 50px以上、外れ値除去後のspan保持率65%以上を入力のhard GOOD gateとして要求します。WARN入力はその辺だけ再タップし、全辺GOODになるまで姿勢推定へ進みません。さらに投影後の全辺coverage 50%以上と全サンプルu∈[0,1]を別々に要求します。outside時は実際のoutside辺だけを再タップし、同一辺で2回失敗後はREFREEZEを要求します。coverage不足だけなら最も弱い辺だけ再タップします。同じFrozen画像をRESTART 20 TAPSで繰り返すと、全辺画像スナップGOOD＋入力GOOD＋coverage PASS＋最終fit GOODに加え、supported seed比率50%以上・選択解周辺cluster比率60%以上を要求します。最初の通過解はPROVISIONALとし、次の同一Frozen解がcenter 3 mm以内・normal 3°以内・projected-corner RMS 1.5 px以内かつmax 3 px以内に一致した時だけCONFIRMEDとします。LOCAL LOST時にVIEWER-ONLYでFREEZEした結果はそのFrozen時点のviewer参照空間だけで有効であり、別Frozenとのworld/local位置比較には使用しません。Hit Test / Depthは姿勢推定に使用せず、結果は診断専用で補正係数や絶対精度判定には使用しません。MAP integrity、Depth agreement、Hit entity probeなど従来の距離診断はそのまま維持します。
 </section>
 
 <section class="card">
@@ -374,7 +388,7 @@ Phase 4.30 Rev.16でも通常の正式単発距離値はimmutable Hit-Hitのま�
       <div id="hitStabilityText">HIT STABILITY: ANALYZING — warning only</div>
       <div id="depthText">DEPTH × HIT: WAITING — diagnostic only</div>
       <div id="depthABText">DEPTH 3D A↔B: — agreement diagnostic</div>
-      <div id="sweepText">SWEEP: 20 cm 0/3 | 50 cm 0/3 | 100 cm 0/3</div>
+      <div id="sweepText">ACCURACY: 50 cm 0/3 | 100 cm 0/3 | 150 cm 0/3</div>
       <div id="entityText">ENTITY PROBE: waiting</div>
       <div id="accuracyText">REF: 50.0 cm / ERROR: —</div>
       <div id="stabilityText">STABILITY: —</div>
@@ -985,7 +999,7 @@ function resetCurrentFrozenMeasurement(){
 }
 
 function updateRepeatabilityUI(){
-  // Phase 4.19 may change the reference between 20 / 50 / 100 cm after consensus.
+  // Phase 4.40 changes the reference between 50 / 100 / 150 cm after exactly three valid formal samples per target.
   // Repeatability must therefore be calculated only within the currently selected reference.
   const rows = sessionFrozenMeasurements
     .filter(v=>Math.abs((v.referenceMeters??NaN)-referenceMeters)<0.0005);
@@ -1168,9 +1182,9 @@ function freezeMeasurementAtB(hitPoint,time){
 }
 
 // Absolute accuracy validation (Rev.16: independent cross-mark centers are auto-snapped in the frozen image).
-let referenceMeters = 0.20;
-const SWEEP_TARGETS_M = [0.20,0.50,1.00];
-const SWEEP_GOAL_PER_TARGET = 3; // minimum attempts before consensus can pass
+let referenceMeters = 0.50;
+const SWEEP_TARGETS_M = [0.50,1.00,1.50];
+const SWEEP_GOAL_PER_TARGET = 3; // fixed valid trials per physical reference; no value-based extension
 const CONSENSUS_MIN_ATTEMPTS = 3;
 const CONSENSUS_ABS_TOL_M = 0.005;
 const CONSENSUS_REL_TOL = 0.01;
@@ -1245,8 +1259,8 @@ const DETAIL_CONTRAST_LOW = 8.0;
 
 let ending = false;
 let cleanupDone = false;
-const LOG_STORAGE_KEY = 'ar-distance-lab-phase4-30-rev16-log';
-const SUMMARY_STORAGE_KEY = 'ar-distance-lab-phase4-30-rev16-summary';
+const LOG_STORAGE_KEY = 'ar-distance-lab-phase4-40-rev1-log';
+const SUMMARY_STORAGE_KEY = 'ar-distance-lab-phase4-40-rev1-summary';
 
 const TRACKING_UNSTABLE_MS = 250;
 const TRACKING_LOST_MS = 1000;
@@ -2733,9 +2747,38 @@ function formatSweepMetric(values,ref){
   const range=a.length>1 ? Math.max(...a)-Math.min(...a) : 0;
   return `${fmtDistance(med)} / Δ ${formatSignedDistanceMeters(err)} (${pctErr>=0?'+':''}${pctErr.toFixed(2)}%) / all-range ${(range*1000).toFixed(2)} mm`;
 }
+function sampleSdFinite(values){
+  const a=values.filter(Number.isFinite);
+  if(a.length<2) return 0;
+  const mean=a.reduce((x,y)=>x+y,0)/a.length;
+  return Math.sqrt(a.reduce((sum,v)=>sum+(v-mean)*(v-mean),0)/(a.length-1));
+}
+function formalAccuracyStats(rows,ref){
+  const values=rows.map(r=>r.hitDistance).filter(Number.isFinite);
+  if(!values.length) return null;
+  const mean=meanFinite(values), med=medianFinite(values);
+  const errors=values.map(v=>v-ref);
+  const absErrors=errors.map(Math.abs);
+  return {
+    n:values.length,mean,median:med,
+    meanError:mean-ref,medianError:med-ref,
+    mae:meanFinite(absErrors),maxAbs:Math.max(...absErrors),
+    sd:sampleSdFinite(values),range:values.length>1?Math.max(...values)-Math.min(...values):0
+  };
+}
+function formatFormalAccuracy(rows,ref){
+  const a=formalAccuracyStats(rows,ref);
+  if(!a) return '—';
+  return `mean ${fmtDistance(a.mean)} / median ${fmtDistance(a.median)} / Δmean ${formatSignedDistanceMeters(a.meanError)}`;
+}
+function formatFormalErrorSpread(rows,ref){
+  const a=formalAccuracyStats(rows,ref);
+  if(!a) return '—';
+  return `MAE ${(a.mae*1000).toFixed(2)} mm / max |err| ${(a.maxAbs*1000).toFixed(2)} mm / SD ${(a.sd*1000).toFixed(2)} mm / range ${(a.range*1000).toFixed(2)} mm`;
+}
 function consensusProgressToken(t){
-  const q=targetConsensus(t);
-  return `${Math.round(t*100)} cm n=${q.n} ${q.state==='PASS'?'CONSENSUS':q.state==='COLLECTING'?'WAIT':'NO-CONS'}`;
+  const n=targetRows(t).length;
+  return `${Math.round(t*100)} cm n=${n}/${SWEEP_GOAL_PER_TARGET} ${n>=SWEEP_GOAL_PER_TARGET?'DONE':'WAIT'}`;
 }
 function sweepProgressText(){
   return SWEEP_TARGETS_M.map(consensusProgressToken).join(' | ');
@@ -2752,8 +2795,8 @@ function showConsensus(target){
 function updateDepthSweepUI(){
   const progress=sweepProgressText();
   set('sweepProgressState',progress,depthSweepSamples.length?'ok':'');
-  if(el.sweepText) el.sweepText.textContent=`CONSENSUS SWEEP: ${progress}`;
-  if(el.discardSweepBtn) el.discardSweepBtn.disabled=!depthSweepSamples.length;
+  if(el.sweepText) el.sweepText.textContent=`ACCURACY SWEEP: ${progress}`;
+  if(el.discardSweepBtn){ el.discardSweepBtn.disabled=true; el.discardSweepBtn.textContent='VALID SAMPLES LOCKED'; }
   document.querySelectorAll('.refPreset').forEach(btn=>{
     const cm=Number(btn.dataset.cm);
     btn.classList.toggle('active',Math.abs(referenceMeters-cm/100)<0.0005);
@@ -2773,34 +2816,28 @@ function updateDepthSweepUI(){
   const nextTarget=targetIndex>=0 && targetIndex<SWEEP_TARGETS_M.length-1 ? SWEEP_TARGETS_M[targetIndex+1] : null;
   if(pendingSweepTarget!==null){
     set('sweepNextState',`${Math.round(pendingSweepTarget*100)} cm after RESET`,'warn');
-  }else if(q.state==='PASS' && nextTarget===null){
-    set('sweepNextState','SWEEP COMPLETE','ok');
-  }else if(q.state==='NO CONSENSUS'){
-    set('sweepNextState',`${Math.round(target*100)} cm — RETRY`,'warn');
+  }else if(rows.length>=SWEEP_GOAL_PER_TARGET && nextTarget===null){
+    set('sweepNextState','ACCURACY SWEEP COMPLETE','ok');
   }else{
     set('sweepNextState',`${Math.round(target*100)} cm`,'');
   }
-  set('sweepSelectedCountState',`${rows.length} / min ${CONSENSUS_MIN_ATTEMPTS}`,rows.length>=CONSENSUS_MIN_ATTEMPTS?'ok':rows.length?'warn':'');
-  set('sweepConsensusState',`${q.state} / cluster ${q.memberCount}/${q.n} / need ${q.required}`,q.state==='PASS'?'ok':q.state==='NO CONSENSUS'?'warn':'');
-  set('sweepHitState',formatSweepMetric(rows.map(x=>x.hitDistance),target),rows.length?'warn':'');
-  if(q.distance!==null){
-    const err=q.distance-target, pct=(err/target)*100;
-    set('sweepConsensusDistanceState',`${fmtDistance(q.distance)} / Δ ${formatSignedDistanceMeters(err)} (${pct>=0?'+':''}${pct.toFixed(2)}%) / cluster span ${(q.span*1000).toFixed(2)} mm`,'ok');
-  }else{
-    set('sweepConsensusDistanceState',q.candidateDistance===null?'—':`candidate ${fmtDistance(q.candidateDistance)} / cluster ${q.memberCount}/${q.n}`,'warn');
-  }
+  set('sweepSelectedCountState',`${rows.length} / ${SWEEP_GOAL_PER_TARGET}`,rows.length>=SWEEP_GOAL_PER_TARGET?'ok':rows.length?'warn':'');
+  set('sweepConsensusState',`${q.state} / cluster ${q.memberCount}/${q.n} / diagnostic only`,q.state==='PASS'?'ok':q.n?'warn':'');
+  set('sweepHitState',formatFormalAccuracy(rows,target),rows.length?'warn':'');
+  set('sweepConsensusDistanceState',formatFormalErrorSpread(rows,target),rows.length?'warn':'');
   set('sweepDepthCenterState',formatSweepMetric(rows.map(x=>x.centerDistance),target),rows.length?'warn':'');
   set('sweepDepthMedianState',formatSweepMetric(rows.map(x=>x.medianDistance),target),rows.length?'warn':'');
 }
 function logSweepSummary(target){
   const rows=targetRows(target);
   if(!rows.length) return;
-  const hitMean=meanFinite(rows.map(x=>x.hitDistance)), hitMed=medianFinite(rows.map(x=>x.hitDistance));
+  const a=formalAccuracyStats(rows,target);
   const centerMed=medianFinite(rows.map(x=>x.centerDistance)), depthMed=medianFinite(rows.map(x=>x.medianDistance));
   const q=targetConsensus(target);
-  const metric=v=>v==null?'n/a':`${v.toFixed(6)} m(error=${((v-target)*1000).toFixed(3)} mm,${(((v-target)/target)*100).toFixed(3)}%)`;
-  log(`SWEEP SUMMARY ${Math.round(target*100)} cm: n=${rows.length}; HitMean=${metric(hitMean)}; HitMedian=${metric(hitMed)}; DepthCenterMedian=${metric(centerMed)}; DepthMedianMedian=${metric(depthMed)}; Consensus=${q.state}; cluster=${q.memberCount}/${q.n}; required=${q.required}; consensusDistance=${q.distance===null?'n/a':q.distance.toFixed(6)+' m'}; clusterSpan=${q.span===null?'n/a':(q.span*1000).toFixed(3)+' mm'}; tolerance=${(q.tolerance*1000).toFixed(3)} mm; consensusUsesReference=false; provisional=true`);
+  const metric=v=>v==null?'n/a':`${v.toFixed(6)} m(error=${((v-target)*1000).toFixed(3)} mm)`;
+  log(`ACCURACY SUMMARY ${Math.round(target*100)} cm: n=${a.n}/${SWEEP_GOAL_PER_TARGET}; HitMean=${a.mean.toFixed(6)} m; HitMedian=${a.median.toFixed(6)} m; meanError=${(a.meanError*1000).toFixed(3)} mm; medianError=${(a.medianError*1000).toFixed(3)} mm; MAE=${(a.mae*1000).toFixed(3)} mm; maxAbsError=${(a.maxAbs*1000).toFixed(3)} mm; sampleSD=${(a.sd*1000).toFixed(3)} mm; range=${(a.range*1000).toFixed(3)} mm; DepthCenterMedian=${metric(centerMed)}; DepthMedianMedian=${metric(depthMed)}; repeatabilityCluster=${q.state} ${q.memberCount}/${q.n}; allValidSamplesIncluded=true; valueBasedDiscard=false; referenceUsedOnlyForError=true; formalSource=immutable-hit`);
 }
+
 function recordDepthSweepSample(integrityState,depthQC){
   const target=sweepTargetForReference();
   if(target===null || !depthABComparison) return null;
@@ -2815,58 +2852,52 @@ function recordDepthSweepSample(integrityState,depthQC){
   depthSweepSamples.push(row);
   const q=targetConsensus(target);
   const err=v=>Number.isFinite(v)?`${((v-target)*1000).toFixed(3)} mm (${(((v-target)/target)*100).toFixed(3)}%)`:'n/a';
-  log(`CONSENSUS SAMPLE #${row.index}: target=${(target*100).toFixed(1)} cm; targetAttempt=${q.n}; Hit=${Number.isFinite(row.hitDistance)?row.hitDistance.toFixed(6):'n/a'} m error=${err(row.hitDistance)}; MAP=${row.integrity}; DepthAgreement=${row.depthAgreement}; depthAbsDelta=${row.depthAgreementDelta===null?'n/a':(row.depthAgreementDelta*1000).toFixed(3)+' mm'}; HitStabilityA=${row.aHitStability??'n/a'}; HitStabilityB=${row.bHitStability??'n/a'}; consensus=${q.state}; cluster=${q.memberCount}/${q.n}; required=${q.required}; consensusDistance=${q.distance===null?'n/a':q.distance.toFixed(6)+' m'}; clusterSpan=${q.span===null?'n/a':(q.span*1000).toFixed(3)+' mm'}; tolerance=${(q.tolerance*1000).toFixed(3)} mm; consensusUsesReference=false; role=repeatability-only`);
-  if(q.n>=CONSENSUS_MIN_ATTEMPTS && q.state!=='PASS'){
-    log(`CONSENSUS RETRY REQUIRED: target=${(target*100).toFixed(1)} cm; attempts=${q.n}; bestCluster=${q.memberCount}/${q.n}; strictMajorityNeed=${q.required}; keep same reference and acquire another independent A-B measurement`);
-  }
+  log(`ACCURACY SAMPLE #${row.index}: target=${(target*100).toFixed(1)} cm; validTrial=${q.n}/${SWEEP_GOAL_PER_TARGET}; Hit=${Number.isFinite(row.hitDistance)?row.hitDistance.toFixed(6):'n/a'} m error=${err(row.hitDistance)}; MAP=${row.integrity}; DepthAgreement=${row.depthAgreement}; depthAbsDelta=${row.depthAgreementDelta===null?'n/a':(row.depthAgreementDelta*1000).toFixed(3)+' mm'}; HitStabilityA=${row.aHitStability??'n/a'}; HitStabilityB=${row.bHitStability??'n/a'}; repeatabilityCluster=${q.state} ${q.memberCount}/${q.n}; sampleLocked=true; valueBasedDiscard=false; role=formal-accuracy; formalSource=immutable-hit`);
   updateDepthSweepUI(); logSweepSummary(target); persistDiagnostics();
   return {recorded:true,target,count:q.n,consensus:q};
 }
 function planSweepAdvance(record){
-  if(!record?.recorded || record.consensus?.state!=='PASS') return;
-  const q=record.consensus;
+  if(!record?.recorded) return;
+  const rows=targetRows(record.target);
+  if(rows.length<SWEEP_GOAL_PER_TARGET) return;
   const i=SWEEP_TARGETS_M.findIndex(t=>Math.abs(t-record.target)<0.0005);
   if(i<0) return;
   if(i<SWEEP_TARGETS_M.length-1){
     pendingSweepTarget=SWEEP_TARGETS_M[i+1];
     set('sweepNextState',`${Math.round(pendingSweepTarget*100)} cm after RESET`,'warn');
-    log(`CONSENSUS AUTO-ADVANCE ARMED: ${Math.round(record.target*100)} cm PASS after ${q.n} attempts; cluster=${q.memberCount}/${q.n}; consensusDistance=${q.distance.toFixed(6)} m; clusterSpan=${(q.span*1000).toFixed(3)} mm; next=${Math.round(pendingSweepTarget*100)} cm; applies on RESET`);
+    const a=formalAccuracyStats(rows,record.target);
+    log(`ACCURACY AUTO-ADVANCE ARMED: ${Math.round(record.target*100)} cm completed ${rows.length}/${SWEEP_GOAL_PER_TARGET} valid trials; mean=${a.mean.toFixed(6)} m; MAE=${(a.mae*1000).toFixed(3)} mm; next=${Math.round(pendingSweepTarget*100)} cm; applies on RESET; repeatabilityConsensusDoesNotGateAdvance=true`);
   }else{
     pendingSweepTarget=null;
-    set('sweepNextState','SWEEP COMPLETE','ok');
+    set('sweepNextState','ACCURACY SWEEP COMPLETE','ok');
     if(!sweepCompleteLogged){
       sweepCompleteLogged=true;
-      const detail=SWEEP_TARGETS_M.map(t=>{const x=targetConsensus(t);return `${Math.round(t*100)} cm n=${x.n} cluster=${x.memberCount}/${x.n}`;}).join(' | ');
-      log(`CONSENSUS SWEEP COMPLETE: ${detail}`);
+      const detail=SWEEP_TARGETS_M.map(t=>{const rows=targetRows(t);const a=formalAccuracyStats(rows,t);return `${Math.round(t*100)} cm n=${rows.length}/${SWEEP_GOAL_PER_TARGET} MAE=${a?(a.mae*1000).toFixed(2):'n/a'}mm`;}).join(' | ');
+      log(`ACCURACY SWEEP COMPLETE: ${detail}; totalValid=${SWEEP_TARGETS_M.reduce((n,t)=>n+targetRows(t).length,0)}; expected=${SWEEP_TARGETS_M.length*SWEEP_GOAL_PER_TARGET}; allValidSamplesIncluded=true; formalSource=immutable-hit`);
     }
   }
 }
+
 function applyPendingSweepTarget(){
   if(pendingSweepTarget===null) return;
   const next=pendingSweepTarget;
   pendingSweepTarget=null;
   setReferenceCm(next*100);
-  log(`CONSENSUS AUTO TARGET APPLIED: reference=${(next*100).toFixed(1)} cm after RESET`);
+  log(`ACCURACY AUTO TARGET APPLIED: reference=${(next*100).toFixed(1)} cm after RESET`);
 }
 function discardLastSweepSample(){
-  if(!depthSweepSamples.length) return;
-  const row=depthSweepSamples.pop();
-  log(`CONSENSUS DISCARD: removed sample #${row.index}; target=${(row.referenceMeters*100).toFixed(1)} cm; reason=user operation exclusion; original diagnostic log retained`);
-  depthSweepSamples.forEach((x,i)=>x.index=i+1); pendingSweepTarget=null; sweepCompleteLogged=false; updateDepthSweepUI(); logSweepSummary(row.referenceMeters);
-  if(Math.abs(referenceMeters-row.referenceMeters)<0.0005){
-    const q=targetConsensus(row.referenceMeters);
-    if(q.state==='PASS') planSweepAdvance({recorded:true,target:row.referenceMeters,count:q.n,consensus:q});
-  }
-  persistDiagnostics();
+  log('ACCURACY SAMPLE DISCARD BLOCKED: valid formal samples are locked to prevent value-based selection; use RESTART ACCURACY PHASE only if the entire protocol must be restarted');
+  if(el.discardSweepBtn){ el.discardSweepBtn.disabled=true; el.discardSweepBtn.textContent='VALID SAMPLES LOCKED'; }
 }
+
 function clearDepthSweepStats(){
-  const n=depthSweepSamples.length; depthSweepSamples=[]; pendingSweepTarget=null; sweepCompleteLogged=false; setReferenceCm(20);
-  log(`CONSENSUS CLEAR: removed ${n} repeat sample(s); raw log retained; target reset to 20 cm`); updateDepthSweepUI(); persistDiagnostics();
+  const n=depthSweepSamples.length; depthSweepSamples=[]; pendingSweepTarget=null; sweepCompleteLogged=false; setReferenceCm(50);
+  log(`ACCURACY PHASE RESTART: removed ${n} valid accuracy sample(s) from active statistics; raw log retained; target reset to 50 cm`); updateDepthSweepUI(); persistDiagnostics();
 }
 
 function nextSweepTargetFromStats(){
   for(const t of SWEEP_TARGETS_M){
-    if(targetConsensus(t).state!=='PASS') return t;
+    if(targetRows(t).length<SWEEP_GOAL_PER_TARGET) return t;
   }
   return SWEEP_TARGETS_M[SWEEP_TARGETS_M.length-1];
 }
@@ -6599,7 +6630,7 @@ function onXRFrame(time,frame){
   refreshRawCameraFreshnessUI('xr-frame-watchdog');
   if(localRawSampled) tryFulfillQueuedCardFreeze('new-local-raw-camera-frame');
 
-  // Phase 4.30 Rev.16 calibration freezes pixels and matching XRView geometry from the same sampling role: LOCAL when available, otherwise VIEWER-ONLY during fallback.
+  // Phase 4.40 Rev.1 inherits Phase 4.30 Rev.16 calibration: freezes pixels and matching XRView geometry from the same sampling role: LOCAL when available, otherwise VIEWER-ONLY during fallback.
   // VIEWER-ONLY solves the known rectangle in the frozen viewer reference space and is not world/local comparable across frames.
   // No live per-corner auto-dwell runs here; Hit/Depth remain independent diagnostics.
 
