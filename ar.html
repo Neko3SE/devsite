@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<title>AR DISTANCE LAB - Phase 4.70 Rev.1</title>
+<title>AR DISTANCE LAB - Phase 4.80 Rev.1</title>
 <style>
 :root{
   color-scheme:dark;
@@ -145,7 +145,7 @@ padding:8px 9px;pointer-events:auto}
 <body>
 <main>
 <h1>AR DISTANCE LAB</h1>
-<p class="sub">Phase 4.70 Rev.1 — Point-Pair / Protocol Guard / immutable Hit-Hit</p>
+<p class="sub">Phase 4.80 Rev.1 — Error Budget Diagnostic / immutable Hit-Hit</p>
 
 <section class="card">
 <h2>STATUS</h2>
@@ -247,6 +247,16 @@ padding:8px 9px;pointer-events:auto}
   <div class="cell">Exact Depth-center − Hit-Hit</div><div class="cell" id="surfaceExactNetState">—</div>
   <div class="cell">Depth-center error vs REF</div><div class="cell" id="depthCenterErrorState">—</div>
   <div class="cell">Depth-median error vs REF</div><div class="cell" id="depthMedianErrorState">—</div>
+  <div class="cell">Error budget / Formal Hit error</div><div class="cell" id="errorBudgetFormalState">—</div>
+  <div class="cell">Error budget / Surface exact Δ</div><div class="cell" id="errorBudgetSurfaceExactState">—</div>
+  <div class="cell">Error budget / Surface projected Δ</div><div class="cell" id="errorBudgetSurfaceProjectedState">—</div>
+  <div class="cell">Error budget / MAP signed Δ</div><div class="cell" id="errorBudgetMapState">—</div>
+  <div class="cell">Error budget / Hit 1.0 s Δ</div><div class="cell" id="errorBudgetTemporalState">—</div>
+  <div class="cell">Alternative error / Depth-center</div><div class="cell" id="errorBudgetDepthAltState">—</div>
+  <div class="cell">Alternative error / current A Anchor</div><div class="cell" id="errorBudgetMapAltState">—</div>
+  <div class="cell">Alternative error / Hit median 1.0 s</div><div class="cell" id="errorBudgetTemporalAltState">—</div>
+  <div class="cell">Observed formal scale error</div><div class="cell" id="errorBudgetScaleState">—</div>
+  <div class="cell">Residual interpretation</div><div class="cell" id="errorBudgetResidualState">UNRESOLVED</div>
   <div class="cell">Hit entity probe</div><div class="cell" id="entityProbeState">WAITING</div>
   <div class="cell">Plane source</div><div class="cell" id="entityPlaneSourceState">NOT REQUESTED</div>
   <div class="cell">Plane nearest × Depth</div><div class="cell" id="entityPlaneHitState">—</div>
@@ -273,13 +283,18 @@ padding:8px 9px;pointer-events:auto}
 </section>
 
 <section class="card">
+<h2>PHASE 4.80 — ERROR BUDGET DIAGNOSTIC</h2>
+<p class="note">Phase 4.80は、正式Hit-Hit誤差を自動補正するフェーズではありません。formal Hit-Hit error、Depth-center − Hit-HitのSurface exact差、同じ差のA-B軸projected近似、Point B時点のMAP signed impact、Hit 1.0 s median − instantを同時に記録します。さらにDepth-center、current A Anchor、Hit 1.0 s medianを使った場合のReferenceに対する代替誤差を並記し、どの観測経路で誤差がどう変化するかを比較します。これらは相互に独立な加算可能な原因成分ではないため、合算して補正値を作りません。残余原因は scale / pose / physical reference / other を分離せず UNRESOLVED とし、複数距離・複数セッションのデータで後から検証します。正式値、Sweep採否、MAP gate、Depth agreement、Surface Consistency threshold、Point-Pair Guardは変更しません。</p>
+</section>
+
+<section class="card">
 <h2>PHASE 4.60 — HIT / DEPTH SURFACE CONSISTENCY DIAGNOSTIC</h2>
 <p class="note">Point A / B の取得フレームで、formal plane Hit を同じXRViewへ変換した前方距離（Hit View −Z）と、同じ画面UVにある同一フレームDepthを比較します。Depth coherence が COHERENT で |Hit View −Z − Depth@UV| &lt; 20 mm のとき MATCH、20 mm以上は MISMATCH、同一フレームDepthが無い場合やcoherenceがCOHERENTでない場合は UNKNOWN と表示します。これは<strong>診断専用</strong>です。CAPTUREをブロックせず、MAPゲート・Accuracy Sweepの採否・正式距離の値を変更せず、Depthによる補正も行いません。Rev.3ではさらに、Point A / B のHit→同一フレームDepth-centerの3D変位を、immutable Hit A→B軸へ射影し、各端点の距離への一次寄与量と、片側だけDepthへ置換した場合の正確なA-B距離差、両端Depth-center距離−Hit-Hit距離を併記します。大きなHit↔Depth表面offsetが、そのままA-B距離誤差を意味するとは限らないことを分離して確認するための診断であり、正式値・採否・MAP gate・Capture gateには一切使用しません。Rev.4ではAccuracy Sweepに、測定値とは独立して確認できた操作・プロトコルミスだけを監査ログ付きで無効化する機能を追加します。Surface ConsistencyやDepth値を理由に無効化することはできません。比較実験では、この表示がMATCHになるまで待つなど取得タイミングを変えず、従来と同じSCENE SETUP / SURFACE / AIM手順で取得してください。</p>
 </section>
 
 <section class="card">
 <h2>PHASE 4.50 — PERSISTENT FORMAL HIT-HIT ACCURACY SWEEP</h2>
-<p class="note">Phase 4.50では、50 / 100 / 150 cm × 各3回 = 合計9回の正式 immutable plane Hit-Hit を1つのAccuracy Sweepとして永続管理します。Sweep状態はlocalStorageへ保存し、ARのEND、ページ再読込、同一Originでの再開後も復元します。値が悪いことを理由に有効サンプルを捨てたり追加測定したりせず、各距離の最初の有効3回だけを固定します。MAP INVALID / reference-space reset など既存の安全ゲートで無効になった測定だけが数え直し対象です。Repeatability cluster、Depth、Anchorは診断専用で、正式Hit-Hit値の補正・採否には使用しません。 Rev.2では保存前と復元時の両方でSweep全体をschema 2として検証し、1件でも構造・Sweep ID・順序・状態値などに不整合があれば部分復元せず、その保存Sweep全体を無効として新しい0/9 Sweepを開始します。旧v1保存キーは読み込まず、削除を試みます。削除できない環境でも旧キーは参照しません。 Rev.3ではARセッション開始直後にSTEP 0 / SCENE SETUPを表示し、A付近→B付近→周囲の床・壁・物体→A付近の順にゆっくり見渡して空間認識を促します。SCENE READYを押すまでPoint A取得へ進みません。これは操作ガイドであり、正式距離の計算式・Hit採用条件・Sweep採否条件は変更しません。 Rev.4ではXR画面上部の状態メッセージをsafe-area上端から従来より約1行分（16 px）下げ、画面切り欠き・パンチホールとの重なりを避けます。測定ロジックと保存形式は変更しません。 Rev.5ではSCENE READYを単なる確認ボタンではなく、A付近へ戻った時点で現在のformal plane Hitが取得できている場合だけ成立するsurface-qualified gateに変更します。シーン認識ガイドには、A→B→周囲→Aの順に加え、端末をその場で回転させるだけでなく少し横・斜めにも移動して視差を作り、床壁境界・角・模様・掲示物などの特徴を画面へ入れることを明示します。これは操作フローの改善だけで、正式距離は引き続きimmutable plane Hit-Hitです。 Rev.6では画面切り欠きとの重なりをさらに避けるため、XR画面上部の状態メッセージだけをRev.5から32 px（約2行分）下へ移動します。測定ロジック、SCENE READY条件、保存形式、正式距離の計算には変更ありません。 Phase 4.60 Rev.1では完了済みSweepを保持したまま、Point A/B取得時のHit View-Zと同一フレームDepth@UVのSurface Consistencyを追加します。この診断は正式値・採否に影響しません。 Phase 4.60 Rev.3ではRev.1を正式ベースラインとして維持したまま、Hit→Depth 3D変位のA-B軸方向寄与を診断表示します。Rev.1のSCENE READY surface-qualified gate、Surface Consistency、保存schema 2、正式immutable Hit-Hit測定は変更しません。 Phase 4.60 Rev.4では、計測値の大小とは独立して後から判明した明確な操作・プロトコルミスだけを、固定理由＋明示確認付きで「PROTOCOL INVALID」として有効Sweepから外せる監査付き操作を追加します。value-based discardは禁止のままです。保存schema 2との互換性を維持するため、無効化できるのは現在もっとも後ろに進んでいるターゲット距離のサンプルだけです。過去ターゲットのサンプルを遡って外す場合はSweep全体を再開始します。正式距離の計算、MAP / Depth / Surface Consistencyのゲート意味は変更しません。 Phase 4.60 Rev.5 Recoveryでは、誤操作で旧9/9 Sweepが保存領域から失われた今回のケースに限り、ユーザー提供の確定ログから `S20260929T133409Z-32C0E4` を復元します。150 cmの旧#7は「WRONG PHYSICAL REFERENCE / POINT PAIR」として除外済みの8/9状態に復元し、150 cmを1回だけ再測定できるようにします。復元は明示確認が必要で、現在の0/9 Sweepは別キーへバックアップしてから上書きします。正式測定ロジックとschema 2は変更しません。 Phase 4.70 Rev.1では、Point A取得時にReferenceを試行単位でロックし、Point B取得前にA→B順序とReference不変を値非依存で監査するPoint-Pair / Protocol Guardを追加します。距離値や誤差はガード判定に使用しません。</p>
+<p class="note">Phase 4.50では、50 / 100 / 150 cm × 各3回 = 合計9回の正式 immutable plane Hit-Hit を1つのAccuracy Sweepとして永続管理します。Sweep状態はlocalStorageへ保存し、ARのEND、ページ再読込、同一Originでの再開後も復元します。値が悪いことを理由に有効サンプルを捨てたり追加測定したりせず、各距離の最初の有効3回だけを固定します。MAP INVALID / reference-space reset など既存の安全ゲートで無効になった測定だけが数え直し対象です。Repeatability cluster、Depth、Anchorは診断専用で、正式Hit-Hit値の補正・採否には使用しません。 Rev.2では保存前と復元時の両方でSweep全体をschema 2として検証し、1件でも構造・Sweep ID・順序・状態値などに不整合があれば部分復元せず、その保存Sweep全体を無効として新しい0/9 Sweepを開始します。旧v1保存キーは読み込まず、削除を試みます。削除できない環境でも旧キーは参照しません。 Rev.3ではARセッション開始直後にSTEP 0 / SCENE SETUPを表示し、A付近→B付近→周囲の床・壁・物体→A付近の順にゆっくり見渡して空間認識を促します。SCENE READYを押すまでPoint A取得へ進みません。これは操作ガイドであり、正式距離の計算式・Hit採用条件・Sweep採否条件は変更しません。 Rev.4ではXR画面上部の状態メッセージをsafe-area上端から従来より約1行分（16 px）下げ、画面切り欠き・パンチホールとの重なりを避けます。測定ロジックと保存形式は変更しません。 Rev.5ではSCENE READYを単なる確認ボタンではなく、A付近へ戻った時点で現在のformal plane Hitが取得できている場合だけ成立するsurface-qualified gateに変更します。シーン認識ガイドには、A→B→周囲→Aの順に加え、端末をその場で回転させるだけでなく少し横・斜めにも移動して視差を作り、床壁境界・角・模様・掲示物などの特徴を画面へ入れることを明示します。これは操作フローの改善だけで、正式距離は引き続きimmutable plane Hit-Hitです。 Rev.6では画面切り欠きとの重なりをさらに避けるため、XR画面上部の状態メッセージだけをRev.5から32 px（約2行分）下へ移動します。測定ロジック、SCENE READY条件、保存形式、正式距離の計算には変更ありません。 Phase 4.60 Rev.1では完了済みSweepを保持したまま、Point A/B取得時のHit View-Zと同一フレームDepth@UVのSurface Consistencyを追加します。この診断は正式値・採否に影響しません。 Phase 4.60 Rev.3ではRev.1を正式ベースラインとして維持したまま、Hit→Depth 3D変位のA-B軸方向寄与を診断表示します。Rev.1のSCENE READY surface-qualified gate、Surface Consistency、保存schema 2、正式immutable Hit-Hit測定は変更しません。 Phase 4.60 Rev.4では、計測値の大小とは独立して後から判明した明確な操作・プロトコルミスだけを、固定理由＋明示確認付きで「PROTOCOL INVALID」として有効Sweepから外せる監査付き操作を追加します。value-based discardは禁止のままです。保存schema 2との互換性を維持するため、無効化できるのは現在もっとも後ろに進んでいるターゲット距離のサンプルだけです。過去ターゲットのサンプルを遡って外す場合はSweep全体を再開始します。正式距離の計算、MAP / Depth / Surface Consistencyのゲート意味は変更しません。 Phase 4.60 Rev.5 Recoveryでは、誤操作で旧9/9 Sweepが保存領域から失われた今回のケースに限り、ユーザー提供の確定ログから `S20260929T133409Z-32C0E4` を復元します。150 cmの旧#7は「WRONG PHYSICAL REFERENCE / POINT PAIR」として除外済みの8/9状態に復元し、150 cmを1回だけ再測定できるようにします。復元は明示確認が必要で、現在の0/9 Sweepは別キーへバックアップしてから上書きします。正式測定ロジックとschema 2は変更しません。 Phase 4.70 Rev.1では、Point A取得時にReferenceを試行単位でロックし、Point B取得前にA→B順序とReference不変を値非依存で監査するPoint-Pair / Protocol Guardを追加します。距離値や誤差はガード判定に使用しません。 Phase 4.80 Rev.1では、正式Hit-Hit誤差、SurfaceのA-B軸方向差、MAP signed impact、Hitの時間窓差と、それぞれに対応する代替誤差をError Budget Diagnosticとして並記します。診断値は加算可能な因果成分とはみなさず、補正・採否・閾値変更には使用しません。</p>
 <div class="actions">
   <button type="button" class="refPreset" data-cm="50">50 cm</button>
   <button type="button" class="refPreset" data-cm="100">100 cm</button>
@@ -516,7 +531,7 @@ const el = {};
   'rawCameraState','hitDistanceState','depthState','depthConfigState','depthBufferState',
   'depthCenterState','depthMedianState','depthTemporalState','depthValidState','depthCoherenceState','hitViewState','hitUvState','depthAtHitState','depthHitDeltaState',
   'surfaceConsistencyLiveState','surfaceConsistencyAState','surfaceConsistencyBState','surfaceConsistencyPairState',
-  'captureADepthState','captureBDepthState','depth3DGeometryState','depth3DAState','depth3DBState','compareHitABState','compareDepthCenterABState','compareDepthMedianABState','compareHitADepthBState','compareDepthAHitBState','surfaceOffsetAState','surfaceAxialAState','surfaceOffsetBState','surfaceAxialBState','surfaceAxialNetState','surfaceExactNetState','depthCenterErrorState','depthMedianErrorState','entityProbeState','entityPlaneSourceState','entityPlaneHitState','entityPointSourceState','entityPointHitState','entityMeshSourceState','entityMeshHitState','entitySnapshotState','aimQualityState','edgeMedianState',
+  'captureADepthState','captureBDepthState','depth3DGeometryState','depth3DAState','depth3DBState','compareHitABState','compareDepthCenterABState','compareDepthMedianABState','compareHitADepthBState','compareDepthAHitBState','surfaceOffsetAState','surfaceAxialAState','surfaceOffsetBState','surfaceAxialBState','surfaceAxialNetState','surfaceExactNetState','depthCenterErrorState','depthMedianErrorState','errorBudgetFormalState','errorBudgetSurfaceExactState','errorBudgetSurfaceProjectedState','errorBudgetMapState','errorBudgetTemporalState','errorBudgetDepthAltState','errorBudgetMapAltState','errorBudgetTemporalAltState','errorBudgetScaleState','errorBudgetResidualState','entityProbeState','entityPlaneSourceState','entityPlaneHitState','entityPointSourceState','entityPointHitState','entityMeshSourceState','entityMeshHitState','entitySnapshotState','aimQualityState','edgeMedianState',
   'contrastMedianState','calibrationWidthMm','calibrationHeightMm','calibrationSequenceState','calibrationAutoState','calibrationDwellState','calibrationTargetState','calibrationWidthState','calibrationHeightState','calibrationDiagonalState','calibrationWidthErrorState','calibrationHeightErrorState','calibrationScaleState','calibrationScaleSpreadState','calibrationScaleResidualState','calibrationAngleState','calibrationPlaneState','calibrationDepthState','calibrationRoleState','calibrationResetBtn','calibrationText','calibrationOverlayText','calibrationDwellTrack','calibrationDwellBar','calibrationCaptureBtn','calibrationResetOverlayBtn','sweepRunState','sweepProgressState','sweepSelectedCountState','sweepConsensusState','sweepNextState','sweepHitState','sweepConsensusDistanceState','sweepDepthCenterState','sweepDepthMedianState','discardSweepBtn','clearSweepBtn','protocolInvalidSample','protocolInvalidReason','protocolInvalidConfirm','invalidateProtocolTrialBtn','protocolInvalidationState','knownSweepRecoveryConfirm','recoverKnownSweepBtn','knownSweepRecoveryState','sweepText','magnifierState','magnifierCanvas','magnifierWrap','cardFreezePanel','cardFreezeCanvas','cardFreezeTitle','cardFreezeTapState','cardFreezeResetTapsBtn','cardFreezeRetakeBtn','cardValidationBtn','cardValidationState','alignmentGrid','alignmentMark','alignmentState','alignmentOffsetState','alignmentUvState','alignBtn','entitySnapshotBtn',
   'magnifierLabel','qualityText','hitStabilityText','surfaceConsistencyText','depthText','depthABText','entityText','alignmentText',
   'coordA','coordB','startBtn','resetBtn','endBtn','log','xrCanvas','xrOverlay','xrHud',
@@ -812,6 +827,8 @@ let hitHistory = []; // {time, point, cameraDistance}
 let hitStabilitySnapshotA = null;
 let hitStabilitySnapshotB = null;
 let hitABComparison = null;
+// Phase 4.80: non-corrective error-budget observables. Never used for formal gating.
+let lastErrorBudgetDiagnostic = null;
 
 function resetHitStabilityDiagnostics(){
   hitStabilitySnapshotA = null;
@@ -1064,6 +1081,96 @@ function logHitABComparison(){
   );
 
   return comparison;
+}
+
+function errorBudgetSignedMm(v){
+  if(!Number.isFinite(v)) return 'n/a';
+  const mm=v*1000;
+  return `${mm>=0?'+':''}${mm.toFixed(3)} mm`;
+}
+
+function buildErrorBudgetDiagnostic(){
+  const formalDistance=frozenMeasurement?.valid ? frozenMeasurement.distance : null;
+  const ref=frozenMeasurement?.valid && Number.isFinite(frozenMeasurement.referenceMeters)
+    ? frozenMeasurement.referenceMeters
+    : referenceMeters;
+  if(!Number.isFinite(formalDistance) || !Number.isFinite(ref) || ref<=0) return null;
+
+  const formalError=formalDistance-ref;
+  const surface=depthABComparison?.surfaceAxisCenter ?? null;
+  const surfaceExact=Number.isFinite(surface?.exactNet) ? surface.exactNet : null;
+  const surfaceProjected=Number.isFinite(surface?.projectedNet) ? surface.projectedNet : null;
+  const projectionResidual=Number.isFinite(surface?.projectionResidual) ? surface.projectionResidual : null;
+  const depthCenterDistance=Number.isFinite(depthABComparison?.centerDistance) ? depthABComparison.centerDistance : null;
+  const depthAlternativeError=depthCenterDistance===null ? null : depthCenterDistance-ref;
+
+  const mapImpact=Number.isFinite(lastDistanceImpact?.signedImpact) ? lastDistanceImpact.signedImpact : null;
+  const mapAlternativeDistance=Number.isFinite(lastDistanceImpact?.currentDistance) ? lastDistanceImpact.currentDistance : null;
+  const mapAlternativeError=mapAlternativeDistance===null ? null : mapAlternativeDistance-ref;
+
+  const temporalDistance=Number.isFinite(hitABComparison?.median1000) ? hitABComparison.median1000 : null;
+  const temporalShift=(temporalDistance===null || !Number.isFinite(hitABComparison?.instant))
+    ? null
+    : temporalDistance-hitABComparison.instant;
+  const temporalAlternativeError=temporalDistance===null ? null : temporalDistance-ref;
+
+  const observedScaleError=formalDistance/ref-1;
+
+  return {
+    reference:ref,formalDistance,formalError,
+    surfaceExact,surfaceProjected,projectionResidual,
+    depthCenterDistance,depthAlternativeError,
+    mapImpact,mapAlternativeDistance,mapAlternativeError,
+    temporalDistance,temporalShift,temporalAlternativeError,
+    observedScaleError,
+    residualCause:'UNRESOLVED'
+  };
+}
+
+function updateErrorBudgetDiagnostic(){
+  const d=buildErrorBudgetDiagnostic();
+  lastErrorBudgetDiagnostic=d;
+  if(!d){
+    set('errorBudgetFormalState','—','');
+    set('errorBudgetSurfaceExactState','—','');
+    set('errorBudgetSurfaceProjectedState','—','');
+    set('errorBudgetMapState','—','');
+    set('errorBudgetTemporalState','—','');
+    set('errorBudgetDepthAltState','—','');
+    set('errorBudgetMapAltState','—','');
+    set('errorBudgetTemporalAltState','—','');
+    set('errorBudgetScaleState','—','');
+    set('errorBudgetResidualState','UNRESOLVED','warn');
+    return null;
+  }
+
+  set('errorBudgetFormalState',errorBudgetSignedMm(d.formalError),'');
+  set('errorBudgetSurfaceExactState',errorBudgetSignedMm(d.surfaceExact),d.surfaceExact===null?'warn':'');
+  set('errorBudgetSurfaceProjectedState',errorBudgetSignedMm(d.surfaceProjected),d.surfaceProjected===null?'warn':'');
+  set('errorBudgetMapState',errorBudgetSignedMm(d.mapImpact),d.mapImpact===null?'warn':'');
+  set('errorBudgetTemporalState',errorBudgetSignedMm(d.temporalShift),d.temporalShift===null?'warn':'');
+  set('errorBudgetDepthAltState',errorBudgetSignedMm(d.depthAlternativeError),d.depthAlternativeError===null?'warn':'');
+  set('errorBudgetMapAltState',errorBudgetSignedMm(d.mapAlternativeError),d.mapAlternativeError===null?'warn':'');
+  set('errorBudgetTemporalAltState',errorBudgetSignedMm(d.temporalAlternativeError),d.temporalAlternativeError===null?'warn':'');
+  set('errorBudgetScaleState',`${d.observedScaleError>=0?'+':''}${(d.observedScaleError*100).toFixed(4)} %`,'');
+  set('errorBudgetResidualState','UNRESOLVED — diagnostics are non-additive','warn');
+
+  log(
+    `ERROR BUDGET DIAGNOSTIC: ` +
+    `formalError=${errorBudgetSignedMm(d.formalError)}; ` +
+    `surfaceExactDepthCenterMinusHit=${errorBudgetSignedMm(d.surfaceExact)}; ` +
+    `surfaceProjected=${errorBudgetSignedMm(d.surfaceProjected)}; ` +
+    `surfaceProjectionResidual=${errorBudgetSignedMm(d.projectionResidual)}; ` +
+    `mapSignedImpact=${errorBudgetSignedMm(d.mapImpact)}; ` +
+    `temporalHitMedian1000MinusInstant=${errorBudgetSignedMm(d.temporalShift)}; ` +
+    `alternativeErrorDepthCenter=${errorBudgetSignedMm(d.depthAlternativeError)}; ` +
+    `alternativeErrorCurrentAAnchor=${errorBudgetSignedMm(d.mapAlternativeError)}; ` +
+    `alternativeErrorHitMedian1000=${errorBudgetSignedMm(d.temporalAlternativeError)}; ` +
+    `observedFormalScaleError=${d.observedScaleError>=0?'+':''}${(d.observedScaleError*100).toFixed(4)}%; ` +
+    `causalDecomposition=false; componentsNonAdditive=true; residualCause=${d.residualCause}; ` +
+    `affectsCaptureGate=false; affectsFormalGate=false; correctionApplied=false; diagnosticOnly=true; formalSource=immutable-hit`
+  );
+  return d;
 }
 
 // Phase 4.30 Rev.16 inherited from Phase 4.19: formal single-shot candidate remains frozen at Point B capture; repeated acquisitions form the consensus.
@@ -1882,6 +1989,17 @@ function resetDepthDiagnostics(){
   set('surfaceExactNetState','—','');
   set('depthCenterErrorState','—','');
   set('depthMedianErrorState','—','');
+  lastErrorBudgetDiagnostic=null;
+  set('errorBudgetFormalState','—','');
+  set('errorBudgetSurfaceExactState','—','');
+  set('errorBudgetSurfaceProjectedState','—','');
+  set('errorBudgetMapState','—','');
+  set('errorBudgetTemporalState','—','');
+  set('errorBudgetDepthAltState','—','');
+  set('errorBudgetMapAltState','—','');
+  set('errorBudgetTemporalAltState','—','');
+  set('errorBudgetScaleState','—','');
+  set('errorBudgetResidualState','UNRESOLVED','');
   lastDepthAgreement = null;
   set('depthCrossCheckDeltaState','—','');
   set('depthCrossCheckState','UNKNOWN','');
@@ -2906,6 +3024,17 @@ function resetSettlingMetrics(){
   set('surfaceExactNetState','—','');
   set('depthCenterErrorState','—','');
   set('depthMedianErrorState','—','');
+  lastErrorBudgetDiagnostic=null;
+  set('errorBudgetFormalState','—','');
+  set('errorBudgetSurfaceExactState','—','');
+  set('errorBudgetSurfaceProjectedState','—','');
+  set('errorBudgetMapState','—','');
+  set('errorBudgetTemporalState','—','');
+  set('errorBudgetDepthAltState','—','');
+  set('errorBudgetMapAltState','—','');
+  set('errorBudgetTemporalAltState','—','');
+  set('errorBudgetScaleState','—','');
+  set('errorBudgetResidualState','UNRESOLVED','');
   lastDepthAgreement = null;
   set('depthCrossCheckDeltaState','—','');
   set('depthCrossCheckState','UNKNOWN','');
@@ -3978,6 +4107,17 @@ function resetMeasurementMetrics(){
   set('surfaceExactNetState','—','');
   set('depthCenterErrorState','—','');
   set('depthMedianErrorState','—','');
+  lastErrorBudgetDiagnostic=null;
+  set('errorBudgetFormalState','—','');
+  set('errorBudgetSurfaceExactState','—','');
+  set('errorBudgetSurfaceProjectedState','—','');
+  set('errorBudgetMapState','—','');
+  set('errorBudgetTemporalState','—','');
+  set('errorBudgetDepthAltState','—','');
+  set('errorBudgetMapAltState','—','');
+  set('errorBudgetTemporalAltState','—','');
+  set('errorBudgetScaleState','—','');
+  set('errorBudgetResidualState','UNRESOLVED','');
   lastDepthAgreement = null;
   set('depthCrossCheckDeltaState','—','');
   set('depthCrossCheckState','UNKNOWN','');
@@ -4163,6 +4303,18 @@ function summarizeMeasurement(reason){
       `exactDepthCenterMinusHit=${sa?.exactNet==null?'n/a':(sa.exactNet>=0?'+':'')+(sa.exactNet*1000).toFixed(3)+' mm'}; ` +
       `projectionResidual=${sa?.projectionResidual==null?'n/a':(sa.projectionResidual>=0?'+':'')+(sa.projectionResidual*1000).toFixed(3)+' mm'}; ` +
       `diagnosticOnly=true; affectsFormalGate=false; correctionApplied=false; formalSource=immutable-hit`
+    );
+  }
+
+  if(lastErrorBudgetDiagnostic){
+    const e=lastErrorBudgetDiagnostic;
+    log(
+      `error budget summary: formalError=${errorBudgetSignedMm(e.formalError)}; ` +
+      `surfaceExact=${errorBudgetSignedMm(e.surfaceExact)}; surfaceProjected=${errorBudgetSignedMm(e.surfaceProjected)}; ` +
+      `mapSignedImpact=${errorBudgetSignedMm(e.mapImpact)}; temporalHitShift=${errorBudgetSignedMm(e.temporalShift)}; ` +
+      `alternativeErrors=[depthCenter:${errorBudgetSignedMm(e.depthAlternativeError)},currentAAnchor:${errorBudgetSignedMm(e.mapAlternativeError)},hitMedian1000:${errorBudgetSignedMm(e.temporalAlternativeError)}]; ` +
+      `observedFormalScaleError=${e.observedScaleError>=0?'+':''}${(e.observedScaleError*100).toFixed(4)}%; ` +
+      `residualCause=${e.residualCause}; causalDecomposition=false; correctionApplied=false; diagnosticOnly=true; formalSource=immutable-hit`
     );
   }
 
@@ -7308,6 +7460,7 @@ async function startAR(){
     log('SURFACE CONSISTENCY DIAGNOSTIC ACTIVE: comparison=HitViewForward-vs-sameFrameDepthAtHitUv; match<20mm; mismatch>=20mm; coherenceRequired=COHERENT; affectsCaptureGate=false; affectsFormalGate=false; correctionApplied=false; diagnosticOnly=true; formalSource=immutable-hit');
     log('SURFACE OFFSET AXIS DIAGNOSTIC ACTIVE: method=local-3D Hit->same-frame Depth-center projected onto immutable Hit A->B axis; positiveEffect=lengthens-A-B; negativeEffect=shortens-A-B; endpointOffsetMagnitudeIsDiagnostic=true; affectsCaptureGate=false; affectsFormalGate=false; correctionApplied=false; diagnosticOnly=true; formalSource=immutable-hit; sweepStorageCompatibility=phase4.50-schema2');
     log('POINT-PAIR PROTOCOL GUARD ACTIVE: lockReferenceAt=A-formal-hit; sequence=A>B; blockReferenceChangeUntilReset=true; guardUsesMeasuredDistance=false; valueIndependent=true; formalMeasurementGeometryUnchanged=true; formalSource=immutable-hit');
+    log('ERROR BUDGET DIAGNOSTIC ACTIVE: observables=formalError,surfaceExact,surfaceProjected,mapSignedImpact,hitMedian1000Shift; alternativeErrors=DepthCenter,currentAAnchor,HitMedian1000; causalDecomposition=false; componentsNonAdditive=true; residualCause=UNRESOLVED; affectsCaptureGate=false; affectsFormalGate=false; correctionApplied=false; diagnosticOnly=true; formalSource=immutable-hit');
     updatePointPairGuardUI();
 
     try{
@@ -7600,6 +7753,7 @@ function createAnchorFromHit(result,hitPose,slot,time,viewerPose){
     log(`TRIAL PROTOCOL AUDIT: state=PASS; protocolReference=${trialProtocolReferenceMeters.toFixed(6)} m; endpointSequence=${TRIAL_PROTOCOL_SEQUENCE}; pointPairGuard=PASS; referenceChangedDuringTrial=${trialProtocolReferenceChanged}; formalPointA=true; formalPointB=true; valueIndependent=true; valueBasedDiscard=false; correctionApplied=false; diagnosticOnly=false; formalSource=immutable-hit`);
     updatePointPairGuardUI();
     logHitABComparison();
+    updateErrorBudgetDiagnostic();
 
     // Anchor-vs-Hit is diagnostic only; it never changes the committed value.
     if(preBCurrentAnchorPoint && capturePointB){
