@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<title>AR DISTANCE LAB - Phase 5.20 Rev.1</title>
+<title>AR DISTANCE LAB - Phase 5.20 Rev.2</title>
 <style>
 :root{
   color-scheme:dark;
@@ -89,7 +89,7 @@ padding:8px 9px;pointer-events:auto}
 }
 #magnifierCanvas{
   position:static;inset:auto;
-  display:block;width:132px;height:132px;
+  display:block;width:136px;height:136px;
   background:#000;pointer-events:none;
 }
 #magnifierCross{
@@ -145,7 +145,7 @@ padding:8px 9px;pointer-events:auto}
 <body>
 <main>
 <h1>AR DISTANCE LAB</h1>
-<p class="sub">Phase 5.20 Rev.1 — Bidirectional Metric Ladder / Revisit Repeatability / immutable Hit-Hit</p>
+<p class="sub">Phase 5.20 Rev.2 — Bidirectional Metric Ladder / Magnifier Center Registration Fix / immutable Hit-Hit</p>
 
 <section class="card">
 <h2>STATUS</h2>
@@ -301,12 +301,18 @@ padding:8px 9px;pointer-events:auto}
   <div class="cell">Edge median</div><div class="cell" id="edgeMedianState">—</div>
   <div class="cell">Contrast median</div><div class="cell" id="contrastMedianState">—</div>
   <div class="cell">Magnifier</div><div class="cell" id="magnifierState">3×</div>
+  <div class="cell">Magnifier center registration</div><div class="cell" id="magnifierRegistrationState">—</div>
   <div class="cell">Center alignment check</div><div class="cell" id="alignmentState">OFF</div>
   <div class="cell">Alignment mark offset</div><div class="cell" id="alignmentOffsetState">—</div>
   <div class="cell">Camera normalized offset</div><div class="cell" id="alignmentUvState">—</div>
   <div class="cell">Point A coord.</div><div class="cell" id="coordA">—</div>
   <div class="cell">Point B coord.</div><div class="cell" id="coordB">—</div>
 </div>
+</section>
+
+<section class="card">
+<h2>PHASE 5.20 REV.2 — MAGNIFIER CENTER REGISTRATION FIX</h2>
+<p class="note">Rev.1では、Raw Camera拡大鏡のCanvas CSSサイズがJavaScriptで160 × 160 pxへ設定される一方、表示ラッパーのcontent boxは136 × 136 pxのままでした。そのためCanvasの中心は(80,80) px、拡大鏡の「＋」はラッパー中心の(68,68) pxとなり、表示上<strong>12 CSS pxずれた位置</strong>を指していました。Rev.2ではラッパーとCanvasを136 × 136 pxへ統一し、拡大鏡「＋」をCanvas中心・Raw Camera中心UV=(0.5,0.5)へ一致させます。実行時にはCanvas中心と「＋」の差、clipping量、Main「＋」のviewport中心差、拡大鏡「＋」が指すRaw Camera UVを自動監査してログへ記録します。この修正は表示・診断だけで、formal plane Hit-Hit、Round-trip Ladder、Accuracy Sweep、MAP / Depth / Surface gate、補正禁止、保存schemaを変更しません。</p>
 </section>
 
 <section class="card">
@@ -345,7 +351,7 @@ padding:8px 9px;pointer-events:auto}
 
 <section class="card">
 <h2>PHASE 4.50 — PERSISTENT FORMAL HIT-HIT ACCURACY SWEEP</h2>
-<p class="note">Phase 4.50では、50 / 100 / 150 cm × 各3回 = 合計9回の正式 immutable plane Hit-Hit を1つのAccuracy Sweepとして永続管理します。Sweep状態はlocalStorageへ保存し、ARのEND、ページ再読込、同一Originでの再開後も復元します。値が悪いことを理由に有効サンプルを捨てたり追加測定したりせず、各距離の最初の有効3回だけを固定します。MAP INVALID / reference-space reset など既存の安全ゲートで無効になった測定だけが数え直し対象です。Repeatability cluster、Depth、Anchorは診断専用で、正式Hit-Hit値の補正・採否には使用しません。 Rev.2では保存前と復元時の両方でSweep全体をschema 2として検証し、1件でも構造・Sweep ID・順序・状態値などに不整合があれば部分復元せず、その保存Sweep全体を無効として新しい0/9 Sweepを開始します。旧v1保存キーは読み込まず、削除を試みます。削除できない環境でも旧キーは参照しません。 Rev.3ではARセッション開始直後にSTEP 0 / SCENE SETUPを表示し、A付近→B付近→周囲の床・壁・物体→A付近の順にゆっくり見渡して空間認識を促します。SCENE READYを押すまでPoint A取得へ進みません。これは操作ガイドであり、正式距離の計算式・Hit採用条件・Sweep採否条件は変更しません。 Rev.4ではXR画面上部の状態メッセージをsafe-area上端から従来より約1行分（16 px）下げ、画面切り欠き・パンチホールとの重なりを避けます。測定ロジックと保存形式は変更しません。 Rev.5ではSCENE READYを単なる確認ボタンではなく、A付近へ戻った時点で現在のformal plane Hitが取得できている場合だけ成立するsurface-qualified gateに変更します。シーン認識ガイドには、A→B→周囲→Aの順に加え、端末をその場で回転させるだけでなく少し横・斜めにも移動して視差を作り、床壁境界・角・模様・掲示物などの特徴を画面へ入れることを明示します。これは操作フローの改善だけで、正式距離は引き続きimmutable plane Hit-Hitです。 Rev.6では画面切り欠きとの重なりをさらに避けるため、XR画面上部の状態メッセージだけをRev.5から32 px（約2行分）下へ移動します。測定ロジック、SCENE READY条件、保存形式、正式距離の計算には変更ありません。 Phase 4.60 Rev.1では完了済みSweepを保持したまま、Point A/B取得時のHit View-Zと同一フレームDepth@UVのSurface Consistencyを追加します。この診断は正式値・採否に影響しません。 Phase 4.60 Rev.3ではRev.1を正式ベースラインとして維持したまま、Hit→Depth 3D変位のA-B軸方向寄与を診断表示します。Rev.1のSCENE READY surface-qualified gate、Surface Consistency、保存schema 2、正式immutable Hit-Hit測定は変更しません。 Phase 4.60 Rev.4では、計測値の大小とは独立して後から判明した明確な操作・プロトコルミスだけを、固定理由＋明示確認付きで「PROTOCOL INVALID」として有効Sweepから外せる監査付き操作を追加します。value-based discardは禁止のままです。保存schema 2との互換性を維持するため、無効化できるのは現在もっとも後ろに進んでいるターゲット距離のサンプルだけです。過去ターゲットのサンプルを遡って外す場合はSweep全体を再開始します。正式距離の計算、MAP / Depth / Surface Consistencyのゲート意味は変更しません。 Phase 4.60 Rev.5 Recoveryでは、誤操作で旧9/9 Sweepが保存領域から失われた今回のケースに限り、ユーザー提供の確定ログから `S20260929T133409Z-32C0E4` を復元します。150 cmの旧#7は「WRONG PHYSICAL REFERENCE / POINT PAIR」として除外済みの8/9状態に復元し、150 cmを1回だけ再測定できるようにします。復元は明示確認が必要で、現在の0/9 Sweepは別キーへバックアップしてから上書きします。正式測定ロジックとschema 2は変更しません。 Phase 4.70 Rev.1では、Point A取得時にReferenceを試行単位でロックし、Point B取得前にA→B順序とReference不変を値非依存で監査するPoint-Pair / Protocol Guardを追加します。距離値や誤差はガード判定に使用しません。 Phase 4.80 Rev.1では、正式Hit-Hit誤差、SurfaceのA-B軸方向差、MAP signed impact、Hitの時間窓差と、それぞれに対応する代替誤差をError Budget Diagnosticとして並記します。診断値は加算可能な因果成分とはみなさず、補正・採否・閾値変更には使用しません。 Phase 4.90 Rev.1では、Point A/B正式取得フレームでplane / point / mesh Hitとsame-frame Depth-centerを凍結比較し、formal planeとの差をView-Zおよびlocal 3Dで記録するHit Source Divergence Diagnosticを追加します。alternate Hit sourceは診断専用で、正式値・採否・補正には使用しません。 Phase 4.90 Rev.2では、Depth-centerに最も近いHit sourceの記述表示をTIE対応にし、同一距離のplane / point / meshを同率として表示します。測定値・ゲート・保存形式は変更しません。 Phase 5.00 Rev.1では、Hit→Depthのlocal 3D変位をcapture camera ray方向とlateral方向へ分解し、Depth camera originとのbaseline、Hit/Depth ray角度、A-B軸へ与える一次射影をray axial / lateralへ分けるRay / Surface Geometry Diagnosticを追加します。正式値・採否・補正・Sweep schemaは変更しません。 Phase 5.10 Rev.1では、同一XRセッション・同一local reference space内で0/50/100/150 cmの4つの物理マークを順番にformal plane Hitで診断取得するMetric Scale Ladder Diagnosticを追加します。6つの点間距離、区間scale ratio、P0→P150軸へのP50/P100投影・横ずれ、区間和とdirect距離の差を記録します。Ladderは完全に診断専用で、正式Point A/B、Accuracy Sweep、MAP / Depth / Surface gate、補正、保存schemaは変更しません。 Phase 5.20 Rev.1ではPhase 5.10の4点往路を保持したまま、150→100→50→0の復路3点を追加し、各区間の往復差、0–150 cm direct距離の往復差、P100/P50/P0の再訪位置差を記録します。再訪差は手振れ・照準・手書きマーク位置・環境認識を分離しないaggregate repeatabilityとして扱い、空間歪みの直接証拠や補正値には使用しません。正式測定ロジック、ゲート、保存schemaは変更しません。</p>
+<p class="note">Phase 4.50では、50 / 100 / 150 cm × 各3回 = 合計9回の正式 immutable plane Hit-Hit を1つのAccuracy Sweepとして永続管理します。Sweep状態はlocalStorageへ保存し、ARのEND、ページ再読込、同一Originでの再開後も復元します。値が悪いことを理由に有効サンプルを捨てたり追加測定したりせず、各距離の最初の有効3回だけを固定します。MAP INVALID / reference-space reset など既存の安全ゲートで無効になった測定だけが数え直し対象です。Repeatability cluster、Depth、Anchorは診断専用で、正式Hit-Hit値の補正・採否には使用しません。 Rev.2では保存前と復元時の両方でSweep全体をschema 2として検証し、1件でも構造・Sweep ID・順序・状態値などに不整合があれば部分復元せず、その保存Sweep全体を無効として新しい0/9 Sweepを開始します。旧v1保存キーは読み込まず、削除を試みます。削除できない環境でも旧キーは参照しません。 Rev.3ではARセッション開始直後にSTEP 0 / SCENE SETUPを表示し、A付近→B付近→周囲の床・壁・物体→A付近の順にゆっくり見渡して空間認識を促します。SCENE READYを押すまでPoint A取得へ進みません。これは操作ガイドであり、正式距離の計算式・Hit採用条件・Sweep採否条件は変更しません。 Rev.4ではXR画面上部の状態メッセージをsafe-area上端から従来より約1行分（16 px）下げ、画面切り欠き・パンチホールとの重なりを避けます。測定ロジックと保存形式は変更しません。 Rev.5ではSCENE READYを単なる確認ボタンではなく、A付近へ戻った時点で現在のformal plane Hitが取得できている場合だけ成立するsurface-qualified gateに変更します。シーン認識ガイドには、A→B→周囲→Aの順に加え、端末をその場で回転させるだけでなく少し横・斜めにも移動して視差を作り、床壁境界・角・模様・掲示物などの特徴を画面へ入れることを明示します。これは操作フローの改善だけで、正式距離は引き続きimmutable plane Hit-Hitです。 Rev.6では画面切り欠きとの重なりをさらに避けるため、XR画面上部の状態メッセージだけをRev.5から32 px（約2行分）下へ移動します。測定ロジック、SCENE READY条件、保存形式、正式距離の計算には変更ありません。 Phase 4.60 Rev.1では完了済みSweepを保持したまま、Point A/B取得時のHit View-Zと同一フレームDepth@UVのSurface Consistencyを追加します。この診断は正式値・採否に影響しません。 Phase 4.60 Rev.3ではRev.1を正式ベースラインとして維持したまま、Hit→Depth 3D変位のA-B軸方向寄与を診断表示します。Rev.1のSCENE READY surface-qualified gate、Surface Consistency、保存schema 2、正式immutable Hit-Hit測定は変更しません。 Phase 4.60 Rev.4では、計測値の大小とは独立して後から判明した明確な操作・プロトコルミスだけを、固定理由＋明示確認付きで「PROTOCOL INVALID」として有効Sweepから外せる監査付き操作を追加します。value-based discardは禁止のままです。保存schema 2との互換性を維持するため、無効化できるのは現在もっとも後ろに進んでいるターゲット距離のサンプルだけです。過去ターゲットのサンプルを遡って外す場合はSweep全体を再開始します。正式距離の計算、MAP / Depth / Surface Consistencyのゲート意味は変更しません。 Phase 4.60 Rev.5 Recoveryでは、誤操作で旧9/9 Sweepが保存領域から失われた今回のケースに限り、ユーザー提供の確定ログから `S20260929T133409Z-32C0E4` を復元します。150 cmの旧#7は「WRONG PHYSICAL REFERENCE / POINT PAIR」として除外済みの8/9状態に復元し、150 cmを1回だけ再測定できるようにします。復元は明示確認が必要で、現在の0/9 Sweepは別キーへバックアップしてから上書きします。正式測定ロジックとschema 2は変更しません。 Phase 4.70 Rev.1では、Point A取得時にReferenceを試行単位でロックし、Point B取得前にA→B順序とReference不変を値非依存で監査するPoint-Pair / Protocol Guardを追加します。距離値や誤差はガード判定に使用しません。 Phase 4.80 Rev.1では、正式Hit-Hit誤差、SurfaceのA-B軸方向差、MAP signed impact、Hitの時間窓差と、それぞれに対応する代替誤差をError Budget Diagnosticとして並記します。診断値は加算可能な因果成分とはみなさず、補正・採否・閾値変更には使用しません。 Phase 4.90 Rev.1では、Point A/B正式取得フレームでplane / point / mesh Hitとsame-frame Depth-centerを凍結比較し、formal planeとの差をView-Zおよびlocal 3Dで記録するHit Source Divergence Diagnosticを追加します。alternate Hit sourceは診断専用で、正式値・採否・補正には使用しません。 Phase 4.90 Rev.2では、Depth-centerに最も近いHit sourceの記述表示をTIE対応にし、同一距離のplane / point / meshを同率として表示します。測定値・ゲート・保存形式は変更しません。 Phase 5.00 Rev.1では、Hit→Depthのlocal 3D変位をcapture camera ray方向とlateral方向へ分解し、Depth camera originとのbaseline、Hit/Depth ray角度、A-B軸へ与える一次射影をray axial / lateralへ分けるRay / Surface Geometry Diagnosticを追加します。正式値・採否・補正・Sweep schemaは変更しません。 Phase 5.10 Rev.1では、同一XRセッション・同一local reference space内で0/50/100/150 cmの4つの物理マークを順番にformal plane Hitで診断取得するMetric Scale Ladder Diagnosticを追加します。6つの点間距離、区間scale ratio、P0→P150軸へのP50/P100投影・横ずれ、区間和とdirect距離の差を記録します。Ladderは完全に診断専用で、正式Point A/B、Accuracy Sweep、MAP / Depth / Surface gate、補正、保存schemaは変更しません。 Phase 5.20 Rev.1ではPhase 5.10の4点往路を保持したまま、150→100→50→0の復路3点を追加し、各区間の往復差、0–150 cm direct距離の往復差、P100/P50/P0の再訪位置差を記録します。再訪差は手振れ・照準・手書きマーク位置・環境認識を分離しないaggregate repeatabilityとして扱い、空間歪みの直接証拠や補正値には使用しません。正式測定ロジック、ゲート、保存schemaは変更しません。 Phase 5.20 Rev.2ではRaw Camera拡大鏡のCanvas CSSサイズ160 pxと136 pxラッパーの不一致を修正し、Canvas中心・拡大鏡「＋」・Raw Camera中心UVを一致させる表示登録監査を追加します。正式測定・Ladder・ゲート・保存schemaは変更しません。</p>
 <div class="actions">
   <button type="button" class="refPreset" data-cm="50">50 cm</button>
   <button type="button" class="refPreset" data-cm="100">100 cm</button>
@@ -588,7 +594,7 @@ const el = {};
   'surfaceConsistencyLiveState','surfaceConsistencyAState','surfaceConsistencyBState','surfaceConsistencyPairState',
   'metricLadderStatusState','metricLadderNextState','metricLadderP0State','metricLadderP50State','metricLadderP100State','metricLadderP150State','metricLadderP100RState','metricLadderP50RState','metricLadderP0RState','metricLadderD01State','metricLadderD12State','metricLadderD23State','metricLadderD02State','metricLadderD13State','metricLadderD03State','metricLadderSegmentsState','metricLadderScaleState','metricLadderLinearityState','metricLadderReturnD23State','metricLadderReturnD12State','metricLadderReturnD01State','metricLadderDirectionDeltaState','metricLadderRevisitState','metricLadderReturnDirectState','metricLadderResetAuditState','metricLadderText','metricLadderCaptureBtn','metricLadderResetBtn','metricLadderResetPageBtn',
   'captureADepthState','captureBDepthState','depth3DGeometryState','depth3DAState','depth3DBState','compareHitABState','compareDepthCenterABState','compareDepthMedianABState','compareHitADepthBState','compareDepthAHitBState','surfaceOffsetAState','surfaceAxialAState','surfaceOffsetBState','surfaceAxialBState','surfaceAxialNetState','surfaceExactNetState','depthCenterErrorState','depthMedianErrorState','errorBudgetFormalState','errorBudgetSurfaceExactState','errorBudgetSurfaceProjectedState','errorBudgetMapState','errorBudgetTemporalState','errorBudgetDepthAltState','errorBudgetMapAltState','errorBudgetTemporalAltState','errorBudgetScaleState','errorBudgetResidualState','hitSourceDivergenceAState','hitSourceDivergenceBState','hitSourceDivergenceFrameState','raySurfaceAState','raySurfaceBState','raySurfacePairState','raySurfaceFrameState','entityProbeState','entityPlaneSourceState','entityPlaneHitState','entityPointSourceState','entityPointHitState','entityMeshSourceState','entityMeshHitState','entitySnapshotState','aimQualityState','edgeMedianState',
-  'contrastMedianState','calibrationWidthMm','calibrationHeightMm','calibrationSequenceState','calibrationAutoState','calibrationDwellState','calibrationTargetState','calibrationWidthState','calibrationHeightState','calibrationDiagonalState','calibrationWidthErrorState','calibrationHeightErrorState','calibrationScaleState','calibrationScaleSpreadState','calibrationScaleResidualState','calibrationAngleState','calibrationPlaneState','calibrationDepthState','calibrationRoleState','calibrationResetBtn','calibrationText','calibrationOverlayText','calibrationDwellTrack','calibrationDwellBar','calibrationCaptureBtn','calibrationResetOverlayBtn','sweepRunState','sweepProgressState','sweepSelectedCountState','sweepConsensusState','sweepNextState','sweepHitState','sweepConsensusDistanceState','sweepDepthCenterState','sweepDepthMedianState','discardSweepBtn','clearSweepBtn','protocolInvalidSample','protocolInvalidReason','protocolInvalidConfirm','invalidateProtocolTrialBtn','protocolInvalidationState','knownSweepRecoveryConfirm','recoverKnownSweepBtn','knownSweepRecoveryState','sweepText','magnifierState','magnifierCanvas','magnifierWrap','cardFreezePanel','cardFreezeCanvas','cardFreezeTitle','cardFreezeTapState','cardFreezeResetTapsBtn','cardFreezeRetakeBtn','cardValidationBtn','cardValidationState','alignmentGrid','alignmentMark','alignmentState','alignmentOffsetState','alignmentUvState','alignBtn','entitySnapshotBtn',
+  'contrastMedianState','calibrationWidthMm','calibrationHeightMm','calibrationSequenceState','calibrationAutoState','calibrationDwellState','calibrationTargetState','calibrationWidthState','calibrationHeightState','calibrationDiagonalState','calibrationWidthErrorState','calibrationHeightErrorState','calibrationScaleState','calibrationScaleSpreadState','calibrationScaleResidualState','calibrationAngleState','calibrationPlaneState','calibrationDepthState','calibrationRoleState','calibrationResetBtn','calibrationText','calibrationOverlayText','calibrationDwellTrack','calibrationDwellBar','calibrationCaptureBtn','calibrationResetOverlayBtn','sweepRunState','sweepProgressState','sweepSelectedCountState','sweepConsensusState','sweepNextState','sweepHitState','sweepConsensusDistanceState','sweepDepthCenterState','sweepDepthMedianState','discardSweepBtn','clearSweepBtn','protocolInvalidSample','protocolInvalidReason','protocolInvalidConfirm','invalidateProtocolTrialBtn','protocolInvalidationState','knownSweepRecoveryConfirm','recoverKnownSweepBtn','knownSweepRecoveryState','sweepText','magnifierState','magnifierRegistrationState','magnifierCanvas','magnifierWrap','magnifierCross','centerGuide','cardFreezePanel','cardFreezeCanvas','cardFreezeTitle','cardFreezeTapState','cardFreezeResetTapsBtn','cardFreezeRetakeBtn','cardValidationBtn','cardValidationState','alignmentGrid','alignmentMark','alignmentState','alignmentOffsetState','alignmentUvState','alignBtn','entitySnapshotBtn',
   'magnifierLabel','qualityText','hitStabilityText','surfaceConsistencyText','depthText','depthABText','entityText','alignmentText',
   'coordA','coordB','startBtn','resetBtn','endBtn','log','xrCanvas','xrOverlay','xrHud',
   'xrState','xrHint','pointText','anchorText','distanceText','accuracyText','stabilityText','settlingText','preBText','sweepText','sceneSetupText','operationText','protocolGuardText','protocolGuardState','trialReferenceState','setPointBtn',
@@ -1852,8 +1858,9 @@ let surfaceConsistencyPair = null;
 let aimQuality = 'ANALYZING';
 let magnifierZoom = 3;
 let magnifierFirstPaintLogged = false;
-const MAG_CSS_SIZE = 160;
+const MAG_CSS_SIZE = 136;
 let magnifierDpr = 1;
+let magnifierRegistrationLastSignature = '';
 let alignmentMode = false;
 let alignmentMark = null;
 
@@ -5452,6 +5459,91 @@ function configureMagnifierCanvas(){
   el.magnifierCanvas.style.height=`${MAG_CSS_SIZE}px`;
 }
 
+
+function auditMagnifierCenterRegistration(reason='runtime'){
+  if(!el.magnifierCanvas || !el.magnifierWrap || !el.magnifierCross || !el.centerGuide) return null;
+
+  const canvasRect=el.magnifierCanvas.getBoundingClientRect();
+  const wrapRect=el.magnifierWrap.getBoundingClientRect();
+  const crossRect=el.magnifierCross.getBoundingClientRect();
+  const mainRect=el.centerGuide.getBoundingClientRect();
+  if(!(canvasRect.width>0 && canvasRect.height>0 && wrapRect.width>0 && wrapRect.height>0)) return null;
+
+  const canvasCx=canvasRect.left+canvasRect.width/2;
+  const canvasCy=canvasRect.top+canvasRect.height/2;
+  const crossCx=crossRect.left+crossRect.width/2;
+  const crossCy=crossRect.top+crossRect.height/2;
+  const crossDx=crossCx-canvasCx;
+  const crossDy=crossCy-canvasCy;
+
+  const mainCx=mainRect.left+mainRect.width/2;
+  const mainCy=mainRect.top+mainRect.height/2;
+  const mainDx=mainCx-window.innerWidth/2;
+  const mainDy=mainCy-window.innerHeight/2;
+
+  const clipX=Math.max(0,el.magnifierCanvas.clientWidth-el.magnifierWrap.clientWidth);
+  const clipY=Math.max(0,el.magnifierCanvas.clientHeight-el.magnifierWrap.clientHeight);
+
+  // Map the overlay cross back through the visible Canvas crop into the 512×512
+  // magnifier source, then through the magnifier shader to Raw Camera UV.
+  const nx=(crossCx-canvasRect.left)/canvasRect.width;
+  const ny=(crossCy-canvasRect.top)/canvasRect.height;
+  const crop=Math.max(1,MAG_SOURCE_SIZE/magnifierZoom);
+  const sourceX=(MAG_SOURCE_SIZE-crop)/2 + nx*crop;
+  const sourceY=(MAG_SOURCE_SIZE-crop)/2 + ny*crop;
+  const sourceU=sourceX/MAG_SOURCE_SIZE;
+  const sourceV=sourceY/MAG_SOURCE_SIZE;
+  const g=latestRawCameraGeometry || latestViewerRawCameraGeometry;
+  const aspect=Number.isFinite(g?.aspect) ? g.aspect : 1.0;
+  const rawU=sourceU;
+  // source Canvas Y is top-down after updateMagnifierSourceCanvas() flips readPixels.
+  const rawV=0.5 + (0.5-sourceV)*aspect;
+
+  const crossOffset=Math.hypot(crossDx,crossDy);
+  const mainOffset=Math.hypot(mainDx,mainDy);
+  const rawCenterOffset=Math.hypot(rawU-0.5,rawV-0.5);
+  const state=(crossOffset<=0.25 && mainOffset<=0.25 && clipX<=0.25 && clipY<=0.25 && rawCenterOffset<=1e-4)
+    ? 'PASS'
+    : 'CHECK';
+
+  set(
+    'magnifierRegistrationState',
+    `${state} / cross-canvas Δ=(${crossDx.toFixed(2)},${crossDy.toFixed(2)}) px / clip=${clipX.toFixed(1)}×${clipY.toFixed(1)} px / rawUV=(${rawU.toFixed(6)},${rawV.toFixed(6)})`,
+    state==='PASS'?'ok':'warn'
+  );
+
+  const signature=[
+    state,
+    canvasRect.width.toFixed(2),canvasRect.height.toFixed(2),
+    el.magnifierWrap.clientWidth,el.magnifierWrap.clientHeight,
+    crossDx.toFixed(2),crossDy.toFixed(2),
+    mainDx.toFixed(2),mainDy.toFixed(2),
+    clipX.toFixed(1),clipY.toFixed(1),
+    rawU.toFixed(6),rawV.toFixed(6),
+    magnifierZoom,
+    aspect.toFixed(6)
+  ].join('|');
+
+  if(signature!==magnifierRegistrationLastSignature){
+    magnifierRegistrationLastSignature=signature;
+    log(
+      `MAGNIFIER CENTER REGISTRATION: reason=${reason}; state=${state}; ` +
+      `canvasCss=${canvasRect.width.toFixed(2)}x${canvasRect.height.toFixed(2)} px; ` +
+      `wrapClient=${el.magnifierWrap.clientWidth}x${el.magnifierWrap.clientHeight} px; ` +
+      `clip=${clipX.toFixed(2)}x${clipY.toFixed(2)} px; ` +
+      `crossMinusCanvasCenter=(${crossDx.toFixed(2)},${crossDy.toFixed(2)}) CSS px; ` +
+      `mainCrossMinusViewportCenter=(${mainDx.toFixed(2)},${mainDy.toFixed(2)}) CSS px; ` +
+      `source512AtCross=(${sourceX.toFixed(3)},${sourceY.toFixed(3)}); ` +
+      `rawCameraUvAtMagnifierCross=(${rawU.toFixed(6)},${rawV.toFixed(6)}); ` +
+      `cameraAspect=${aspect.toFixed(6)}; zoom=${magnifierZoom}x; ` +
+      `displayRegistrationOnly=true; autoCorrectionApplied=false; affectsCaptureGate=false; affectsFormalGate=false; ` +
+      `correctionApplied=false; diagnosticOnly=true; formalSource=immutable-hit`
+    );
+  }
+
+  return {state,crossDx,crossDy,mainDx,mainDy,clipX,clipY,rawU,rawV};
+}
+
 function setRawCameraDisplayMode(mode){
   if(rawCameraDisplayMode!==mode){
     const role=mode==='LOCAL'?'local-world':mode==='VIEWER_FALLBACK'?'viewer-only':'none';
@@ -5624,6 +5716,7 @@ function drawMagnifierPixels(){
     `${magnifierZoom}× / source ${crop}×${crop} / DPR ${magnifierDpr.toFixed(2)}`,
     'ok'
   );
+  auditMagnifierCenterRegistration(magnifierFirstPaintLogged?'visible-paint':'draw');
 }
 function resetAlignmentMark(){
   alignmentMark=null;
@@ -8227,6 +8320,7 @@ async function startAR(){
     log('HIT SOURCE DIVERGENCE DIAGNOSTIC ACTIVE: captureFrameSources=formal-plane,point,mesh,same-frame-depth-center; compare=view-forward,local-3D; staleEntitySamplesRejected=true; nearestSourceReporting=tie-aware; tieEpsilon=0.001mm; formalMeasurementSource=plane; alternateSourcesDiagnosticOnly=true; affectsCaptureGate=false; affectsFormalGate=false; correctionApplied=false; diagnosticOnly=true; formalSource=immutable-hit');
     log('RAY / SURFACE GEOMETRY DIAGNOSTIC ACTIVE: captureFrameGeometry=XRView-hit-ray-vs-DepthGeometry-ray; observables=hitDepthOffset3D,rayAxial,rayLateral,cameraOriginBaseline,rayAngle,ABAxisEffectSplit; firstOrderABAxisProjection=true; causalDecomposition=false; affectsCaptureGate=false; affectsFormalGate=false; correctionApplied=false; diagnosticOnly=true; formalSource=immutable-hit');
     log('METRIC SCALE ROUND-TRIP DIAGNOSTIC ACTIVE: sequence=0F/50F/100F/150T/100R/50R/0R; sameImmersiveSession=true; sameLocalReferenceSpace=true; captureSource=formal-plane-hit; forwardPhase5_10Preserved=true; compareForwardVsReturn=true; revisitDisplacement=true; operatorEnvironmentErrorNotSeparated=true; handMotionNotSeparated=true; markPlacementErrorNotSeparated=true; referenceSpaceResetDuringSequenceInvalidatesLadder=true; guardUsesMeasuredDistance=false; valueIndependent=true; affectsCaptureGate=false; affectsFormalGate=false; correctionApplied=false; diagnosticOnly=true; formalMeasurementGeometryUnchanged=true; formalSource=immutable-hit');
+    log('MAGNIFIER CENTER REGISTRATION FIX ACTIVE: wrapperCss=136x136; canvasCss=136x136; priorRev1RuntimeCanvasCss=160x160; priorWrapperContent=136x136; priorOverlayCrossOffsetFromCanvasCenter=(-12,-12)px nominal; targetRawCameraUvAtCross=0.5,0.5; displayRegistrationOnly=true; affectsCaptureGate=false; affectsFormalGate=false; correctionApplied=false; diagnosticOnly=true; formalSource=immutable-hit');
     updatePointPairGuardUI();
     updateMetricLadderUI();
 
