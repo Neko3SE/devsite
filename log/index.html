@@ -123,6 +123,20 @@
       <div class="log-list">
               <!-- 新しいLOGはこの直下へ追加 -->
 
+<article class="log-entry" id="log-2026-09-30-01">
+          <div class="log-entry__meta">
+          <time datetime="2026-09-30">2026-09-30</time>
+          <span class="log-entry__type">LAB</span>
+          </div>
+          <h3 class="log-entry__title">＜検討中＞WebXR(WebXR Device API)は、WebVRとWebARを統合して新しく作られたAPI</h3>
+          <div class="log-entry__body">
+          <p>WebXR(WebXR Device API)は、専用アプリ無しで仮想現実（VR）や拡張現実（AR）を実現し、
+            Webブラウザ連携できるものを対象としたAPIで、Google Chromeが多く対応している様だ。
+            でも有料ライブラリを使用せず無料範囲で対応するのはだいぶ大変です。調べ始めてかれこれ一週間。。。<BR>
+	  </p>
+          </div>
+         </article>
+
 <article class="log-entry" id="log-2026-09-27-03">
           <div class="log-entry__meta">
           <time datetime="2026-09-27">2026-09-27</time>
@@ -136,10 +150,11 @@
 	Android (Chrome)：◯
 	iPhone (iOS Safari)：✕
 	Android：ブラウザのままカメラ映像に3Dを重ねる高精度なWebAR（床面認識等）やVRが動きます。
-	iPhone：非対応。iPhoneのカメラでAR（Quick Look等）を開くには、一度ブラウザを離れて専用のビューアー（USDZ形式）へ切り替える必要があります。
+	iPhone：非対応。iPhoneのカメラでAR（Quick Look等）を開くには、
+  　　　　一度ブラウザを離れて専用のビューアー（USDZ形式）へ切り替える必要があります。
 
-・WebGPU（次世代3D・AI描画）従来のWebGLに代わる、低遅延・高効率な3Dグラフィックス・機械学習API。両OSともに対応を完了しており、
-ブラウザ内での高度な3Dゲームや軽量なAI処理（LLM等）が無料で動かせます。
+・WebGPU（次世代3D・AI描画）従来のWebGLに代わる、低遅延・高効率な3Dグラフィックス・機械学習API。
+両OSともに対応を完了しており、ブラウザ内での高度な3Dゲームや軽量なAI処理（LLM等）が無料で動かせます。
 	Android (Chrome)：◯
 	iPhone (iOS Safari)：◯
 
@@ -157,17 +172,18 @@
 	iPhone (iOS Safari)：✕　iPhoneは非対応です。
 
 ・File System Access API（ローカルファイル保存）
-	Android (Chrome)：(一部のみ)　✕　ユーザーのPCやスマホの「写真」や「書類」フォルダといったリアルなディレクトリに直接ファイルを上書き保存・同期できる機能。
+	Android (Chrome)：(一部のみ)　✕　ユーザーのPCやスマホの「写真」や「書類」フォルダといった
+  　　　　　　　　　　リアルなディレクトリに直接ファイルを上書き保存・同期できる機能。
 	iPhone (iOS Safari)：✕
 	セキュリティの観点から、Android・iPhoneともにモバイルブラウザでは原則「非対応」です。
 
-・Shape Detection API（顔・文字・バーコード検出）カメラで写した映像から、ブラウザが「顔の位置」「バーコード/QRコード」「文字（OCR）」を
-ハードウェア（GPU）を使って高速に検出する技術。
+・Shape Detection API（顔・文字・バーコード検出）カメラで写した映像から、ブラウザが
+「顔の位置」「バーコード/QRコード」「文字（OCR）」をハードウェア（GPU）を使って高速に検出する技術。
 	Android (Chrome)：◯　Androidは標準対応
 	iPhone (iOS Safari)：✕　iPhoneは非対応のため、JavaScriptの重い外部ライブラリを読み込ませる必要があります。
 
-・Web Share Target API（「共有先」に選ばれる機能）PWAとしてインストールしたWebアプリが、スマホの「写真を共有」「テキストを共有」の
-一覧（シェアシート）にアプリとして登場できる機能。
+・Web Share Target API（「共有先」に選ばれる機能）PWAとしてインストールしたWebアプリが、
+スマホの「写真を共有」「テキストを共有」の一覧（シェアシート）にアプリとして登場できる機能。
 	Android (Chrome)：◯
 	iPhone (iOS Safari)：✕　iPhoneは、Webアプリが他のアプリからの共有を受け取る「ターゲット」になることを許可していません。
 </pre>これは、障がい者用デバイス（外部スイッチ、点字読み書き装置、音声機器、脳波測定装置）などの対応に差があるという事です。<BR>
