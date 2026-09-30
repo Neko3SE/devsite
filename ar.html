@@ -80,7 +80,7 @@ padding:8px 9px;pointer-events:auto}
 #sweepText{font-size:11px;font-weight:700;color:#bfdbfe;margin-top:3px}
 #magnifierWrap{
   position:absolute;right:14px;
-  top:calc(env(safe-area-inset-top,0px) + 50px);
+  top:calc(env(safe-area-inset-top,0px) + 112px);
   width:136px;height:136px;
   box-sizing:content-box;
   z-index:30;
@@ -146,7 +146,7 @@ padding:8px 9px;pointer-events:auto}
 <body>
 <main>
 <h1>AR DISTANCE LAB</h1>
-<p class="sub">Phase 5.20 Rev.3 — Bidirectional Metric Ladder / Magnifier Border-Box Registration Fix / immutable Hit-Hit</p>
+<p class="sub">Phase 5.20 Rev.4 — Long-Term Hit Settling Diagnostic / Magnifier 4× / immutable Hit-Hit</p>
 
 <section class="card">
 <h2>STATUS</h2>
@@ -301,7 +301,7 @@ padding:8px 9px;pointer-events:auto}
   <div class="cell">Aim quality</div><div class="cell" id="aimQualityState">ANALYZING</div>
   <div class="cell">Edge median</div><div class="cell" id="edgeMedianState">—</div>
   <div class="cell">Contrast median</div><div class="cell" id="contrastMedianState">—</div>
-  <div class="cell">Magnifier</div><div class="cell" id="magnifierState">3×</div>
+  <div class="cell">Magnifier</div><div class="cell" id="magnifierState">4×</div>
   <div class="cell">Magnifier center registration</div><div class="cell" id="magnifierRegistrationState">—</div>
   <div class="cell">Center alignment check</div><div class="cell" id="alignmentState">OFF</div>
   <div class="cell">Alignment mark offset</div><div class="cell" id="alignmentOffsetState">—</div>
@@ -503,7 +503,7 @@ Phase 4.50 Rev.4でも正式単発距離値はimmutable Hit-Hitのままです�
       <div id="alignmentGrid"></div>
       <div id="magnifierCross">＋</div>
       <div id="alignmentMark"></div>
-      <div id="magnifierLabel">MAG 3×</div>
+      <div id="magnifierLabel">MAG 4×</div>
     </div>
 
     <div id="cardFreezePanel" hidden>
@@ -550,8 +550,8 @@ Phase 4.50 Rev.4でも正式単発距離値はimmutable Hit-Hitのままです�
       <div id="anchorText">ANCHOR A: — / ANCHOR B: —</div>
       <div class="magRow">
         <button type="button" class="magBtn" data-mag="2">MAG 2×</button>
-        <button type="button" class="magBtn active" data-mag="3">MAG 3×</button>
-        <button type="button" class="magBtn" data-mag="4">MAG 4×</button>
+        <button type="button" class="magBtn" data-mag="3">MAG 3×</button>
+        <button type="button" class="magBtn active" data-mag="4">MAG 4×</button>
       </div>
       <div class="diagRow" style="display:none">
         <button type="button" id="entitySnapshotBtn" disabled>HIT ENTITY SNAPSHOT</button>
@@ -862,6 +862,7 @@ function updateMetricLadderUI(){
 function resetMetricLadder(reason='manual',logIt=true){
   metricLadderPoints=[];
   metricLadderCapturePending=false;
+  metricPostCaptureSettling=null;
   metricLadderInvalidReason=null;
   metricLadderResetCountAtStart=null;
   metricLadderLastSummary=null;
@@ -936,6 +937,8 @@ function captureMetricLadderPointFromHit(hitPose,time){
   };
   metricLadderPoints.push(row);
   log(`METRIC SCALE ROUND-TRIP CAPTURE ${row.key}: physicalMark=${row.markCm} cm; leg=${row.leg}; local=${fmtPoint(row.point)}; frame=${row.frame}; cameraToHit=${row.cameraToHit==null?'n/a':row.cameraToHit.toFixed(6)+' m'}; hitStability=${row.hitStability}; hitMaxRadius=${row.hitMaxRadius==null?'n/a':(row.hitMaxRadius*1000).toFixed(3)+' mm'}; sessionReset=${row.sessionResetCount}; immutableDiagnosticPoint=true; measuredDistanceNotInspected=true; valueIndependent=true; operatorEnvironmentErrorNotSeparated=true; markPlacementErrorNotSeparated=true; correctionApplied=false; diagnosticOnly=true; formalSource=plane-hit`);
+  logLongTermHitSettling('PRE-CAPTURE',row.key,time,point);
+  beginMetricPostCaptureSettling(row);
   logMetricLadderNewPairs(idx);
   updateMetricLadderUI();
 
@@ -1201,8 +1204,15 @@ const DISTANCE_IMPACT_INVALID_M = 0.005;
 
 
 // Phase 4.16: Hit Test capture stability diagnostic (warning-only).
-const HIT_HISTORY_RETENTION_MS = 1600;
+// Rev.4 retains enough history to observe slow settling independently of the
+// existing 300 ms short-term STABLE diagnostic. None of these values gate capture.
+const HIT_HISTORY_RETENTION_MS = 6500;
 const HIT_WINDOW_MS = [300,500,1000];
+const HIT_SETTLING_WINDOWS_MS = [500,1000,2000,5000];
+const HIT_SETTLING_EDGE_MS = 250;
+const HIT_SETTLING_MIN_COVERAGE_RATIO = 0.80;
+const HIT_SETTLED_MAX_ROBUST_SHIFT_M = 0.002; // diagnostic label only; never a gate
+const HIT_POST_CAPTURE_MILESTONES_MS = [500,1000,2000,5000];
 // 300 ms is a warning-only short-window diagnostic. It never blocks capture
 // and never replaces the immutable Instant Hit used for the formal commit.
 const HIT_STABILITY_WINDOW_MS = 300;
@@ -1210,6 +1220,7 @@ const HIT_STABLE_MAX_RADIUS_M = 0.003;
 const HIT_STABLE_MIN_COVERAGE_MS = 200;
 const HIT_STABLE_MIN_SAMPLES = 6;
 let liveHitStability = 'ANALYZING';
+let metricPostCaptureSettling = null;
 let lastHitStabilityUiMs = -Infinity;
 let hitHistory = []; // {time, point, cameraDistance}
 let hitStabilitySnapshotA = null;
@@ -1258,9 +1269,9 @@ function recordHitSample(time,point,cameraDistance){
     hitHistory.shift();
   }
 
-  // Safety cap for unexpectedly high frame rates.
-  if(hitHistory.length>240){
-    hitHistory.splice(0,hitHistory.length-240);
+  // Safety cap for unexpectedly high frame rates while retaining ~5 s diagnostics.
+  if(hitHistory.length>480){
+    hitHistory.splice(0,hitHistory.length-480);
   }
 }
 
@@ -1317,6 +1328,96 @@ function hitWindowStats(captureTime,windowMs,instantPoint){
     spanZ:Math.max(...zs)-Math.min(...zs),
     cameraDistanceMedian:cameraDistances.length ? median(cameraDistances) : null
   };
+}
+
+function hitSettlingWindowStats(captureTime,windowMs,instantPoint){
+  const start=captureTime-windowMs;
+  const samples=hitHistory.filter(
+    sample=>sample.time>=start && sample.time<=captureTime+0.01
+  );
+  if(!samples.length || !instantPoint) return null;
+
+  const coverageMs=samples.length>1
+    ? samples[samples.length-1].time-samples[0].time
+    : 0;
+  const edgeMs=Math.min(HIT_SETTLING_EDGE_MS,Math.max(100,windowMs*0.25));
+  const firstTime=samples[0].time;
+  const lastTime=samples[samples.length-1].time;
+  const startSamples=samples.filter(sample=>sample.time<=firstTime+edgeMs);
+  const endSamples=samples.filter(sample=>sample.time>=lastTime-edgeMs);
+  const startMedian=coordinateMedian(startSamples.map(sample=>sample.point));
+  const endMedian=coordinateMedian(endSamples.map(sample=>sample.point));
+  const robustShift=startMedian && endMedian ? distance3(startMedian,endMedian) : null;
+  const instantFromStartMedian=startMedian ? distance3(startMedian,instantPoint) : null;
+  const base=hitWindowStats(captureTime,windowMs,instantPoint);
+  const coverageRatio=Math.min(1,coverageMs/windowMs);
+  let state='PARTIAL';
+  if(coverageRatio>=HIT_SETTLING_MIN_COVERAGE_RATIO && Number.isFinite(robustShift)){
+    state=robustShift<=HIT_SETTLED_MAX_ROBUST_SHIFT_M ? 'SETTLED-CANDIDATE' : 'DRIFTING';
+  }
+  return {
+    windowMs,n:samples.length,coverageMs,coverageRatio,startMedian,endMedian,
+    robustShift,instantFromStartMedian,
+    maxRadius:base?.maxRadius??null,rmsRadius:base?.rmsRadius??null,state
+  };
+}
+
+function logLongTermHitSettling(prefix,label,time,instantPoint){
+  const fields=[];
+  for(const windowMs of HIT_SETTLING_WINDOWS_MS){
+    const st=hitSettlingWindowStats(time,windowMs,instantPoint);
+    if(!st){
+      fields.push(`${(windowMs/1000).toFixed(1)}s[n=0]`);
+      continue;
+    }
+    fields.push(
+      `${(windowMs/1000).toFixed(1)}s[`+
+      `state=${st.state},coverage=${st.coverageMs.toFixed(0)}ms,`+
+      `robustShift=${st.robustShift==null?'n/a':(st.robustShift*1000).toFixed(3)+'mm'},`+
+      `startToInstant=${st.instantFromStartMedian==null?'n/a':(st.instantFromStartMedian*1000).toFixed(3)+'mm'},`+
+      `maxR=${st.maxRadius==null?'n/a':(st.maxRadius*1000).toFixed(3)+'mm'}]`
+    );
+  }
+  log(
+    `LONG-TERM HIT SETTLING ${prefix} ${label}: ${fields.join('; ')}; `+
+    `settledThreshold=${(HIT_SETTLED_MAX_ROBUST_SHIFT_M*1000).toFixed(1)}mm-diagnostic-only; `+
+    `affectsCaptureGate=false; affectsFormalGate=false; correctionApplied=false; diagnosticOnly=true; formalSource=immutable-hit`
+  );
+}
+
+function beginMetricPostCaptureSettling(row){
+  if(metricPostCaptureSettling && metricPostCaptureSettling.reported.size<HIT_POST_CAPTURE_MILESTONES_MS.length){
+    log(`LONG-TERM HIT POST-CAPTURE INTERRUPTED: point=${metricPostCaptureSettling.key}; reason=new-metric-capture; diagnosticOnly=true`);
+  }
+  metricPostCaptureSettling={
+    key:row.key,
+    captureTime:row.time,
+    capturePoint:clonePoint(row.point),
+    reported:new Set()
+  };
+}
+
+function updateMetricPostCaptureSettling(time,currentPoint){
+  const tracker=metricPostCaptureSettling;
+  if(!tracker || !currentPoint || !Number.isFinite(time)) return;
+  const elapsed=time-tracker.captureTime;
+  for(const milestoneMs of HIT_POST_CAPTURE_MILESTONES_MS){
+    if(elapsed<milestoneMs || tracker.reported.has(milestoneMs)) continue;
+    tracker.reported.add(milestoneMs);
+    const displacement=distance3(tracker.capturePoint,currentPoint);
+    const rolling=hitSettlingWindowStats(time,milestoneMs,currentPoint);
+    log(
+      `LONG-TERM HIT POST-CAPTURE ${tracker.key} +${milestoneMs}ms: `+
+      `captureToCurrent=${(displacement*1000).toFixed(3)} mm; `+
+      `rollingState=${rolling?.state??'n/a'}; `+
+      `rollingRobustShift=${rolling?.robustShift==null?'n/a':(rolling.robustShift*1000).toFixed(3)+' mm'}; `+
+      `rollingMaxRadius=${rolling?.maxRadius==null?'n/a':(rolling.maxRadius*1000).toFixed(3)+' mm'}; `+
+      `hitStillPresent=true; affectsCaptureGate=false; affectsFormalGate=false; correctionApplied=false; diagnosticOnly=true; formalSource=immutable-hit`
+    );
+  }
+  if(tracker.reported.size>=HIT_POST_CAPTURE_MILESTONES_MS.length){
+    metricPostCaptureSettling=null;
+  }
 }
 
 function classifyHitStability(stats){
@@ -1857,7 +1958,7 @@ let captureSurfaceConsistencyB = null;
 let surfaceConsistencyPair = null;
 
 let aimQuality = 'ANALYZING';
-let magnifierZoom = 3;
+let magnifierZoom = 4;
 let magnifierFirstPaintLogged = false;
 const MAG_CSS_SIZE = 136;
 let magnifierDpr = 1;
@@ -5431,6 +5532,19 @@ function analyzeRawPixels(pix,w,h){
 }
 
 
+function positionMagnifierBelowTopPanel(reason='runtime'){
+  if(!el.magnifierWrap || !el.topPanel) return;
+  const topRect=el.topPanel.getBoundingClientRect();
+  const gap=8;
+  const desiredTop=Math.ceil(topRect.bottom+gap);
+  const maxTop=Math.max(8,window.innerHeight-MAG_CSS_SIZE-12);
+  const top=Math.min(desiredTop,maxTop);
+  el.magnifierWrap.style.top=`${top}px`;
+  if(reason==='configure'){
+    log(`magnifier placement: belowTopPanel=true; topPanelBottom=${topRect.bottom.toFixed(1)}px; gap=${gap}px; magnifierTop=${top}px; overlap=${top<topRect.bottom?'YES':'NO'}`);
+  }
+}
+
 function configureMagnifierCanvas(){
   magnifierDpr=Math.min(
     Math.max(window.devicePixelRatio || 1,1),
@@ -5458,6 +5572,7 @@ function configureMagnifierCanvas(){
 
   el.magnifierCanvas.style.width=`${MAG_CSS_SIZE}px`;
   el.magnifierCanvas.style.height=`${MAG_CSS_SIZE}px`;
+  positionMagnifierBelowTopPanel('configure');
 }
 
 
@@ -8321,7 +8436,8 @@ async function startAR(){
     log('HIT SOURCE DIVERGENCE DIAGNOSTIC ACTIVE: captureFrameSources=formal-plane,point,mesh,same-frame-depth-center; compare=view-forward,local-3D; staleEntitySamplesRejected=true; nearestSourceReporting=tie-aware; tieEpsilon=0.001mm; formalMeasurementSource=plane; alternateSourcesDiagnosticOnly=true; affectsCaptureGate=false; affectsFormalGate=false; correctionApplied=false; diagnosticOnly=true; formalSource=immutable-hit');
     log('RAY / SURFACE GEOMETRY DIAGNOSTIC ACTIVE: captureFrameGeometry=XRView-hit-ray-vs-DepthGeometry-ray; observables=hitDepthOffset3D,rayAxial,rayLateral,cameraOriginBaseline,rayAngle,ABAxisEffectSplit; firstOrderABAxisProjection=true; causalDecomposition=false; affectsCaptureGate=false; affectsFormalGate=false; correctionApplied=false; diagnosticOnly=true; formalSource=immutable-hit');
     log('METRIC SCALE ROUND-TRIP DIAGNOSTIC ACTIVE: sequence=0F/50F/100F/150T/100R/50R/0R; sameImmersiveSession=true; sameLocalReferenceSpace=true; captureSource=formal-plane-hit; forwardPhase5_10Preserved=true; compareForwardVsReturn=true; revisitDisplacement=true; operatorEnvironmentErrorNotSeparated=true; handMotionNotSeparated=true; markPlacementErrorNotSeparated=true; referenceSpaceResetDuringSequenceInvalidatesLadder=true; guardUsesMeasuredDistance=false; valueIndependent=true; affectsCaptureGate=false; affectsFormalGate=false; correctionApplied=false; diagnosticOnly=true; formalMeasurementGeometryUnchanged=true; formalSource=immutable-hit');
-    log('MAGNIFIER CENTER REGISTRATION FIX ACTIVE: wrapperCss=136x136; canvasCss=136x136; priorRev1RuntimeCanvasCss=160x160; priorWrapperContent=136x136; priorOverlayCrossOffsetFromCanvasCenter=(-12,-12)px nominal; targetRawCameraUvAtCross=0.5,0.5; displayRegistrationOnly=true; affectsCaptureGate=false; affectsFormalGate=false; correctionApplied=false; diagnosticOnly=true; formalSource=immutable-hit');
+    log('LONG-TERM HIT SETTLING DIAGNOSTIC ACTIVE: preCaptureWindows=0.5/1/2/5s; postCaptureMilestones=0.5/1/2/5s; robustShift=first250msMedian-to-last250msMedian; settledCandidateThreshold=2.0mm; thresholdDiagnosticOnly=true; retention=6.5s; handMotionNotSeparated=true; affectsCaptureGate=false; affectsFormalGate=false; correctionApplied=false; diagnosticOnly=true; formalSource=immutable-hit');
+    log('MAGNIFIER CENTER REGISTRATION FIX ACTIVE: wrapperCss=136x136; canvasCss=136x136; defaultZoom=4x; placement=dynamic-below-topPanel+8px; priorRev1RuntimeCanvasCss=160x160; priorWrapperContent=136x136; targetRawCameraUvAtCross=0.5,0.5; displayRegistrationOnly=true; affectsCaptureGate=false; affectsFormalGate=false; correctionApplied=false; diagnosticOnly=true; formalSource=immutable-hit');
     updatePointPairGuardUI();
     updateMetricLadderUI();
 
@@ -8802,6 +8918,7 @@ function onXRFrame(time,frame){
       // in the 0.3 / 0.5 / 1.0 second diagnostic windows.
       recordHitSample(time,latestHitPoint,latestHitDistance);
       updateLiveHitStability(time);
+      updateMetricPostCaptureSettling(time,latestHitPoint);
 
       set('hitDistanceState',`${latestHitDistance.toFixed(3)} m`,latestHitDistance>NEAR_RANGE_M?'ok':'warn');
       updateDepthHitCrossCheck(time);
@@ -9208,6 +9325,7 @@ function onSessionEnd(){
 window.addEventListener('resize',()=>{
   if(el.magnifierCanvas){
     configureMagnifierCanvas();
+    positionMagnifierBelowTopPanel('resize');
     drawMagnifierPixels();
     if(frozenCardFrame) drawFrozenCardFrame();
   }
@@ -9215,7 +9333,7 @@ window.addEventListener('resize',()=>{
 
 document.querySelectorAll('.magBtn').forEach(btn=>{
   btn.addEventListener('click',()=>{
-    magnifierZoom = Number(btn.dataset.mag) || 3;
+    magnifierZoom = Number(btn.dataset.mag) || 4;
     if(alignmentMark) resetAlignmentMark();
     document.querySelectorAll('.magBtn').forEach(
       b=>b.classList.toggle('active',b===btn)
@@ -9338,7 +9456,7 @@ resetDepthDiagnostics();
 resetHitEntityProbe();
 resetAimQuality();
 updateDepthSweepUI();
-set('magnifierState','3×','ok');
+set('magnifierState','4×','ok');
 set('alignmentState','OFF','');
 set('alignmentOffsetState','—','');
 set('alignmentUvState','—','');
