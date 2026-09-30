@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<title>AR DISTANCE LAB - Phase 5.00 Rev.1</title>
+<title>AR DISTANCE LAB - Phase 5.10 Rev.1</title>
 <style>
 :root{
   color-scheme:dark;
@@ -145,7 +145,7 @@ padding:8px 9px;pointer-events:auto}
 <body>
 <main>
 <h1>AR DISTANCE LAB</h1>
-<p class="sub">Phase 4.90 Rev.1 — Hit Source Divergence Diagnostic / immutable Hit-Hit</p>
+<p class="sub">Phase 5.10 Rev.1 — Metric Scale Ladder Diagnostic / immutable Hit-Hit</p>
 
 <section class="card">
 <h2>STATUS</h2>
@@ -272,6 +272,22 @@ padding:8px 9px;pointer-events:auto}
   <div class="cell">Ray / Surface geometry B</div><div class="cell" id="raySurfaceBState">—</div>
   <div class="cell">Ray → A-B effect split</div><div class="cell" id="raySurfacePairState">—</div>
   <div class="cell">Ray geometry frame coherence</div><div class="cell" id="raySurfaceFrameState">—</div>
+  <div class="cell">Metric ladder status</div><div class="cell" id="metricLadderStatusState">WAITING SESSION</div>
+  <div class="cell">Metric ladder next point</div><div class="cell" id="metricLadderNextState">P0 (0 cm)</div>
+  <div class="cell">Ladder P0 coord.</div><div class="cell" id="metricLadderP0State">—</div>
+  <div class="cell">Ladder P50 coord.</div><div class="cell" id="metricLadderP50State">—</div>
+  <div class="cell">Ladder P100 coord.</div><div class="cell" id="metricLadderP100State">—</div>
+  <div class="cell">Ladder P150 coord.</div><div class="cell" id="metricLadderP150State">—</div>
+  <div class="cell">Ladder 0–50</div><div class="cell" id="metricLadderD01State">—</div>
+  <div class="cell">Ladder 50–100</div><div class="cell" id="metricLadderD12State">—</div>
+  <div class="cell">Ladder 100–150</div><div class="cell" id="metricLadderD23State">—</div>
+  <div class="cell">Ladder 0–100</div><div class="cell" id="metricLadderD02State">—</div>
+  <div class="cell">Ladder 50–150</div><div class="cell" id="metricLadderD13State">—</div>
+  <div class="cell">Ladder 0–150</div><div class="cell" id="metricLadderD03State">—</div>
+  <div class="cell">Ladder local scale ratios</div><div class="cell" id="metricLadderSegmentsState">—</div>
+  <div class="cell">Ladder direct 150 cm scale</div><div class="cell" id="metricLadderScaleState">—</div>
+  <div class="cell">Ladder line / position geometry</div><div class="cell" id="metricLadderLinearityState">—</div>
+  <div class="cell">Ladder reference-space audit</div><div class="cell" id="metricLadderResetAuditState">—</div>
   <div class="cell">Aim quality</div><div class="cell" id="aimQualityState">ANALYZING</div>
   <div class="cell">Edge median</div><div class="cell" id="edgeMedianState">—</div>
   <div class="cell">Contrast median</div><div class="cell" id="contrastMedianState">—</div>
@@ -282,6 +298,15 @@ padding:8px 9px;pointer-events:auto}
   <div class="cell">Point A coord.</div><div class="cell" id="coordA">—</div>
   <div class="cell">Point B coord.</div><div class="cell" id="coordB">—</div>
 </div>
+</section>
+
+<section class="card">
+<h2>PHASE 5.10 — METRIC SCALE LADDER DIAGNOSTIC</h2>
+<p class="note">Phase 5.10は、同じimmersive-arセッション・同じlocal reference spaceのまま、一直線上に物理的に用意した <strong>0 / 50 / 100 / 150 cm</strong> の4マークを順番にformal plane Hit sourceで凍結取得し、0–50、50–100、100–150、0–100、50–150、0–150の6距離を同時比較します。さらに3つの50 cm区間のscale ratio、0–150 cmのdirect scale ratio、P50/P100のP0→P150軸上位置と横ずれ、3区間合計−直線距離を記録します。これにより、全区間に共通するmetric scale差と、区間ごとに異なる局所的なgeometry差を記述的に分離します。Ladder点は<strong>診断専用スナップショット</strong>で、Point A/B、Anchor、Accuracy Sweep、MAP gate、Depth agreement、Surface Consistency、正式immutable Hit-Hitを一切変更しません。測定値を見て点を採否する機能もなく、reference-space resetが4点取得の途中に発生した場合だけ同一座標系条件が崩れたものとしてLadderをINVALIDにし、RESET LADDERを要求します。</p>
+<div class="actions">
+  <button type="button" id="metricLadderResetPageBtn">RESET METRIC LADDER</button>
+</div>
+<pre id="metricLadderText" style="margin-top:10px;max-height:260px">METRIC SCALE LADDER: start AR, complete SCENE SETUP, then capture P0 → P50 → P100 → P150 in one XR session.</pre>
 </section>
 
 <section class="card">
@@ -311,7 +336,7 @@ padding:8px 9px;pointer-events:auto}
 
 <section class="card">
 <h2>PHASE 4.50 — PERSISTENT FORMAL HIT-HIT ACCURACY SWEEP</h2>
-<p class="note">Phase 4.50では、50 / 100 / 150 cm × 各3回 = 合計9回の正式 immutable plane Hit-Hit を1つのAccuracy Sweepとして永続管理します。Sweep状態はlocalStorageへ保存し、ARのEND、ページ再読込、同一Originでの再開後も復元します。値が悪いことを理由に有効サンプルを捨てたり追加測定したりせず、各距離の最初の有効3回だけを固定します。MAP INVALID / reference-space reset など既存の安全ゲートで無効になった測定だけが数え直し対象です。Repeatability cluster、Depth、Anchorは診断専用で、正式Hit-Hit値の補正・採否には使用しません。 Rev.2では保存前と復元時の両方でSweep全体をschema 2として検証し、1件でも構造・Sweep ID・順序・状態値などに不整合があれば部分復元せず、その保存Sweep全体を無効として新しい0/9 Sweepを開始します。旧v1保存キーは読み込まず、削除を試みます。削除できない環境でも旧キーは参照しません。 Rev.3ではARセッション開始直後にSTEP 0 / SCENE SETUPを表示し、A付近→B付近→周囲の床・壁・物体→A付近の順にゆっくり見渡して空間認識を促します。SCENE READYを押すまでPoint A取得へ進みません。これは操作ガイドであり、正式距離の計算式・Hit採用条件・Sweep採否条件は変更しません。 Rev.4ではXR画面上部の状態メッセージをsafe-area上端から従来より約1行分（16 px）下げ、画面切り欠き・パンチホールとの重なりを避けます。測定ロジックと保存形式は変更しません。 Rev.5ではSCENE READYを単なる確認ボタンではなく、A付近へ戻った時点で現在のformal plane Hitが取得できている場合だけ成立するsurface-qualified gateに変更します。シーン認識ガイドには、A→B→周囲→Aの順に加え、端末をその場で回転させるだけでなく少し横・斜めにも移動して視差を作り、床壁境界・角・模様・掲示物などの特徴を画面へ入れることを明示します。これは操作フローの改善だけで、正式距離は引き続きimmutable plane Hit-Hitです。 Rev.6では画面切り欠きとの重なりをさらに避けるため、XR画面上部の状態メッセージだけをRev.5から32 px（約2行分）下へ移動します。測定ロジック、SCENE READY条件、保存形式、正式距離の計算には変更ありません。 Phase 4.60 Rev.1では完了済みSweepを保持したまま、Point A/B取得時のHit View-Zと同一フレームDepth@UVのSurface Consistencyを追加します。この診断は正式値・採否に影響しません。 Phase 4.60 Rev.3ではRev.1を正式ベースラインとして維持したまま、Hit→Depth 3D変位のA-B軸方向寄与を診断表示します。Rev.1のSCENE READY surface-qualified gate、Surface Consistency、保存schema 2、正式immutable Hit-Hit測定は変更しません。 Phase 4.60 Rev.4では、計測値の大小とは独立して後から判明した明確な操作・プロトコルミスだけを、固定理由＋明示確認付きで「PROTOCOL INVALID」として有効Sweepから外せる監査付き操作を追加します。value-based discardは禁止のままです。保存schema 2との互換性を維持するため、無効化できるのは現在もっとも後ろに進んでいるターゲット距離のサンプルだけです。過去ターゲットのサンプルを遡って外す場合はSweep全体を再開始します。正式距離の計算、MAP / Depth / Surface Consistencyのゲート意味は変更しません。 Phase 4.60 Rev.5 Recoveryでは、誤操作で旧9/9 Sweepが保存領域から失われた今回のケースに限り、ユーザー提供の確定ログから `S20260929T133409Z-32C0E4` を復元します。150 cmの旧#7は「WRONG PHYSICAL REFERENCE / POINT PAIR」として除外済みの8/9状態に復元し、150 cmを1回だけ再測定できるようにします。復元は明示確認が必要で、現在の0/9 Sweepは別キーへバックアップしてから上書きします。正式測定ロジックとschema 2は変更しません。 Phase 4.70 Rev.1では、Point A取得時にReferenceを試行単位でロックし、Point B取得前にA→B順序とReference不変を値非依存で監査するPoint-Pair / Protocol Guardを追加します。距離値や誤差はガード判定に使用しません。 Phase 4.80 Rev.1では、正式Hit-Hit誤差、SurfaceのA-B軸方向差、MAP signed impact、Hitの時間窓差と、それぞれに対応する代替誤差をError Budget Diagnosticとして並記します。診断値は加算可能な因果成分とはみなさず、補正・採否・閾値変更には使用しません。 Phase 4.90 Rev.1では、Point A/B正式取得フレームでplane / point / mesh Hitとsame-frame Depth-centerを凍結比較し、formal planeとの差をView-Zおよびlocal 3Dで記録するHit Source Divergence Diagnosticを追加します。alternate Hit sourceは診断専用で、正式値・採否・補正には使用しません。 Phase 4.90 Rev.2では、Depth-centerに最も近いHit sourceの記述表示をTIE対応にし、同一距離のplane / point / meshを同率として表示します。測定値・ゲート・保存形式は変更しません。 Phase 5.00 Rev.1では、Hit→Depthのlocal 3D変位をcapture camera ray方向とlateral方向へ分解し、Depth camera originとのbaseline、Hit/Depth ray角度、A-B軸へ与える一次射影をray axial / lateralへ分けるRay / Surface Geometry Diagnosticを追加します。正式値・採否・補正・Sweep schemaは変更しません。</p>
+<p class="note">Phase 4.50では、50 / 100 / 150 cm × 各3回 = 合計9回の正式 immutable plane Hit-Hit を1つのAccuracy Sweepとして永続管理します。Sweep状態はlocalStorageへ保存し、ARのEND、ページ再読込、同一Originでの再開後も復元します。値が悪いことを理由に有効サンプルを捨てたり追加測定したりせず、各距離の最初の有効3回だけを固定します。MAP INVALID / reference-space reset など既存の安全ゲートで無効になった測定だけが数え直し対象です。Repeatability cluster、Depth、Anchorは診断専用で、正式Hit-Hit値の補正・採否には使用しません。 Rev.2では保存前と復元時の両方でSweep全体をschema 2として検証し、1件でも構造・Sweep ID・順序・状態値などに不整合があれば部分復元せず、その保存Sweep全体を無効として新しい0/9 Sweepを開始します。旧v1保存キーは読み込まず、削除を試みます。削除できない環境でも旧キーは参照しません。 Rev.3ではARセッション開始直後にSTEP 0 / SCENE SETUPを表示し、A付近→B付近→周囲の床・壁・物体→A付近の順にゆっくり見渡して空間認識を促します。SCENE READYを押すまでPoint A取得へ進みません。これは操作ガイドであり、正式距離の計算式・Hit採用条件・Sweep採否条件は変更しません。 Rev.4ではXR画面上部の状態メッセージをsafe-area上端から従来より約1行分（16 px）下げ、画面切り欠き・パンチホールとの重なりを避けます。測定ロジックと保存形式は変更しません。 Rev.5ではSCENE READYを単なる確認ボタンではなく、A付近へ戻った時点で現在のformal plane Hitが取得できている場合だけ成立するsurface-qualified gateに変更します。シーン認識ガイドには、A→B→周囲→Aの順に加え、端末をその場で回転させるだけでなく少し横・斜めにも移動して視差を作り、床壁境界・角・模様・掲示物などの特徴を画面へ入れることを明示します。これは操作フローの改善だけで、正式距離は引き続きimmutable plane Hit-Hitです。 Rev.6では画面切り欠きとの重なりをさらに避けるため、XR画面上部の状態メッセージだけをRev.5から32 px（約2行分）下へ移動します。測定ロジック、SCENE READY条件、保存形式、正式距離の計算には変更ありません。 Phase 4.60 Rev.1では完了済みSweepを保持したまま、Point A/B取得時のHit View-Zと同一フレームDepth@UVのSurface Consistencyを追加します。この診断は正式値・採否に影響しません。 Phase 4.60 Rev.3ではRev.1を正式ベースラインとして維持したまま、Hit→Depth 3D変位のA-B軸方向寄与を診断表示します。Rev.1のSCENE READY surface-qualified gate、Surface Consistency、保存schema 2、正式immutable Hit-Hit測定は変更しません。 Phase 4.60 Rev.4では、計測値の大小とは独立して後から判明した明確な操作・プロトコルミスだけを、固定理由＋明示確認付きで「PROTOCOL INVALID」として有効Sweepから外せる監査付き操作を追加します。value-based discardは禁止のままです。保存schema 2との互換性を維持するため、無効化できるのは現在もっとも後ろに進んでいるターゲット距離のサンプルだけです。過去ターゲットのサンプルを遡って外す場合はSweep全体を再開始します。正式距離の計算、MAP / Depth / Surface Consistencyのゲート意味は変更しません。 Phase 4.60 Rev.5 Recoveryでは、誤操作で旧9/9 Sweepが保存領域から失われた今回のケースに限り、ユーザー提供の確定ログから `S20260929T133409Z-32C0E4` を復元します。150 cmの旧#7は「WRONG PHYSICAL REFERENCE / POINT PAIR」として除外済みの8/9状態に復元し、150 cmを1回だけ再測定できるようにします。復元は明示確認が必要で、現在の0/9 Sweepは別キーへバックアップしてから上書きします。正式測定ロジックとschema 2は変更しません。 Phase 4.70 Rev.1では、Point A取得時にReferenceを試行単位でロックし、Point B取得前にA→B順序とReference不変を値非依存で監査するPoint-Pair / Protocol Guardを追加します。距離値や誤差はガード判定に使用しません。 Phase 4.80 Rev.1では、正式Hit-Hit誤差、SurfaceのA-B軸方向差、MAP signed impact、Hitの時間窓差と、それぞれに対応する代替誤差をError Budget Diagnosticとして並記します。診断値は加算可能な因果成分とはみなさず、補正・採否・閾値変更には使用しません。 Phase 4.90 Rev.1では、Point A/B正式取得フレームでplane / point / mesh Hitとsame-frame Depth-centerを凍結比較し、formal planeとの差をView-Zおよびlocal 3Dで記録するHit Source Divergence Diagnosticを追加します。alternate Hit sourceは診断専用で、正式値・採否・補正には使用しません。 Phase 4.90 Rev.2では、Depth-centerに最も近いHit sourceの記述表示をTIE対応にし、同一距離のplane / point / meshを同率として表示します。測定値・ゲート・保存形式は変更しません。 Phase 5.00 Rev.1では、Hit→Depthのlocal 3D変位をcapture camera ray方向とlateral方向へ分解し、Depth camera originとのbaseline、Hit/Depth ray角度、A-B軸へ与える一次射影をray axial / lateralへ分けるRay / Surface Geometry Diagnosticを追加します。正式値・採否・補正・Sweep schemaは変更しません。 Phase 5.10 Rev.1では、同一XRセッション・同一local reference space内で0/50/100/150 cmの4つの物理マークを順番にformal plane Hitで診断取得するMetric Scale Ladder Diagnosticを追加します。6つの点間距離、区間scale ratio、P0→P150軸へのP50/P100投影・横ずれ、区間和とdirect距離の差を記録します。Ladderは完全に診断専用で、正式Point A/B、Accuracy Sweep、MAP / Depth / Surface gate、補正、保存schemaは変更しません。</p>
 <div class="actions">
   <button type="button" class="refPreset" data-cm="50">50 cm</button>
   <button type="button" class="refPreset" data-cm="100">100 cm</button>
@@ -523,6 +548,10 @@ Phase 4.50 Rev.4でも正式単発距離値はimmutable Hit-Hitのままです�
         <button type="button" id="xrResetBtn" disabled>RESET</button>
         <button type="button" id="xrEndBtn" class="danger">END</button>
       </div>
+      <div class="xrActions" style="margin-top:8px">
+        <button type="button" id="metricLadderCaptureBtn" disabled>DIAG LADDER P0</button>
+        <button type="button" id="metricLadderResetBtn" disabled>RESET LADDER</button>
+      </div>
     </div>
   </div>
 </div>
@@ -548,6 +577,7 @@ const el = {};
   'rawCameraState','hitDistanceState','depthState','depthConfigState','depthBufferState',
   'depthCenterState','depthMedianState','depthTemporalState','depthValidState','depthCoherenceState','hitViewState','hitUvState','depthAtHitState','depthHitDeltaState',
   'surfaceConsistencyLiveState','surfaceConsistencyAState','surfaceConsistencyBState','surfaceConsistencyPairState',
+  'metricLadderStatusState','metricLadderNextState','metricLadderP0State','metricLadderP50State','metricLadderP100State','metricLadderP150State','metricLadderD01State','metricLadderD12State','metricLadderD23State','metricLadderD02State','metricLadderD13State','metricLadderD03State','metricLadderSegmentsState','metricLadderScaleState','metricLadderLinearityState','metricLadderResetAuditState','metricLadderText','metricLadderCaptureBtn','metricLadderResetBtn','metricLadderResetPageBtn',
   'captureADepthState','captureBDepthState','depth3DGeometryState','depth3DAState','depth3DBState','compareHitABState','compareDepthCenterABState','compareDepthMedianABState','compareHitADepthBState','compareDepthAHitBState','surfaceOffsetAState','surfaceAxialAState','surfaceOffsetBState','surfaceAxialBState','surfaceAxialNetState','surfaceExactNetState','depthCenterErrorState','depthMedianErrorState','errorBudgetFormalState','errorBudgetSurfaceExactState','errorBudgetSurfaceProjectedState','errorBudgetMapState','errorBudgetTemporalState','errorBudgetDepthAltState','errorBudgetMapAltState','errorBudgetTemporalAltState','errorBudgetScaleState','errorBudgetResidualState','hitSourceDivergenceAState','hitSourceDivergenceBState','hitSourceDivergenceFrameState','raySurfaceAState','raySurfaceBState','raySurfacePairState','raySurfaceFrameState','entityProbeState','entityPlaneSourceState','entityPlaneHitState','entityPointSourceState','entityPointHitState','entityMeshSourceState','entityMeshHitState','entitySnapshotState','aimQualityState','edgeMedianState',
   'contrastMedianState','calibrationWidthMm','calibrationHeightMm','calibrationSequenceState','calibrationAutoState','calibrationDwellState','calibrationTargetState','calibrationWidthState','calibrationHeightState','calibrationDiagonalState','calibrationWidthErrorState','calibrationHeightErrorState','calibrationScaleState','calibrationScaleSpreadState','calibrationScaleResidualState','calibrationAngleState','calibrationPlaneState','calibrationDepthState','calibrationRoleState','calibrationResetBtn','calibrationText','calibrationOverlayText','calibrationDwellTrack','calibrationDwellBar','calibrationCaptureBtn','calibrationResetOverlayBtn','sweepRunState','sweepProgressState','sweepSelectedCountState','sweepConsensusState','sweepNextState','sweepHitState','sweepConsensusDistanceState','sweepDepthCenterState','sweepDepthMedianState','discardSweepBtn','clearSweepBtn','protocolInvalidSample','protocolInvalidReason','protocolInvalidConfirm','invalidateProtocolTrialBtn','protocolInvalidationState','knownSweepRecoveryConfirm','recoverKnownSweepBtn','knownSweepRecoveryState','sweepText','magnifierState','magnifierCanvas','magnifierWrap','cardFreezePanel','cardFreezeCanvas','cardFreezeTitle','cardFreezeTapState','cardFreezeResetTapsBtn','cardFreezeRetakeBtn','cardValidationBtn','cardValidationState','alignmentGrid','alignmentMark','alignmentState','alignmentOffsetState','alignmentUvState','alignBtn','entitySnapshotBtn',
   'magnifierLabel','qualityText','hitStabilityText','surfaceConsistencyText','depthText','depthABText','entityText','alignmentText',
@@ -584,6 +614,243 @@ let raf = 0;
 
 let latestHitMatrix = null;
 let latestHitPoint = null;
+
+// Phase 5.10 Rev.1: same-session metric-scale ladder diagnostic only.
+// Four immutable diagnostic plane-Hit snapshots at physical 0 / 50 / 100 / 150 cm marks
+// are compared without changing formal Point A/B, Sweep, gates, correction, or storage schema.
+const METRIC_LADDER_MARKS_CM = [0,50,100,150];
+const METRIC_LADDER_PAIR_SPECS = [
+  {a:0,b:1,label:'0-50',referenceMeters:0.5,stateId:'metricLadderD01State'},
+  {a:1,b:2,label:'50-100',referenceMeters:0.5,stateId:'metricLadderD12State'},
+  {a:2,b:3,label:'100-150',referenceMeters:0.5,stateId:'metricLadderD23State'},
+  {a:0,b:2,label:'0-100',referenceMeters:1.0,stateId:'metricLadderD02State'},
+  {a:1,b:3,label:'50-150',referenceMeters:1.0,stateId:'metricLadderD13State'},
+  {a:0,b:3,label:'0-150',referenceMeters:1.5,stateId:'metricLadderD03State'}
+];
+let metricLadderPoints = [];
+let metricLadderCapturePending = false;
+let metricLadderInvalidReason = null;
+let metricLadderResetCountAtStart = null;
+let metricLadderLastSummary = null;
+
+function metricLadderPointName(index){
+  const cm=METRIC_LADDER_MARKS_CM[index];
+  return Number.isFinite(cm) ? `P${cm}` : 'COMPLETE';
+}
+
+function metricLadderPair(a,b,referenceMeters,label){
+  if(!metricLadderPoints[a] || !metricLadderPoints[b]) return null;
+  const measured=distance3(metricLadderPoints[a].point,metricLadderPoints[b].point);
+  return {
+    label,referenceMeters,measured,
+    error:measured-referenceMeters,
+    scaleRatio:measured/referenceMeters
+  };
+}
+
+function computeMetricLadderSummary(){
+  if(metricLadderPoints.length<4) return null;
+  const pairMap={};
+  for(const spec of METRIC_LADDER_PAIR_SPECS){
+    pairMap[spec.label]=metricLadderPair(spec.a,spec.b,spec.referenceMeters,spec.label);
+  }
+  const p0=metricLadderPoints[0].point;
+  const p50=metricLadderPoints[1].point;
+  const p100=metricLadderPoints[2].point;
+  const p150=metricLadderPoints[3].point;
+  const axisVec=vectorBetween(p0,p150);
+  const axis=normalize3(axisVec);
+  if(!axis) return null;
+
+  function axisPosition(point,expectedMeters){
+    const v=vectorBetween(p0,point);
+    const axial=dot3(v,axis);
+    const lateralVec={x:v.x-axis.x*axial,y:v.y-axis.y*axial,z:v.z-axis.z*axial};
+    const lateral=norm3(lateralVec);
+    return {
+      axial,lateral,expectedMeters,
+      axialError:axial-expectedMeters,
+      fractionOfDirect:pairMap['0-150'].measured>1e-12 ? axial/pairMap['0-150'].measured : null
+    };
+  }
+
+  const pos50=axisPosition(p50,0.5);
+  const pos100=axisPosition(p100,1.0);
+  const segmentRatios=[pairMap['0-50'].scaleRatio,pairMap['50-100'].scaleRatio,pairMap['100-150'].scaleRatio];
+  const segmentRatioMean=segmentRatios.reduce((a,b)=>a+b,0)/segmentRatios.length;
+  const segmentRatioMin=Math.min(...segmentRatios);
+  const segmentRatioMax=Math.max(...segmentRatios);
+  const segmentRatioSpan=segmentRatioMax-segmentRatioMin;
+  const segmentSum=pairMap['0-50'].measured+pairMap['50-100'].measured+pairMap['100-150'].measured;
+  const direct150=pairMap['0-150'].measured;
+  return {
+    pairMap,pos50,pos100,
+    segmentRatios,segmentRatioMean,segmentRatioMin,segmentRatioMax,segmentRatioSpan,
+    directScaleRatio:direct150/1.5,
+    segmentSum,direct150,segmentSumMinusDirect:segmentSum-direct150,
+    resetStart:metricLadderResetCountAtStart,
+    resetEnd:sessionReferenceSpaceResetCount,
+    resetDelta:metricLadderResetCountAtStart==null?null:sessionReferenceSpaceResetCount-metricLadderResetCountAtStart
+  };
+}
+
+function formatMetricLadderPair(pair){
+  if(!pair) return '—';
+  return `${pair.measured.toFixed(6)} m / err ${signedMm(pair.error)} / ratio ${pair.scaleRatio.toFixed(6)}`;
+}
+
+function updateMetricLadderUI(){
+  const count=metricLadderPoints.length;
+  const complete=count===METRIC_LADDER_MARKS_CM.length;
+  const invalid=!!metricLadderInvalidReason;
+  const status=!session && count===0
+    ? 'WAITING SESSION'
+    : invalid
+      ? `INVALID — ${metricLadderInvalidReason}`
+      : complete
+        ? 'COMPLETE 4/4'
+        : `${count}/4 CAPTURED`;
+  set('metricLadderStatusState',status,invalid?'ng':complete?'ok':count?'warn':'');
+  set('metricLadderNextState',complete?'COMPLETE':invalid?'RESET REQUIRED':`${metricLadderPointName(count)} (${METRIC_LADDER_MARKS_CM[count]} cm)` ,invalid?'ng':complete?'ok':'');
+
+  const pointStateIds=['metricLadderP0State','metricLadderP50State','metricLadderP100State','metricLadderP150State'];
+  pointStateIds.forEach((id,i)=>{
+    const row=metricLadderPoints[i];
+    set(id,row?`${fmtPoint(row.point)} / frame=${row.frame}`:'—',row?'ok':'');
+  });
+
+  for(const spec of METRIC_LADDER_PAIR_SPECS){
+    const pair=metricLadderPair(spec.a,spec.b,spec.referenceMeters,spec.label);
+    set(spec.stateId,formatMetricLadderPair(pair),pair?'ok':'');
+  }
+
+  const summary=computeMetricLadderSummary();
+  metricLadderLastSummary=summary;
+  if(summary){
+    set('metricLadderSegmentsState',`ratios=${summary.segmentRatios.map(v=>v.toFixed(6)).join(' / ')}; mean=${summary.segmentRatioMean.toFixed(6)}; span=${(summary.segmentRatioSpan*100).toFixed(4)} pp`,'ok');
+    set('metricLadderScaleState',`ratio=${summary.directScaleRatio.toFixed(6)}; error=${signedMm(summary.direct150-1.5)}; ${((summary.directScaleRatio-1)*100).toFixed(4)}%`,'ok');
+    set('metricLadderLinearityState',`P50 axial=${summary.pos50.axial.toFixed(6)} m (${signedMm(summary.pos50.axialError)}), lateral=${(summary.pos50.lateral*1000).toFixed(3)} mm; P100 axial=${summary.pos100.axial.toFixed(6)} m (${signedMm(summary.pos100.axialError)}), lateral=${(summary.pos100.lateral*1000).toFixed(3)} mm; Σsegments−direct=${signedMm(summary.segmentSumMinusDirect)}`,'ok');
+    set('metricLadderResetAuditState',`start=${summary.resetStart}; end=${summary.resetEnd}; delta=${summary.resetDelta}`,(summary.resetDelta===0)?'ok':'ng');
+    if(el.metricLadderText){
+      el.metricLadderText.textContent = [
+        'METRIC SCALE LADDER COMPLETE — diagnostic only',
+        ...METRIC_LADDER_PAIR_SPECS.map(spec=>`${spec.label} cm-equivalent: ${formatMetricLadderPair(summary.pairMap[spec.label])}`),
+        `local 50 cm scale ratios: ${summary.segmentRatios.map(v=>v.toFixed(6)).join(' / ')}; mean=${summary.segmentRatioMean.toFixed(6)}; span=${(summary.segmentRatioSpan*100).toFixed(4)} percentage-points`,
+        `direct 0-150 scale ratio=${summary.directScaleRatio.toFixed(6)}; direct error=${signedMm(summary.direct150-1.5)}`,
+        `P50 on P0->P150 axis: axial=${summary.pos50.axial.toFixed(6)} m; axial error=${signedMm(summary.pos50.axialError)}; lateral=${(summary.pos50.lateral*1000).toFixed(3)} mm`,
+        `P100 on P0->P150 axis: axial=${summary.pos100.axial.toFixed(6)} m; axial error=${signedMm(summary.pos100.axialError)}; lateral=${(summary.pos100.lateral*1000).toFixed(3)} mm`,
+        `segment sum=${summary.segmentSum.toFixed(6)} m; direct=${summary.direct150.toFixed(6)} m; sum-direct=${signedMm(summary.segmentSumMinusDirect)}`,
+        `reference-space reset delta=${summary.resetDelta}; valueBasedDiscard=false; correctionApplied=false; diagnosticOnly=true; formalSource=immutable-hit`
+      ].join('\n');
+    }
+  }else{
+    set('metricLadderSegmentsState','—','');
+    set('metricLadderScaleState','—','');
+    set('metricLadderLinearityState','—','');
+    set('metricLadderResetAuditState',metricLadderResetCountAtStart==null?'—':`start=${metricLadderResetCountAtStart}; current=${sessionReferenceSpaceResetCount}; delta=${sessionReferenceSpaceResetCount-metricLadderResetCountAtStart}`,'');
+    if(el.metricLadderText){
+      const next=complete?'COMPLETE':`${metricLadderPointName(count)} (${METRIC_LADDER_MARKS_CM[count]} cm)`;
+      el.metricLadderText.textContent = invalid
+        ? `METRIC SCALE LADDER INVALID: ${metricLadderInvalidReason}. Press RESET LADDER and repeat all four points in one reference-space interval.`
+        : `METRIC SCALE LADDER: ${count}/4 captured. Next=${next}. Use the fixed physical marks P0 -> P50 -> P100 -> P150; measured values do not control acceptance.`;
+    }
+  }
+
+  const captureAllowed=!!session && sceneSetupReady && trackingMode==='ACTIVE' && !!latestHitPoint && !metricLadderCapturePending && !invalid && !complete && !capturePending && !anchorCreationBusy && !calibrationModeActive();
+  if(el.metricLadderCaptureBtn){
+    el.metricLadderCaptureBtn.disabled=!captureAllowed;
+    el.metricLadderCaptureBtn.textContent=complete?'DIAG LADDER COMPLETE':invalid?'DIAG LADDER INVALID':`DIAG CAPTURE ${metricLadderPointName(count)}`;
+  }
+  if(el.metricLadderResetBtn) el.metricLadderResetBtn.disabled=!session;
+}
+
+function resetMetricLadder(reason='manual',logIt=true){
+  metricLadderPoints=[];
+  metricLadderCapturePending=false;
+  metricLadderInvalidReason=null;
+  metricLadderResetCountAtStart=null;
+  metricLadderLastSummary=null;
+  updateMetricLadderUI();
+  if(logIt){
+    log(`METRIC SCALE LADDER RESET: reason=${reason}; sameSessionRequired=true; marks=0/50/100/150cm; measuredDistanceNotInspected=true; valueIndependent=true; correctionApplied=false; diagnosticOnly=true; formalSource=immutable-hit`);
+  }
+}
+
+function invalidateMetricLadderForReferenceReset(){
+  if(metricLadderPoints.length===0 || metricLadderPoints.length>=4) return;
+  metricLadderInvalidReason='REFERENCE_SPACE_RESET_DURING_LADDER';
+  metricLadderCapturePending=false;
+  log(`METRIC SCALE LADDER INVALID: reason=${metricLadderInvalidReason}; captured=${metricLadderPoints.length}/4; startReset=${metricLadderResetCountAtStart}; currentReset=${sessionReferenceSpaceResetCount}; measuredDistanceNotInspected=true; valueIndependent=true; correctionApplied=false; diagnosticOnly=true; formalSource=immutable-hit`);
+  updateMetricLadderUI();
+}
+
+function requestMetricLadderCapture(source='dom-button'){
+  if(!session){ log('METRIC SCALE LADDER CAPTURE BLOCKED: no active XR session'); return; }
+  if(!sceneSetupReady){ log('METRIC SCALE LADDER CAPTURE BLOCKED: scene setup not confirmed'); return; }
+  if(metricLadderInvalidReason){ log(`METRIC SCALE LADDER CAPTURE BLOCKED: ${metricLadderInvalidReason}; resetRequired=true`); return; }
+  if(metricLadderPoints.length>=4){ log('METRIC SCALE LADDER CAPTURE IGNORED: already complete 4/4'); return; }
+  if(metricLadderCapturePending){ return; }
+  if(capturePending || anchorCreationBusy || calibrationModeActive()){
+    log(`METRIC SCALE LADDER CAPTURE BLOCKED: formalOrCalibrationCaptureBusy=true; formalCapturePending=${capturePending??'none'}; anchorCreationBusy=${anchorCreationBusy}; calibrationMode=${calibrationModeActive()}`);
+    return;
+  }
+  if(!latestHitPoint){
+    log(`METRIC SCALE LADDER CAPTURE BLOCKED: no-current-plane-hit; next=${metricLadderPointName(metricLadderPoints.length)}; formalMeasurementSource=plane; alternateHitsDiagnosticOnly=true`);
+    return;
+  }
+  metricLadderCapturePending=true;
+  const idx=metricLadderPoints.length;
+  log(`METRIC SCALE LADDER CAPTURE REQUESTED: point=${metricLadderPointName(idx)}; physicalMark=${METRIC_LADDER_MARKS_CM[idx]} cm; source=${source}; hitStability=${liveHitStability}; hitStabilityGate=false; measuredDistanceNotInspected=true; valueIndependent=true; diagnosticOnly=true; formalSource=plane-hit`);
+  updateMetricLadderUI();
+}
+
+function logMetricLadderNewPairs(newIndex){
+  for(const spec of METRIC_LADDER_PAIR_SPECS){
+    if(spec.b!==newIndex) continue;
+    const pair=metricLadderPair(spec.a,spec.b,spec.referenceMeters,spec.label);
+    if(!pair) continue;
+    log(`METRIC SCALE LADDER PAIR ${spec.label}: measured=${pair.measured.toFixed(6)} m; reference=${pair.referenceMeters.toFixed(6)} m; error=${signedMm(pair.error)}; scaleRatio=${pair.scaleRatio.toFixed(6)}; sameSession=true; sameLocalReferenceSpace=true; valueBasedDiscard=false; correctionApplied=false; diagnosticOnly=true; formalSource=plane-hit`);
+  }
+}
+
+function captureMetricLadderPointFromHit(hitPose,time){
+  if(!metricLadderCapturePending) return;
+  metricLadderCapturePending=false;
+  if(metricLadderInvalidReason){ updateMetricLadderUI(); return; }
+  const idx=metricLadderPoints.length;
+  if(idx>=4 || !hitPose){ updateMetricLadderUI(); return; }
+
+  if(idx>0 && metricLadderResetCountAtStart!==sessionReferenceSpaceResetCount){
+    metricLadderInvalidReason='REFERENCE_SPACE_RESET_DURING_LADDER';
+    log(`METRIC SCALE LADDER CAPTURE BLOCKED: reason=${metricLadderInvalidReason}; startReset=${metricLadderResetCountAtStart}; currentReset=${sessionReferenceSpaceResetCount}; valueIndependent=true; diagnosticOnly=true`);
+    updateMetricLadderUI();
+    return;
+  }
+
+  const p=hitPose.transform.position;
+  const point={x:p.x,y:p.y,z:p.z};
+  if(idx===0) metricLadderResetCountAtStart=sessionReferenceSpaceResetCount;
+  const stats=hitWindowStats(time,HIT_STABILITY_WINDOW_MS,point);
+  const stability=classifyHitStability(stats);
+  const row={
+    index:idx,markCm:METRIC_LADDER_MARKS_CM[idx],point:clonePoint(point),time,frame:frameCount,
+    cameraToHit:Number.isFinite(latestHitDistance)?latestHitDistance:null,
+    hitStability:stability,
+    hitMaxRadius:stats?.maxRadius??null,
+    sessionResetCount:sessionReferenceSpaceResetCount
+  };
+  metricLadderPoints.push(row);
+  log(`METRIC SCALE LADDER CAPTURE ${metricLadderPointName(idx)}: physicalMark=${row.markCm} cm; local=${fmtPoint(row.point)}; frame=${row.frame}; cameraToHit=${row.cameraToHit==null?'n/a':row.cameraToHit.toFixed(6)+' m'}; hitStability=${row.hitStability}; hitMaxRadius=${row.hitMaxRadius==null?'n/a':(row.hitMaxRadius*1000).toFixed(3)+' mm'}; sessionReset=${row.sessionResetCount}; immutableDiagnosticPoint=true; measuredDistanceNotInspected=true; valueIndependent=true; correctionApplied=false; diagnosticOnly=true; formalSource=plane-hit`);
+  logMetricLadderNewPairs(idx);
+  updateMetricLadderUI();
+
+  if(metricLadderPoints.length===4){
+    const summary=computeMetricLadderSummary();
+    if(summary){
+      log(`METRIC SCALE LADDER SUMMARY: segmentRatios=[${summary.segmentRatios.map(v=>v.toFixed(6)).join(',')}]; segmentRatioMean=${summary.segmentRatioMean.toFixed(6)}; segmentRatioSpan=${(summary.segmentRatioSpan*100).toFixed(4)}pp; direct150=${summary.direct150.toFixed(6)} m; direct150Error=${signedMm(summary.direct150-1.5)}; directScaleRatio=${summary.directScaleRatio.toFixed(6)}; P50[axial=${summary.pos50.axial.toFixed(6)} m; axialError=${signedMm(summary.pos50.axialError)}; lateral=${(summary.pos50.lateral*1000).toFixed(3)} mm; fraction=${summary.pos50.fractionOfDirect?.toFixed(6)??'n/a'}]; P100[axial=${summary.pos100.axial.toFixed(6)} m; axialError=${signedMm(summary.pos100.axialError)}; lateral=${(summary.pos100.lateral*1000).toFixed(3)} mm; fraction=${summary.pos100.fractionOfDirect?.toFixed(6)??'n/a'}]; segmentSumMinusDirect=${signedMm(summary.segmentSumMinusDirect)}; referenceSpaceResetDelta=${summary.resetDelta}; sameSession=true; allFourPointsIncluded=true; valueBasedDiscard=false; causalDecomposition=false; correctionApplied=false; diagnosticOnly=true; formalMeasurementGeometryUnchanged=true; formalSource=immutable-hit`);
+    }
+  }
+}
 
 // Phase 4.30 Rev.16: one frozen Raw Camera frame + five manual seed taps per edge + frozen-image dark-line snapping + deterministic 4-of-5 outlier QC + active-span retention + >=50% projected-edge coverage gate + final-fit GOOD gate + same-frozen repeat diagnostics.
 const CALIBRATION_CORNERS = ['TL','TR','BR','BL'];
@@ -7807,6 +8074,7 @@ async function startAR(){
   ending = false;
   cleanupDone = false;
   sessionReferenceSpaceResetCount = 0;
+  resetMetricLadder('new-xr-session',false);
   sessionFrozenMeasurements = [];
   sceneSetupReady = false;
   sceneSetupSurfaceEligible = false;
@@ -7862,7 +8130,9 @@ async function startAR(){
     log('ERROR BUDGET DIAGNOSTIC ACTIVE: observables=formalError,surfaceExact,surfaceProjected,mapSignedImpact,hitMedian1000Shift; alternativeErrors=DepthCenter,currentAAnchor,HitMedian1000; causalDecomposition=false; componentsNonAdditive=true; residualCause=UNRESOLVED; affectsCaptureGate=false; affectsFormalGate=false; correctionApplied=false; diagnosticOnly=true; formalSource=immutable-hit');
     log('HIT SOURCE DIVERGENCE DIAGNOSTIC ACTIVE: captureFrameSources=formal-plane,point,mesh,same-frame-depth-center; compare=view-forward,local-3D; staleEntitySamplesRejected=true; nearestSourceReporting=tie-aware; tieEpsilon=0.001mm; formalMeasurementSource=plane; alternateSourcesDiagnosticOnly=true; affectsCaptureGate=false; affectsFormalGate=false; correctionApplied=false; diagnosticOnly=true; formalSource=immutable-hit');
     log('RAY / SURFACE GEOMETRY DIAGNOSTIC ACTIVE: captureFrameGeometry=XRView-hit-ray-vs-DepthGeometry-ray; observables=hitDepthOffset3D,rayAxial,rayLateral,cameraOriginBaseline,rayAngle,ABAxisEffectSplit; firstOrderABAxisProjection=true; causalDecomposition=false; affectsCaptureGate=false; affectsFormalGate=false; correctionApplied=false; diagnosticOnly=true; formalSource=immutable-hit');
+    log('METRIC SCALE LADDER DIAGNOSTIC ACTIVE: physicalMarks=0/50/100/150cm; sameImmersiveSession=true; sameLocalReferenceSpace=true; captureSource=formal-plane-hit; pairDistances=0-50/50-100/100-150/0-100/50-150/0-150; localScaleRatios=true; lineProjection=true; referenceSpaceResetDuringSequenceInvalidatesLadder=true; guardUsesMeasuredDistance=false; valueIndependent=true; affectsCaptureGate=false; affectsFormalGate=false; correctionApplied=false; diagnosticOnly=true; formalMeasurementGeometryUnchanged=true; formalSource=immutable-hit');
     updatePointPairGuardUI();
+    updateMetricLadderUI();
 
     try{
       const usage=session.depthUsage ?? 'not exposed';
@@ -7927,6 +8197,7 @@ async function startAR(){
       }catch{}
 
       log(`XRReferenceSpace reset event; measurementResets=${referenceSpaceResetCount}; sessionResets=${sessionReferenceSpaceResetCount}${detail}`);
+      invalidateMetricLadderForReferenceReset();
 
       if(preBActive){
         log(
@@ -8360,6 +8631,10 @@ function onXRFrame(time,frame){
         if(el.operationText) el.operationText.textContent = 'STEP 0: Point A surface is detected. Press SCENE READY AT A.';
       }
 
+      if(metricLadderCapturePending && !capturePending && !anchorCreationBusy){
+        captureMetricLadderPointFromHit(hitPose,time);
+      }
+
       if(capturePending && !anchorCreationBusy){
         const slot = capturePending;
         createAnchorFromHit(result,hitPose,slot,time,pose);
@@ -8429,6 +8704,8 @@ function onXRFrame(time,frame){
         : (pointA && !pointB ? !canPressCaptureButton() : true);
     }
   }
+
+  updateMetricLadderUI();
 
   // Raw Camera Access: analyze/display the same XR camera stream.
   let localRawSampled=false;
@@ -8666,9 +8943,15 @@ function onSessionEnd(){
 
   log('XRSession end event received');
 
+  if(metricLadderPoints.length>0 && metricLadderPoints.length<4 && !metricLadderInvalidReason){
+    metricLadderInvalidReason='SESSION_ENDED_BEFORE_LADDER_COMPLETE';
+    log(`METRIC SCALE LADDER INVALID: reason=${metricLadderInvalidReason}; captured=${metricLadderPoints.length}/4; sameSessionRequirementBroken=true; measuredDistanceNotInspected=true; valueIndependent=true; correctionApplied=false; diagnosticOnly=true; formalSource=immutable-hit`);
+  }
+
   // Do not call XRAnchor.delete(), hitTestSource.cancel(), or other XR methods
   // here. At this point the XRSession has already ended.
   session = null;
+  metricLadderCapturePending = false;
   localSpace = null;
   viewerSpace = null;
   hitTestSource = null;
@@ -8716,6 +8999,7 @@ function onSessionEnd(){
   el.calibrationCaptureBtn.disabled = true;
   el.calibrationResetOverlayBtn.disabled = true;
   el.startBtn.disabled = el.arSupport.textContent !== 'SUPPORTED';
+  updateMetricLadderUI();
 
   set('sessionState','ENDED','warn');
   set('trackingState','ENDED','warn');
@@ -8825,6 +9109,9 @@ el.setPointBtn.addEventListener('click',()=>{
 });
 el.xrResetBtn.addEventListener('click',resetMeasurement);
 el.xrEndBtn.addEventListener('click',endAR);
+el.metricLadderCaptureBtn.addEventListener('click',()=>requestMetricLadderCapture('dom-button'));
+el.metricLadderResetBtn.addEventListener('click',()=>resetMetricLadder('overlay-button',true));
+el.metricLadderResetPageBtn.addEventListener('click',()=>resetMetricLadder('page-button',true));
 
 window.addEventListener('error',event=>{
   try{
@@ -8866,6 +9153,7 @@ set('alignmentOffsetState','—','');
 set('alignmentUvState','—','');
 updateCalibrationUI();
 updateDistanceUI();
+updateMetricLadderUI();
 preflight();
 })();
 </script>
