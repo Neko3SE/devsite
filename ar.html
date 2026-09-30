@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<title>AR DISTANCE LAB - Phase 5.20 Rev.8</title>
+<title>AR DISTANCE LAB - Phase 5.20 Rev.9</title>
 <style>
 :root{
   color-scheme:dark;
@@ -146,7 +146,7 @@ padding:8px 9px;pointer-events:auto}
 <body>
 <main>
 <h1>AR DISTANCE LAB</h1>
-<p class="sub">Phase 5.20 Rev.8 — Round-Trip Single Reference Anchor Local Coordinates / Same-frame Anchor Diagnostics / Magnifier 4× / immutable Hit-Hit</p>
+<p class="sub">Phase 5.20 Rev.9 — Hit Motion Semantics / Capture Surface Suspect Diagnostic / Single Reference Anchor / immutable Hit-Hit</p>
 
 <section class="card">
 <h2>STATUS</h2>
@@ -352,7 +352,7 @@ padding:8px 9px;pointer-events:auto}
 
 <section class="card">
 <h2>PHASE 4.50 — PERSISTENT FORMAL HIT-HIT ACCURACY SWEEP</h2>
-<p class="note">Phase 4.50では、50 / 100 / 150 cm × 各3回 = 合計9回の正式 immutable plane Hit-Hit を1つのAccuracy Sweepとして永続管理します。Sweep状態はlocalStorageへ保存し、ARのEND、ページ再読込、同一Originでの再開後も復元します。値が悪いことを理由に有効サンプルを捨てたり追加測定したりせず、各距離の最初の有効3回だけを固定します。MAP INVALID / reference-space reset など既存の安全ゲートで無効になった測定だけが数え直し対象です。Repeatability cluster、Depth、Anchorは診断専用で、正式Hit-Hit値の補正・採否には使用しません。 Rev.2では保存前と復元時の両方でSweep全体をschema 2として検証し、1件でも構造・Sweep ID・順序・状態値などに不整合があれば部分復元せず、その保存Sweep全体を無効として新しい0/9 Sweepを開始します。旧v1保存キーは読み込まず、削除を試みます。削除できない環境でも旧キーは参照しません。 Rev.3ではARセッション開始直後にSTEP 0 / SCENE SETUPを表示し、A付近→B付近→周囲の床・壁・物体→A付近の順にゆっくり見渡して空間認識を促します。SCENE READYを押すまでPoint A取得へ進みません。これは操作ガイドであり、正式距離の計算式・Hit採用条件・Sweep採否条件は変更しません。 Rev.4ではXR画面上部の状態メッセージをsafe-area上端から従来より約1行分（16 px）下げ、画面切り欠き・パンチホールとの重なりを避けます。測定ロジックと保存形式は変更しません。 Rev.5ではSCENE READYを単なる確認ボタンではなく、A付近へ戻った時点で現在のformal plane Hitが取得できている場合だけ成立するsurface-qualified gateに変更します。シーン認識ガイドには、A→B→周囲→Aの順に加え、端末をその場で回転させるだけでなく少し横・斜めにも移動して視差を作り、床壁境界・角・模様・掲示物などの特徴を画面へ入れることを明示します。これは操作フローの改善だけで、正式距離は引き続きimmutable plane Hit-Hitです。 Rev.6では画面切り欠きとの重なりをさらに避けるため、XR画面上部の状態メッセージだけをRev.5から32 px（約2行分）下へ移動します。測定ロジック、SCENE READY条件、保存形式、正式距離の計算には変更ありません。 Phase 4.60 Rev.1では完了済みSweepを保持したまま、Point A/B取得時のHit View-Zと同一フレームDepth@UVのSurface Consistencyを追加します。この診断は正式値・採否に影響しません。 Phase 4.60 Rev.3ではRev.1を正式ベースラインとして維持したまま、Hit→Depth 3D変位のA-B軸方向寄与を診断表示します。Rev.1のSCENE READY surface-qualified gate、Surface Consistency、保存schema 2、正式immutable Hit-Hit測定は変更しません。 Phase 4.60 Rev.4では、計測値の大小とは独立して後から判明した明確な操作・プロトコルミスだけを、固定理由＋明示確認付きで「PROTOCOL INVALID」として有効Sweepから外せる監査付き操作を追加します。value-based discardは禁止のままです。保存schema 2との互換性を維持するため、無効化できるのは現在もっとも後ろに進んでいるターゲット距離のサンプルだけです。過去ターゲットのサンプルを遡って外す場合はSweep全体を再開始します。正式距離の計算、MAP / Depth / Surface Consistencyのゲート意味は変更しません。 Phase 4.60 Rev.5 Recoveryでは、誤操作で旧9/9 Sweepが保存領域から失われた今回のケースに限り、ユーザー提供の確定ログから `S20260929T133409Z-32C0E4` を復元します。150 cmの旧#7は「WRONG PHYSICAL REFERENCE / POINT PAIR」として除外済みの8/9状態に復元し、150 cmを1回だけ再測定できるようにします。復元は明示確認が必要で、現在の0/9 Sweepは別キーへバックアップしてから上書きします。正式測定ロジックとschema 2は変更しません。 Phase 4.70 Rev.1では、Point A取得時にReferenceを試行単位でロックし、Point B取得前にA→B順序とReference不変を値非依存で監査するPoint-Pair / Protocol Guardを追加します。距離値や誤差はガード判定に使用しません。 Phase 4.80 Rev.1では、正式Hit-Hit誤差、SurfaceのA-B軸方向差、MAP signed impact、Hitの時間窓差と、それぞれに対応する代替誤差をError Budget Diagnosticとして並記します。診断値は加算可能な因果成分とはみなさず、補正・採否・閾値変更には使用しません。 Phase 4.90 Rev.1では、Point A/B正式取得フレームでplane / point / mesh Hitとsame-frame Depth-centerを凍結比較し、formal planeとの差をView-Zおよびlocal 3Dで記録するHit Source Divergence Diagnosticを追加します。alternate Hit sourceは診断専用で、正式値・採否・補正には使用しません。 Phase 4.90 Rev.2では、Depth-centerに最も近いHit sourceの記述表示をTIE対応にし、同一距離のplane / point / meshを同率として表示します。測定値・ゲート・保存形式は変更しません。 Phase 5.00 Rev.1では、Hit→Depthのlocal 3D変位をcapture camera ray方向とlateral方向へ分解し、Depth camera originとのbaseline、Hit/Depth ray角度、A-B軸へ与える一次射影をray axial / lateralへ分けるRay / Surface Geometry Diagnosticを追加します。正式値・採否・補正・Sweep schemaは変更しません。 Phase 5.10 Rev.1では、同一XRセッション・同一local reference space内で0/50/100/150 cmの4つの物理マークを順番にformal plane Hitで診断取得するMetric Scale Ladder Diagnosticを追加します。6つの点間距離、区間scale ratio、P0→P150軸へのP50/P100投影・横ずれ、区間和とdirect距離の差を記録します。Ladderは完全に診断専用で、正式Point A/B、Accuracy Sweep、MAP / Depth / Surface gate、補正、保存schemaは変更しません。 Phase 5.20 Rev.1ではPhase 5.10の4点往路を保持したまま、150→100→50→0の復路3点を追加し、各区間の往復差、0–150 cm direct距離の往復差、P100/P50/P0の再訪位置差を記録します。再訪差は手振れ・照準・手書きマーク位置・環境認識を分離しないaggregate repeatabilityとして扱い、空間歪みの直接証拠や補正値には使用しません。正式測定ロジック、ゲート、保存schemaは変更しません。 Phase 5.20 Rev.2ではRaw Camera拡大鏡のCanvas CSSサイズ160 pxと136 pxラッパーの不一致を修正し、Canvas中心・拡大鏡「＋」・Raw Camera中心UVを一致させる表示登録監査を追加します。正式測定・Ladder・ゲート・保存schemaは変更しません。 Phase 5.20 Rev.3では実機監査で残った2 px border由来のborder-box clippingを解消するため、拡大鏡ラッパーだけをcontent-boxへ変更します。表示中心登録以外のロジックは変更しません。 Phase 5.20 Rev.7ではRound-Tripの各取得点にも診断専用Anchorを作成し、両Anchorが同一XRFrameで追跡できた時だけimmutable Hit間距離との比較を記録します。またPOST診断のviewer pose / aim ray変化は物理カメラ移動や操作ミスとは推定せず、XRが報告したPose変化としてのみ記録します。正式値は引き続きimmutable plane Hit-Hitです。 Phase 5.20 Rev.8ではP0Fで作成した1個のAnchorだけを共通Reference Anchorとして追加利用し、以後の各formal plane Hitを各Capture XRFrame時点のP0F Anchor PoseでAnchorローカル座標へ変換して保存します。異なる時刻のworld座標を直接比較せず、1個の共通Reference Anchorに対する相対座標距離とimmutable Hit-Hitを並記します。Rev.7の独立Anchor診断は比較用に維持し、正式値・採否・補正には使用しません。</p>
+<p class="note">Phase 4.50では、50 / 100 / 150 cm × 各3回 = 合計9回の正式 immutable plane Hit-Hit を1つのAccuracy Sweepとして永続管理します。Sweep状態はlocalStorageへ保存し、ARのEND、ページ再読込、同一Originでの再開後も復元します。値が悪いことを理由に有効サンプルを捨てたり追加測定したりせず、各距離の最初の有効3回だけを固定します。MAP INVALID / reference-space reset など既存の安全ゲートで無効になった測定だけが数え直し対象です。Repeatability cluster、Depth、Anchorは診断専用で、正式Hit-Hit値の補正・採否には使用しません。 Rev.2では保存前と復元時の両方でSweep全体をschema 2として検証し、1件でも構造・Sweep ID・順序・状態値などに不整合があれば部分復元せず、その保存Sweep全体を無効として新しい0/9 Sweepを開始します。旧v1保存キーは読み込まず、削除を試みます。削除できない環境でも旧キーは参照しません。 Rev.3ではARセッション開始直後にSTEP 0 / SCENE SETUPを表示し、A付近→B付近→周囲の床・壁・物体→A付近の順にゆっくり見渡して空間認識を促します。SCENE READYを押すまでPoint A取得へ進みません。これは操作ガイドであり、正式距離の計算式・Hit採用条件・Sweep採否条件は変更しません。 Rev.4ではXR画面上部の状態メッセージをsafe-area上端から従来より約1行分（16 px）下げ、画面切り欠き・パンチホールとの重なりを避けます。測定ロジックと保存形式は変更しません。 Rev.5ではSCENE READYを単なる確認ボタンではなく、A付近へ戻った時点で現在のformal plane Hitが取得できている場合だけ成立するsurface-qualified gateに変更します。シーン認識ガイドには、A→B→周囲→Aの順に加え、端末をその場で回転させるだけでなく少し横・斜めにも移動して視差を作り、床壁境界・角・模様・掲示物などの特徴を画面へ入れることを明示します。これは操作フローの改善だけで、正式距離は引き続きimmutable plane Hit-Hitです。 Rev.6では画面切り欠きとの重なりをさらに避けるため、XR画面上部の状態メッセージだけをRev.5から32 px（約2行分）下へ移動します。測定ロジック、SCENE READY条件、保存形式、正式距離の計算には変更ありません。 Phase 4.60 Rev.1では完了済みSweepを保持したまま、Point A/B取得時のHit View-Zと同一フレームDepth@UVのSurface Consistencyを追加します。この診断は正式値・採否に影響しません。 Phase 4.60 Rev.3ではRev.1を正式ベースラインとして維持したまま、Hit→Depth 3D変位のA-B軸方向寄与を診断表示します。Rev.1のSCENE READY surface-qualified gate、Surface Consistency、保存schema 2、正式immutable Hit-Hit測定は変更しません。 Phase 4.60 Rev.4では、計測値の大小とは独立して後から判明した明確な操作・プロトコルミスだけを、固定理由＋明示確認付きで「PROTOCOL INVALID」として有効Sweepから外せる監査付き操作を追加します。value-based discardは禁止のままです。保存schema 2との互換性を維持するため、無効化できるのは現在もっとも後ろに進んでいるターゲット距離のサンプルだけです。過去ターゲットのサンプルを遡って外す場合はSweep全体を再開始します。正式距離の計算、MAP / Depth / Surface Consistencyのゲート意味は変更しません。 Phase 4.60 Rev.5 Recoveryでは、誤操作で旧9/9 Sweepが保存領域から失われた今回のケースに限り、ユーザー提供の確定ログから `S20260929T133409Z-32C0E4` を復元します。150 cmの旧#7は「WRONG PHYSICAL REFERENCE / POINT PAIR」として除外済みの8/9状態に復元し、150 cmを1回だけ再測定できるようにします。復元は明示確認が必要で、現在の0/9 Sweepは別キーへバックアップしてから上書きします。正式測定ロジックとschema 2は変更しません。 Phase 4.70 Rev.1では、Point A取得時にReferenceを試行単位でロックし、Point B取得前にA→B順序とReference不変を値非依存で監査するPoint-Pair / Protocol Guardを追加します。距離値や誤差はガード判定に使用しません。 Phase 4.80 Rev.1では、正式Hit-Hit誤差、SurfaceのA-B軸方向差、MAP signed impact、Hitの時間窓差と、それぞれに対応する代替誤差をError Budget Diagnosticとして並記します。診断値は加算可能な因果成分とはみなさず、補正・採否・閾値変更には使用しません。 Phase 4.90 Rev.1では、Point A/B正式取得フレームでplane / point / mesh Hitとsame-frame Depth-centerを凍結比較し、formal planeとの差をView-Zおよびlocal 3Dで記録するHit Source Divergence Diagnosticを追加します。alternate Hit sourceは診断専用で、正式値・採否・補正には使用しません。 Phase 4.90 Rev.2では、Depth-centerに最も近いHit sourceの記述表示をTIE対応にし、同一距離のplane / point / meshを同率として表示します。測定値・ゲート・保存形式は変更しません。 Phase 5.00 Rev.1では、Hit→Depthのlocal 3D変位をcapture camera ray方向とlateral方向へ分解し、Depth camera originとのbaseline、Hit/Depth ray角度、A-B軸へ与える一次射影をray axial / lateralへ分けるRay / Surface Geometry Diagnosticを追加します。正式値・採否・補正・Sweep schemaは変更しません。 Phase 5.10 Rev.1では、同一XRセッション・同一local reference space内で0/50/100/150 cmの4つの物理マークを順番にformal plane Hitで診断取得するMetric Scale Ladder Diagnosticを追加します。6つの点間距離、区間scale ratio、P0→P150軸へのP50/P100投影・横ずれ、区間和とdirect距離の差を記録します。Ladderは完全に診断専用で、正式Point A/B、Accuracy Sweep、MAP / Depth / Surface gate、補正、保存schemaは変更しません。 Phase 5.20 Rev.1ではPhase 5.10の4点往路を保持したまま、150→100→50→0の復路3点を追加し、各区間の往復差、0–150 cm direct距離の往復差、P100/P50/P0の再訪位置差を記録します。再訪差は手振れ・照準・手書きマーク位置・環境認識を分離しないaggregate repeatabilityとして扱い、空間歪みの直接証拠や補正値には使用しません。正式測定ロジック、ゲート、保存schemaは変更しません。 Phase 5.20 Rev.2ではRaw Camera拡大鏡のCanvas CSSサイズ160 pxと136 pxラッパーの不一致を修正し、Canvas中心・拡大鏡「＋」・Raw Camera中心UVを一致させる表示登録監査を追加します。正式測定・Ladder・ゲート・保存schemaは変更しません。 Phase 5.20 Rev.3では実機監査で残った2 px border由来のborder-box clippingを解消するため、拡大鏡ラッパーだけをcontent-boxへ変更します。表示中心登録以外のロジックは変更しません。 Phase 5.20 Rev.7ではRound-Tripの各取得点にも診断専用Anchorを作成し、両Anchorが同一XRFrameで追跡できた時だけimmutable Hit間距離との比較を記録します。またPOST診断のviewer pose / aim ray変化は物理カメラ移動や操作ミスとは推定せず、XRが報告したPose変化としてのみ記録します。正式値は引き続きimmutable plane Hit-Hitです。 Phase 5.20 Rev.8ではP0Fで作成した1個のAnchorだけを共通Reference Anchorとして追加利用し、以後の各formal plane Hitを各Capture XRFrame時点のP0F Anchor PoseでAnchorローカル座標へ変換して保存します。異なる時刻のworld座標を直接比較せず、1個の共通Reference Anchorに対する相対座標距離とimmutable Hit-Hitを並記します。Rev.7の独立Anchor診断は比較用に維持し、正式値・採否・補正には使用しません。 Phase 5.20 Rev.9ではSTABLE/MOVINGを物理カメラ移動ではなくformal plane Hit座標の短期変動状態としてUI上でHIT STABLE / HIT MOVINGと明示します。またRound-Trip各CaptureフレームではDepthを強制取得し、formal plane HitのView forward距離と同一UV・同一XRFrameのDepthを比較して、MATCHをSURFACE CONSISTENT、COHERENTかつ20 mm以上のMISMATCHをSURFACE SUSPECT、Depth不足・coherence不足をSURFACE UNKNOWNとして凍結記録します。これは誤Surface候補を観測する診断専用で、Capture拒否・正式値補正・自動棄却には使用しません。</p>
 <div class="actions">
   <button type="button" class="refPreset" data-cm="50">50 cm</button>
   <button type="button" class="refPreset" data-cm="100">100 cm</button>
@@ -530,7 +530,7 @@ Phase 4.50 Rev.4でも正式単発距離値はimmutable Hit-Hitのままです�
       <div id="distanceText">DISTANCE: —</div>
       <div id="measureGateRow">
         <div id="qualityText">AIM QUALITY: ANALYZING</div>
-        <div id="hitStabilityText">HIT STABILITY: ANALYZING</div>
+        <div id="hitStabilityText">HIT: ANALYZING — hit-point motion, not camera motion</div>
       </div>
       <div id="surfaceConsistencyText">SURFACE CONSISTENCY: UNKNOWN — diagnostic only</div>
       <div id="depthText">DEPTH × HIT: WAITING — diagnostic only</div>
@@ -672,6 +672,32 @@ const metricLadderAnchorPairLogged = new Set();
 // Every later formal-plane Hit is transformed, on its own capture XRFrame, into that
 // single Anchor's local coordinate system. These coordinates are diagnostic only.
 let metricLadderReferenceAnchorReady = false;
+// Phase 5.20 Rev.9: capture-frame surface identity plausibility is frozen for every
+// Round-Trip point using formal plane Hit View-forward vs same-UV same-XRFrame Depth.
+// It is descriptive only: no capture gate, no correction, and no automatic discard.
+function metricCaptureSurfaceObservation(){
+  const sameFrame = latestDepthHitCrossCheck && latestDepthHitCrossCheck.frame===frameCount
+    ? latestDepthHitCrossCheck
+    : null;
+  const sc=classifySurfaceConsistency(sameFrame);
+  const diagnosticState = sc.state==='MATCH'
+    ? 'SURFACE-CONSISTENT'
+    : sc.state==='MISMATCH'
+      ? 'SURFACE-SUSPECT'
+      : 'SURFACE-UNKNOWN';
+  return {
+    diagnosticState,
+    consistencyState:sc.state,
+    reason:sc.reason,
+    hitViewForward:Number.isFinite(sc.hitViewForward)?sc.hitViewForward:null,
+    depthAtHitUv:Number.isFinite(sc.depthAtHitUv)?sc.depthAtHitUv:null,
+    signedDelta:Number.isFinite(sc.signedDelta)?sc.signedDelta:null,
+    absDelta:Number.isFinite(sc.absDelta)?sc.absDelta:null,
+    coherence:sc.coherence??null,
+    frame:sameFrame?.frame??frameCount,
+    sameFrame:!!sameFrame
+  };
+}
 const METRIC_LADDER_ANCHOR_REVISIT_SPECS = [
   {a:2,b:4,label:'REVISIT-P100',referenceMeters:0,kind:'revisit'},
   {a:1,b:5,label:'REVISIT-P50',referenceMeters:0,kind:'revisit'},
@@ -944,7 +970,7 @@ function updateMetricLadderUI(){
   const pointStateIds=['metricLadderP0State','metricLadderP50State','metricLadderP100State','metricLadderP150State','metricLadderP100RState','metricLadderP50RState','metricLadderP0RState'];
   pointStateIds.forEach((id,i)=>{
     const row=metricLadderPoints[i];
-    set(id,row?`${row.key}: ${fmtPoint(row.point)} / frame=${row.frame}`:'—',row?'ok':'');
+    set(id,row?`${row.key}: ${fmtPoint(row.point)} / frame=${row.frame} / ${row.surfaceDiagnostic??'SURFACE-UNKNOWN'}`:'—',row?(row.surfaceDiagnostic==='SURFACE-SUSPECT'?'warn':'ok'):'');
   });
 
   for(const spec of METRIC_LADDER_FORWARD_PAIR_SPECS){
@@ -1067,7 +1093,7 @@ function requestMetricLadderCapture(source='dom-button'){
   metricLadderCapturePending=true;
   const idx=metricLadderPoints.length;
   const spec=METRIC_LADDER_SEQUENCE[idx];
-  log(`METRIC SCALE ROUND-TRIP CAPTURE REQUESTED: point=${spec.key}; physicalMark=${spec.markCm} cm; leg=${spec.leg}; source=${source}; hitStability=${liveHitStability}; hitStabilityGate=false; measuredDistanceNotInspected=true; valueIndependent=true; operatorEnvironmentErrorNotSeparated=true; markPlacementErrorNotSeparated=true; diagnosticOnly=true; formalSource=plane-hit`);
+  log(`METRIC SCALE ROUND-TRIP CAPTURE REQUESTED: point=${spec.key}; physicalMark=${spec.markCm} cm; leg=${spec.leg}; source=${source}; hitStability=${liveHitStability}; hitStabilityMeaning=hit-point-motion-not-camera-motion; hitStabilityGate=false; measuredDistanceNotInspected=true; valueIndependent=true; operatorEnvironmentErrorNotSeparated=true; markPlacementErrorNotSeparated=true; diagnosticOnly=true; formalSource=plane-hit`);
   updateMetricLadderUI();
 }
 
@@ -1103,6 +1129,7 @@ function captureMetricLadderPointFromHit(result,hitPose,time,viewerPose){
   if(idx===0) metricLadderResetCountAtStart=sessionReferenceSpaceResetCount;
   const stats=hitWindowStats(time,HIT_STABILITY_WINDOW_MS,point);
   const stability=classifyHitStability(stats);
+  const captureSurface=metricCaptureSurfaceObservation();
   let referenceLocalPoint=null;
   let referenceLocalStatus='UNAVAILABLE';
   if(idx===0){
@@ -1125,6 +1152,10 @@ function captureMetricLadderPointFromHit(result,hitPose,time,viewerPose){
     cameraPoint:cameraPoint?clonePoint(cameraPoint):null,
     rayDirection:rayDirection?clonePoint(rayDirection):null,
     hitStability:stability,hitMaxRadius:stats?.maxRadius??null,sessionResetCount:sessionReferenceSpaceResetCount,
+    surfaceDiagnostic:captureSurface.diagnosticState,surfaceConsistencyState:captureSurface.consistencyState,
+    surfaceSignedDelta:captureSurface.signedDelta,surfaceAbsDelta:captureSurface.absDelta,
+    surfaceHitViewForward:captureSurface.hitViewForward,surfaceDepthAtHitUv:captureSurface.depthAtHitUv,
+    surfaceDepthCoherence:captureSurface.coherence,surfaceSameFrame:captureSurface.sameFrame,surfaceReason:captureSurface.reason,
     referenceLocalPoint:referenceLocalPoint?clonePoint(referenceLocalPoint):null,
     referenceLocalFrame:referenceLocalPoint?frameCount:null,
     referenceLocalStatus
@@ -1132,6 +1163,7 @@ function captureMetricLadderPointFromHit(result,hitPose,time,viewerPose){
   metricLadderPoints.push(row);
   requestMetricLadderDiagnosticAnchor(result,row);
   log(`METRIC SCALE ROUND-TRIP CAPTURE ${row.key}: physicalMark=${row.markCm} cm; leg=${row.leg}; local=${fmtPoint(row.point)}; frame=${row.frame}; cameraToHit=${row.cameraToHit==null?'n/a':row.cameraToHit.toFixed(6)+' m'}; hitStability=${row.hitStability}; hitMaxRadius=${row.hitMaxRadius==null?'n/a':(row.hitMaxRadius*1000).toFixed(3)+' mm'}; sessionReset=${row.sessionResetCount}; immutableDiagnosticPoint=true; measuredDistanceNotInspected=true; valueIndependent=true; operatorEnvironmentErrorNotSeparated=true; markPlacementErrorNotSeparated=true; correctionApplied=false; diagnosticOnly=true; formalSource=plane-hit`);
+  log(`METRIC ROUNDTRIP CAPTURE SURFACE ${row.key}: state=${row.surfaceDiagnostic}; consistency=${row.surfaceConsistencyState}; sameXRFrame=${row.surfaceSameFrame}; hitViewForward=${row.surfaceHitViewForward==null?'n/a':row.surfaceHitViewForward.toFixed(6)+' m'}; depthAtHitUv=${row.surfaceDepthAtHitUv==null?'n/a':row.surfaceDepthAtHitUv.toFixed(6)+' m'}; signedDelta=${row.surfaceSignedDelta==null?'n/a':signedMm(row.surfaceSignedDelta)}; absDelta=${row.surfaceAbsDelta==null?'n/a':(row.surfaceAbsDelta*1000).toFixed(3)+' mm'}; depthCoherence=${row.surfaceDepthCoherence??'n/a'}; reason=${row.surfaceReason}; threshold=20.0 mm; surfaceIdentityNotProven=true; captureBlocked=false; discardAutomatic=false; affectsCaptureGate=false; affectsFormalGate=false; correctionApplied=false; diagnosticOnly=true; formalSource=immutable-hit`);
   log(`METRIC ROUNDTRIP SINGLE-REFERENCE LOCAL CAPTURE ${row.key}: referenceAnchor=P0F; status=${row.referenceLocalStatus}; anchorLocal=${row.referenceLocalPoint?fmtPoint(row.referenceLocalPoint):'n/a'}; captureFrame=${row.frame}; oneCommonReferenceAnchor=true; coordinateTransformDiagnosticOnly=true; affectsCaptureGate=false; affectsFormalGate=false; correctionApplied=false; formalSource=immutable-hit`);
   logLongTermHitSettling('PRE-CAPTURE',row.key,time,point);
   beginMetricPostCaptureSettling(row);
@@ -1458,7 +1490,7 @@ function resetHitStabilityDiagnostics(){
   liveHitStability = 'ANALYZING';
   lastHitStabilityUiMs = -Infinity;
   if(el.hitStabilityText){
-    el.hitStabilityText.textContent = 'HIT STABILITY: ANALYZING';
+    el.hitStabilityText.textContent = 'HIT: ANALYZING — hit-point motion, not camera motion';
   }
 }
 
@@ -1673,7 +1705,7 @@ function updateLiveHitStability(time){
   if(!latestHitPoint){
     liveHitStability = 'NO SURFACE';
     if(el.hitStabilityText){
-      el.hitStabilityText.textContent = 'HIT STABILITY: NO SURFACE';
+      el.hitStabilityText.textContent = 'HIT: NO SURFACE — hit-point state';
     }
     return;
   }
@@ -1687,16 +1719,16 @@ function updateLiveHitStability(time){
 
   if(!el.hitStabilityText) return;
   if(!stats || liveHitStability==='ANALYZING'){
-    el.hitStabilityText.textContent = 'HIT STABILITY: ANALYZING';
+    el.hitStabilityText.textContent = 'HIT: ANALYZING — hit-point motion, not camera motion';
     return;
   }
 
   const maxR=(stats.maxRadius*1000).toFixed(1);
   const suffix=`maxR ${maxR} mm / 300 ms / warning only`;
   if(liveHitStability==='STABLE'){
-    el.hitStabilityText.textContent = 'HIT STABILITY: STABLE';
+    el.hitStabilityText.textContent = 'HIT: STABLE — hit-point stable';
   }else{
-    el.hitStabilityText.textContent = 'HIT STABILITY: MOVING';
+    el.hitStabilityText.textContent = 'HIT: MOVING — hit-point moved';
   }
 }
 
@@ -2226,7 +2258,7 @@ const SWEEP_ALLOWED_INTEGRITY = new Set(['PASS','WARN']);
 const SWEEP_ALLOWED_DEPTH_AGREEMENT = new Set(['AGREE','WARN','DIVERGED','UNKNOWN']);
 const SWEEP_ALLOWED_COHERENCE = new Set(['COHERENT','MIXED','LOW VALID','LOW COHERENCE','NO DEPTH']);
 const SWEEP_ALLOWED_HIT_STABILITY = new Set(['STABLE','MOVING','ANALYZING']);
-const DIAGNOSTIC_PROTOCOL_REVISION = 12;
+const DIAGNOSTIC_PROTOCOL_REVISION = 13;
 const KNOWN_RECOVERY_SWEEP_ID = 'S20260929T133409Z-32C0E4';
 const KNOWN_RECOVERY_CREATED_AT = '2026-09-29T13:34:09.641Z';
 const KNOWN_RECOVERY_BACKUP_KEY = 'ar-distance-lab-phase4-60-rev5-pre-recovery-backup-v1';
@@ -8669,6 +8701,7 @@ async function startAR(){
     set('sessionState','STARTED','ok');
     log(`session started; enabledFeatures=[${session.enabledFeatures ? Array.from(session.enabledFeatures).join(', ') : 'not exposed'}]`);
     log('SURFACE CONSISTENCY DIAGNOSTIC ACTIVE: comparison=HitViewForward-vs-sameFrameDepthAtHitUv; match<20mm; mismatch>=20mm; coherenceRequired=COHERENT; affectsCaptureGate=false; affectsFormalGate=false; correctionApplied=false; diagnosticOnly=true; formalSource=immutable-hit');
+    log('HIT MOTION / CAPTURE SURFACE DIAGNOSTIC Rev.9 ACTIVE: uiStates=HIT-STABLE/HIT-MOVING; stateMeaning=plane-hit-short-term-motion-not-physical-camera-motion; roundTripCaptureDepth=forced-same-XR-frame; surfaceConsistent=MATCH<20mm+COHERENT; surfaceSuspect=MISMATCH>=20mm+COHERENT; surfaceUnknown=missing-or-noncoherent-depth; captureBlocked=false; discardAutomatic=false; affectsCaptureGate=false; affectsFormalGate=false; correctionApplied=false; diagnosticOnly=true; formalSource=immutable-hit');
     log('SURFACE OFFSET AXIS DIAGNOSTIC ACTIVE: method=local-3D Hit->same-frame Depth-center projected onto immutable Hit A->B axis; positiveEffect=lengthens-A-B; negativeEffect=shortens-A-B; endpointOffsetMagnitudeIsDiagnostic=true; affectsCaptureGate=false; affectsFormalGate=false; correctionApplied=false; diagnosticOnly=true; formalSource=immutable-hit; sweepStorageCompatibility=phase4.50-schema2');
     log('POINT-PAIR PROTOCOL GUARD ACTIVE: lockReferenceAt=A-formal-hit; sequence=A>B; blockReferenceChangeUntilReset=true; guardUsesMeasuredDistance=false; valueIndependent=true; formalMeasurementGeometryUnchanged=true; formalSource=immutable-hit');
     log('ERROR BUDGET DIAGNOSTIC ACTIVE: observables=formalError,surfaceExact,surfaceProjected,mapSignedImpact,hitMedian1000Shift; alternativeErrors=DepthCenter,currentAAnchor,HitMedian1000; causalDecomposition=false; componentsNonAdditive=true; residualCause=UNRESOLVED; affectsCaptureGate=false; affectsFormalGate=false; correctionApplied=false; diagnosticOnly=true; formalSource=immutable-hit');
@@ -9121,9 +9154,9 @@ function onXRFrame(time,frame){
   }
 
   // Depth is sampled before Hit Test processing. If a capture is pending, force
-  // a sample on this exact XR frame so Point A/B logs use the closest possible
-  // Depth information without changing the formal Hit commit.
-  sampleDepthForFrame(frame,pose,time,!!capturePending || entitySnapshotPending || !!calibrationCapturePending);
+  // a sample on this exact XR frame so Point A/B and Rev.9 Round-Trip Capture logs use
+  // same-frame Depth information without changing the formal Hit commit.
+  sampleDepthForFrame(frame,pose,time,!!capturePending || metricLadderCapturePending || entitySnapshotPending || !!calibrationCapturePending);
 
   const aTracked = updateAnchorPose(frame,'A',time,pose);
   const bTracked = updateAnchorPose(frame,'B',time,pose);
