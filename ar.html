@@ -80,7 +80,7 @@ padding:8px 9px;pointer-events:auto}
 #sweepText{font-size:11px;font-weight:700;color:#bfdbfe;margin-top:3px}
 #magnifierWrap{
   position:absolute;right:14px;
-  top:calc(env(safe-area-inset-top,0px) + 112px);
+  top:calc(env(safe-area-inset-top,0px) + 120px);
   width:136px;height:136px;
   box-sizing:content-box;
   z-index:30;
@@ -146,7 +146,7 @@ padding:8px 9px;pointer-events:auto}
 <body>
 <main>
 <h1>AR DISTANCE LAB</h1>
-<p class="sub">Phase 5.20 Rev.4 — Long-Term Hit Settling Diagnostic / Magnifier 4× / immutable Hit-Hit</p>
+<p class="sub">Phase 5.20 Rev.5 — Long-Term Hit Settling Diagnostic / Magnifier 4× / immutable Hit-Hit</p>
 
 <section class="card">
 <h2>STATUS</h2>
@@ -5533,15 +5533,13 @@ function analyzeRawPixels(pix,w,h){
 
 
 function positionMagnifierBelowTopPanel(reason='runtime'){
-  if(!el.magnifierWrap || !el.topPanel) return;
-  const topRect=el.topPanel.getBoundingClientRect();
-  const gap=8;
-  const desiredTop=Math.ceil(topRect.bottom+gap);
-  const maxTop=Math.max(8,window.innerHeight-MAG_CSS_SIZE-12);
-  const top=Math.min(desiredTop,maxTop);
-  el.magnifierWrap.style.top=`${top}px`;
+  if(!el.magnifierWrap) return;
+  // Fixed vertical slot. Do not follow the live text height: the reserved 120 px
+  // offset clears the HUD whether its visible status text occupies one or two lines.
+  // safe-area-inset-top remains handled by the CSS top declaration.
+  el.magnifierWrap.style.top='';
   if(reason==='configure'){
-    log(`magnifier placement: belowTopPanel=true; topPanelBottom=${topRect.bottom.toFixed(1)}px; gap=${gap}px; magnifierTop=${top}px; overlap=${top<topRect.bottom?'YES':'NO'}`);
+    log('magnifier placement: mode=FIXED; top=safe-area+120px; reservedForTopHud=one-or-two-lines; lineCountTracking=false; positionJitter=false');
   }
 }
 
@@ -8437,7 +8435,7 @@ async function startAR(){
     log('RAY / SURFACE GEOMETRY DIAGNOSTIC ACTIVE: captureFrameGeometry=XRView-hit-ray-vs-DepthGeometry-ray; observables=hitDepthOffset3D,rayAxial,rayLateral,cameraOriginBaseline,rayAngle,ABAxisEffectSplit; firstOrderABAxisProjection=true; causalDecomposition=false; affectsCaptureGate=false; affectsFormalGate=false; correctionApplied=false; diagnosticOnly=true; formalSource=immutable-hit');
     log('METRIC SCALE ROUND-TRIP DIAGNOSTIC ACTIVE: sequence=0F/50F/100F/150T/100R/50R/0R; sameImmersiveSession=true; sameLocalReferenceSpace=true; captureSource=formal-plane-hit; forwardPhase5_10Preserved=true; compareForwardVsReturn=true; revisitDisplacement=true; operatorEnvironmentErrorNotSeparated=true; handMotionNotSeparated=true; markPlacementErrorNotSeparated=true; referenceSpaceResetDuringSequenceInvalidatesLadder=true; guardUsesMeasuredDistance=false; valueIndependent=true; affectsCaptureGate=false; affectsFormalGate=false; correctionApplied=false; diagnosticOnly=true; formalMeasurementGeometryUnchanged=true; formalSource=immutable-hit');
     log('LONG-TERM HIT SETTLING DIAGNOSTIC ACTIVE: preCaptureWindows=0.5/1/2/5s; postCaptureMilestones=0.5/1/2/5s; robustShift=first250msMedian-to-last250msMedian; settledCandidateThreshold=2.0mm; thresholdDiagnosticOnly=true; retention=6.5s; handMotionNotSeparated=true; affectsCaptureGate=false; affectsFormalGate=false; correctionApplied=false; diagnosticOnly=true; formalSource=immutable-hit');
-    log('MAGNIFIER CENTER REGISTRATION FIX ACTIVE: wrapperCss=136x136; canvasCss=136x136; defaultZoom=4x; placement=dynamic-below-topPanel+8px; priorRev1RuntimeCanvasCss=160x160; priorWrapperContent=136x136; targetRawCameraUvAtCross=0.5,0.5; displayRegistrationOnly=true; affectsCaptureGate=false; affectsFormalGate=false; correctionApplied=false; diagnosticOnly=true; formalSource=immutable-hit');
+    log('MAGNIFIER CENTER REGISTRATION FIX ACTIVE: wrapperCss=136x136; canvasCss=136x136; defaultZoom=4x; placement=fixed-safe-area+120px; reservedForTopHud=one-or-two-lines; lineCountTracking=false; priorRev1RuntimeCanvasCss=160x160; priorWrapperContent=136x136; targetRawCameraUvAtCross=0.5,0.5; displayRegistrationOnly=true; affectsCaptureGate=false; affectsFormalGate=false; correctionApplied=false; diagnosticOnly=true; formalSource=immutable-hit');
     updatePointPairGuardUI();
     updateMetricLadderUI();
 
