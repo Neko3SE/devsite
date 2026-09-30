@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<title>AR DISTANCE LAB - Phase 5.20 Rev.3</title>
+<title>AR DISTANCE LAB - Phase 5.20 Rev.6</title>
 <style>
 :root{
   color-scheme:dark;
@@ -146,7 +146,7 @@ padding:8px 9px;pointer-events:auto}
 <body>
 <main>
 <h1>AR DISTANCE LAB</h1>
-<p class="sub">Phase 5.20 Rev.5 — Long-Term Hit Settling Diagnostic / Magnifier 4× / immutable Hit-Hit</p>
+<p class="sub">Phase 5.20 Rev.6 — Same-frame Anchor Pair Diagnostic / POST Hold Validity / Magnifier 4× / immutable Hit-Hit</p>
 
 <section class="card">
 <h2>STATUS</h2>
@@ -910,7 +910,7 @@ function logMetricLadderNewPairs(newIndex){
   }
 }
 
-function captureMetricLadderPointFromHit(hitPose,time){
+function captureMetricLadderPointFromHit(hitPose,time,viewerPose){
   if(!metricLadderCapturePending) return;
   metricLadderCapturePending=false;
   if(metricLadderInvalidReason){ updateMetricLadderUI(); return; }
@@ -927,12 +927,17 @@ function captureMetricLadderPointFromHit(hitPose,time){
   const spec=METRIC_LADDER_SEQUENCE[idx];
   const p=hitPose.transform.position;
   const point={x:p.x,y:p.y,z:p.z};
+  const vp=viewerPose?.transform?.position;
+  const cameraPoint=vp?{x:vp.x,y:vp.y,z:vp.z}:null;
+  const rayDirection=cameraPoint?normalize3(vectorBetween(cameraPoint,point)):null;
   if(idx===0) metricLadderResetCountAtStart=sessionReferenceSpaceResetCount;
   const stats=hitWindowStats(time,HIT_STABILITY_WINDOW_MS,point);
   const stability=classifyHitStability(stats);
   const row={
     index:idx,key:spec.key,markCm:spec.markCm,leg:spec.leg,point:clonePoint(point),time,frame:frameCount,
     cameraToHit:Number.isFinite(latestHitDistance)?latestHitDistance:null,
+    cameraPoint:cameraPoint?clonePoint(cameraPoint):null,
+    rayDirection:rayDirection?clonePoint(rayDirection):null,
     hitStability:stability,hitMaxRadius:stats?.maxRadius??null,sessionResetCount:sessionReferenceSpaceResetCount
   };
   metricLadderPoints.push(row);
@@ -1093,6 +1098,13 @@ let frozenCardFrameIndex = 0;
 
 let anchorA = null;
 let anchorB = null;
+// Phase 5.20 Rev.6: diagnostic-only first common XR-frame Anchor A/B comparison.
+// The formal committed value remains immutable Hit-Hit.
+let sameFrameAnchorPairDiagPending = false;
+let sameFrameAnchorPairDiagLogged = false;
+let sameFrameAnchorPairDiagImmutableDistance = null;
+let sameFrameAnchorPairDiagBCaptureFrame = null;
+let sameFrameAnchorPairDiagBCaptureTime = null;
 let pointA = null;
 let pointB = null;
 let matrixA = null;
@@ -1213,6 +1225,9 @@ const HIT_SETTLING_EDGE_MS = 250;
 const HIT_SETTLING_MIN_COVERAGE_RATIO = 0.80;
 const HIT_SETTLED_MAX_ROBUST_SHIFT_M = 0.002; // diagnostic label only; never a gate
 const HIT_POST_CAPTURE_MILESTONES_MS = [500,1000,2000,5000];
+// Rev.6: diagnostic-only operator hold proxy. These thresholds never gate or discard captures.
+const POST_HOLD_CAMERA_MOVE_SUSPECT_M = 0.020;
+const POST_HOLD_RAY_ANGLE_SUSPECT_DEG = 2.0;
 // 300 ms is a warning-only short-window diagnostic. It never blocks capture
 // and never replaces the immutable Instant Hit used for the formal commit.
 const HIT_STABILITY_WINDOW_MS = 300;
@@ -1393,14 +1408,34 @@ function beginMetricPostCaptureSettling(row){
     key:row.key,
     captureTime:row.time,
     capturePoint:clonePoint(row.point),
-    reported:new Set()
+    captureCameraPoint:row.cameraPoint?clonePoint(row.cameraPoint):null,
+    captureRayDirection:row.rayDirection?clonePoint(row.rayDirection):null,
+    reported:new Set(),
+    operatorMotionLogged:false
   };
 }
 
-function updateMetricPostCaptureSettling(time,currentPoint){
+function updateMetricPostCaptureSettling(time,currentPoint,viewerPose){
   const tracker=metricPostCaptureSettling;
   if(!tracker || !currentPoint || !Number.isFinite(time)) return;
   const elapsed=time-tracker.captureTime;
+  const currentCamera=viewerPose?.transform?.position
+    ? {x:viewerPose.transform.position.x,y:viewerPose.transform.position.y,z:viewerPose.transform.position.z}
+    : null;
+  const currentRay=currentCamera?normalize3(vectorBetween(currentCamera,currentPoint)):null;
+  const cameraMove=(tracker.captureCameraPoint&&currentCamera)
+    ? distance3(tracker.captureCameraPoint,currentCamera)
+    : null;
+  const rayAngle=(tracker.captureRayDirection&&currentRay)
+    ? angleBetweenDirectionsDeg(tracker.captureRayDirection,currentRay)
+    : null;
+  const operatorMotionSuspected=
+    (Number.isFinite(cameraMove)&&cameraMove>POST_HOLD_CAMERA_MOVE_SUSPECT_M) ||
+    (Number.isFinite(rayAngle)&&rayAngle>POST_HOLD_RAY_ANGLE_SUSPECT_DEG);
+  const holdValidity=(cameraMove==null&&rayAngle==null)
+    ? 'UNKNOWN'
+    : operatorMotionSuspected?'OPERATOR-MOTION-SUSPECTED':'HOLD-CONSISTENT';
+
   for(const milestoneMs of HIT_POST_CAPTURE_MILESTONES_MS){
     if(elapsed<milestoneMs || tracker.reported.has(milestoneMs)) continue;
     tracker.reported.add(milestoneMs);
@@ -1412,8 +1447,22 @@ function updateMetricPostCaptureSettling(time,currentPoint){
       `rollingState=${rolling?.state??'n/a'}; `+
       `rollingRobustShift=${rolling?.robustShift==null?'n/a':(rolling.robustShift*1000).toFixed(3)+' mm'}; `+
       `rollingMaxRadius=${rolling?.maxRadius==null?'n/a':(rolling.maxRadius*1000).toFixed(3)+' mm'}; `+
-      `hitStillPresent=true; affectsCaptureGate=false; affectsFormalGate=false; correctionApplied=false; diagnosticOnly=true; formalSource=immutable-hit`
+      `holdValidity=${holdValidity}; `+
+      `cameraMove=${cameraMove==null?'n/a':(cameraMove*1000).toFixed(3)+' mm'}; `+
+      `aimRayAngle=${rayAngle==null?'n/a':rayAngle.toFixed(3)+' deg'}; `+
+      `holdThresholds=camera>${(POST_HOLD_CAMERA_MOVE_SUSPECT_M*1000).toFixed(0)}mm|ray>${POST_HOLD_RAY_ANGLE_SUSPECT_DEG.toFixed(1)}deg-diagnostic-only; `+
+      `samePhysicalTargetNotProven=true; hitStillPresent=true; affectsCaptureGate=false; affectsFormalGate=false; correctionApplied=false; diagnosticOnly=true; formalSource=immutable-hit`
     );
+    if(operatorMotionSuspected && !tracker.operatorMotionLogged){
+      tracker.operatorMotionLogged=true;
+      log(
+        `OPERATION SUSPECTED POST-CAPTURE ${tracker.key}: reason=post-hold-camera-or-aim-motion; `+
+        `cameraMove=${cameraMove==null?'n/a':(cameraMove*1000).toFixed(3)+' mm'}; `+
+        `aimRayAngle=${rayAngle==null?'n/a':rayAngle.toFixed(3)+' deg'}; `+
+        `interpretation=operator-may-have-started-next-move-before-5s-hold-ended; `+
+        `capturePointRemainsImmutable=true; discardAutomatic=false; diagnosticOnly=true`
+      );
+    }
   }
   if(tracker.reported.size>=HIT_POST_CAPTURE_MILESTONES_MS.length){
     metricPostCaptureSettling=null;
@@ -8434,7 +8483,8 @@ async function startAR(){
     log('HIT SOURCE DIVERGENCE DIAGNOSTIC ACTIVE: captureFrameSources=formal-plane,point,mesh,same-frame-depth-center; compare=view-forward,local-3D; staleEntitySamplesRejected=true; nearestSourceReporting=tie-aware; tieEpsilon=0.001mm; formalMeasurementSource=plane; alternateSourcesDiagnosticOnly=true; affectsCaptureGate=false; affectsFormalGate=false; correctionApplied=false; diagnosticOnly=true; formalSource=immutable-hit');
     log('RAY / SURFACE GEOMETRY DIAGNOSTIC ACTIVE: captureFrameGeometry=XRView-hit-ray-vs-DepthGeometry-ray; observables=hitDepthOffset3D,rayAxial,rayLateral,cameraOriginBaseline,rayAngle,ABAxisEffectSplit; firstOrderABAxisProjection=true; causalDecomposition=false; affectsCaptureGate=false; affectsFormalGate=false; correctionApplied=false; diagnosticOnly=true; formalSource=immutable-hit');
     log('METRIC SCALE ROUND-TRIP DIAGNOSTIC ACTIVE: sequence=0F/50F/100F/150T/100R/50R/0R; sameImmersiveSession=true; sameLocalReferenceSpace=true; captureSource=formal-plane-hit; forwardPhase5_10Preserved=true; compareForwardVsReturn=true; revisitDisplacement=true; operatorEnvironmentErrorNotSeparated=true; handMotionNotSeparated=true; markPlacementErrorNotSeparated=true; referenceSpaceResetDuringSequenceInvalidatesLadder=true; guardUsesMeasuredDistance=false; valueIndependent=true; affectsCaptureGate=false; affectsFormalGate=false; correctionApplied=false; diagnosticOnly=true; formalMeasurementGeometryUnchanged=true; formalSource=immutable-hit');
-    log('LONG-TERM HIT SETTLING DIAGNOSTIC ACTIVE: preCaptureWindows=0.5/1/2/5s; postCaptureMilestones=0.5/1/2/5s; robustShift=first250msMedian-to-last250msMedian; settledCandidateThreshold=2.0mm; thresholdDiagnosticOnly=true; retention=6.5s; handMotionNotSeparated=true; affectsCaptureGate=false; affectsFormalGate=false; correctionApplied=false; diagnosticOnly=true; formalSource=immutable-hit');
+    log('LONG-TERM HIT SETTLING DIAGNOSTIC ACTIVE: preCaptureWindows=0.5/1/2/5s; postCaptureMilestones=0.5/1/2/5s; robustShift=first250msMedian-to-last250msMedian; settledCandidateThreshold=2.0mm; thresholdDiagnosticOnly=true; retention=6.5s; postHoldValidity=camera-motion+aim-ray-proxy; samePhysicalTargetNotProven=true; operatorMotionThresholds=20mm/2deg-diagnostic-only; handMotionNotSeparated=true; affectsCaptureGate=false; affectsFormalGate=false; correctionApplied=false; diagnosticOnly=true; formalSource=immutable-hit');
+    log('SAME-FRAME ANCHOR PAIR DIAGNOSTIC ACTIVE: trigger=first-XR-frame-after-B-anchor-created-with-both-anchors-tracked; compare=currentAnchorA-currentAnchorB-vs-immutableHitHit; sameFrame=true; affectsCaptureGate=false; affectsFormalGate=false; correctionApplied=false; diagnosticOnly=true; formalSource=immutable-hit');
     log('MAGNIFIER CENTER REGISTRATION FIX ACTIVE: wrapperCss=136x136; canvasCss=136x136; defaultZoom=4x; placement=fixed-safe-area+120px; reservedForTopHud=one-or-two-lines; lineCountTracking=false; priorRev1RuntimeCanvasCss=160x160; priorWrapperContent=136x136; targetRawCameraUvAtCross=0.5,0.5; displayRegistrationOnly=true; affectsCaptureGate=false; affectsFormalGate=false; correctionApplied=false; diagnosticOnly=true; formalSource=immutable-hit');
     updatePointPairGuardUI();
     updateMetricLadderUI();
@@ -8615,6 +8665,27 @@ function updateTrackingState(time,pose){
     el.xrHint.textContent = 'Hold steady or aim at a more textured area.';
   }
 }
+function maybeLogSameFrameAnchorPairDiagnostic(time){
+  if(!sameFrameAnchorPairDiagPending || sameFrameAnchorPairDiagLogged) return;
+  if(!anchorA || !anchorB || !pointA || !pointB) return;
+  const anchorDistance=distance3(pointA,pointB);
+  const immutableDistance=sameFrameAnchorPairDiagImmutableDistance;
+  const delta=Number.isFinite(immutableDistance)?anchorDistance-immutableDistance:null;
+  log(
+    `SAME-FRAME ANCHOR PAIR DIAGNOSTIC: `+
+    `anchorAtoB=${anchorDistance.toFixed(6)} m; `+
+    `immutableHitHit=${Number.isFinite(immutableDistance)?immutableDistance.toFixed(6)+' m':'n/a'}; `+
+    `anchorMinusImmutable=${delta==null?'n/a':signedMm(delta)}; `+
+    `sameXRFrame=${frameCount}; `+
+    `framesAfterBCapture=${sameFrameAnchorPairDiagBCaptureFrame==null?'n/a':frameCount-sameFrameAnchorPairDiagBCaptureFrame}; `+
+    `msAfterBCapture=${sameFrameAnchorPairDiagBCaptureTime==null?'n/a':(time-sameFrameAnchorPairDiagBCaptureTime).toFixed(1)}; `+
+    `bothAnchorsTracked=true; comparesCurrentAnchorPosesInOneFrame=true; `+
+    `formalMeasurementGeometryUnchanged=true; affectsFormalGate=false; correctionApplied=false; diagnosticOnly=true; formalSource=immutable-hit`
+  );
+  sameFrameAnchorPairDiagLogged=true;
+  sameFrameAnchorPairDiagPending=false;
+}
+
 function updateAnchorPose(frame,which,time,viewerPose){
   const anchor = which === 'A' ? anchorA : anchorB;
   if(!anchor) return false;
@@ -8723,6 +8794,11 @@ function createAnchorFromHit(result,hitPose,slot,time,viewerPose){
     // first so the A drift value is already available to the comparison log.
     capturePointB = {...fallbackPoint};
     captureResetCountB = sessionReferenceSpaceResetCount;
+    sameFrameAnchorPairDiagImmutableDistance = capturePointA ? distance3(capturePointA,capturePointB) : null;
+    sameFrameAnchorPairDiagBCaptureFrame = frameCount;
+    sameFrameAnchorPairDiagBCaptureTime = time;
+    sameFrameAnchorPairDiagPending = true;
+    sameFrameAnchorPairDiagLogged = false;
     preBSummaryAtB = summarizePreB('POINT B CAPTURE',time);
     preBActive = false;
 
@@ -8798,6 +8874,10 @@ function createAnchorFromHit(result,hitPose,slot,time,viewerPose){
     }
   }).catch(err=>{
     anchorCreationBusy = false;
+    if(slot==='B'){
+      sameFrameAnchorPairDiagPending = false;
+      sameFrameAnchorPairDiagLogged = false;
+    }
     set(slot === 'A' ? 'anchorAState' : 'anchorBState','CREATE FAILED','ng');
     log(`Point ${slot}: createAnchor failed: ${err.name}: ${err.message}`);
     el.xrHint.textContent = `Anchor creation failed for Point ${slot}. Try again.`;
@@ -8860,6 +8940,10 @@ function onXRFrame(time,frame){
     updateDistanceUI();
   }
 
+  if(aTracked && bTracked && pointA && pointB){
+    maybeLogSameFrameAnchorPairDiagnostic(time);
+  }
+
   // Stability is sampled only when A and B are both tracked in the same XR frame.
   if(measurementActive && aTracked && bTracked && pointA && pointB){
     const d = calcDistance(pointA,pointB);
@@ -8916,7 +9000,7 @@ function onXRFrame(time,frame){
       // in the 0.3 / 0.5 / 1.0 second diagnostic windows.
       recordHitSample(time,latestHitPoint,latestHitDistance);
       updateLiveHitStability(time);
-      updateMetricPostCaptureSettling(time,latestHitPoint);
+      updateMetricPostCaptureSettling(time,latestHitPoint,pose);
 
       set('hitDistanceState',`${latestHitDistance.toFixed(3)} m`,latestHitDistance>NEAR_RANGE_M?'ok':'warn');
       updateDepthHitCrossCheck(time);
@@ -8938,7 +9022,7 @@ function onXRFrame(time,frame){
       }
 
       if(metricLadderCapturePending && !capturePending && !anchorCreationBusy){
-        captureMetricLadderPointFromHit(hitPose,time);
+        captureMetricLadderPointFromHit(hitPose,time,pose);
       }
 
       if(capturePending && !anchorCreationBusy){
@@ -9101,6 +9185,11 @@ function resetMeasurement(){
 
   anchorA = null;
   anchorB = null;
+  sameFrameAnchorPairDiagPending = false;
+  sameFrameAnchorPairDiagLogged = false;
+  sameFrameAnchorPairDiagImmutableDistance = null;
+  sameFrameAnchorPairDiagBCaptureFrame = null;
+  sameFrameAnchorPairDiagBCaptureTime = null;
 
   resetMeasurementMetrics();
   applyPendingSweepTarget();
