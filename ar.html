@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<title>AR DISTANCE LAB - Phase 5.20 Rev.7</title>
+<title>AR DISTANCE LAB - Phase 5.20 Rev.8</title>
 <style>
 :root{
   color-scheme:dark;
@@ -146,7 +146,7 @@ padding:8px 9px;pointer-events:auto}
 <body>
 <main>
 <h1>AR DISTANCE LAB</h1>
-<p class="sub">Phase 5.20 Rev.7 — Round-Trip Same-frame Anchor Diagnostics / XR Pose Delta Logging / Magnifier 4× / immutable Hit-Hit</p>
+<p class="sub">Phase 5.20 Rev.8 — Round-Trip Single Reference Anchor Local Coordinates / Same-frame Anchor Diagnostics / Magnifier 4× / immutable Hit-Hit</p>
 
 <section class="card">
 <h2>STATUS</h2>
@@ -352,7 +352,7 @@ padding:8px 9px;pointer-events:auto}
 
 <section class="card">
 <h2>PHASE 4.50 — PERSISTENT FORMAL HIT-HIT ACCURACY SWEEP</h2>
-<p class="note">Phase 4.50では、50 / 100 / 150 cm × 各3回 = 合計9回の正式 immutable plane Hit-Hit を1つのAccuracy Sweepとして永続管理します。Sweep状態はlocalStorageへ保存し、ARのEND、ページ再読込、同一Originでの再開後も復元します。値が悪いことを理由に有効サンプルを捨てたり追加測定したりせず、各距離の最初の有効3回だけを固定します。MAP INVALID / reference-space reset など既存の安全ゲートで無効になった測定だけが数え直し対象です。Repeatability cluster、Depth、Anchorは診断専用で、正式Hit-Hit値の補正・採否には使用しません。 Rev.2では保存前と復元時の両方でSweep全体をschema 2として検証し、1件でも構造・Sweep ID・順序・状態値などに不整合があれば部分復元せず、その保存Sweep全体を無効として新しい0/9 Sweepを開始します。旧v1保存キーは読み込まず、削除を試みます。削除できない環境でも旧キーは参照しません。 Rev.3ではARセッション開始直後にSTEP 0 / SCENE SETUPを表示し、A付近→B付近→周囲の床・壁・物体→A付近の順にゆっくり見渡して空間認識を促します。SCENE READYを押すまでPoint A取得へ進みません。これは操作ガイドであり、正式距離の計算式・Hit採用条件・Sweep採否条件は変更しません。 Rev.4ではXR画面上部の状態メッセージをsafe-area上端から従来より約1行分（16 px）下げ、画面切り欠き・パンチホールとの重なりを避けます。測定ロジックと保存形式は変更しません。 Rev.5ではSCENE READYを単なる確認ボタンではなく、A付近へ戻った時点で現在のformal plane Hitが取得できている場合だけ成立するsurface-qualified gateに変更します。シーン認識ガイドには、A→B→周囲→Aの順に加え、端末をその場で回転させるだけでなく少し横・斜めにも移動して視差を作り、床壁境界・角・模様・掲示物などの特徴を画面へ入れることを明示します。これは操作フローの改善だけで、正式距離は引き続きimmutable plane Hit-Hitです。 Rev.6では画面切り欠きとの重なりをさらに避けるため、XR画面上部の状態メッセージだけをRev.5から32 px（約2行分）下へ移動します。測定ロジック、SCENE READY条件、保存形式、正式距離の計算には変更ありません。 Phase 4.60 Rev.1では完了済みSweepを保持したまま、Point A/B取得時のHit View-Zと同一フレームDepth@UVのSurface Consistencyを追加します。この診断は正式値・採否に影響しません。 Phase 4.60 Rev.3ではRev.1を正式ベースラインとして維持したまま、Hit→Depth 3D変位のA-B軸方向寄与を診断表示します。Rev.1のSCENE READY surface-qualified gate、Surface Consistency、保存schema 2、正式immutable Hit-Hit測定は変更しません。 Phase 4.60 Rev.4では、計測値の大小とは独立して後から判明した明確な操作・プロトコルミスだけを、固定理由＋明示確認付きで「PROTOCOL INVALID」として有効Sweepから外せる監査付き操作を追加します。value-based discardは禁止のままです。保存schema 2との互換性を維持するため、無効化できるのは現在もっとも後ろに進んでいるターゲット距離のサンプルだけです。過去ターゲットのサンプルを遡って外す場合はSweep全体を再開始します。正式距離の計算、MAP / Depth / Surface Consistencyのゲート意味は変更しません。 Phase 4.60 Rev.5 Recoveryでは、誤操作で旧9/9 Sweepが保存領域から失われた今回のケースに限り、ユーザー提供の確定ログから `S20260929T133409Z-32C0E4` を復元します。150 cmの旧#7は「WRONG PHYSICAL REFERENCE / POINT PAIR」として除外済みの8/9状態に復元し、150 cmを1回だけ再測定できるようにします。復元は明示確認が必要で、現在の0/9 Sweepは別キーへバックアップしてから上書きします。正式測定ロジックとschema 2は変更しません。 Phase 4.70 Rev.1では、Point A取得時にReferenceを試行単位でロックし、Point B取得前にA→B順序とReference不変を値非依存で監査するPoint-Pair / Protocol Guardを追加します。距離値や誤差はガード判定に使用しません。 Phase 4.80 Rev.1では、正式Hit-Hit誤差、SurfaceのA-B軸方向差、MAP signed impact、Hitの時間窓差と、それぞれに対応する代替誤差をError Budget Diagnosticとして並記します。診断値は加算可能な因果成分とはみなさず、補正・採否・閾値変更には使用しません。 Phase 4.90 Rev.1では、Point A/B正式取得フレームでplane / point / mesh Hitとsame-frame Depth-centerを凍結比較し、formal planeとの差をView-Zおよびlocal 3Dで記録するHit Source Divergence Diagnosticを追加します。alternate Hit sourceは診断専用で、正式値・採否・補正には使用しません。 Phase 4.90 Rev.2では、Depth-centerに最も近いHit sourceの記述表示をTIE対応にし、同一距離のplane / point / meshを同率として表示します。測定値・ゲート・保存形式は変更しません。 Phase 5.00 Rev.1では、Hit→Depthのlocal 3D変位をcapture camera ray方向とlateral方向へ分解し、Depth camera originとのbaseline、Hit/Depth ray角度、A-B軸へ与える一次射影をray axial / lateralへ分けるRay / Surface Geometry Diagnosticを追加します。正式値・採否・補正・Sweep schemaは変更しません。 Phase 5.10 Rev.1では、同一XRセッション・同一local reference space内で0/50/100/150 cmの4つの物理マークを順番にformal plane Hitで診断取得するMetric Scale Ladder Diagnosticを追加します。6つの点間距離、区間scale ratio、P0→P150軸へのP50/P100投影・横ずれ、区間和とdirect距離の差を記録します。Ladderは完全に診断専用で、正式Point A/B、Accuracy Sweep、MAP / Depth / Surface gate、補正、保存schemaは変更しません。 Phase 5.20 Rev.1ではPhase 5.10の4点往路を保持したまま、150→100→50→0の復路3点を追加し、各区間の往復差、0–150 cm direct距離の往復差、P100/P50/P0の再訪位置差を記録します。再訪差は手振れ・照準・手書きマーク位置・環境認識を分離しないaggregate repeatabilityとして扱い、空間歪みの直接証拠や補正値には使用しません。正式測定ロジック、ゲート、保存schemaは変更しません。 Phase 5.20 Rev.2ではRaw Camera拡大鏡のCanvas CSSサイズ160 pxと136 pxラッパーの不一致を修正し、Canvas中心・拡大鏡「＋」・Raw Camera中心UVを一致させる表示登録監査を追加します。正式測定・Ladder・ゲート・保存schemaは変更しません。 Phase 5.20 Rev.3では実機監査で残った2 px border由来のborder-box clippingを解消するため、拡大鏡ラッパーだけをcontent-boxへ変更します。表示中心登録以外のロジックは変更しません。 Phase 5.20 Rev.7ではRound-Tripの各取得点にも診断専用Anchorを作成し、両Anchorが同一XRFrameで追跡できた時だけimmutable Hit間距離との比較を記録します。またPOST診断のviewer pose / aim ray変化は物理カメラ移動や操作ミスとは推定せず、XRが報告したPose変化としてのみ記録します。正式値は引き続きimmutable plane Hit-Hitです。</p>
+<p class="note">Phase 4.50では、50 / 100 / 150 cm × 各3回 = 合計9回の正式 immutable plane Hit-Hit を1つのAccuracy Sweepとして永続管理します。Sweep状態はlocalStorageへ保存し、ARのEND、ページ再読込、同一Originでの再開後も復元します。値が悪いことを理由に有効サンプルを捨てたり追加測定したりせず、各距離の最初の有効3回だけを固定します。MAP INVALID / reference-space reset など既存の安全ゲートで無効になった測定だけが数え直し対象です。Repeatability cluster、Depth、Anchorは診断専用で、正式Hit-Hit値の補正・採否には使用しません。 Rev.2では保存前と復元時の両方でSweep全体をschema 2として検証し、1件でも構造・Sweep ID・順序・状態値などに不整合があれば部分復元せず、その保存Sweep全体を無効として新しい0/9 Sweepを開始します。旧v1保存キーは読み込まず、削除を試みます。削除できない環境でも旧キーは参照しません。 Rev.3ではARセッション開始直後にSTEP 0 / SCENE SETUPを表示し、A付近→B付近→周囲の床・壁・物体→A付近の順にゆっくり見渡して空間認識を促します。SCENE READYを押すまでPoint A取得へ進みません。これは操作ガイドであり、正式距離の計算式・Hit採用条件・Sweep採否条件は変更しません。 Rev.4ではXR画面上部の状態メッセージをsafe-area上端から従来より約1行分（16 px）下げ、画面切り欠き・パンチホールとの重なりを避けます。測定ロジックと保存形式は変更しません。 Rev.5ではSCENE READYを単なる確認ボタンではなく、A付近へ戻った時点で現在のformal plane Hitが取得できている場合だけ成立するsurface-qualified gateに変更します。シーン認識ガイドには、A→B→周囲→Aの順に加え、端末をその場で回転させるだけでなく少し横・斜めにも移動して視差を作り、床壁境界・角・模様・掲示物などの特徴を画面へ入れることを明示します。これは操作フローの改善だけで、正式距離は引き続きimmutable plane Hit-Hitです。 Rev.6では画面切り欠きとの重なりをさらに避けるため、XR画面上部の状態メッセージだけをRev.5から32 px（約2行分）下へ移動します。測定ロジック、SCENE READY条件、保存形式、正式距離の計算には変更ありません。 Phase 4.60 Rev.1では完了済みSweepを保持したまま、Point A/B取得時のHit View-Zと同一フレームDepth@UVのSurface Consistencyを追加します。この診断は正式値・採否に影響しません。 Phase 4.60 Rev.3ではRev.1を正式ベースラインとして維持したまま、Hit→Depth 3D変位のA-B軸方向寄与を診断表示します。Rev.1のSCENE READY surface-qualified gate、Surface Consistency、保存schema 2、正式immutable Hit-Hit測定は変更しません。 Phase 4.60 Rev.4では、計測値の大小とは独立して後から判明した明確な操作・プロトコルミスだけを、固定理由＋明示確認付きで「PROTOCOL INVALID」として有効Sweepから外せる監査付き操作を追加します。value-based discardは禁止のままです。保存schema 2との互換性を維持するため、無効化できるのは現在もっとも後ろに進んでいるターゲット距離のサンプルだけです。過去ターゲットのサンプルを遡って外す場合はSweep全体を再開始します。正式距離の計算、MAP / Depth / Surface Consistencyのゲート意味は変更しません。 Phase 4.60 Rev.5 Recoveryでは、誤操作で旧9/9 Sweepが保存領域から失われた今回のケースに限り、ユーザー提供の確定ログから `S20260929T133409Z-32C0E4` を復元します。150 cmの旧#7は「WRONG PHYSICAL REFERENCE / POINT PAIR」として除外済みの8/9状態に復元し、150 cmを1回だけ再測定できるようにします。復元は明示確認が必要で、現在の0/9 Sweepは別キーへバックアップしてから上書きします。正式測定ロジックとschema 2は変更しません。 Phase 4.70 Rev.1では、Point A取得時にReferenceを試行単位でロックし、Point B取得前にA→B順序とReference不変を値非依存で監査するPoint-Pair / Protocol Guardを追加します。距離値や誤差はガード判定に使用しません。 Phase 4.80 Rev.1では、正式Hit-Hit誤差、SurfaceのA-B軸方向差、MAP signed impact、Hitの時間窓差と、それぞれに対応する代替誤差をError Budget Diagnosticとして並記します。診断値は加算可能な因果成分とはみなさず、補正・採否・閾値変更には使用しません。 Phase 4.90 Rev.1では、Point A/B正式取得フレームでplane / point / mesh Hitとsame-frame Depth-centerを凍結比較し、formal planeとの差をView-Zおよびlocal 3Dで記録するHit Source Divergence Diagnosticを追加します。alternate Hit sourceは診断専用で、正式値・採否・補正には使用しません。 Phase 4.90 Rev.2では、Depth-centerに最も近いHit sourceの記述表示をTIE対応にし、同一距離のplane / point / meshを同率として表示します。測定値・ゲート・保存形式は変更しません。 Phase 5.00 Rev.1では、Hit→Depthのlocal 3D変位をcapture camera ray方向とlateral方向へ分解し、Depth camera originとのbaseline、Hit/Depth ray角度、A-B軸へ与える一次射影をray axial / lateralへ分けるRay / Surface Geometry Diagnosticを追加します。正式値・採否・補正・Sweep schemaは変更しません。 Phase 5.10 Rev.1では、同一XRセッション・同一local reference space内で0/50/100/150 cmの4つの物理マークを順番にformal plane Hitで診断取得するMetric Scale Ladder Diagnosticを追加します。6つの点間距離、区間scale ratio、P0→P150軸へのP50/P100投影・横ずれ、区間和とdirect距離の差を記録します。Ladderは完全に診断専用で、正式Point A/B、Accuracy Sweep、MAP / Depth / Surface gate、補正、保存schemaは変更しません。 Phase 5.20 Rev.1ではPhase 5.10の4点往路を保持したまま、150→100→50→0の復路3点を追加し、各区間の往復差、0–150 cm direct距離の往復差、P100/P50/P0の再訪位置差を記録します。再訪差は手振れ・照準・手書きマーク位置・環境認識を分離しないaggregate repeatabilityとして扱い、空間歪みの直接証拠や補正値には使用しません。正式測定ロジック、ゲート、保存schemaは変更しません。 Phase 5.20 Rev.2ではRaw Camera拡大鏡のCanvas CSSサイズ160 pxと136 pxラッパーの不一致を修正し、Canvas中心・拡大鏡「＋」・Raw Camera中心UVを一致させる表示登録監査を追加します。正式測定・Ladder・ゲート・保存schemaは変更しません。 Phase 5.20 Rev.3では実機監査で残った2 px border由来のborder-box clippingを解消するため、拡大鏡ラッパーだけをcontent-boxへ変更します。表示中心登録以外のロジックは変更しません。 Phase 5.20 Rev.7ではRound-Tripの各取得点にも診断専用Anchorを作成し、両Anchorが同一XRFrameで追跡できた時だけimmutable Hit間距離との比較を記録します。またPOST診断のviewer pose / aim ray変化は物理カメラ移動や操作ミスとは推定せず、XRが報告したPose変化としてのみ記録します。正式値は引き続きimmutable plane Hit-Hitです。 Phase 5.20 Rev.8ではP0Fで作成した1個のAnchorだけを共通Reference Anchorとして追加利用し、以後の各formal plane Hitを各Capture XRFrame時点のP0F Anchor PoseでAnchorローカル座標へ変換して保存します。異なる時刻のworld座標を直接比較せず、1個の共通Reference Anchorに対する相対座標距離とimmutable Hit-Hitを並記します。Rev.7の独立Anchor診断は比較用に維持し、正式値・採否・補正には使用しません。</p>
 <div class="actions">
   <button type="button" class="refPreset" data-cm="50">50 cm</button>
   <button type="button" class="refPreset" data-cm="100">100 cm</button>
@@ -668,6 +668,10 @@ let metricLadderLastSummary = null;
 // The formal Round-Trip geometry remains the immutable plane Hit coordinates above.
 let metricLadderAnchorGeneration = 0;
 const metricLadderAnchorPairLogged = new Set();
+// Phase 5.20 Rev.8: P0F's diagnostic Anchor is also the ONE common Reference Anchor.
+// Every later formal-plane Hit is transformed, on its own capture XRFrame, into that
+// single Anchor's local coordinate system. These coordinates are diagnostic only.
+let metricLadderReferenceAnchorReady = false;
 const METRIC_LADDER_ANCHOR_REVISIT_SPECS = [
   {a:2,b:4,label:'REVISIT-P100',referenceMeters:0,kind:'revisit'},
   {a:1,b:5,label:'REVISIT-P50',referenceMeters:0,kind:'revisit'},
@@ -678,9 +682,34 @@ function metricLadderPointName(index){
   return METRIC_LADDER_SEQUENCE[index]?.key ?? 'COMPLETE';
 }
 
+function rotateVectorByQuaternion(v,q){
+  // Unit-quaternion rotation. XR orientations are normalized; defensive normalization
+  // avoids magnifying numerical noise if an implementation returns a tiny norm error.
+  if(!v||!q) return null;
+  const n=Math.hypot(q.x,q.y,q.z,q.w);
+  if(!Number.isFinite(n)||n<1e-12) return null;
+  const x=q.x/n,y=q.y/n,z=q.z/n,w=q.w/n;
+  const tx=2*(y*v.z-z*v.y);
+  const ty=2*(z*v.x-x*v.z);
+  const tz=2*(x*v.y-y*v.x);
+  return {
+    x:v.x+w*tx+(y*tz-z*ty),
+    y:v.y+w*ty+(z*tx-x*tz),
+    z:v.z+w*tz+(x*ty-y*tx)
+  };
+}
+
+function localPointToReferenceAnchorLocal(point,anchorPoint,anchorOrientation){
+  if(!point||!anchorPoint||!anchorOrientation) return null;
+  const rel={x:point.x-anchorPoint.x,y:point.y-anchorPoint.y,z:point.z-anchorPoint.z};
+  // Inverse orientation = conjugate for unit quaternion.
+  return rotateVectorByQuaternion(rel,{x:-anchorOrientation.x,y:-anchorOrientation.y,z:-anchorOrientation.z,w:anchorOrientation.w});
+}
+
 function clearMetricLadderDiagnosticAnchors(reason='reset',logIt=false){
   metricLadderAnchorGeneration++;
   metricLadderAnchorPairLogged.clear();
+  metricLadderReferenceAnchorReady=false;
   let deleted=0;
   for(const row of metricLadderPoints){
     try{
@@ -689,8 +718,12 @@ function clearMetricLadderDiagnosticAnchors(reason='reset',logIt=false){
     if(row){
       row.diagAnchor=null;
       row.diagAnchorPoint=null;
+      row.diagAnchorOrientation=null;
       row.diagAnchorTrackedFrame=null;
       row.diagAnchorCreatePending=false;
+      row.referenceLocalPoint=null;
+      row.referenceLocalFrame=null;
+      row.referenceLocalStatus=null;
     }
   }
   if(logIt){
@@ -717,6 +750,10 @@ function requestMetricLadderDiagnosticAnchor(result,row){
     row.diagAnchor=anchor;
     row.diagAnchorCreatePending=false;
     row.diagAnchorCreatedAtFrame=frameCount;
+    if(row.index===0){
+      metricLadderReferenceAnchorReady=true;
+      log(`METRIC ROUNDTRIP SINGLE REFERENCE ANCHOR ESTABLISHED: point=P0F; captureFrame=${row.frame}; createdAtFrame=${frameCount}; referenceLocalOrigin=(0,0,0); oneCommonReferenceAnchor=true; diagnosticOnly=true; formalSource=immutable-hit`);
+    }
     log(`METRIC ROUNDTRIP ANCHOR CREATED: point=${row.key}; captureFrame=${row.frame}; createdAtFrame=${frameCount}; formalGeometryUnchanged=true; diagnosticOnly=true; formalSource=immutable-hit`);
   }).catch(err=>{
     row.diagAnchorCreatePending=false;
@@ -733,6 +770,7 @@ function updateMetricLadderAnchorDiagnostics(frame,time){
   if(!metricLadderPoints.length || !frame || !localSpace) return;
   for(const row of metricLadderPoints){
     row.diagAnchorPoint=null;
+    row.diagAnchorOrientation=null;
     row.diagAnchorTrackedFrame=null;
     const anchor=row.diagAnchor;
     if(!anchor) continue;
@@ -743,7 +781,9 @@ function updateMetricLadderAnchorDiagnostics(frame,time){
     try{ pose=frame.getPose(anchor.anchorSpace,localSpace); }catch{}
     if(!pose) continue;
     const q=pose.transform.position;
+    const o=pose.transform.orientation;
     row.diagAnchorPoint={x:q.x,y:q.y,z:q.z};
+    row.diagAnchorOrientation={x:o.x,y:o.y,z:o.z,w:o.w};
     row.diagAnchorTrackedFrame=frameCount;
   }
 
@@ -769,6 +809,29 @@ function updateMetricLadderAnchorDiagnostics(frame,time){
       `anchorError=${ref==null?'n/a':signedMm(anchorDistance-ref)}; immutableError=${ref==null?'n/a':signedMm(immutableDistance-ref)}; `+
       `endpointCoordinateDelta=[${a.key}:${(aCoordDelta*1000).toFixed(3)} mm,${b.key}:${(bCoordDelta*1000).toFixed(3)} mm]; `+
       `coordinateDeltaIsDiagnosticNotPhysicalMotion=true; bothAnchorsTrackedSameFrame=true; `+
+      `formalMeasurementGeometryUnchanged=true; affectsCaptureGate=false; affectsFormalGate=false; correctionApplied=false; diagnosticOnly=true; formalSource=immutable-hit`
+    );
+  }
+}
+
+function logMetricLadderReferenceLocalNewPairs(newIndex){
+  const specs=[...METRIC_LADDER_FORWARD_PAIR_SPECS,...METRIC_LADDER_RETURN_PAIR_SPECS,...METRIC_LADDER_ANCHOR_REVISIT_SPECS];
+  for(const spec of specs){
+    if(spec.b!==newIndex) continue;
+    const a=metricLadderPoints[spec.a], b=metricLadderPoints[spec.b];
+    if(!a||!b||!a.referenceLocalPoint||!b.referenceLocalPoint) continue;
+    const localDistance=distance3(a.referenceLocalPoint,b.referenceLocalPoint);
+    const immutableDistance=distance3(a.point,b.point);
+    const delta=localDistance-immutableDistance;
+    const ref=Number.isFinite(spec.referenceMeters)?spec.referenceMeters:null;
+    log(
+      `METRIC ROUNDTRIP SINGLE-REFERENCE LOCAL PAIR ${spec.label}: `+
+      `points=${a.key}->${b.key}; referenceAnchor=P0F; `+
+      `referenceLocalDistance=${localDistance.toFixed(6)} m; immutableHitDistance=${immutableDistance.toFixed(6)} m; `+
+      `referenceLocalMinusImmutable=${signedMm(delta)}; `+
+      `reference=${ref==null?'n/a':ref.toFixed(6)+' m'}; `+
+      `referenceLocalError=${ref==null?'n/a':signedMm(localDistance-ref)}; immutableError=${ref==null?'n/a':signedMm(immutableDistance-ref)}; `+
+      `captureFrames=${a.referenceLocalFrame}->${b.referenceLocalFrame}; oneCommonReferenceAnchor=true; `+
       `formalMeasurementGeometryUnchanged=true; affectsCaptureGate=false; affectsFormalGate=false; correctionApplied=false; diagnosticOnly=true; formalSource=immutable-hit`
     );
   }
@@ -1040,19 +1103,40 @@ function captureMetricLadderPointFromHit(result,hitPose,time,viewerPose){
   if(idx===0) metricLadderResetCountAtStart=sessionReferenceSpaceResetCount;
   const stats=hitWindowStats(time,HIT_STABILITY_WINDOW_MS,point);
   const stability=classifyHitStability(stats);
+  let referenceLocalPoint=null;
+  let referenceLocalStatus='UNAVAILABLE';
+  if(idx===0){
+    // P0F defines the common Reference Anchor origin. createAnchor() is async, but the
+    // anchor is created from this exact Hit, so its anchor-local origin is exactly P0F.
+    referenceLocalPoint={x:0,y:0,z:0};
+    referenceLocalStatus='REFERENCE-ORIGIN';
+  }else{
+    const refRow=metricLadderPoints[0];
+    if(metricLadderReferenceAnchorReady && refRow?.diagAnchorPoint && refRow?.diagAnchorOrientation && refRow.diagAnchorTrackedFrame===frameCount){
+      referenceLocalPoint=localPointToReferenceAnchorLocal(point,refRow.diagAnchorPoint,refRow.diagAnchorOrientation);
+      referenceLocalStatus=referenceLocalPoint?'CAPTURED-IN-P0F-ANCHOR-LOCAL':'TRANSFORM-FAILED';
+    }else{
+      referenceLocalStatus=!metricLadderReferenceAnchorReady?'REFERENCE-ANCHOR-NOT-READY':'REFERENCE-ANCHOR-NOT-TRACKED-THIS-FRAME';
+    }
+  }
   const row={
     index:idx,key:spec.key,markCm:spec.markCm,leg:spec.leg,point:clonePoint(point),time,frame:frameCount,
     cameraToHit:Number.isFinite(latestHitDistance)?latestHitDistance:null,
     cameraPoint:cameraPoint?clonePoint(cameraPoint):null,
     rayDirection:rayDirection?clonePoint(rayDirection):null,
-    hitStability:stability,hitMaxRadius:stats?.maxRadius??null,sessionResetCount:sessionReferenceSpaceResetCount
+    hitStability:stability,hitMaxRadius:stats?.maxRadius??null,sessionResetCount:sessionReferenceSpaceResetCount,
+    referenceLocalPoint:referenceLocalPoint?clonePoint(referenceLocalPoint):null,
+    referenceLocalFrame:referenceLocalPoint?frameCount:null,
+    referenceLocalStatus
   };
   metricLadderPoints.push(row);
   requestMetricLadderDiagnosticAnchor(result,row);
   log(`METRIC SCALE ROUND-TRIP CAPTURE ${row.key}: physicalMark=${row.markCm} cm; leg=${row.leg}; local=${fmtPoint(row.point)}; frame=${row.frame}; cameraToHit=${row.cameraToHit==null?'n/a':row.cameraToHit.toFixed(6)+' m'}; hitStability=${row.hitStability}; hitMaxRadius=${row.hitMaxRadius==null?'n/a':(row.hitMaxRadius*1000).toFixed(3)+' mm'}; sessionReset=${row.sessionResetCount}; immutableDiagnosticPoint=true; measuredDistanceNotInspected=true; valueIndependent=true; operatorEnvironmentErrorNotSeparated=true; markPlacementErrorNotSeparated=true; correctionApplied=false; diagnosticOnly=true; formalSource=plane-hit`);
+  log(`METRIC ROUNDTRIP SINGLE-REFERENCE LOCAL CAPTURE ${row.key}: referenceAnchor=P0F; status=${row.referenceLocalStatus}; anchorLocal=${row.referenceLocalPoint?fmtPoint(row.referenceLocalPoint):'n/a'}; captureFrame=${row.frame}; oneCommonReferenceAnchor=true; coordinateTransformDiagnosticOnly=true; affectsCaptureGate=false; affectsFormalGate=false; correctionApplied=false; formalSource=immutable-hit`);
   logLongTermHitSettling('PRE-CAPTURE',row.key,time,point);
   beginMetricPostCaptureSettling(row);
   logMetricLadderNewPairs(idx);
+  logMetricLadderReferenceLocalNewPairs(idx);
   updateMetricLadderUI();
 
   if(metricLadderPoints.length===4){
@@ -8593,6 +8677,7 @@ async function startAR(){
     log('METRIC SCALE ROUND-TRIP DIAGNOSTIC ACTIVE: sequence=0F/50F/100F/150T/100R/50R/0R; sameImmersiveSession=true; sameLocalReferenceSpace=true; captureSource=formal-plane-hit; forwardPhase5_10Preserved=true; compareForwardVsReturn=true; revisitDisplacement=true; operatorEnvironmentErrorNotSeparated=true; handMotionNotSeparated=true; markPlacementErrorNotSeparated=true; referenceSpaceResetDuringSequenceInvalidatesLadder=true; guardUsesMeasuredDistance=false; valueIndependent=true; affectsCaptureGate=false; affectsFormalGate=false; correctionApplied=false; diagnosticOnly=true; formalMeasurementGeometryUnchanged=true; formalSource=immutable-hit');
     log('LONG-TERM HIT SETTLING DIAGNOSTIC ACTIVE: preCaptureWindows=0.5/1/2/5s; postCaptureMilestones=0.5/1/2/5s; robustShift=first250msMedian-to-last250msMedian; settledCandidateThreshold=2.0mm; thresholdDiagnosticOnly=true; retention=6.5s; postPoseDelta=xr-reported-viewer-pose+aim-ray; samePhysicalTargetNotProven=true; physicalCameraMotionNotInferred=true; operatorErrorNotInferred=true; poseDeltaThresholds=viewer20mm/ray2deg-diagnostic-only; affectsCaptureGate=false; affectsFormalGate=false; correctionApplied=false; diagnosticOnly=true; formalSource=immutable-hit');
     log('SAME-FRAME ANCHOR PAIR DIAGNOSTIC ACTIVE: formalAB=first-XR-frame-after-B-anchor-created-with-both-anchors-tracked; roundTrip=diagnostic-anchor-per-capture+same-frame-pair-and-revisit-comparison; compare=currentAnchorPair-vs-immutableHitPair; sameFrame=true; affectsCaptureGate=false; affectsFormalGate=false; correctionApplied=false; diagnosticOnly=true; formalSource=immutable-hit');
+    log('SINGLE REFERENCE ANCHOR LOCAL-COORDINATE DIAGNOSTIC ACTIVE: referenceAnchor=P0F-only; transformEachLaterHitUsing=current-P0F-anchor-pose-on-that-capture-XRFrame; storedCoordinate=P0F-anchor-local; compare=referenceLocalPair-vs-immutableHitPair; oneCommonReferenceAnchor=true; independentPointAnchorsRemainComparisonOnly=true; affectsCaptureGate=false; affectsFormalGate=false; correctionApplied=false; diagnosticOnly=true; formalSource=immutable-hit');
     log('MAGNIFIER CENTER REGISTRATION FIX ACTIVE: wrapperCss=136x136; canvasCss=136x136; defaultZoom=4x; placement=fixed-safe-area+120px; reservedForTopHud=one-or-two-lines; lineCountTracking=false; priorRev1RuntimeCanvasCss=160x160; priorWrapperContent=136x136; targetRawCameraUvAtCross=0.5,0.5; displayRegistrationOnly=true; affectsCaptureGate=false; affectsFormalGate=false; correctionApplied=false; diagnosticOnly=true; formalSource=immutable-hit');
     updatePointPairGuardUI();
     updateMetricLadderUI();
