@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<title>AR DISTANCE LAB - Phase 4.90 Rev.1</title>
+<title>AR DISTANCE LAB - Phase 5.00 Rev.1</title>
 <style>
 :root{
   color-scheme:dark;
@@ -268,6 +268,10 @@ padding:8px 9px;pointer-events:auto}
   <div class="cell">Capture A source divergence</div><div class="cell" id="hitSourceDivergenceAState">—</div>
   <div class="cell">Capture B source divergence</div><div class="cell" id="hitSourceDivergenceBState">—</div>
   <div class="cell">Capture source frame coherence</div><div class="cell" id="hitSourceDivergenceFrameState">—</div>
+  <div class="cell">Ray / Surface geometry A</div><div class="cell" id="raySurfaceAState">—</div>
+  <div class="cell">Ray / Surface geometry B</div><div class="cell" id="raySurfaceBState">—</div>
+  <div class="cell">Ray → A-B effect split</div><div class="cell" id="raySurfacePairState">—</div>
+  <div class="cell">Ray geometry frame coherence</div><div class="cell" id="raySurfaceFrameState">—</div>
   <div class="cell">Aim quality</div><div class="cell" id="aimQualityState">ANALYZING</div>
   <div class="cell">Edge median</div><div class="cell" id="edgeMedianState">—</div>
   <div class="cell">Contrast median</div><div class="cell" id="contrastMedianState">—</div>
@@ -281,8 +285,13 @@ padding:8px 9px;pointer-events:auto}
 </section>
 
 <section class="card">
+<h2>PHASE 5.00 — RAY / SURFACE GEOMETRY DIAGNOSTIC</h2>
+<p class="note">Phase 5.00は、Point A / Bの正式取得フレームで、formal Hit位置とsame-frame Depth-center位置の3D差を「formal Hitのカメラ視線方向成分」と「その視線に直交する横方向成分」へ幾何学的に分解します。Hit側の光学原点はXRView transform、Depth側は同一フレームのDepth geometry transformからlocal座標へ復元し、両カメラ原点間のbaseline、Hit rayとDepth rayの角度も記録します。Point B取得後はimmutable Hit A→B軸に対して、各端点のHit→Depth変位が距離方向へ与える一次射影を、camera-ray axial成分とlateral成分へ分けて表示します。これは<strong>記述的な幾何診断</strong>であり、因果分解・補正・採否には使用しません。formal plane Hit-Hit、MAP gate、Depth agreement、Surface Consistency、Point-Pair Guard、Accuracy Sweepの意味と保存schemaは変更しません。</p>
+</section>
+
+<section class="card">
 <h2>PHASE 4.90 — HIT SOURCE DIVERGENCE DIAGNOSTIC</h2>
-<p class="note">Phase 4.90は、Point A / Bを正式取得するその同一XRフレームで、formal plane Hit、diagnostic point Hit、diagnostic mesh Hit、same-frame Depth-centerを凍結比較します。各Hit sourceについてView forward距離、local XYZ、formal planeとの差（View-Z / 3D）、Depth-centerとの差（3D）を記録し、Depth-centerに最も近いHit sourceも記述的に表示します。point / mesh / Depthは診断専用で、formal plane Hit-Hitを置換せず、Capture gate・MAP gate・Accuracy Sweep採否・補正には使用しません。capturePending中はDepthとentity probeを同一フレームで強制取得し、frame番号が一致しない診断値は利用しません。Phase 4.80の「Observed formal scale error」は単一試行からAR空間scaleを断定しないよう「Formal relative error (sample)」へ改称します。</p>
+<p class="note">Phase 4.90は、Point A / Bを正式取得するその同一XRフレームで、formal plane Hit、diagnostic point Hit、diagnostic mesh Hit、same-frame Depth-centerを凍結比較します。各Hit sourceについてView forward距離、local XYZ、formal planeとの差（View-Z / 3D）、Depth-centerとの差（3D）を記録します。Rev.2ではDepth-centerに最も近いHit sourceの記述表示をTIE対応にし、plane / point / meshが同距離なら <code>TIE[plane,point,mesh]</code> と表示します。formal planeとplane probeは同じplane sourceなので、nearest-source比較では二重に数えません。これは表示上の改善だけで、point / mesh / Depthは診断専用、formal plane Hit-Hitを置換せず、Capture gate・MAP gate・Accuracy Sweep採否・補正には使用しません。capturePending中はDepthとentity probeを同一フレームで強制取得し、frame番号が一致しない診断値は利用しません。</p>
 </section>
 
 <section class="card">
@@ -302,7 +311,7 @@ padding:8px 9px;pointer-events:auto}
 
 <section class="card">
 <h2>PHASE 4.50 — PERSISTENT FORMAL HIT-HIT ACCURACY SWEEP</h2>
-<p class="note">Phase 4.50では、50 / 100 / 150 cm × 各3回 = 合計9回の正式 immutable plane Hit-Hit を1つのAccuracy Sweepとして永続管理します。Sweep状態はlocalStorageへ保存し、ARのEND、ページ再読込、同一Originでの再開後も復元します。値が悪いことを理由に有効サンプルを捨てたり追加測定したりせず、各距離の最初の有効3回だけを固定します。MAP INVALID / reference-space reset など既存の安全ゲートで無効になった測定だけが数え直し対象です。Repeatability cluster、Depth、Anchorは診断専用で、正式Hit-Hit値の補正・採否には使用しません。 Rev.2では保存前と復元時の両方でSweep全体をschema 2として検証し、1件でも構造・Sweep ID・順序・状態値などに不整合があれば部分復元せず、その保存Sweep全体を無効として新しい0/9 Sweepを開始します。旧v1保存キーは読み込まず、削除を試みます。削除できない環境でも旧キーは参照しません。 Rev.3ではARセッション開始直後にSTEP 0 / SCENE SETUPを表示し、A付近→B付近→周囲の床・壁・物体→A付近の順にゆっくり見渡して空間認識を促します。SCENE READYを押すまでPoint A取得へ進みません。これは操作ガイドであり、正式距離の計算式・Hit採用条件・Sweep採否条件は変更しません。 Rev.4ではXR画面上部の状態メッセージをsafe-area上端から従来より約1行分（16 px）下げ、画面切り欠き・パンチホールとの重なりを避けます。測定ロジックと保存形式は変更しません。 Rev.5ではSCENE READYを単なる確認ボタンではなく、A付近へ戻った時点で現在のformal plane Hitが取得できている場合だけ成立するsurface-qualified gateに変更します。シーン認識ガイドには、A→B→周囲→Aの順に加え、端末をその場で回転させるだけでなく少し横・斜めにも移動して視差を作り、床壁境界・角・模様・掲示物などの特徴を画面へ入れることを明示します。これは操作フローの改善だけで、正式距離は引き続きimmutable plane Hit-Hitです。 Rev.6では画面切り欠きとの重なりをさらに避けるため、XR画面上部の状態メッセージだけをRev.5から32 px（約2行分）下へ移動します。測定ロジック、SCENE READY条件、保存形式、正式距離の計算には変更ありません。 Phase 4.60 Rev.1では完了済みSweepを保持したまま、Point A/B取得時のHit View-Zと同一フレームDepth@UVのSurface Consistencyを追加します。この診断は正式値・採否に影響しません。 Phase 4.60 Rev.3ではRev.1を正式ベースラインとして維持したまま、Hit→Depth 3D変位のA-B軸方向寄与を診断表示します。Rev.1のSCENE READY surface-qualified gate、Surface Consistency、保存schema 2、正式immutable Hit-Hit測定は変更しません。 Phase 4.60 Rev.4では、計測値の大小とは独立して後から判明した明確な操作・プロトコルミスだけを、固定理由＋明示確認付きで「PROTOCOL INVALID」として有効Sweepから外せる監査付き操作を追加します。value-based discardは禁止のままです。保存schema 2との互換性を維持するため、無効化できるのは現在もっとも後ろに進んでいるターゲット距離のサンプルだけです。過去ターゲットのサンプルを遡って外す場合はSweep全体を再開始します。正式距離の計算、MAP / Depth / Surface Consistencyのゲート意味は変更しません。 Phase 4.60 Rev.5 Recoveryでは、誤操作で旧9/9 Sweepが保存領域から失われた今回のケースに限り、ユーザー提供の確定ログから `S20260929T133409Z-32C0E4` を復元します。150 cmの旧#7は「WRONG PHYSICAL REFERENCE / POINT PAIR」として除外済みの8/9状態に復元し、150 cmを1回だけ再測定できるようにします。復元は明示確認が必要で、現在の0/9 Sweepは別キーへバックアップしてから上書きします。正式測定ロジックとschema 2は変更しません。 Phase 4.70 Rev.1では、Point A取得時にReferenceを試行単位でロックし、Point B取得前にA→B順序とReference不変を値非依存で監査するPoint-Pair / Protocol Guardを追加します。距離値や誤差はガード判定に使用しません。 Phase 4.80 Rev.1では、正式Hit-Hit誤差、SurfaceのA-B軸方向差、MAP signed impact、Hitの時間窓差と、それぞれに対応する代替誤差をError Budget Diagnosticとして並記します。診断値は加算可能な因果成分とはみなさず、補正・採否・閾値変更には使用しません。 Phase 4.90 Rev.1では、Point A/B正式取得フレームでplane / point / mesh Hitとsame-frame Depth-centerを凍結比較し、formal planeとの差をView-Zおよびlocal 3Dで記録するHit Source Divergence Diagnosticを追加します。alternate Hit sourceは診断専用で、正式値・採否・補正には使用しません。</p>
+<p class="note">Phase 4.50では、50 / 100 / 150 cm × 各3回 = 合計9回の正式 immutable plane Hit-Hit を1つのAccuracy Sweepとして永続管理します。Sweep状態はlocalStorageへ保存し、ARのEND、ページ再読込、同一Originでの再開後も復元します。値が悪いことを理由に有効サンプルを捨てたり追加測定したりせず、各距離の最初の有効3回だけを固定します。MAP INVALID / reference-space reset など既存の安全ゲートで無効になった測定だけが数え直し対象です。Repeatability cluster、Depth、Anchorは診断専用で、正式Hit-Hit値の補正・採否には使用しません。 Rev.2では保存前と復元時の両方でSweep全体をschema 2として検証し、1件でも構造・Sweep ID・順序・状態値などに不整合があれば部分復元せず、その保存Sweep全体を無効として新しい0/9 Sweepを開始します。旧v1保存キーは読み込まず、削除を試みます。削除できない環境でも旧キーは参照しません。 Rev.3ではARセッション開始直後にSTEP 0 / SCENE SETUPを表示し、A付近→B付近→周囲の床・壁・物体→A付近の順にゆっくり見渡して空間認識を促します。SCENE READYを押すまでPoint A取得へ進みません。これは操作ガイドであり、正式距離の計算式・Hit採用条件・Sweep採否条件は変更しません。 Rev.4ではXR画面上部の状態メッセージをsafe-area上端から従来より約1行分（16 px）下げ、画面切り欠き・パンチホールとの重なりを避けます。測定ロジックと保存形式は変更しません。 Rev.5ではSCENE READYを単なる確認ボタンではなく、A付近へ戻った時点で現在のformal plane Hitが取得できている場合だけ成立するsurface-qualified gateに変更します。シーン認識ガイドには、A→B→周囲→Aの順に加え、端末をその場で回転させるだけでなく少し横・斜めにも移動して視差を作り、床壁境界・角・模様・掲示物などの特徴を画面へ入れることを明示します。これは操作フローの改善だけで、正式距離は引き続きimmutable plane Hit-Hitです。 Rev.6では画面切り欠きとの重なりをさらに避けるため、XR画面上部の状態メッセージだけをRev.5から32 px（約2行分）下へ移動します。測定ロジック、SCENE READY条件、保存形式、正式距離の計算には変更ありません。 Phase 4.60 Rev.1では完了済みSweepを保持したまま、Point A/B取得時のHit View-Zと同一フレームDepth@UVのSurface Consistencyを追加します。この診断は正式値・採否に影響しません。 Phase 4.60 Rev.3ではRev.1を正式ベースラインとして維持したまま、Hit→Depth 3D変位のA-B軸方向寄与を診断表示します。Rev.1のSCENE READY surface-qualified gate、Surface Consistency、保存schema 2、正式immutable Hit-Hit測定は変更しません。 Phase 4.60 Rev.4では、計測値の大小とは独立して後から判明した明確な操作・プロトコルミスだけを、固定理由＋明示確認付きで「PROTOCOL INVALID」として有効Sweepから外せる監査付き操作を追加します。value-based discardは禁止のままです。保存schema 2との互換性を維持するため、無効化できるのは現在もっとも後ろに進んでいるターゲット距離のサンプルだけです。過去ターゲットのサンプルを遡って外す場合はSweep全体を再開始します。正式距離の計算、MAP / Depth / Surface Consistencyのゲート意味は変更しません。 Phase 4.60 Rev.5 Recoveryでは、誤操作で旧9/9 Sweepが保存領域から失われた今回のケースに限り、ユーザー提供の確定ログから `S20260929T133409Z-32C0E4` を復元します。150 cmの旧#7は「WRONG PHYSICAL REFERENCE / POINT PAIR」として除外済みの8/9状態に復元し、150 cmを1回だけ再測定できるようにします。復元は明示確認が必要で、現在の0/9 Sweepは別キーへバックアップしてから上書きします。正式測定ロジックとschema 2は変更しません。 Phase 4.70 Rev.1では、Point A取得時にReferenceを試行単位でロックし、Point B取得前にA→B順序とReference不変を値非依存で監査するPoint-Pair / Protocol Guardを追加します。距離値や誤差はガード判定に使用しません。 Phase 4.80 Rev.1では、正式Hit-Hit誤差、SurfaceのA-B軸方向差、MAP signed impact、Hitの時間窓差と、それぞれに対応する代替誤差をError Budget Diagnosticとして並記します。診断値は加算可能な因果成分とはみなさず、補正・採否・閾値変更には使用しません。 Phase 4.90 Rev.1では、Point A/B正式取得フレームでplane / point / mesh Hitとsame-frame Depth-centerを凍結比較し、formal planeとの差をView-Zおよびlocal 3Dで記録するHit Source Divergence Diagnosticを追加します。alternate Hit sourceは診断専用で、正式値・採否・補正には使用しません。 Phase 4.90 Rev.2では、Depth-centerに最も近いHit sourceの記述表示をTIE対応にし、同一距離のplane / point / meshを同率として表示します。測定値・ゲート・保存形式は変更しません。 Phase 5.00 Rev.1では、Hit→Depthのlocal 3D変位をcapture camera ray方向とlateral方向へ分解し、Depth camera originとのbaseline、Hit/Depth ray角度、A-B軸へ与える一次射影をray axial / lateralへ分けるRay / Surface Geometry Diagnosticを追加します。正式値・採否・補正・Sweep schemaは変更しません。</p>
 <div class="actions">
   <button type="button" class="refPreset" data-cm="50">50 cm</button>
   <button type="button" class="refPreset" data-cm="100">100 cm</button>
@@ -539,7 +548,7 @@ const el = {};
   'rawCameraState','hitDistanceState','depthState','depthConfigState','depthBufferState',
   'depthCenterState','depthMedianState','depthTemporalState','depthValidState','depthCoherenceState','hitViewState','hitUvState','depthAtHitState','depthHitDeltaState',
   'surfaceConsistencyLiveState','surfaceConsistencyAState','surfaceConsistencyBState','surfaceConsistencyPairState',
-  'captureADepthState','captureBDepthState','depth3DGeometryState','depth3DAState','depth3DBState','compareHitABState','compareDepthCenterABState','compareDepthMedianABState','compareHitADepthBState','compareDepthAHitBState','surfaceOffsetAState','surfaceAxialAState','surfaceOffsetBState','surfaceAxialBState','surfaceAxialNetState','surfaceExactNetState','depthCenterErrorState','depthMedianErrorState','errorBudgetFormalState','errorBudgetSurfaceExactState','errorBudgetSurfaceProjectedState','errorBudgetMapState','errorBudgetTemporalState','errorBudgetDepthAltState','errorBudgetMapAltState','errorBudgetTemporalAltState','errorBudgetScaleState','errorBudgetResidualState','hitSourceDivergenceAState','hitSourceDivergenceBState','hitSourceDivergenceFrameState','entityProbeState','entityPlaneSourceState','entityPlaneHitState','entityPointSourceState','entityPointHitState','entityMeshSourceState','entityMeshHitState','entitySnapshotState','aimQualityState','edgeMedianState',
+  'captureADepthState','captureBDepthState','depth3DGeometryState','depth3DAState','depth3DBState','compareHitABState','compareDepthCenterABState','compareDepthMedianABState','compareHitADepthBState','compareDepthAHitBState','surfaceOffsetAState','surfaceAxialAState','surfaceOffsetBState','surfaceAxialBState','surfaceAxialNetState','surfaceExactNetState','depthCenterErrorState','depthMedianErrorState','errorBudgetFormalState','errorBudgetSurfaceExactState','errorBudgetSurfaceProjectedState','errorBudgetMapState','errorBudgetTemporalState','errorBudgetDepthAltState','errorBudgetMapAltState','errorBudgetTemporalAltState','errorBudgetScaleState','errorBudgetResidualState','hitSourceDivergenceAState','hitSourceDivergenceBState','hitSourceDivergenceFrameState','raySurfaceAState','raySurfaceBState','raySurfacePairState','raySurfaceFrameState','entityProbeState','entityPlaneSourceState','entityPlaneHitState','entityPointSourceState','entityPointHitState','entityMeshSourceState','entityMeshHitState','entitySnapshotState','aimQualityState','edgeMedianState',
   'contrastMedianState','calibrationWidthMm','calibrationHeightMm','calibrationSequenceState','calibrationAutoState','calibrationDwellState','calibrationTargetState','calibrationWidthState','calibrationHeightState','calibrationDiagonalState','calibrationWidthErrorState','calibrationHeightErrorState','calibrationScaleState','calibrationScaleSpreadState','calibrationScaleResidualState','calibrationAngleState','calibrationPlaneState','calibrationDepthState','calibrationRoleState','calibrationResetBtn','calibrationText','calibrationOverlayText','calibrationDwellTrack','calibrationDwellBar','calibrationCaptureBtn','calibrationResetOverlayBtn','sweepRunState','sweepProgressState','sweepSelectedCountState','sweepConsensusState','sweepNextState','sweepHitState','sweepConsensusDistanceState','sweepDepthCenterState','sweepDepthMedianState','discardSweepBtn','clearSweepBtn','protocolInvalidSample','protocolInvalidReason','protocolInvalidConfirm','invalidateProtocolTrialBtn','protocolInvalidationState','knownSweepRecoveryConfirm','recoverKnownSweepBtn','knownSweepRecoveryState','sweepText','magnifierState','magnifierCanvas','magnifierWrap','cardFreezePanel','cardFreezeCanvas','cardFreezeTitle','cardFreezeTapState','cardFreezeResetTapsBtn','cardFreezeRetakeBtn','cardValidationBtn','cardValidationState','alignmentGrid','alignmentMark','alignmentState','alignmentOffsetState','alignmentUvState','alignBtn','entitySnapshotBtn',
   'magnifierLabel','qualityText','hitStabilityText','surfaceConsistencyText','depthText','depthABText','entityText','alignmentText',
   'coordA','coordB','startBtn','resetBtn','endBtn','log','xrCanvas','xrOverlay','xrHud',
@@ -841,6 +850,10 @@ let lastErrorBudgetDiagnostic = null;
 // Phase 4.90: same-capture-frame plane / point / mesh / Depth divergence snapshots. Diagnostic only.
 let captureHitSourceDivergenceA = null;
 let captureHitSourceDivergenceB = null;
+// Phase 5.00: same-capture-frame ray / surface geometry snapshots. Diagnostic only.
+let captureRaySurfaceGeometryA = null;
+let captureRaySurfaceGeometryB = null;
+let raySurfacePairGeometry = null;
 
 function resetHitStabilityDiagnostics(){
   hitStabilitySnapshotA = null;
@@ -1500,7 +1513,7 @@ const SWEEP_ALLOWED_INTEGRITY = new Set(['PASS','WARN']);
 const SWEEP_ALLOWED_DEPTH_AGREEMENT = new Set(['AGREE','WARN','DIVERGED','UNKNOWN']);
 const SWEEP_ALLOWED_COHERENCE = new Set(['COHERENT','MIXED','LOW VALID','LOW COHERENCE','NO DEPTH']);
 const SWEEP_ALLOWED_HIT_STABILITY = new Set(['STABLE','MOVING','ANALYZING']);
-const DIAGNOSTIC_PROTOCOL_REVISION = 11;
+const DIAGNOSTIC_PROTOCOL_REVISION = 12;
 const KNOWN_RECOVERY_SWEEP_ID = 'S20260929T133409Z-32C0E4';
 const KNOWN_RECOVERY_CREATED_AT = '2026-09-29T13:34:09.641Z';
 const KNOWN_RECOVERY_BACKUP_KEY = 'ar-distance-lab-phase4-60-rev5-pre-recovery-backup-v1';
@@ -2007,6 +2020,13 @@ function resetDepthDiagnostics(){
   set('hitSourceDivergenceAState','—','');
   set('hitSourceDivergenceBState','—','');
   set('hitSourceDivergenceFrameState','—','');
+  captureRaySurfaceGeometryA=null;
+  captureRaySurfaceGeometryB=null;
+  raySurfacePairGeometry=null;
+  set('raySurfaceAState','—','');
+  set('raySurfaceBState','—','');
+  set('raySurfacePairState','—','');
+  set('raySurfaceFrameState','—','');
   set('errorBudgetFormalState','—','');
   set('errorBudgetSurfaceExactState','—','');
   set('errorBudgetSurfaceProjectedState','—','');
@@ -2579,23 +2599,38 @@ function buildCaptureHitSourceDivergence(slot,formalPoint,formalHitViewDiag,dept
     delta3DVsDepth:0
   } : {type:'depth',status:sameFrameDepth?'NO_VALID_CENTER':'NO_SAME_FRAME_DEPTH'};
 
+  // Rev.2: descriptive nearest-source reporting is tie-aware.
+  // formal-plane and planeProbe represent the same plane source, so the
+  // nearest-source comparison uses one canonical "plane" candidate.
+  const HIT_SOURCE_TIE_EPS_M=0.000001; // 0.001 mm; display semantics only
   const candidates=[
-    {name:'formal-plane',distance:0},
-    planeProbe.status==='OK'&&Number.isFinite(planeProbe.delta3DVsDepth)?{name:'plane-probe',distance:planeProbe.delta3DVsDepth}:null,
+    depthLocal&&formalPoint?{name:'plane',distance:distance3(formalPoint,depthLocal)}:null,
     point.status==='OK'&&Number.isFinite(point.delta3DVsDepth)?{name:'point',distance:point.delta3DVsDepth}:null,
     mesh.status==='OK'&&Number.isFinite(mesh.delta3DVsDepth)?{name:'mesh',distance:mesh.delta3DVsDepth}:null
   ].filter(Boolean);
-  if(depthLocal && formalPoint) candidates[0].distance=distance3(formalPoint,depthLocal);
-  const closestToDepth=depthLocal && candidates.length
-    ? candidates.reduce((best,x)=>x.distance<best.distance?x:best,candidates[0])
-    : null;
+  let closestToDepth=null;
+  let closestToDepthSources=[];
+  if(depthLocal && candidates.length){
+    const minDistance=Math.min(...candidates.map(x=>x.distance));
+    closestToDepthSources=candidates
+      .filter(x=>Math.abs(x.distance-minDistance)<=HIT_SOURCE_TIE_EPS_M)
+      .map(x=>x.name);
+    closestToDepth={
+      name:closestToDepthSources.length>1
+        ? `TIE[${closestToDepthSources.join(',')}]`
+        : closestToDepthSources[0],
+      distance:minDistance
+    };
+  }
 
   return {
     slot,frame:frameCount,sameFrameEntities,sameFrameDepth,
     formal:{forward:formalForward,localPoint:formalPoint?clonePoint(formalPoint):null},
     planeProbe,point,mesh,depth,
     closestToDepth:closestToDepth?.name??'n/a',
-    closestToDepthDistance:closestToDepth?.distance??null
+    closestToDepthDistance:closestToDepth?.distance??null,
+    closestToDepthSources,
+    closestTieEpsilon:HIT_SOURCE_TIE_EPS_M
   };
 }
 
@@ -2644,6 +2679,202 @@ function captureHitSourceDivergence(slot,formalPoint,formalHitViewDiag,depth3D){
   logCaptureHitSourceDivergence(d);
   updateHitSourceDivergenceUI();
   return d;
+}
+
+function raySurfaceSignedMm(v){
+  if(!Number.isFinite(v)) return 'n/a';
+  return `${v>=0?'+':''}${(v*1000).toFixed(3)} mm`;
+}
+function raySurfaceDeg(v){
+  return Number.isFinite(v) ? `${v.toFixed(4)} deg` : 'n/a';
+}
+function raySurfaceOriginFromMatrix(m){
+  if(!m || m.length!==16) return null;
+  try{
+    const p=transformPointByMatrix(m,{x:0,y:0,z:0});
+    return p&&[p.x,p.y,p.z].every(Number.isFinite)?p:null;
+  }catch{return null;}
+}
+function buildCaptureRaySurfaceGeometry(slot,viewerPose,formalPoint,hitViewDiag,depth3D){
+  const view=viewerPose?.views?.[0];
+  const sameFrameDepth=!!(depth3D && depth3D.frame===frameCount && depth3D.centerLocal);
+  const hitCameraOrigin=view?.transform?.position && Number.isFinite(view.transform.position.x)
+    ? {x:view.transform.position.x,y:view.transform.position.y,z:view.transform.position.z}
+    : null;
+
+  let depthCameraOrigin=null;
+  let depthGeometrySource='n/a';
+  if(sameFrameDepth && view && latestDepthInfo && latestDepthInfoFrame===frameCount){
+    const geom=depthGeometryForFrame(view,latestDepthInfo);
+    depthGeometrySource=geom?.source??'n/a';
+    depthCameraOrigin=raySurfaceOriginFromMatrix(geom?.transform);
+  }
+
+  const depthPoint=sameFrameDepth?clonePoint(depth3D.centerLocal):null;
+  if(!formalPoint || !hitCameraOrigin || !depthPoint || !depthCameraOrigin){
+    return {
+      slot,frame:frameCount,sameFrameDepth,
+      status:'PARTIAL',
+      formalPoint:formalPoint?clonePoint(formalPoint):null,
+      depthPoint,
+      hitCameraOrigin,
+      depthCameraOrigin,
+      depthGeometrySource
+    };
+  }
+
+  const hitRay=vectorBetween(hitCameraOrigin,formalPoint);
+  const depthRay=vectorBetween(depthCameraOrigin,depthPoint);
+  const hitRayUnit=normalize3(hitRay);
+  const depthRayUnit=normalize3(depthRay);
+  const delta=vectorBetween(formalPoint,depthPoint);
+  if(!hitRayUnit || !depthRayUnit || !delta){
+    return {slot,frame:frameCount,sameFrameDepth,status:'PARTIAL',formalPoint:clonePoint(formalPoint),depthPoint,hitCameraOrigin,depthCameraOrigin,depthGeometrySource};
+  }
+
+  const axialOnHitRay=dot3(delta,hitRayUnit);
+  const axialVector=scale3(hitRayUnit,axialOnHitRay);
+  const lateralVector=add3(delta,scale3(axialVector,-1));
+  const lateralToHitRay=norm3(lateralVector);
+  const hitDepthRayAngle=angleBetweenDirectionsDeg(hitRayUnit,depthRayUnit);
+  const cameraOriginBaseline=distance3(hitCameraOrigin,depthCameraOrigin);
+
+  return {
+    slot,frame:frameCount,sameFrameDepth,status:'OK',
+    formalPoint:clonePoint(formalPoint),
+    depthPoint,
+    hitCameraOrigin,
+    depthCameraOrigin,
+    depthGeometrySource,
+    hitRayUnit,
+    depthRayUnit,
+    hitRayLength:norm3(hitRay),
+    depthRayLength:norm3(depthRay),
+    hitDepthDelta:delta,
+    offset3D:norm3(delta),
+    axialOnHitRay,
+    axialVector,
+    lateralVector,
+    lateralToHitRay,
+    hitDepthRayAngle,
+    cameraOriginBaseline,
+    formalViewForward:Number.isFinite(hitViewDiag?.forward)?hitViewDiag.forward:null,
+    depthViewForward:Number.isFinite(depth3D?.centerDepth)?depth3D.centerDepth:null
+  };
+}
+
+function logCaptureRaySurfaceGeometry(d){
+  if(!d) return;
+  if(d.status!=='OK'){
+    log(
+      `RAY SURFACE GEOMETRY ${d.slot}: frame=${d.frame}; status=${d.status}; sameFrameDepth=${d.sameFrameDepth}; ` +
+      `hitCameraOrigin=${d.hitCameraOrigin?fmtPoint(d.hitCameraOrigin):'n/a'}; depthCameraOrigin=${d.depthCameraOrigin?fmtPoint(d.depthCameraOrigin):'n/a'}; ` +
+      `depthGeometry=${d.depthGeometrySource??'n/a'}; descriptiveOnly=true; causalDecomposition=false; affectsCaptureGate=false; affectsFormalGate=false; correctionApplied=false; diagnosticOnly=true; formalSource=immutable-hit`
+    );
+    return;
+  }
+  log(
+    `RAY SURFACE GEOMETRY ${d.slot}: frame=${d.frame}; sameFrameDepth=${d.sameFrameDepth}; ` +
+    `hitCameraOrigin=${fmtPoint(d.hitCameraOrigin)}; depthCameraOrigin=${fmtPoint(d.depthCameraOrigin)}; cameraOriginBaseline=${raySurfaceSignedMm(d.cameraOriginBaseline)}; ` +
+    `formalRayLength=${d.hitRayLength.toFixed(6)} m; depthRayLength=${d.depthRayLength.toFixed(6)} m; ` +
+    `HitToDepth[offset3D=${raySurfaceSignedMm(d.offset3D)}; axialOnHitRay=${raySurfaceSignedMm(d.axialOnHitRay)}; lateralToHitRay=${raySurfaceSignedMm(d.lateralToHitRay)}; vector=${formatVectorMm(d.hitDepthDelta)}]; ` +
+    `hitDepthRayAngle=${raySurfaceDeg(d.hitDepthRayAngle)}; formalViewForward=${fmtMaybeNumber(d.formalViewForward,6)} m; depthViewForward=${fmtMaybeNumber(d.depthViewForward,6)} m; ` +
+    `depthGeometry=${d.depthGeometrySource}; descriptiveOnly=true; causalDecomposition=false; affectsCaptureGate=false; affectsFormalGate=false; correctionApplied=false; diagnosticOnly=true; formalSource=immutable-hit`
+  );
+}
+
+function buildRaySurfacePairGeometry(){
+  if(!capturePointA || !capturePointB) return null;
+  const axis=normalize3(vectorBetween(capturePointA,capturePointB));
+  if(!axis) return null;
+
+  function endpoint(slot,d){
+    if(!d || d.status!=='OK' || !d.hitRayUnit || !d.hitDepthDelta) return null;
+    const sign=slot==='A'?-1:1;
+    const rayAxisCos=dot3(d.hitRayUnit,axis);
+    const rayVsABAngle=Math.acos(Math.max(-1,Math.min(1,rayAxisCos)))*180/Math.PI;
+    const totalEffect=sign*dot3(d.hitDepthDelta,axis);
+    const axialEffect=sign*dot3(d.axialVector,axis);
+    const lateralEffect=totalEffect-axialEffect;
+    return {slot,rayAxisCos,rayVsABAngle,totalEffect,axialEffect,lateralEffect};
+  }
+
+  const a=endpoint('A',captureRaySurfaceGeometryA);
+  const b=endpoint('B',captureRaySurfaceGeometryB);
+  const totalNet=(a?.totalEffect??0)+(b?.totalEffect??0);
+  const axialNet=(a?.axialEffect??0)+(b?.axialEffect??0);
+  const lateralNet=(a?.lateralEffect??0)+(b?.lateralEffect??0);
+  const surfaceProjected=depthABComparison?.surfaceAxisCenter?.projectedNet;
+  const surfaceCrossResidual=Number.isFinite(surfaceProjected)?totalNet-surfaceProjected:null;
+  return {
+    axis,
+    a,b,
+    totalNet,axialNet,lateralNet,
+    surfaceProjected:Number.isFinite(surfaceProjected)?surfaceProjected:null,
+    surfaceCrossResidual
+  };
+}
+
+function logRaySurfacePairGeometry(d){
+  if(!d) return;
+  function ep(x){
+    if(!x) return 'N/A';
+    return `rayVsABAngle=${raySurfaceDeg(x.rayVsABAngle)}; cos=${x.rayAxisCos>=0?'+':''}${x.rayAxisCos.toFixed(6)}; totalSurfaceEffect=${raySurfaceSignedMm(x.totalEffect)}; rayAxialEffect=${raySurfaceSignedMm(x.axialEffect)}; rayLateralEffect=${raySurfaceSignedMm(x.lateralEffect)}`;
+  }
+  log(
+    `RAY -> A-B EFFECT DECOMPOSITION: A[${ep(d.a)}]; B[${ep(d.b)}]; ` +
+    `net[totalSurfaceEffect=${raySurfaceSignedMm(d.totalNet)}; rayAxialEffect=${raySurfaceSignedMm(d.axialNet)}; rayLateralEffect=${raySurfaceSignedMm(d.lateralNet)}]; ` +
+    `surfaceAxisProjectedCrossCheck=${raySurfaceSignedMm(d.surfaceProjected)}; crossResidual=${raySurfaceSignedMm(d.surfaceCrossResidual)}; ` +
+    `firstOrderABAxisProjection=true; causalDecomposition=false; componentsNonAdditiveWithOtherDiagnostics=true; ` +
+    `affectsCaptureGate=false; affectsFormalGate=false; correctionApplied=false; diagnosticOnly=true; formalSource=immutable-hit`
+  );
+}
+
+function updateRaySurfaceGeometryUI(){
+  function endpointText(d){
+    if(!d) return '—';
+    if(d.status!=='OK') return `${d.status} / same-frame depth ${d.sameFrameDepth?'YES':'NO'}`;
+    return `offset ${raySurfaceSignedMm(d.offset3D)} / axial ${raySurfaceSignedMm(d.axialOnHitRay)} / lateral ${raySurfaceSignedMm(d.lateralToHitRay)} / ray angle ${raySurfaceDeg(d.hitDepthRayAngle)} / origin baseline ${raySurfaceSignedMm(d.cameraOriginBaseline)}`;
+  }
+  set('raySurfaceAState',endpointText(captureRaySurfaceGeometryA),captureRaySurfaceGeometryA?.status==='OK'?'ok':'');
+  set('raySurfaceBState',endpointText(captureRaySurfaceGeometryB),captureRaySurfaceGeometryB?.status==='OK'?'ok':'');
+  if(raySurfacePairGeometry){
+    set(
+      'raySurfacePairState',
+      `net ${raySurfaceSignedMm(raySurfacePairGeometry.totalNet)} / ray axial ${raySurfaceSignedMm(raySurfacePairGeometry.axialNet)} / lateral ${raySurfaceSignedMm(raySurfacePairGeometry.lateralNet)} / cross ${raySurfaceSignedMm(raySurfacePairGeometry.surfaceCrossResidual)}`,
+      'ok'
+    );
+  }else{
+    set('raySurfacePairState','—','');
+  }
+  const ds=[captureRaySurfaceGeometryA,captureRaySurfaceGeometryB].filter(Boolean);
+  if(!ds.length){
+    set('raySurfaceFrameState','—','');
+  }else{
+    const pass=ds.every(d=>d.status==='OK'&&d.sameFrameDepth);
+    set('raySurfaceFrameState',pass?'SAME-FRAME PASS':'SAME-FRAME PARTIAL',pass?'ok':'warn');
+  }
+}
+
+function captureRaySurfaceGeometry(slot,viewerPose,formalPoint,hitViewDiag,depth3D){
+  const d=buildCaptureRaySurfaceGeometry(slot,viewerPose,formalPoint,hitViewDiag,depth3D);
+  if(slot==='A'){
+    captureRaySurfaceGeometryA=d;
+    captureRaySurfaceGeometryB=null;
+    raySurfacePairGeometry=null;
+  }else{
+    captureRaySurfaceGeometryB=d;
+  }
+  logCaptureRaySurfaceGeometry(d);
+  updateRaySurfaceGeometryUI();
+  return d;
+}
+
+function updateRaySurfacePairGeometry(){
+  raySurfacePairGeometry=buildRaySurfacePairGeometry();
+  if(raySurfacePairGeometry) logRaySurfacePairGeometry(raySurfacePairGeometry);
+  updateRaySurfaceGeometryUI();
+  return raySurfacePairGeometry;
 }
 
 function requestEntitySnapshot(){
@@ -4242,6 +4473,18 @@ function resetMeasurementMetrics(){
   set('errorBudgetTemporalAltState','—','');
   set('errorBudgetScaleState','—','');
   set('errorBudgetResidualState','UNRESOLVED','');
+  captureHitSourceDivergenceA=null;
+  captureHitSourceDivergenceB=null;
+  set('hitSourceDivergenceAState','—','');
+  set('hitSourceDivergenceBState','—','');
+  set('hitSourceDivergenceFrameState','—','');
+  captureRaySurfaceGeometryA=null;
+  captureRaySurfaceGeometryB=null;
+  raySurfacePairGeometry=null;
+  set('raySurfaceAState','—','');
+  set('raySurfaceBState','—','');
+  set('raySurfacePairState','—','');
+  set('raySurfaceFrameState','—','');
   lastDepthAgreement = null;
   set('depthCrossCheckDeltaState','—','');
   set('depthCrossCheckState','UNKNOWN','');
@@ -4427,6 +4670,22 @@ function summarizeMeasurement(reason){
       `exactDepthCenterMinusHit=${sa?.exactNet==null?'n/a':(sa.exactNet>=0?'+':'')+(sa.exactNet*1000).toFixed(3)+' mm'}; ` +
       `projectionResidual=${sa?.projectionResidual==null?'n/a':(sa.projectionResidual>=0?'+':'')+(sa.projectionResidual*1000).toFixed(3)+' mm'}; ` +
       `diagnosticOnly=true; affectsFormalGate=false; correctionApplied=false; formalSource=immutable-hit`
+    );
+  }
+
+  if(captureRaySurfaceGeometryA || captureRaySurfaceGeometryB){
+    const ra=captureRaySurfaceGeometryA;
+    const rb=captureRaySurfaceGeometryB;
+    function raySummaryPart(d){
+      if(!d) return 'N/A';
+      if(d.status!=='OK') return `frame=${d.frame},status=${d.status},sameFrameDepth=${d.sameFrameDepth}`;
+      return `frame=${d.frame},sameFrameDepth=${d.sameFrameDepth},offset3D=${raySurfaceSignedMm(d.offset3D)},axialOnHitRay=${raySurfaceSignedMm(d.axialOnHitRay)},lateralToHitRay=${raySurfaceSignedMm(d.lateralToHitRay)},rayAngle=${raySurfaceDeg(d.hitDepthRayAngle)},originBaseline=${raySurfaceSignedMm(d.cameraOriginBaseline)}`;
+    }
+    const rp=raySurfacePairGeometry;
+    log(
+      `ray surface geometry summary: A[${raySummaryPart(ra)}]; B[${raySummaryPart(rb)}]; ` +
+      `pair[totalSurfaceEffect=${raySurfaceSignedMm(rp?.totalNet)},rayAxialEffect=${raySurfaceSignedMm(rp?.axialNet)},rayLateralEffect=${raySurfaceSignedMm(rp?.lateralNet)},surfaceCrossResidual=${raySurfaceSignedMm(rp?.surfaceCrossResidual)}]; ` +
+      `causalDecomposition=false; correctionApplied=false; affectsFormalGate=false; diagnosticOnly=true; formalSource=immutable-hit`
     );
   }
 
@@ -7601,7 +7860,8 @@ async function startAR(){
     log('SURFACE OFFSET AXIS DIAGNOSTIC ACTIVE: method=local-3D Hit->same-frame Depth-center projected onto immutable Hit A->B axis; positiveEffect=lengthens-A-B; negativeEffect=shortens-A-B; endpointOffsetMagnitudeIsDiagnostic=true; affectsCaptureGate=false; affectsFormalGate=false; correctionApplied=false; diagnosticOnly=true; formalSource=immutable-hit; sweepStorageCompatibility=phase4.50-schema2');
     log('POINT-PAIR PROTOCOL GUARD ACTIVE: lockReferenceAt=A-formal-hit; sequence=A>B; blockReferenceChangeUntilReset=true; guardUsesMeasuredDistance=false; valueIndependent=true; formalMeasurementGeometryUnchanged=true; formalSource=immutable-hit');
     log('ERROR BUDGET DIAGNOSTIC ACTIVE: observables=formalError,surfaceExact,surfaceProjected,mapSignedImpact,hitMedian1000Shift; alternativeErrors=DepthCenter,currentAAnchor,HitMedian1000; causalDecomposition=false; componentsNonAdditive=true; residualCause=UNRESOLVED; affectsCaptureGate=false; affectsFormalGate=false; correctionApplied=false; diagnosticOnly=true; formalSource=immutable-hit');
-    log('HIT SOURCE DIVERGENCE DIAGNOSTIC ACTIVE: captureFrameSources=formal-plane,point,mesh,same-frame-depth-center; compare=view-forward,local-3D; staleEntitySamplesRejected=true; formalMeasurementSource=plane; alternateSourcesDiagnosticOnly=true; affectsCaptureGate=false; affectsFormalGate=false; correctionApplied=false; diagnosticOnly=true; formalSource=immutable-hit');
+    log('HIT SOURCE DIVERGENCE DIAGNOSTIC ACTIVE: captureFrameSources=formal-plane,point,mesh,same-frame-depth-center; compare=view-forward,local-3D; staleEntitySamplesRejected=true; nearestSourceReporting=tie-aware; tieEpsilon=0.001mm; formalMeasurementSource=plane; alternateSourcesDiagnosticOnly=true; affectsCaptureGate=false; affectsFormalGate=false; correctionApplied=false; diagnosticOnly=true; formalSource=immutable-hit');
+    log('RAY / SURFACE GEOMETRY DIAGNOSTIC ACTIVE: captureFrameGeometry=XRView-hit-ray-vs-DepthGeometry-ray; observables=hitDepthOffset3D,rayAxial,rayLateral,cameraOriginBaseline,rayAngle,ABAxisEffectSplit; firstOrderABAxisProjection=true; causalDecomposition=false; affectsCaptureGate=false; affectsFormalGate=false; correctionApplied=false; diagnosticOnly=true; formalSource=immutable-hit');
     updatePointPairGuardUI();
 
     try{
@@ -7853,6 +8113,7 @@ function createAnchorFromHit(result,hitPose,slot,time,viewerPose){
     captureQualitySnapshot(slot,fallbackPoint,viewerPose,time,hitViewDiag);
   const depth3D = captureDepth3DPoint(slot,viewerPose,hitViewDiag);
   captureHitSourceDivergence(slot,fallbackPoint,hitViewDiag,depth3D);
+  captureRaySurfaceGeometry(slot,viewerPose,fallbackPoint,hitViewDiag,depth3D);
 
   if(slot==='A'){
     captureSnapshotA=captureSnapshot;
@@ -7890,6 +8151,7 @@ function createAnchorFromHit(result,hitPose,slot,time,viewerPose){
     preBActive = false;
 
     updateDepthABComparison();
+    updateRaySurfacePairGeometry();
     updateSurfaceConsistencyPair();
     freezeMeasurementAtB(fallbackPoint,time);
     log(`TRIAL PROTOCOL AUDIT: state=PASS; protocolReference=${trialProtocolReferenceMeters.toFixed(6)} m; endpointSequence=${TRIAL_PROTOCOL_SEQUENCE}; pointPairGuard=PASS; referenceChangedDuringTrial=${trialProtocolReferenceChanged}; formalPointA=true; formalPointB=true; valueIndependent=true; valueBasedDiscard=false; correctionApplied=false; diagnosticOnly=false; formalSource=immutable-hit`);
